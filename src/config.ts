@@ -74,6 +74,12 @@ export const profileConfig: ProfileConfig = {
 		},
 	],
 };
+
 export const expressiveCodeConfig = {
   theme: "github-dark"
+};
+
+export const licenseConfig = {
+  name: "MIT",
+  url: "https://opensource.org/licenses/MIT"
 };
