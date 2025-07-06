@@ -72,20 +72,6 @@ const bannerOffset =
 	bannerOffsetByPosition[siteConfig.banner.position || "center"];
 ---
 
-{enableBanner && (
-  <div id="banner-wrapper" class="w-full overflow-hidden">
-    <img
-      id="banner"
-      src="/demo-banner.png"
-      alt="Banner"
-      class="w-full h-[var(--banner-height-home)] object-cover transition-all duration-500 opacity-0 scale-105"
-      loading="eager"
-      decoding="async"
-      style="aspect-ratio: 16/5;"
-    />
-  </div>
-)}
-
 <!DOCTYPE html>
 <html lang={siteLang} class="bg-[var(--page-bg)] transition text-[14px] md:text-[16px]"
 	  data-overlayscrollbars-initialize
