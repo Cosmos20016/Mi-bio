@@ -15,8 +15,8 @@ import remarkDirective from "remark-directive"; /* Handle directives */
 import remarkGithubAdmonitionsToDirectives from "remark-github-admonitions-to-directives";
 import remarkMath from "remark-math";
 import remarkSectionize from "remark-sectionize";
-import { expressiveCodeConfig } from "./src/config"; // CORREGIDO: sin .ts
-import { pluginLanguageBadge } from "./src/plugins/expressive-code/language-badge.ts";
+import { expressiveCodeConfig } from "./src/config";
+import { pluginLanguageBadge } from "./src/plugins/expressive-code/language-badge";
 import { AdmonitionComponent } from "./src/plugins/rehype-component-admonition.mjs";
 import { GithubCardComponent } from "./src/plugins/rehype-component-github-card.mjs";
 import { parseDirectiveNode } from "./src/plugins/remark-directive-rehype.js";
