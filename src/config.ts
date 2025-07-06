@@ -74,3 +74,6 @@ export const profileConfig: ProfileConfig = {
 		},
 	],
 };
+export const expressiveCodeConfig = {
+  theme: "github-dark"
+};
