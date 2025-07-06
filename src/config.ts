@@ -45,14 +45,9 @@ export const navBarConfig: NavBarConfig = {
 		LinkPreset.Archive,
 		LinkPreset.About,
 		{
-			name: "YouTube",
-			url: "https://www.youtube.com/@kevinborjayt", // Cambiado a YouTube
-			external: true,
-		},
-		{
-			name: "Facebook",
-			url: "https://www.facebook.com/share/16n7f7zdYQ/", // Nuevo enlace a Facebook
-			external: true,
+			name: "GitHub",
+			url: "https://github.com/saicaca/fuwari", // Internal links should not include the base path, as it is automatically added
+			external: true, // Show an external link icon and will open in a new tab
 		},
 	],
 };
