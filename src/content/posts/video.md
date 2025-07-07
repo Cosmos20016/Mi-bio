@@ -1,6 +1,6 @@
 ---
 title: Multimedia
-published: 2025-07-07
+published: today
 description: Descubre todos tus videos favoritos reunidos en un solo espacio, directo desde cualquier plataforma.
 tags: [Multimedia,Videos]
 category: Entretenimiento
