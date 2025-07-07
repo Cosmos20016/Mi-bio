@@ -5,11 +5,13 @@ description: Descubre todos tus videos favoritos reunidos en un solo espacio, di
 tags: [Multimedia,Videos]
 category: Entretenimiento
 draft: false
+
 ```yaml
 
 Descubre todos tus videos favoritos reunidos en un solo espacio, directo desde cualquier plataforma.
 
 ```
+
 ```yaml
 ---
 title: Include Video in the Post
