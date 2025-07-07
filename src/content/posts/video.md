@@ -10,8 +10,10 @@ draft: false
 Descubre todos tus videos favoritos reunidos en un solo espacio, directo desde cualquier plataforma.
 
 ```yaml
-Déjate sorprender, ríe, aprende y sueña a través de cada imagen, sonido o historia. Cuando te regalas un momento para el arte y la creatividad, tu mente se expande y tu alma sonríe. Los contenidos multimedia son puentes que nos conectan con nuevas ideas, culturas y emociones, haciéndonos sentir más vivos y unidos con el mundo.
-                                                                                                                                                                              -KB
+Déjate sorprender, ríe, aprende y sueña a través de cada imagen, sonido o historia.
+Cuando te regalas un momento para el arte y la creatividad, tu mente se expande y tu alma sonríe.
+Los contenidos multimedia son puentes que nos conectan con nuevas ideas, culturas y emociones,
+haciéndonos sentir más vivos y unidos con el mundo.                                           -KB
 ```
 
 ## YouTube
