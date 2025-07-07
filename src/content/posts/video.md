@@ -11,12 +11,9 @@ Descubre todos tus videos favoritos reunidos en un solo espacio, directo desde c
 
 ```yaml
 ---
-title: Include Video in the Post
-published: 2023-10-19
-// ...
+published: today
+Déjate llevar por el disfrute, el aprendizaje y los sueños; cada momento dedicado al arte y la creatividad enriquece la mente y alimenta el alma. Los contenidos multimedia abren puertas a nuevas ideas, culturas y emociones.
 ---
-
-<iframe width="100%" height="468" src="https://www.youtube.com/embed/5gIf0_xpFPI?si=N1WTorLKL0uwLsU_" title="YouTube video player" frameborder="0" allowfullscreen></iframe>
 ```
 
 ## YouTube
