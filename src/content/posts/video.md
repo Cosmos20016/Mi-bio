@@ -1,14 +1,15 @@
 ---
 title: Multimedia
 published: 2025-07-07
-description: Descubre todos tus videos favoritos reunidos en un solo espacio, directo desde cualquier plataforma.
+description: Descubre todos tus videos favoritos reunidos en un solo espacio, directo desde cualquier plataforma. 
 tags: [Multimedia,Videos]
 category: Entretenimiento
 draft: false
----
+```yaml
 
-Just copy the embed code from YouTube or other platforms, and paste it in the markdown file.
+Descubre todos tus videos favoritos reunidos en un solo espacio, directo desde cualquier plataforma.
 
+```
 ```yaml
 ---
 title: Include Video in the Post
