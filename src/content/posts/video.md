@@ -7,9 +7,10 @@ category: Entretenimiento
 draft: false
 
 ```yaml
-
+---
 Descubre todos tus videos favoritos reunidos en un solo espacio, directo desde cualquier plataforma.
-
+---
+<iframe width="100%" height="468" src="https://www.youtube.com/embed/5gIf0_xpFPI?si=N1WTorLKL0uwLsU_" title="YouTube video player" frameborder="0" allowfullscreen></iframe>
 ```
 
 ```yaml
