@@ -22,8 +22,19 @@
     60% { transform: rotate(0deg);}
     100% { transform: rotate(0deg);}
   }
+  .desc-chill {
+    text-align: justify;
+    max-width: 480px;
+    margin: 1.5rem auto 0 auto;
+    background: rgba(255,255,255,0.75);
+    border-radius: 12px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.04);
+    padding: 1.2rem 2rem;
+    line-height: 1.6;
+    color: #4a4a4a;
+    font-size: 1.15rem;
+  }
 </style>
-
 <div class="center-chill">
   <span class="wave">👋</span>
   <div class="desc-chill">
