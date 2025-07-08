@@ -1,5 +1,5 @@
 ---
-title: Bienvenido a Mi-bio
+title: Bienvenido/@ a mi bio
 published: 2025-07-08
 description: "Conoce a la persona detrás, los objetivos del sitio y lo que está por venir."
 image: "./cover.png"
@@ -12,15 +12,14 @@ draft: false
 
 ## ¿Qué encontrarás?
 
-- Una presentación personal, para que me conozcas mejor.
-- Un blog donde compartiré guías, tutoriales y reflexiones sobre desarrollo web, tecnología y mis áreas de interés.
-- Sección de proyectos: aquí iré mostrando los trabajos y experimentos en los que estoy involucrado.
-
+- Entretenimiento.
+- Un blog interactivo donde compartiré guías, tutoriales y reflexiones sobre desarrollo web, tecnología y áreas de interés.
+- Herramientas y guías.
+  
+---
 ## Futuras implementaciones
 ```yaml
 Estoy trabajando en nuevas funcionalidades, entre las que planeo incluir:
-- contenido multimedia integrado.
-...
 - contenido multimedia integrado.
 - Sección de comentarios y contacto directo.
 - Integración de nuevas tecnologías.
