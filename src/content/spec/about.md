@@ -1,10 +1,13 @@
 # Sobre mí
 ---
-<p align="center">
-  <img src="./midibujo.png"/>
-</p>
 
-Soy Kevin Borja, una persona sencilla y creativa, creador de contenido y programador web con muchas ganas de aprender y compartir.
+<div style="display: flex; flex-direction: column; align-items: center;">
+  <img src="./midibujo.png" alt="Mi dibujo" style="max-width: 200px; margin-bottom: 16px;" />
+  <p style="text-align: center;">
+    Soy Kevin Borja, una persona sencilla y creativa, creador de contenido y programador web con muchas ganas de aprender y compartir.
+  </p>
+</div>
+
 ---
 
 ::github{repo="Cosmos20016/Mi-bio"}
