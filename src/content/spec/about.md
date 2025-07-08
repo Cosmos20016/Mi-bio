@@ -22,36 +22,14 @@
     60% { transform: rotate(0deg);}
     100% { transform: rotate(0deg);}
   }
-  .desc-chill {
-    text-align: center;
-    font-size: 1.15rem;
-    color: #4a4a4a;
-    max-width: 480px;
-    margin-top: 1rem;
-    background: rgba(255,255,255,0.75);
-    border-radius: 12px;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.04);
-    padding: 1.2rem 2rem;
-    line-height: 1.6;
-  }
-  .chill-img {
-    max-width: 180px;
-    margin-bottom: 18px;
-    border-radius: 50%;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.10);
-    transition: transform 0.3s;
-  }
-  .chill-img:hover {
-    transform: scale(1.07) rotate(-4deg);
-  }
 </style>
 
 <div class="center-chill">
   <span class="wave">👋</span>
-  <img src="./midibujo.png" alt="Mi dibujo" class="chill-img" />
   <div class="desc-chill">
     ¡Hey! Soy Kevin Borja, alguien que disfruta crear, compartir y aprender sin estrés.<br /><br />
     Me gustan los retos, el desarrollo web y todo lo creativo. Busco siempre aportar buena vibra, inspiración y soluciones simples.<br /><br />
     Si tienes una idea, un proyecto o solo quieres charlar sobre tecnología, ¡bienvenido/a!
   </div>
 </div>
+---
