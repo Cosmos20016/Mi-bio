@@ -13,9 +13,9 @@ draft: false
 ## ¿Qué encontrarás?
 
 - Entretenimiento.
-- Un blog interactivo donde compartiré guías, tutoriales y reflexiones sobre desarrollo web, tecnología y áreas de interés.
 - Herramientas y guías.
-  
+- Un blog interactivo de guías, tutoriales y reflexiones, desarrollo web, tecnología y áreas de interés.
+    
 ---
 ## Futuras implementaciones
 ```yaml
