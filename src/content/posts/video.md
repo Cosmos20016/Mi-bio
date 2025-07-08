@@ -15,7 +15,6 @@ title: El poder de los contenidos multimedia
 published: 2025-07-08
 ---
 
-```txt
 Déjate sorprender, ríe, aprende y sueña a través de cada imagen, sonido o historia.
 Cuando te regalas un momento para el arte y la creatividad, tu mente se expande y tu alma sonríe.
 Los contenidos multimedia son puentes que nos conectan con nuevas ideas, culturas y emociones,
