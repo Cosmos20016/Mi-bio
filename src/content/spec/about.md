@@ -1,7 +1,8 @@
 # About
 This is the demo site for [Fuwari](https://github.com/saicaca/fuwari).
 
-::github{repo="saicaca/fuwari"}
+::github{repo="Cosmos20016
+Mi-bio"}
 
 > ### Sources of images used in this site
 > - [Unsplash](https://unsplash.com/)
