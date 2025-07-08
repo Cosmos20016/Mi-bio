@@ -1,5 +1,4 @@
 # Sobre mí
----
 <style>
   .center-chill {
     display: flex;
@@ -43,4 +42,4 @@
     Si tienes una idea, un proyecto o solo quieres charlar sobre tecnología, ¡bienvenido/a!
   </div>
 </div>
----
+
