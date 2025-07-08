@@ -1,6 +1,6 @@
 ---
 title: Multimedia
-published: 2025-08-07
+published: 2025-08-06
 description: Descubre todos tus videos favoritos reunidos en un solo espacio, directo desde cualquier plataforma.
 tags: [Multimedia,Videos]
 category: Entretenimiento
@@ -12,7 +12,7 @@ Descubre todos tus videos favoritos reunidos en un solo espacio, directo desde c
 ```yaml
 ---
 title: El poder de los contenidos multimedia
-published: 2025-08-07
+published: 2025-08-06
 ---
 
 Déjate sorprender, ríe, aprende y sueña a través de cada imagen, sonido o historia.
