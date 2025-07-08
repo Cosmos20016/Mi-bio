@@ -1,5 +1,5 @@
 # About
-This is the demo site for [Fuwari](https://github.com/saicaca/fuwari).
+Soy Kevin Borja, una persona sencilla y creativa, con muchas ganas de aprender y compartir
 
 ::github{repo="Cosmos20016/Mi-bio"}
 
