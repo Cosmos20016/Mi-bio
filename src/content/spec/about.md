@@ -1,7 +1,7 @@
 # Sobre mí
 ---
 <p align="center">
-  <img src="./midibujo.png" alt="Mi dibujo" />
+  <img src="./midibujo.png"/>
 </p>
 
 Soy Kevin Borja, una persona sencilla y creativa, creador de contenido y programador web con muchas ganas de aprender y compartir.
