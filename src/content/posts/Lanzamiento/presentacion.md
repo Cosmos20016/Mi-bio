@@ -3,8 +3,8 @@ title: Bienvenido/@ a mi bio
 published: 2025-07-08
 description: "Conoce a la persona detrás, los objetivos del sitio y lo que está por venir."
 image: "./cover.png"
-tags: ["Presentación", "Mi-bio", "Nuevas Funcionalidades"]
-category: Lanzamiento
+tags: ["Presentación", "Mi bio", "Lanzamiento"]
+category: Lanzamiento oficial
 draft: false
 ---
 
