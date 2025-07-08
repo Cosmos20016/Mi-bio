@@ -1,6 +1,8 @@
 # About
+---
 image: "./midibujo.png"
 Soy Kevin Borja, una persona sencilla y creativa, con muchas ganas de aprender y compartir
+---
 
 ::github{repo="Cosmos20016/Mi-bio"}
 
