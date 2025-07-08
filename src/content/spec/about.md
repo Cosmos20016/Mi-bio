@@ -30,7 +30,7 @@
     box-shadow: 0 2px 16px rgba(0,0,0,0.04);
     padding: 1.2rem 2rem;
     line-height: 1.6;
-    color: #4a4a4a;
+    color: #8e44ad;
     font-size: 1.15rem;
   }
 </style>
