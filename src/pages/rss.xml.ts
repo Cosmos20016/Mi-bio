@@ -19,8 +19,10 @@ export async function GET(context: APIContext) {
 	const blog = await getSortedPosts();
 
 	return rss({
-  title: siteConfig.title,
-  description: siteConfig.subtitle || "No description", 
+  title: siteConfig.subtitle
+  ? `${siteConfig.title} - ${siteConfig.subtitle}`
+  : siteConfig.title,
+description: siteConfig.subtitle || "No description", 
   site: context.site ?? "https://kevinborja.com",
   items: blog.map((post) => {
     const content =
