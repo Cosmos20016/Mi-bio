@@ -19,23 +19,23 @@ export async function GET(context: APIContext) {
 	const blog = await getSortedPosts();
 
 	return rss({
-		title: siteConfig.title,
-		description?: siteConfig.subtitle,
-		site: context.site ?? "https://kevinborja.com",
-		items: blog.map((post) => {
-			const content =
-				typeof post.body === "string" ? post.body : String(post.body || "");
-			const cleanedContent = stripInvalidXmlChars(content);
-			return {
-				title: post.data.title,
-				pubDate: post.data.published,
-				description: post.data.description || "",
-				link: `/posts/${post.slug}/`,
-				content: sanitizeHtml(parser.render(cleanedContent), {
-					allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img"]),
-				}),
-			};
-		}),
-		customData: `<language>${siteConfig.lang}</language>`,
-	});
+  title: siteConfig.title,
+  description: siteConfig.subtitle ? siteConfig.subtitle : undefined,
+  site: context.site ?? "https://kevinborja.com",
+  items: blog.map((post) => {
+    const content =
+      typeof post.body === "string" ? post.body : String(post.body || "");
+    const cleanedContent = stripInvalidXmlChars(content);
+    return {
+      title: post.data.title,
+      pubDate: post.data.published,
+      description: post.data.description || "",
+      link: `/posts/${post.slug}/`,
+      content: sanitizeHtml(parser.render(cleanedContent), {
+        allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img"]),
+      }),
+    };
+  }),
+  customData: `<language>${siteConfig.lang}</language>`,
+});
 }
