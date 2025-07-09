@@ -20,7 +20,7 @@ export async function GET(context: APIContext) {
 
 	return rss({
   title: siteConfig.title,
-  description: siteConfig.subtitle || "undefine", 
+  description: siteConfig.subtitle || "No description", 
   site: context.site ?? "https://kevinborja.com",
   items: blog.map((post) => {
     const content =
@@ -29,7 +29,7 @@ export async function GET(context: APIContext) {
     return {
       title: post.data.title,
       pubDate: post.data.published,
-      description: "",
+      description: post.data.description || "",
       link: `/posts/${post.slug}/`,
       content: sanitizeHtml(parser.render(cleanedContent), {
         allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img"]),
