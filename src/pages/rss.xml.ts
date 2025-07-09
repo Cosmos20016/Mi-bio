@@ -20,7 +20,7 @@ export async function GET(context: APIContext) {
 
 	return rss({
 		title: siteConfig.title,
-		description: siteConfig.subtitle,
+		description?: siteConfig.subtitle,
 		site: context.site ?? "https://kevinborja.com",
 		items: blog.map((post) => {
 			const content =
