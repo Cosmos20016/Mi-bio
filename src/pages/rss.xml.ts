@@ -21,7 +21,7 @@ export async function GET(context: APIContext) {
 	return rss({
 		title: siteConfig.title,
 		description: siteConfig.subtitle,
-		site: context.site ?? "https://fuwari.vercel.app",
+		site: context.site ?? "https://kevinborja.com",
 		items: blog.map((post) => {
 			const content =
 				typeof post.body === "string" ? post.body : String(post.body || "");
