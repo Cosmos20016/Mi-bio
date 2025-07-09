@@ -1,6 +1,6 @@
 # ¡Hola! 👋
 
-Bienvenido/a a mi espacio en GitHub. Soy Kevin Borja, una persona sencilla y creativa, con muchas ganas de aprender y compartir.
+Bienvenido/a a mi espacio en GitHub. Soy Kevin Borja, una persona sencilla y creativa, con muchas ganas de aprender.
 
 Puedes encontrarme en mis redes sociales:
 - 📺 [YouTube](https://www.youtube.com/@kevinborjayt)
