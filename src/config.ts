@@ -41,9 +41,9 @@ export const siteConfig: SiteConfig = {
 
 export const navBarConfig: NavBarConfig = {
 	links: [
-		LinkPreset.Home,
-		LinkPreset.Archive,
-		LinkPreset.About,
+		LinkPreset.Inicio,
+		LinkPreset.Archivo,
+		LinkPreset.Sobre_mí,
 		{
 			name: "YouTube",
 			url: "https://www.youtube.com/@kevinborjayt", // Internal links should not include the base path, as it is automatically added
