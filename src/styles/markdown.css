@@ -1,15 +1,3 @@
-@tailwind base;
-@tailwind components;
-
-@layer components {
-  .btn-regular-dark {
-    background-color: #222;
-    color: #fff;
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
-  }
-}
-
 .custom-md {
     h1 {
         @apply text-3xl;
