@@ -1,34 +1,38 @@
 ---
-title: Bienvenido/@ a mi bio
-published: 2025-07-08
-description: "Conoce a la persona detrás, los objetivos del sitio y lo que está por venir."
+title: ¡Bienvenido/a a mi Biografía!
+published: 2025-07-10
+description: "Descubre quién soy, los objetivos de este sitio y lo que está por venir."
 image: "./cover.png"
-tags: ["Presentación", "Mi bio",]
+tags: ["Lanzamiento", "Biografía"]
 category: Lanzamiento oficial
 draft: false
 ---
 
-¡Hola! Soy Kevin Borja y te doy la bienvenida a mi web: **Kevinborja.com**. Este espacio está pensado para compartir intereses, proyectos y experimentos tecnológicos. Quiero que este sitio sea un punto de encuentro donde puedas descubrir avances y participar en el crecimiento de este proyecto.
+¡Hola! Soy Kevin Borja y te doy la bienvenida a mi web: **Kevinborja.com**. Este espacio nace de mi pasión por la tecnología, el desarrollo web y la curiosidad constante. Aquí comparto proyectos, experimentos, ideas y recursos. Quiero que este sitio sea un punto de encuentro para quienes buscan aprender, colaborar y crecer juntos.
 
-## ¿Qué encontrarás?
+## ¿Qué podrás encontrar?
 
-- Entretenimiento.
-- Herramientas y guías.
-- Un blog interactivo de guías, tutoriales y reflexiones, desarrollo web, tecnología y áreas de interés.
-    
+- Contenido entretenido y educativo.
+- Herramientas prácticas y guías útiles.
+- Un blog interactivo con tutoriales, reflexiones y experiencias en desarrollo web, tecnología y temas afines.
+- Espacios para la participación y el intercambio de ideas.
+
 ---
-## Futuras implementaciones
+
+## Próximas funcionalidades
+
 ```yaml
-Estoy trabajando en nuevas funcionalidades, entre las que planeo incluir:
-- contenido multimedia integrado.
+Actualmente trabajo en nuevas mejoras, que incluirán:
+- Integración de contenido multimedia (videos, podcasts, etc).
 - Sección de comentarios y contacto directo.
-- Integración de nuevas tecnologías.
-- Recursos y herramientas útiles para la comunidad.
+- Incorporación de tecnologías emergentes.
+- Recursos exclusivos para la comunidad.
 ```
+
 ## Mi visión
 
-Mi objetivo es que la web evolucione constantemente. Todo lo planeado es solo el inicio; tengo muchas ideas para seguir creciendo y ofreciendo contenido de calidad.
+Deseo que **Kevinborja.com** sea una web viva, en constante evolución. Lo que ves ahora es solo el comienzo: mi meta es seguir sumando valor, creciendo y ofreciendo contenido relevante para ti.
 
 ---
 
-Espero que disfrutes navegando por la web y te unas a este viaje. ¡Gracias por visitar!
+Espero que disfrutes la experiencia y te sumes a esta aventura. ¡Gracias por tu visita y bienvenido/a!
