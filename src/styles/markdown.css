@@ -1,3 +1,6 @@
+@tailwind base;
+@tailwind components;
+
 @layer components {
   .btn-regular-dark {
     background-color: #222;
