@@ -499,7 +499,7 @@ window.onscroll = scrollFunction
 
 window.onresize = () => {
 	// calculate the --banner-height-extend, which needs to be a multiple of 4 to avoid blurry text
-	let offset = Math.floor(window.innerHeight * (BANNER_HEIGHT_EXTEND / 100));
+	let offset = Math.floor(window.innerHeight * (BANNER_HEIGHT_EXTEND / 80));
 	offset = offset - offset % 4;
 	document.documentElement.style.setProperty('--banner-height-extend', `${offset}px`);
 }
