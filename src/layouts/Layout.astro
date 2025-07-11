@@ -30,12 +30,11 @@ interface Props {
 
 let { title, banner, description, lang, setOGTypeArticle } = Astro.props;
 
+// Usar demo-banner.png siempre
+banner = "/src/assets/images/demo-banner.png";
+
 const isHomePage = pathsEqual(Astro.url.pathname, url("/"));
 const configHue = siteConfig.themeColor.hue;
-if (!banner || typeof banner !== "string" || banner.trim() === "") {
-	banner = siteConfig.banner.src;
-}
-banner = siteConfig.banner.src;
 const enableBanner = siteConfig.banner.enable;
 
 let pageTitle: string;
@@ -134,13 +133,13 @@ const bannerOffset =
 	>
 		<ConfigCarrier></ConfigCarrier>
 		
-		<!-- BLOQUE DEL BANNER RESPONSIVE -->
+		<!-- Banner Responsive: demo-banner.png -->
 		{enableBanner && (
 			<div id="banner-wrapper">
-				<img id="demo-banner.png" class="banner-img" src={banner} alt="Banner" />
+				<img id="banner" class="banner-img" src={banner} alt="Banner" />
 			</div>
 		)}
-		<!-- FIN BLOQUE DEL BANNER -->
+		<!-- Fin Banner -->
 
 		<slot />
 
@@ -182,7 +181,7 @@ const bannerOffset =
 	}
 }
 
-/* ESTILOS RESPONSIVOS PARA EL BANNER */
+/* Estilos RESPONSIVOS para el banner */
 .banner-img {
 	width: 100%;
 	height: auto;
@@ -205,10 +204,9 @@ const bannerOffset =
 }
 </style>
 
-<!-- El resto de scripts se mantienen sin cambios -->
 <script>
-/* ...tu código JS tal como lo tenías... */
+/* ... Tu código JS tal como lo tenías ... */
 </script>
 <script>
-/* ...tu código JS de PhotoSwipe tal como lo tenías... */
+/* ... Tu código JS de PhotoSwipe tal como lo tenías ... */
 </script>
