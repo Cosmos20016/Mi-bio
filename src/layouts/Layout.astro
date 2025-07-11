@@ -30,7 +30,7 @@ interface Props {
 
 let { title, banner, description, lang, setOGTypeArticle } = Astro.props;
 
-// Usar demo-banner.png siempre
+// Usar demo-banner.png SIEMPRE
 banner = "/src/assets/images/demo-banner.png";
 
 const isHomePage = pathsEqual(Astro.url.pathname, url("/"));
@@ -97,7 +97,6 @@ const bannerOffset =
 			/>
 		))}
 
-		<!-- Set the theme before the page is rendered to avoid a flash -->
 		<script is:inline define:vars={{DEFAULT_THEME, LIGHT_MODE, DARK_MODE, AUTO_MODE, BANNER_HEIGHT_EXTEND, PAGE_WIDTH, configHue}}>
 			const theme = localStorage.getItem('theme') || DEFAULT_THEME;
 			switch (theme) {
@@ -131,9 +130,14 @@ const bannerOffset =
 	<body class="min-h-screen transition" class:list={[{"lg:is-home": isHomePage, "enable-banner": enableBanner}]}
 		  data-overlayscrollbars-initialize
 	>
-		<ConfigCarrier></ConfigCarrier>
-		
-		<!-- Banner Responsive: demo-banner.png -->
+		<ConfigCarrier />
+
+		<!-- Barra de Navegación -->
+		<div id="navbar-wrapper">
+			<!-- Aquí debe ir tu código actual del navbar -->
+		</div>
+
+		<!-- Banner Responsive: demo-banner.png debajo del navbar -->
 		{enableBanner && (
 			<div id="banner-wrapper">
 				<img id="banner" class="banner-img" src={banner} alt="Banner" />
@@ -143,7 +147,6 @@ const bannerOffset =
 
 		<slot />
 
-		<!-- increase the page height during page transition to prevent the scrolling animation from jumping -->
 		<div id="page-height-extend" class="hidden h-[300vh]"></div>
 	</body>
 </html>
@@ -156,32 +159,22 @@ const bannerOffset =
 @tailwind components;
 @layer components {
 	.enable-banner.is-home #banner-wrapper {
-		@apply h-[var(--banner-height-home)] translate-y-[var(--banner-height-extend)]
+		@apply h-[var(--banner-height-home)];
 	}
 	.enable-banner #banner-wrapper {
-		@apply h-[var(--banner-height-home)]
+		@apply h-[var(--banner-height-home)];
 	}
 	.enable-banner.is-home #banner {
-		@apply h-[var(--banner-height-home)] translate-y-0
+		@apply h-[var(--banner-height-home)];
 	}
 	.enable-banner #banner {
-		@apply h-[var(--banner-height-home)] translate-y-[var(--bannerOffset)]
-	}
-	.enable-banner.is-home #main-grid {
-		@apply translate-y-[var(--banner-height-extend)];
-	}
-	.enable-banner #top-row {
-		@apply h-[calc(var(--banner-height-home)_-_4.5rem)] transition-all duration-300
-	}
-	.enable-banner.is-home #sidebar-sticky {
-		@apply top-[calc(1rem_-_var(--banner-height-extend))]
+		@apply h-[var(--banner-height-home)];
 	}
 	.navbar-hidden {
-		@apply opacity-0 -translate-y-16
+		@apply opacity-0 -translate-y-16;
 	}
 }
-
-/* Estilos RESPONSIVOS para el banner */
+/* ESTILOS RESPONSIVOS PARA EL BANNER */
 .banner-img {
 	width: 100%;
 	height: auto;
@@ -205,8 +198,8 @@ const bannerOffset =
 </style>
 
 <script>
-/* ... Tu código JS tal como lo tenías ... */
+/* ...Tu código JS tal como lo tenías... */
 </script>
 <script>
-/* ... Tu código JS de PhotoSwipe tal como lo tenías ... */
+/* ...Tu código JS de PhotoSwipe tal como lo tenías... */
 </script>
