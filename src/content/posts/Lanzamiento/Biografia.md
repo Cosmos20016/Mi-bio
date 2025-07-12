@@ -7,6 +7,17 @@ tags: ["Biografía"]
 category: Lanzamiento oficial
 draft: false
 ---
+
+# Mi post con música
+
+Aquí puedes escuchar la canción:
+
+<audio controls style="width: 100%; border-radius: 8px;">
+  <source src="/assets/musica/Llamado.mp3" type="audio/mpeg" />
+  Tu navegador no soporta el elemento audio.
+</audio>
+
+---
 ¡Hola! Soy Kevin Borja y te doy la bienvenida a mi web: **Kevinborja.com**. Este espacio nace de mi pasión por la tecnología, el desarrollo web y la curiosidad constante. Aquí comparto proyectos, experimentos, ideas y recursos. Quiero que este sitio sea un punto de encuentro para quienes buscan aprender, colaborar y crecer juntos.
 
 ## ¿Qué podrás encontrar?
