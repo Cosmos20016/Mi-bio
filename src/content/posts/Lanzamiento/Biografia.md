@@ -11,7 +11,7 @@ draft: false
 Aquí puedes escuchar la canción:
 
 <div style="background: #e2e8f0; padding: 1.5rem; border-radius: 18px; box-shadow: 0 2px 8px #0001; display: flex; align-items: center; gap: 1.5rem;">
-  <a href="[https://www.youtube.com/watch?v=TU_ID_DE_VIDEO](https://www.youtube.com/watch?v=w8N9ZCIh3ZU)" target="_blank" rel="noopener" style="display:inline-block;">
+  <a href="[https://www.youtube.com/watch?v=w8N9ZCIh3ZU]" target="_blank" rel="noopener" style="display:inline-block;">
     <img src="/assets/musica/icono-musica.png" alt="Icono música"
       width="64" height="64"
       style="margin-right: 1rem; border-radius: 12px; background: #a7f3d0; padding: 0.5rem;" />
