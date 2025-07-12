@@ -35,3 +35,9 @@ Deseo que **Kevinborja.com** sea una web viva, en constante evolución. Lo que v
 ---
 
 Espero que disfrutes la experiencia y te sumes a esta aventura. ¡Gracias por tu visita y bienvenido/a!
+
+<script>
+  document.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+  });
+</script>
