@@ -1,3 +1,4 @@
+---
 <div style="background: #e2e8f0; padding: 1.5rem; border-radius: 18px; box-shadow: 0 2px 8px #0001; display: flex; align-items: center; gap: 1.5rem;">
   <img src="/assets/musica/icono-musica.png" alt="Música" width="64" height="64" style="border-radius: 12px; background: #a7f3d0; padding: 0.5rem;">
   <div style="flex:1">
