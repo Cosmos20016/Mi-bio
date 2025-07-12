@@ -1,1 +1,14 @@
+---
+const { src, titulo } = Astro.props;
+---
 
+<div style="display: flex; align-items: center; gap: 1rem; background: #f6f6f6; padding: 1rem; border-radius: 12px; box-shadow: 0 2px 8px #0002;">
+  <img src="/assets/musica/icono-musica.png" alt="Música" width="40" height="40" style="object-fit: contain; border-radius: 8px;" />
+  <div style="flex: 1;">
+    <div style="font-weight: bold; margin-bottom: 0.5rem;">{titulo}</div>
+    <audio controls style="width: 100%; border-radius: 8px;">
+      <source src={src} type="audio/mpeg" />
+      Tu navegador no soporta el elemento audio.
+    </audio>
+  </div>
+</div>
