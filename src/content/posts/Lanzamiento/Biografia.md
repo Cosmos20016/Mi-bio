@@ -1,12 +1,4 @@
 ---
-title: ¡Mi Biografía!
-published: 2025-07-10
-description: "Descubre quién soy, los objetivos de este sitio y lo que está por venir."
-image: "./cover.png"
-tags: ["Biografía"]
-category: Lanzamiento oficial
-draft: false
----
 # Post con música
 Aquí puedes escuchar la canción:
 
@@ -22,8 +14,15 @@ Aquí puedes escuchar la canción:
     </audio>
   </div>
 </div>
----
 
+title: ¡Mi Biografía!
+published: 2025-07-10
+description: "Descubre quién soy, los objetivos de este sitio y lo que está por venir."
+image: "./cover.png"
+tags: ["Biografía"]
+category: Lanzamiento oficial
+draft: false
+---
 ¡Hola! Soy Kevin Borja y te doy la bienvenida a mi web: **Kevinborja.com**. Este espacio nace de mi pasión por la tecnología, el desarrollo web y la curiosidad constante. Aquí comparto proyectos, experimentos, ideas y recursos. Quiero que este sitio sea un punto de encuentro para quienes buscan aprender, colaborar y crecer juntos.
 
 ## ¿Qué podrás encontrar?
