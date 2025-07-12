@@ -570,8 +570,9 @@ if (window.swup) {
 <script>
 window.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('img').forEach(img => {
-    if (img.src.includes('/posts/')) {
-      // Protección básica
+    if (img.src.includes('src/content')) {
+  // Aplica la marca de agua y protección
+}
       img.setAttribute('draggable', 'false');
       img.addEventListener('copy', e => e.preventDefault());
       img.addEventListener('dragstart', e => e.preventDefault());
