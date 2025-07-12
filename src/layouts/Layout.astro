@@ -1,4 +1,4 @@
----
+hay quedaria biien la proteccion con javascript? ---
 import "@fontsource/roboto/400.css";
 import "@fontsource/roboto/500.css";
 import "@fontsource/roboto/700.css";
@@ -567,36 +567,8 @@ if (window.swup) {
 	document.addEventListener("swup:enable", setup)
 }
 </script>
-window.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('img').forEach(img => {
-    // Protección básica
-    img.setAttribute('draggable', 'false');
-    img.addEventListener('copy', e => e.preventDefault());
-    img.addEventListener('dragstart', e => e.preventDefault());
-    img.style.userSelect = 'none';
-    img.oncontextmenu = () => false;
-    // Marca de agua dinámica
-    const watermark = document.createElement('div');
-    watermark.textContent = '© Kevinborja.com';
-    watermark.style.position = 'absolute';
-    watermark.style.top = '10px';
-    watermark.style.right = '10px';
-    watermark.style.background = 'rgba(0,0,0,0.5)';
-    watermark.style.color = 'white';
-    watermark.style.fontSize = '12px';
-    watermark.style.padding = '2px 6px';
-    watermark.style.pointerEvents = 'none';
-    watermark.style.zIndex = '1000';
-    watermark.style.borderRadius = '4px';
-    // Asegura que el padre sea relativo
-    if (img.parentNode) {
-      img.parentNode.style.position = 'relative';
-      img.parentNode.appendChild(watermark);
-    }
-  });
-  // Deshabilita clic derecho global (opcional)
+<script>
   document.addEventListener('contextmenu', function(e) {
     e.preventDefault();
   });
-});
 </script>
