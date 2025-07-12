@@ -568,7 +568,36 @@ if (window.swup) {
 }
 </script>
 <script>
+window.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('img').forEach(img => {
+    if (img.src.includes('/posts/')) { // Cambia "/posts/" si la ruta es diferente en tu proyecto final
+      // Protección básica
+      img.setAttribute('draggable', 'false');
+      img.addEventListener('copy', e => e.preventDefault());
+      img.addEventListener('dragstart', e => e.preventDefault());
+      img.style.userSelect = 'none';
+      img.oncontextmenu = () => false;
+      // Marca de agua dinámica
+      const watermark = document.createElement('div');
+      watermark.textContent = '© Kevinborja.com';
+      watermark.style.position = 'absolute';
+      watermark.style.top = '10px';
+      watermark.style.right = '10px';
+      watermark.style.background = 'rgba(0,0,0,0.5)';
+      watermark.style.color = 'white';
+      watermark.style.fontSize = '12px';
+      watermark.style.padding = '2px 6px';
+      watermark.style.pointerEvents = 'none';
+      watermark.style.zIndex = '1000';
+      watermark.style.borderRadius = '4px';
+      if (img.parentNode) {
+        img.parentNode.style.position = 'relative';
+        img.parentNode.appendChild(watermark);
+      }
+    }
+  });
   document.addEventListener('contextmenu', function(e) {
     e.preventDefault();
   });
+});
 </script>
