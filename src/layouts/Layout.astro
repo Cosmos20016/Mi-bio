@@ -570,7 +570,6 @@ if (window.swup) {
 <script>
 window.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('img').forEach(img => {
-    // Solo afectar imágenes cuyo src contiene "/posts/"
     if (img.src.includes('/posts/')) {
       // Protección básica
       img.setAttribute('draggable', 'false');
