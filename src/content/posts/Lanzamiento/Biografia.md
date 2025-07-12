@@ -11,9 +11,13 @@ draft: false
 Aquí puedes escuchar la canción:
 
 <div style="background: #e2e8f0; padding: 1.5rem; border-radius: 18px; box-shadow: 0 2px 8px #0001; display: flex; align-items: center; gap: 1.5rem;">
-  <img src="/assets/musica/icono-musica.png" alt="Icono música"
-    width="64" height="64"
-    style="margin-right: 1rem; border-radius: 12px; background: #a7f3d0; padding: 0.5rem;" />
+  <span style="margin-right: 1rem; border-radius: 12px; background: #a7f3d0; padding: 0.5rem; display: flex; align-items: center;">
+    <!-- Icono musical SVG embebido -->
+    <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+      <circle cx="32" cy="32" r="32" fill="#34d399"/>
+      <path d="M44 18v24a8 8 0 11-4-6.93V26h-12v16a8 8 0 11-4-6.93V18h20z" fill="#fff"/>
+    </svg>
+  </span>
   <div style="flex:1">
     <p style="font-weight: bold; margin: 0 0 0.5rem 0; color: #334155;">Llamado en la tormenta</p>
     <audio controls controlsList="nodownload" style="width: 100%; border-radius: 8px;">
