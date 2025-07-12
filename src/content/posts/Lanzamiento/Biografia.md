@@ -1,3 +1,7 @@
+<audio controls style="width: 100%; border-radius: 8px;">
+  <source src="/assets/musica/llamado.mp3" type="audio/mpeg" />
+  Tu navegador no soporta el elemento audio.
+</audio>
 ---
 title: ¡Mi Biografía!
 published: 2025-07-10
