@@ -570,7 +570,8 @@ if (window.swup) {
 <script>
 window.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('img').forEach(img => {
-    if (img.src.includes('/posts/')) { // Cambia "/posts/" si la ruta es diferente en tu proyecto final
+    // Solo afectar imágenes cuyo src contiene "/posts/"
+    if (img.src.includes('/posts/')) {
       // Protección básica
       img.setAttribute('draggable', 'false');
       img.addEventListener('copy', e => e.preventDefault());
@@ -596,6 +597,7 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     }
   });
+  // Bloquea menú contextual global (opcional)
   document.addEventListener('contextmenu', function(e) {
     e.preventDefault();
   });
