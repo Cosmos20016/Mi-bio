@@ -2,7 +2,7 @@
 title: ¡Mi Biografía!
 published: 2025-07-10
 description: "Descubre quién soy, los objetivos de este sitio y lo que está por venir."
-img src="./cover.png"
+image: "./cover.png"
 tags: ["Biografía"]
 category: Lanzamiento oficial
 draft: false
