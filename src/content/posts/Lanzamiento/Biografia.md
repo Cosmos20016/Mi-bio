@@ -7,6 +7,15 @@ tags: ["Biografía"]
 category: Lanzamiento oficial
 draft: false
 ---
+import ReproductorMusica from '../../components/ReproductorMusica.astro';
+---
+
+# Mi post con música
+
+Aquí puedes escuchar la canción:
+
+<ReproductorMusica src="/assets/musica/llamado.mp3" titulo="Llamado Musical" />
+---
 
 ¡Hola! Soy Kevin Borja y te doy la bienvenida a mi web: **Kevinborja.com**. Este espacio nace de mi pasión por la tecnología, el desarrollo web y la curiosidad constante. Aquí comparto proyectos, experimentos, ideas y recursos. Quiero que este sitio sea un punto de encuentro para quienes buscan aprender, colaborar y crecer juntos.
 
