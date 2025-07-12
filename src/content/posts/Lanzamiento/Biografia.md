@@ -16,8 +16,7 @@ Aquí puedes escuchar la canción:
     style="margin-right: 1rem; border-radius: 12px; background: #a7f3d0; padding: 0.5rem;" />
   <div style="flex:1">
     <a href="https://www.youtube.com/watch?v=w8N9ZCIh3ZU" target="_blank" rel="noopener"
-      style="font-weight: bold; margin: 0 0 0.5rem 0; color: #334155; text-decoration: none; display: inline-block;">
-      Llamado en la tormenta
+   <p style="font-weight: bold; margin: 0 0 0.5rem 0; color: #334155;">Llamado en la tormenta</p>
     </a>
     <audio controls controlsList="nodownload" style="width: 100%; border-radius: 8px;">
       <source src="/assets/musica/Llamado.mp3" type="audio/mpeg" />
