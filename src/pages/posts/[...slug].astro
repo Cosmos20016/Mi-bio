@@ -130,5 +130,41 @@ const jsonLd = {
             </div>}
         </a>
     </div>
+---
+import { useEffect, useState } from "react";
+const [comentarios, setComentarios] = useState([]);
+useEffect(() => {
+  fetch("/comentarios.json")
+    .then(r => r.json())
+    .then(setComentarios);
+}, []);
+function enviarComentario(e) {
+  e.preventDefault();
+  const nombre = e.target.nombre.value;
+  const comentario = e.target.comentario.value;
+  fetch("/api/comentar", {
+    method: "POST",
+    body: JSON.stringify({ nombre, comentario }),
+    headers: { "Content-Type": "application/json" }
+  }).then(() => {
+    fetch("/comentarios.json")
+      .then(r => r.json())
+      .then(setComentarios);
+    e.target.reset();
+  });
+}
+---
+<form on:submit={enviarComentario}>
+  <input type="text" name="nombre" placeholder="Tu nombre (opcional)" />
+  <textarea name="comentario" placeholder="Escribe tu comentario" required></textarea>
+  <button type="submit">Enviar</button>
+</form>
+<ul>
+  {comentarios.map(com => (
+    <li>
+      <b>{com.nombre}:</b> {com.comentario} <small>({new Date(com.fecha).toLocaleString()})</small>
+    </li>
+  ))}
+</ul>
 
 </MainGridLayout>
