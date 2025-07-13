@@ -1,4 +1,5 @@
 # Sobre mí
+
 ---
 <style>
   .center-chill {
@@ -36,11 +37,20 @@
   }
 </style>
 <div class="center-chill">
-  <span class="wave">👋</span>
+  <span class="wave">👾</span>
   <div class="desc-chill">
-    ¡Hey! Soy Kevin Borja, alguien que disfruta crear, compartir y aprender sin estrés.<br /><br />
-    Me gustan los retos, el desarrollo web y todo lo creativo. Busco siempre aportar buena vibra, inspiración y soluciones simples.<br /><br />
-    Si tienes una idea, un proyecto o solo quieres charlar sobre tecnología, ¡bienvenido/a!
+    Fluyo como un algoritmo en sueños: soy Kevin Borja, viajero entre bytes y pensamientos,<br />
+    tejedor de universos web donde lo posible y lo imposible se dan la mano.<br /><br />
+
+    Cada reto es una puerta que se abre hacia nuevos colores y dimensiones.<br />
+    Mi código no solo resuelve problemas: los transforma en constelaciones donde la creatividad orbita libre.<br /><br />
+
+    Aquí, la inspiración no tiene forma fija: es una onda, un destello, una sinapsis que conecta ideas y personas.<br />
+    Dejo que la tecnología respire arte, que el arte inspire soluciones, y que todo lo demás se mezcle sin fronteras.<br /><br />
+
+    Si alguna vez has sentido que una idea te habla en un idioma desconocido, este espacio es tu traductor surrealista.<br />
+    Ven, comparte tu visión, tu rareza, tu chispa. Aquí los proyectos se sueñan despiertos y se construyen juntos en el borde de lo real.<br /><br />
+
+    <b>Bienvenido/a: aquí, las reglas se reescriben y la buena vibra es ley universal.</b>
   </div>
 </div>
-
