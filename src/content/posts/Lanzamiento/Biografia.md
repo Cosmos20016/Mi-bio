@@ -1,7 +1,12 @@
 ---
-import ShareButtons from '../components/ShareButtons.svelte';
+import ShareButtons from '../../../components/ShareButtons.svelte'; // Ajusta la ruta si es necesario
+
 const title = "¡Mi Biografía!";
-const content =  
+const description = "Descubre quién soy, los objetivos de este sitio y lo que está por venir.";
+const url = "https://kevinborja.com/posts/lanzamiento/biografia/";
+---
+<h1>{title}</h1>
+<p>{description}</p>
 title: ¡Mi Biografía!
 published: 2025-07-10
 description: "Descubre quién soy, los objetivos de este sitio y lo que está por venir."
@@ -40,12 +45,4 @@ Deseo que **Kevinborja.com** sea una web viva, en constante evolución. Lo que v
 Espero que disfrutes la experiencia y te sumes a esta aventura. ¡Gracias por tu visita y bienvenido/a!
 
 ---
-import ShareButtons from '../components/ShareButtons.svelte';
-const { title, content, url } = Astro.props;
----
-const url = "https://kevinborja.com/posts/lanzamiento/biografia/";
----
-
-<h1>{title}</h1>
-<p>{content}</p>
 <ShareButtons title={title} url={url} />
