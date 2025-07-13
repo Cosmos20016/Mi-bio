@@ -6,7 +6,8 @@
 .giscus-header {
   display: none !important;
 }
-/* Oculta el texto "Desarrollado por giscus" en el footer de Giscus */
-.giscus .color-text-secondary {
+/* Oculta el texto y el enlace de Giscus footer */
+.giscus .color-text-secondary,
+.giscus .link-secondary {
   display: none !important;
 }
