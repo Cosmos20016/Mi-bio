@@ -131,12 +131,17 @@ const jsonLd = {
         </a>
     </div>
 
-  <div id="cusdis_thread"
-  host de datos="https://cusdis.com"
-  id de la aplicación de datos="0aa00f08-a766-4b09-9b7a-4f1f57b9214a"
-  data-page-id="{{ PAGE_ID }}"
-  URL de la página de datos="{{ URL_PÁGINA }}"
-  data-page-title="{{ TÍTULO_PÁGINA }}"
+---
+const PAGE_ID = Astro.url.pathname; // Esto identifica cada página por su ruta, por ejemplo "/sobre-mi"
+const PAGE_URL = "https://kevinborja.com" + Astro.url.pathname; // URL completa de la página
+const PAGE_TITLE = "Título de la página"; // Cambia esto por el título real si lo tienes en una variable
+---
+<div id="cusdis_thread"
+  data-host="https://cusdis.com"
+  data-app-id="0aa00f08-a766-4b09-9b7a-4f1f57b9214a"
+  data-page-id={PAGE_ID}
+  data-page-url={PAGE_URL}
+  data-page-title={PAGE_TITLE}
 ></div>
 <script async defer src="https://cusdis.com/js/cusdis.es.js"></script>
 </MainGridLayout>
