@@ -568,7 +568,33 @@ if (window.swup) {
 }
 </script>
 <script>
+  // Bloquea menú contextual
   document.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+  });
+
+  // Bloquea el arrastre de imágenes
+  document.addEventListener('dragstart', function(e) {
+    if (e.target.tagName === 'IMG') {
+      e.preventDefault();
+    }
+  });
+
+  // Bloquea teclas para copiar/código fuente
+  document.addEventListener('keydown', function(e) {
+    // Ctrl+U, Ctrl+Shift+I, F12, Ctrl+C
+    if (
+      (e.ctrlKey && e.key.toLowerCase() === 'u') || // Ver código fuente
+      (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'i') || // Herramientas Dev
+      (e.key === 'F12') || // Herramientas Dev
+      (e.ctrlKey && e.key.toLowerCase() === 'c') // Copiar
+    ) {
+      e.preventDefault();
+    }
+  });
+
+  // Desactiva selección de texto
+  document.addEventListener('selectstart', function(e) {
     e.preventDefault();
   });
 </script>
