@@ -1,3 +1,8 @@
+/* Oculta el footer de Utterances (si lo usas) */
+.utterances-footer {
+  display: none !important;
+}
+/* Oculta el header superior de Giscus */
 .giscus-header {
   display: none !important;
 }
