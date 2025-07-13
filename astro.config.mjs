@@ -117,7 +117,6 @@ export default defineConfig({
 				rehypeComponents,
 				{
 					components: {
-						// 👇 AÑADE ESTA LÍNEA PARA INTERCEPTAR LAS IMÁGENES MARKDOWN
 						img: ["@components/misc/ImageWrapper.astro", { isPostImage: true }],
 						github: GithubCardComponent,
 						note: (x, y) => AdmonitionComponent(x, y, "note"),
