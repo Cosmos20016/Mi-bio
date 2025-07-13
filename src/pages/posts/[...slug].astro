@@ -131,22 +131,10 @@ const jsonLd = {
         </a>
     </div>
 
-    <section id="comments" style="margin-top:2rem;">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.css">
-  <div id="gitalk-container"></div>
-  <script src="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.js"></script>
-  <script>
-    var gitalk = new Gitalk({
-      clientID: 'Ov23liaeNqOWBFtquuXp',
-      clientSecret: 'fe68ebe3e31d1e9e8464caa79c6eba79c30b47ee',
-      repo: 'Comentarios',
-      owner: 'Cosmos20016',
-      admin: ['Cosmos20016'],
-      id: location.pathname,
-      language: 'es',
-      distractionFreeMode: false
-    });
-    gitalk.render('gitalk-container');
-  </script>
-</section>
+   <!-- Comentarios con CommentBox.io -->
+<div class="commentbox"></div>
+<script src="https://unpkg.com/commentbox.io/dist/commentBox.min.js"></script>
+<script>
+  commentBox('5671325729292288-proj'); // PON TU PROJECT ID AQUÍ
+</script>
 </MainGridLayout>
