@@ -37,20 +37,13 @@
   }
 </style>
 <div class="center-chill">
-  <span class="wave">👾</span>
+  <span class="wave">🐢</span>
   <div class="desc-chill">
-    Fluyo como un algoritmo en sueños: soy Kevin Borja, viajero entre bytes y pensamientos,<br />
-    tejedor de universos web donde lo posible y lo imposible se dan la mano.<br /><br />
-
-    Cada reto es una puerta que se abre hacia nuevos colores y dimensiones.<br />
-    Mi código no solo resuelve problemas: los transforma en constelaciones donde la creatividad orbita libre.<br /><br />
-
-    Aquí, la inspiración no tiene forma fija: es una onda, un destello, una sinapsis que conecta ideas y personas.<br />
-    Dejo que la tecnología respire arte, que el arte inspire soluciones, y que todo lo demás se mezcle sin fronteras.<br /><br />
-
-    Si alguna vez has sentido que una idea te habla en un idioma desconocido, este espacio es tu traductor surrealista.<br />
-    Ven, comparte tu visión, tu rareza, tu chispa. Aquí los proyectos se sueñan despiertos y se construyen juntos en el borde de lo real.<br /><br />
-
-    <b>Bienvenido/a: aquí, las reglas se reescriben y la buena vibra es ley universal.</b>
+    Me llamo Kevin Borja y avanzo al ritmo de una tortuga cósmica: cada paso es preciso, cada idea es un universo en expansión.<br /><br />
+    Habito el arte de crear y compartir como quien explora mundos submarinos: sin prisa, con curiosidad infinita y una sonrisa en el caparazón.<br /><br />
+    Los retos son mis islas flotantes; el desarrollo web mi océano, y la creatividad, mi corriente que nunca se detiene.<br /><br />
+    Mi meta es simple pero subrealista: transformar lo cotidiano en inspiración, sembrar soluciones que vibren con la energía del ahora y contagiar buena onda a quien se cruce en mi viaje.<br /><br />
+    Si alguna vez soñaste con combinar tecnología y poesía, o hacer de la rutina un arte, este espacio es tu refugio y tu lanzadera.<br /><br />
+    <b>Bienvenido/a: aquí, la lentitud es poder, el código es magia, y la buena vibra es ley universal.</b>
   </div>
 </div>
