@@ -130,19 +130,5 @@ const jsonLd = {
             </div>}
         </a>
     </div>
----
-const PAGE_ID = Astro.url.pathname;
-const PAGE_URL = "https://kevinborja.com" + Astro.url.pathname;
-const PAGE_TITLE = entry?.data?.title || "Sin título";
----
-<!-- Aquí va el contenido de tu post -->
 
-<div id="cusdis_thread"
-  data-host="https://cusdis.com"
-  data-app-id="0aa00f08-a766-4b09-9b7a-4f1f57b9214a"
-  data-page-id={PAGE_ID}
-  data-page-url={PAGE_URL}
-  data-page-title={PAGE_TITLE}
-></div>
-<script async defer src="https://cusdis.com/js/cusdis.es.js"></script>
 </MainGridLayout>
