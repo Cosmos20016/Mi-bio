@@ -130,11 +130,9 @@ const jsonLd = {
             </div>}
         </a>
     </div>
-comentarios.push({
-  nombre: data.nombre || "Anónimo",
-  comentario: data.comentario,
-  fecha: new Date().toISOString(),
-  url: data.url // El slug o la URL de la página
-});
-
+---
+import Comentarios from "../../components/Comentarios.astro";
+---
+<!-- Tu contenido del post -->
+<Comentarios />
 </MainGridLayout>
