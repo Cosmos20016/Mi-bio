@@ -130,12 +130,13 @@ const jsonLd = {
             </div>}
         </a>
     </div>
+---
+const PAGE_ID = Astro.url.pathname;
+const PAGE_URL = "https://kevinborja.com" + Astro.url.pathname;
+const PAGE_TITLE = entry?.data?.title || "Sin título";
+---
+<!-- Tu contenido del post aquí -->
 
----
-const PAGE_ID = Astro.url.pathname; // Esto identifica cada página por su ruta, por ejemplo "/sobre-mi"
-const PAGE_URL = "https://kevinborja.com" + Astro.url.pathname; // URL completa de la página
-const PAGE_TITLE = "Título de la página"; // Cambia esto por el título real si lo tienes en una variable
----
 <div id="cusdis_thread"
   data-host="https://cusdis.com"
   data-app-id="0aa00f08-a766-4b09-9b7a-4f1f57b9214a"
