@@ -35,3 +35,11 @@ Deseo que **Kevinborja.com** sea una web viva, en constante evolución. Lo que v
 ---
 
 Espero que disfrutes la experiencia y te sumes a esta aventura. ¡Gracias por tu visita y bienvenido/a!
+
+---
+import ShareButtons from '../components/ShareButtons.svelte';
+const { title, content, url } = Astro.props;
+---
+<h1>{title}</h1>
+<p>{content}</p>
+<ShareButtons title={Kevin Borja Biogafía} url={[url](https://kevinborja.com/posts/lanzamiento/biografia/)} />
