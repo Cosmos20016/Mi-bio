@@ -567,53 +567,8 @@ if (window.swup) {
 	document.addEventListener("swup:enable", setup)
 }
 </script>
-<style>
-.img-watermark-container {
-  position: relative;
-  display: inline-block;
-}
-.img-watermark-container img {
-  display: block;
-}
-.img-watermark {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: rgba(0,0,0,0.5);
-  color: white;
-  font-size: 12px;
-  padding: 2px 6px;
-  pointer-events: none;
-  z-index: 1000;
-  border-radius: 4px;
-}
-</style>
-
 <script>
-window.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('img.post-img').forEach(img => {
-    // Creamos un contenedor para la imagen y la marca de agua
-    const container = document.createElement('div');
-    container.className = 'img-watermark-container';
-
-    img.parentNode.insertBefore(container, img);
-    container.appendChild(img);
-
-    // Creamos el div de marca de agua
-    const watermark = document.createElement('div');
-    watermark.className = 'img-watermark';
-    watermark.textContent = '© Kevinborja.com';
-    container.appendChild(watermark);
-
-    // Protección extra
-    img.setAttribute('draggable', 'false');
-    img.style.userSelect = 'none';
-    img.oncontextmenu = () => false;
-  });
-
-  // Opcional: bloquear el menú contextual en todo el documento
   document.addEventListener('contextmenu', function(e) {
     e.preventDefault();
   });
-});
 </script>
