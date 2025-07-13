@@ -1,13 +1,11 @@
-/* Oculta el footer de Utterances (si lo usas) */
-.utterances-footer {
-  display: none !important;
-}
-/* Oculta el header superior de Giscus */
+/* Oculta el header de Giscus */
 .giscus-header {
   display: none !important;
 }
-/* Oculta el texto y el enlace de Giscus footer */
+/* Oculta el texto y el enlace de Giscus */
 .giscus .color-text-secondary,
-.giscus .link-secondary {
+.giscus .link-secondary,
+.giscus em.color-text-secondary,
+.giscus a.link-secondary {
   display: none !important;
 }
