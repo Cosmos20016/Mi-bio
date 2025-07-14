@@ -18,7 +18,7 @@ draft: false
 - Un blog interactivo con tutoriales, reflexiones y experiencias en desarrollo web, tecnología y temas afines.
 - Espacios para la participación y el intercambio de ideas.
 
-## Próximas funcionalidades
+> ## Próximas funcionalidades
 ---
 
 ```yaml
@@ -29,10 +29,10 @@ Actualmente trabajo en nuevas mejoras, que incluirán:
 - Recursos exclusivos para la comunidad.
 ```
 
-> .[## Mi visión].
+## Mi visión
 ---
 
 > Deseo que **Kevinborja.com** sea una web viva, en constante evolución. Lo que ves ahora es solo el comienzo: mi meta es seguir sumando valor, creciendo y ofreciendo contenido relevante para ti.
 
 
-Espero que disfrutes la experiencia y te sumes a esta aventura. ¡Gracias por tu visita y bienvenido/a!
+> Espero que disfrutes la experiencia y te sumes a esta aventura. ¡Gracias por tu visita y bienvenido/a! <
