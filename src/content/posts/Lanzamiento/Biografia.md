@@ -25,10 +25,10 @@ draft: false
       <stop offset="40%" stop-color="#00e580" />
       <stop offset="100%" stop-color="#FFD700" />
     </linearGradient>
-    <!-- Glow radial dorado para los bordes de la caja -->
-    <radialGradient id="glow-caja" cx="50%" cy="50%" r="70%">
-      <stop offset="55%" stop-color="#FFD700" stop-opacity="0.18"/>
-      <stop offset="90%" stop-color="#FFD700" stop-opacity="0.33"/>
+    <!-- Glow angular dorado para los bordes de la caja -->
+    <radialGradient id="glow-caja" cx="50%" cy="50%" r="70%" gradientTransform="rotate(16 0.5 0.5) scale(1.18 0.95)">
+      <stop offset="59%" stop-color="#FFD700" stop-opacity="0.11"/>
+      <stop offset="88%" stop-color="#FFD700" stop-opacity="0.33"/>
       <stop offset="100%" stop-color="#fff4e0" stop-opacity="0"/>
     </radialGradient>
     <!-- Glow radial dorado robot -->
@@ -52,8 +52,8 @@ draft: false
       <stop offset="100%" stop-color="#00e580"/>
     </linearGradient>
   </defs>
-  <!-- Glow dorado animado por los bordes de la caja (efecto glow detrás) -->
-  <rect class="glow-anim-caja" x="0" y="0" width="400" height="210" rx="32" fill="url(#glow-caja)" />
+  <!-- Glow dorado angular y grande por los bordes de la caja -->
+  <rect class="glow-anim-caja" x="-28" y="-19" width="456" height="248" rx="42" fill="url(#glow-caja)" />
   <!-- Fondo blanco degradado -->
   <rect width="400" height="210" rx="32" fill="url(#bg)" />
   <!-- Glow dorado detrás del robot -->
@@ -141,7 +141,7 @@ draft: false
 }
 @keyframes glowCajaPulse {
   0% { filter: drop-shadow(0 0 0px #FFD700);}
-  80% { filter: drop-shadow(0 0 38px #FFD700);}
+  80% { filter: drop-shadow(0 0 50px #FFD700);}
   100% { filter: drop-shadow(0 0 0px #FFD700);}
 }
 .glow-anim-robot {
