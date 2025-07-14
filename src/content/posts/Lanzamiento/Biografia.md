@@ -11,13 +11,13 @@ draft: false
 ¡Hola! Soy Kevin Borja y te doy la bienvenida a mi web: **Kevinborja.com**. Este espacio nace de mi pasión por la tecnología, el desarrollo web y la curiosidad constante. Aquí comparto proyectos, experimentos, ideas y recursos. Quiero que este sitio sea un punto de encuentro para quienes buscan aprender, colaborar y crecer.
 
 ## ¿Qué podrás encontrar?
-
+---
 <style>
 .center-svg {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 60vh; /* Menos alto para acortar espacio vertical */
+  min-height: 55vh; /* Más corto verticalmente, sin reducir tamaño SVG */
   width: 100%;
   padding: 0 10px;
   box-sizing: border-box;
@@ -62,19 +62,21 @@ draft: false
   80%  { transform: translateY(8px);}
   100% { transform: translateY(0);}
 }
-/* Animación ignición llama cohete con más vida */
+/* Animación ignición llama cohete con más vida y sincronizada */
 .flame-anim {
-  transform-origin: 378px 185px;
+  transform-origin: 378px 159px;
   animation: flameIgnite 2.9s infinite cubic-bezier(.7,.2,.2,.8);
 }
 @keyframes flameIgnite {
-  0%   { opacity: 0.8; transform: scaleY(1.18) scaleX(1);}
-  7%   { opacity: 1;   transform: scaleY(1.4) scaleX(0.97);}
-  15%  { opacity: 0.88;   transform: scaleY(0.7) scaleX(1.15);}
-  31%  { opacity: 1;   transform: scaleY(1.6) scaleX(0.92);}
-  54%  { opacity: 0.8;   transform: scaleY(0.88) scaleX(1.11);}
-  75%  { opacity: 1;   transform: scaleY(1.35) scaleX(0.93);}
-  100% { opacity: 0.8; transform: scaleY(1.18) scaleX(1);}
+  /* simulando explosión, vibración y estiramiento de llama */
+  0%   { opacity: 0.7; transform: scaleY(1) scaleX(1);}
+  8%   { opacity: 1;   transform: scaleY(1.6) scaleX(0.9) skewY(-6deg);}
+  16%  { opacity: 0.9;   transform: scaleY(1.1) scaleX(1.1) skewY(8deg);}
+  32%  { opacity: 1;   transform: scaleY(1.8) scaleX(0.8) skewY(-10deg);}
+  48%  { opacity: 0.85;   transform: scaleY(1) scaleX(1.05) skewY(5deg);}
+  64%  { opacity: 1;   transform: scaleY(1.35) scaleX(0.95) skewY(-4deg);}
+  80%  { opacity: 0.85;   transform: scaleY(1) scaleX(1.07) skewY(2deg);}
+  100% { opacity: 0.7; transform: scaleY(1) scaleX(1);}
 }
 </style>
 
@@ -163,8 +165,10 @@ draft: false
     <polygon points="378,118 386,118 382,106" fill="#FFD700" stroke="#fff4e0" stroke-width="1"/>
     <circle cx="378" cy="132" r="4" fill="#00e580" stroke="#FFD700" stroke-width="1"/>
     <rect x="374" y="143" width="8" height="8" rx="4" fill="#22223b"/>
-    <!-- Llama animada con más vida -->
+    <!-- Llama animada con más vida y estilizada -->
     <polygon class="flame-anim" points="372,150 384,150 378,168" fill="url(#flame)"/>
+    <!-- Añade una chispa debajo de la llama para dar más realismo -->
+    <ellipse class="flame-anim" cx="378" cy="171" rx="2.2" ry="0.8" fill="#FFD700" opacity="0.7"/>
     <ellipse cx="378" cy="126" rx="2.2" ry="1.1" fill="#fff" opacity="0.5"/>
     <ellipse cx="374" cy="139" rx="1.2" ry="0.6" fill="#fff" opacity="0.3"/>
   </g>
