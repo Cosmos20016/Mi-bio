@@ -14,9 +14,10 @@ draft: false
 
 <svg width="400" height="190" viewBox="0 0 400 190" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#232323" />
-      <stop offset="100%" stop-color="#22223B" />
+    <!-- Fondo blanco y borde dorado -->
+    <linearGradient id="border-gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFD700" />
+      <stop offset="100%" stop-color="#FFD700" />
     </linearGradient>
     <linearGradient id="wave" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="#FFD700" />
@@ -24,13 +25,14 @@ draft: false
       <stop offset="100%" stop-color="#7C5FFF" />
     </linearGradient>
     <radialGradient id="glow" cx="50%" cy="30%" r="80%">
-      <stop offset="0%" stop-color="#FFD700" stop-opacity="0.23"/>
-      <stop offset="100%" stop-color="#232D3F" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#FFD700" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <rect width="400" height="190" rx="30" fill="url(#bg)" />
+  <!-- Marco dorado -->
+  <rect x="3" y="3" width="394" height="184" rx="30" fill="#fff" stroke="url(#border-gold)" stroke-width="6"/>
+  <!-- Glow dorado -->
   <ellipse cx="200" cy="90" rx="145" ry="70" fill="url(#glow)" />
-
   <!-- Robot/diadema centrado estilo minimalista y compatible -->
   <g class="headphone-emoji">
     <circle cx="200" cy="28" r="18" fill="#fff"/>
@@ -47,7 +49,6 @@ draft: false
     <!-- Boca robot sonriente -->
     <rect x="196" y="37" width="8" height="2.5" rx="1" fill="#FFD700"/>
   </g>
-
   <!-- Título central -->
   <text x="200" y="58" text-anchor="middle" fill="#FFD700" font-size="28" font-family="monospace" font-weight="bold">
     🎧 Música, Videos, Podcasts
@@ -73,6 +74,22 @@ draft: false
   <!-- Esferas animadas con CSS -->
   <circle class="ball-anim-left" cx="70" cy="170" r="9" fill="#FFD700" opacity="0.85"/>
   <circle class="ball-anim-right" cx="330" cy="170" r="9" fill="#00e580" opacity="0.85"/>
+  <!-- Cohete animado en la esquina derecha -->
+  <g class="rocket-anim">
+    <!-- Estela -->
+    <rect x="370" y="155" width="5" height="23" rx="2.5" fill="#FFD700" opacity="0.7"/>
+    <rect x="372" y="170" width="3" height="10" rx="1.5" fill="#7c5fff" opacity="0.5"/>
+    <!-- Cuerpo -->
+    <rect x="366" y="131" width="12" height="21" rx="6" fill="#fff"/>
+    <!-- Punta -->
+    <polygon points="372,126 378,126 375,116" fill="#FFD700"/>
+    <!-- Ventana -->
+    <circle cx="372" cy="138" r="3" fill="#00e580"/>
+    <!-- Base -->
+    <rect x="369" y="151" width="6" height="6" rx="3" fill="#22223b"/>
+    <!-- Llama -->
+    <polygon points="368,157 376,157 372,167" fill="#00e580"/>
+  </g>
 </svg>
 <style>
 .wave-anim {
@@ -110,6 +127,18 @@ draft: false
   0% { filter: drop-shadow(0 0 0px #FFD700);}
   80% { filter: drop-shadow(0 0 10px #FFD700);}
   100% { filter: drop-shadow(0 0 0px #FFD700);}
+}
+.rocket-anim {
+  animation: rocketUp 2.9s infinite cubic-bezier(.7,.2,.2,.8);
+}
+@keyframes rocketUp {
+  0%   { transform: translateY(0);}
+  14%  { transform: translateY(-14px);}
+  28%  { transform: translateY(-20px);}
+  50%  { transform: translateY(-10px);}
+  72%  { transform: translateY(0);}
+  80%  { transform: translateY(8px);}
+  100% { transform: translateY(0);}
 }
 </style>
 
