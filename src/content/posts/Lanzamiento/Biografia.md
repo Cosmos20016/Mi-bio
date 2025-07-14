@@ -13,132 +13,7 @@ draft: false
 ## ¿Qué podrás encontrar?
 ---
 <style>
-.center-svg {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 54vh;
-  width: 100%;
-  padding: 0 10px;
-  box-sizing: border-box;
-}
-.svg-responsive {
-  width: 100%;
-  max-width: 400px;
-  height: auto;
-  display: block;
-}
-.wave-anim {
-  stroke-dasharray: 900;
-  stroke-dashoffset: 0;
-  animation: waveBounce 4.47s infinite; /* 10% más lenta que antes (4.065s * 1.1) */
-  transform-origin: center;
-}
-@keyframes waveBounce {
-  0% { transform: translateY(0px);}
-  18% { transform: translateY(-10px);}
-  40% { transform: translateY(7px);}
-  60% { transform: translateY(-4px);}
-  80% { transform: translateY(2px);}
-  100% { transform: translateY(0px);}
-}
-.headphone-emoji {
-  animation: headphonesPulse 2.5s infinite alternate;
-}
-@keyframes headphonesPulse {
-  0% { filter: drop-shadow(0 0 0px #FFD700);}
-  80% { filter: drop-shadow(0 0 14px #FFD700);}
-  100% { filter: drop-shadow(0 0 0px #FFD700);}
-}
-.rocket-anim {
-  animation: rocketUp 2.9s infinite cubic-bezier(.7,.2,.2,.8);
-}
-@keyframes rocketUp {
-  0%   { transform: translateY(0);}
-  14%  { transform: translateY(-14px);}
-  28%  { transform: translateY(-20px);}
-  50%  { transform: translateY(-10px);}
-  72%  { transform: translateY(0);}
-  80%  { transform: translateY(8px);}
-  100% { transform: translateY(0);}
-}
-/* Animación ignición llama cohete sincronizada y estilizada */
-.flame-anim {
-  transform-origin: 378px 193px;
-  animation: flameIgnite 2.9s infinite cubic-bezier(.7,.2,.2,.8);
-}
-@keyframes flameIgnite {
-  0%   { opacity: 0.8; transform: scaleY(1) scaleX(1);}
-  14%  { opacity: 1;   transform: scaleY(1.18) scaleX(0.97);}
-  28%  { opacity: 0.92;   transform: scaleY(0.97) scaleX(1.11);}
-  50%  { opacity: 1;   transform: scaleY(1.2) scaleX(0.93);}
-  72%  { opacity: 0.92;   transform: scaleY(1.08) scaleX(1.07);}
-  80%  { opacity: 1;   transform: scaleY(1.14) scaleX(0.96);}
-  100% { opacity: 0.8; transform: scaleY(1) scaleX(1);}
-}<style>
-.center-svg {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 54vh;
-  width: 100%;
-  padding: 0 10px;
-  box-sizing: border-box;
-}
-.svg-responsive {
-  width: 100%;
-  max-width: 400px;
-  height: auto;
-  display: block;
-}
-.wave-anim {
-  stroke-dasharray: 900;
-  stroke-dashoffset: 0;
-  animation: waveBounce 4.47s infinite;
-  transform-origin: center;
-}
-@keyframes waveBounce {
-  0% { transform: translateY(0px);}
-  18% { transform: translateY(-10px);}
-  40% { transform: translateY(7px);}
-  60% { transform: translateY(-4px);}
-  80% { transform: translateY(2px);}
-  100% { transform: translateY(0px);}
-}
-.headphone-emoji {
-  animation: headphonesPulse 2.5s infinite alternate;
-}
-@keyframes headphonesPulse {
-  0% { filter: drop-shadow(0 0 0px #FFD700);}
-  80% { filter: drop-shadow(0 0 14px #FFD700);}
-  100% { filter: drop-shadow(0 0 0px #FFD700);}
-}
-.rocket-anim {
-  animation: rocketUp 2.9s infinite cubic-bezier(.7,.2,.2,.8);
-}
-@keyframes rocketUp {
-  0%   { transform: translateY(0);}
-  14%  { transform: translateY(-14px);}
-  28%  { transform: translateY(-20px);}
-  50%  { transform: translateY(-10px);}
-  72%  { transform: translateY(0);}
-  80%  { transform: translateY(8px);}
-  100% { transform: translateY(0);}
-}
-.flame-anim {
-  transform-origin: 378px 193px;
-  animation: flameIgnite 2.9s infinite cubic-bezier(.7,.2,.2,.8);
-}
-@keyframes flameIgnite {
-  0%   { opacity: 0.8; transform: scaleY(1) scaleX(1);}
-  14%  { opacity: 1;   transform: scaleY(1.18) scaleX(0.97);}
-  28%  { opacity: 0.92;   transform: scaleY(0.97) scaleX(1.11);}
-  50%  { opacity: 1;   transform: scaleY(1.2) scaleX(0.93);}
-  72%  { opacity: 0.92;   transform: scaleY(1.08) scaleX(1.07);}
-  80%  { opacity: 1;   transform: scaleY(1.14) scaleX(0.96);}
-  100% { opacity: 0.8; transform: scaleY(1) scaleX(1);}
-}
-/* TORTUGA SUPER ESTILIZADA Y MUY LENTA */
+/* ...todo igual hasta la tortuga... */
 .turtle-anim {
   animation: turtleWalk 38s linear infinite;
 }
@@ -146,20 +21,26 @@ draft: false
   0%   { transform: translateX(0px);}
   100% { transform: translateX(390px);}
 }
+/* Patas con movimiento fluido y pegadas al cuerpo */
 .turtle-leg {
   animation: turtleLegs 2.3s infinite alternate cubic-bezier(.7,.2,.2,.8);
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
 }
 @keyframes turtleLegs {
-  0%   { transform: rotate(-8deg);}
-  100% { transform: rotate(17deg);}
+  0%   { transform: rotate(-6deg) scaleX(1);}
+  100% { transform: rotate(10deg) scaleX(0.98);}
 }
+/* Cabeza gira suavemente y se estira un poco */
 .turtle-head {
   animation: turtleHeadMove 3.2s infinite alternate cubic-bezier(.7,.2,.2,.8);
+  transform-box: fill-box;
+  transform-origin: 10% 50%;
 }
 @keyframes turtleHeadMove {
-  0%   { transform: rotate(-8deg) scale(1,1);}
-  50%  { transform: rotate(3deg) scale(1.08,1.03);}
-  100% { transform: rotate(8deg) scale(1,1);}
+  0%   { transform: rotate(-6deg) scale(1,1);}
+  50%  { transform: rotate(2deg) scale(1.05,1.03);}
+  100% { transform: rotate(6deg) scale(1,1);}
 }
 .turtle-eye {
   animation: turtleBlink 7.6s infinite cubic-bezier(.7,.2,.2,.8);
@@ -180,9 +61,9 @@ draft: false
   animation: turtleSmile 7.8s infinite alternate cubic-bezier(.7,.2,.2,.8);
 }
 @keyframes turtleSmile {
-  0%   { d: path("M28,201.7 Q27.8,201.3 28.7,201.2"); }
-  50%  { d: path("M28,201.7 Q28.2,201.7 28.7,201.2"); }
-  100% { d: path("M28,201.7 Q27.8,201.3 28.7,201.2"); }
+  0%   { d: path("M27.2,200.2 Q27.1,200.8 27.8,200.7"); }
+  50%  { d: path("M27.2,200.2 Q27.4,201.1 27.8,200.7"); }
+  100% { d: path("M27.2,200.2 Q27.1,200.8 27.8,200.7"); }
 }
 .turtle-neck {
   animation: turtleNeck 3.2s infinite alternate cubic-bezier(.7,.2,.2,.8);
@@ -196,79 +77,37 @@ draft: false
 
 <div class="center-svg">
 <svg class="svg-responsive" width="400" height="210" viewBox="0 0 400 210" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <!-- ... (definiciones no modificadas) ... -->
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#f6f8fa" />
-      <stop offset="100%" stop-color="#fff4e0" />
-    </linearGradient>
-    <linearGradient id="wave" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#7c5fff" />
-      <stop offset="40%" stop-color="#00e580" />
-      <stop offset="100%" stop-color="#FFD700" />
-    </linearGradient>
-    <radialGradient id="glow-borders" cx="50%" cy="50%" r="80%">
-      <stop offset="0%" stop-color="#FFD700" stop-opacity="0.0"/>
-      <stop offset="68%" stop-color="#FFD700" stop-opacity="0.12"/>
-      <stop offset="98%" stop-color="#FFD700" stop-opacity="0.22"/>
-      <stop offset="100%" stop-color="#fff4e0" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="glow-robot" cx="50%" cy="50%" r="85%">
-      <stop offset="0%" stop-color="#FFD700" stop-opacity="0.33"/>
-      <stop offset="100%" stop-color="#fff4e0" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="rocket-border" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#FFD700"/>
-      <stop offset="100%" stop-color="#fff4e0"/>
-    </linearGradient>
-    <linearGradient id="rocket-body" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#fff"/>
-      <stop offset="100%" stop-color="#fff4e0"/>
-    </linearGradient>
-    <linearGradient id="flame" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#FFD700"/>
-      <stop offset="100%" stop-color="#00e580"/>
-    </linearGradient>
-  </defs>
-  <!-- Glow dorado animado por los bordes (elipse más grande) -->
-  <ellipse class="glow-anim-borders" cx="200" cy="105" rx="196" ry="104" fill="url(#glow-borders)" />
-  <!-- Fondo blanco degradado -->
-  <rect width="400" height="210" rx="32" fill="url(#bg)" />
-  <!-- Glow dorado detrás del robot -->
-  <ellipse class="glow-anim-robot" cx="200" cy="50" rx="45" ry="23" fill="url(#glow-robot)" />
-
-  <!-- ... (todo lo demás igual) ... -->
-
-  <!-- Tortuga animada recorriendo la línea inferior - POSICIONES AJUSTADAS -->
+  <!-- ...todo igual hasta la tortuga... -->
   <g class="turtle-anim" style="transform: translateY(-16px);">
-    <!-- Sombra -->
+    <!-- Sombra debajo de la tortuga -->
     <ellipse cx="20" cy="207" rx="7" ry="2.2" fill="#222" opacity="0.17"/>
-    <!-- Cuerpo principal -->
-    <ellipse cx="20" cy="200" rx="8.5" ry="6" fill="#3a6b34"/>
-    <!-- Caparazón con brillo -->
-    <ellipse class="turtle-shell" cx="20" cy="197" rx="6.2" ry="4.5" fill="#84d36b" stroke="#3a6b34" stroke-width="1.7"/>
+    <!-- Caparazón más definido y centrado -->
+    <ellipse class="turtle-shell" cx="20" cy="198.2" rx="6" ry="4.2" fill="#84d36b" stroke="#3a6b34" stroke-width="1.7"/>
+    <!-- Cuerpo debajo del caparazón -->
+    <ellipse cx="20" cy="199" rx="8" ry="5.2" fill="#3a6b34"/>
     <!-- Detalles caparazón -->
-    <ellipse cx="17.7" cy="195.5" rx="1.1" ry="0.7" fill="#3a6b34" opacity="0.4"/>
-    <ellipse cx="22.3" cy="195.5" rx="1.1" ry="0.7" fill="#3a6b34" opacity="0.4"/>
-    <ellipse cx="20" cy="198.5" rx="1.7" ry="0.9" fill="#3a6b34" opacity="0.16"/>
-    <!-- Cuello flexible (más pegado) -->
-    <ellipse class="turtle-neck" cx="24.6" cy="199.7" rx="1.1" ry="0.4" fill="#5e914e" opacity="0.19"/>
-    <!-- Cabeza más pegada y chica -->
-    <ellipse class="turtle-head" cx="27.2" cy="199.7" rx="2.2" ry="1.6" fill="#3a6b34"/>
-    <!-- Ojo con animación de parpadeo y brillo -->
-    <circle class="turtle-eye" cx="28" cy="199.7" r="0.7" fill="#222"/>
-    <circle cx="28.2" cy="199.3" r="0.19" fill="#fff" opacity="0.7"/>
-    <!-- Patas animadas más pegadas al cuerpo -->
-    <ellipse class="turtle-leg" cx="16.3" cy="204.2" rx="1.8" ry="0.7" fill="#5e914e"/>
-    <ellipse class="turtle-leg" cx="23.7" cy="204.2" rx="1.8" ry="0.7" fill="#5e914e"/>
-    <ellipse class="turtle-leg" cx="16.3" cy="197.2" rx="1.7" ry="0.5" fill="#5e914e"/>
-    <ellipse class="turtle-leg" cx="23.7" cy="197.2" rx="1.7" ry="0.5" fill="#5e914e"/>
-    <!-- Cola -->
-    <ellipse cx="13.5" cy="200.3" rx="0.7" ry="0.25" fill="#5e914e" />
-    <!-- Boca (sonrisa animada) más pequeña, centrada -->
-    <path class="turtle-mouth" d="M28,201.2 Q27.8,200.9 28.5,200.8" stroke="#222" stroke-width="0.4" fill="none"/>
+    <ellipse cx="18" cy="197" rx="1" ry="0.6" fill="#3a6b34" opacity="0.4"/>
+    <ellipse cx="22" cy="197" rx="1" ry="0.6" fill="#3a6b34" opacity="0.4"/>
+    <ellipse cx="20" cy="199.8" rx="1.5" ry="0.7" fill="#3a6b34" opacity="0.13"/>
+    <!-- Cuello corto y pegado -->
+    <ellipse class="turtle-neck" cx="24.5" cy="199.2" rx="0.9" ry="0.35" fill="#5e914e" opacity="0.19"/>
+    <!-- Cabeza redondeada y pegada al caparazón -->
+    <ellipse class="turtle-head" cx="26.2" cy="199.1" rx="1.5" ry="1.1" fill="#3a6b34"/>
+    <!-- Ojo claro y centrado -->
+    <circle class="turtle-eye" cx="26.8" cy="198.9" r="0.7" fill="#222"/>
+    <circle cx="27" cy="198.7" r="0.15" fill="#fff" opacity="0.6"/>
+    <!-- Patas delanteras animadas y pegadas -->
+    <ellipse class="turtle-leg" cx="17.2" cy="202.9" rx="1.1" ry="0.45" fill="#5e914e"/>
+    <ellipse class="turtle-leg" cx="22.8" cy="202.9" rx="1.1" ry="0.45" fill="#5e914e"/>
+    <!-- Patas traseras animadas y pegadas -->
+    <ellipse class="turtle-leg" cx="17.2" cy="196.3" rx="1" ry="0.4" fill="#5e914e"/>
+    <ellipse class="turtle-leg" cx="22.8" cy="196.3" rx="1" ry="0.4" fill="#5e914e"/>
+    <!-- Cola pequeña -->
+    <ellipse cx="15.1" cy="199.1" rx="0.4" ry="0.13" fill="#5e914e" />
+    <!-- Boca (sonrisa animada) pequeñita -->
+    <path class="turtle-mouth" d="M27.2,200.2 Q27.1,200.8 27.8,200.7" stroke="#222" stroke-width="0.35" fill="none"/>
   </g>
-  <!-- Cohete con llama sincronizada y estilizada -->
+  <!-- ...todo igual después... -->
   <g class="rocket-anim">
     <rect x="375" y="162" width="6" height="26" rx="3" fill="url(#rocket-border)" opacity="0.7"/>
     <rect x="377" y="180" width="4" height="12" rx="2" fill="#7c5fff" opacity="0.5"/>
