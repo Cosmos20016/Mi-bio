@@ -25,11 +25,10 @@ draft: false
       <stop offset="40%" stop-color="#00e580" />
       <stop offset="100%" stop-color="#FFD700" />
     </linearGradient>
-    <!-- Glow radial dorado para los bordes -->
-    <radialGradient id="glow-borders" cx="50%" cy="50%" r="80%">
-      <stop offset="0%" stop-color="#FFD700" stop-opacity="0.0"/>
-      <stop offset="68%" stop-color="#FFD700" stop-opacity="0.12"/>
-      <stop offset="98%" stop-color="#FFD700" stop-opacity="0.22"/>
+    <!-- Glow radial dorado para los bordes de la caja -->
+    <radialGradient id="glow-caja" cx="50%" cy="50%" r="70%">
+      <stop offset="55%" stop-color="#FFD700" stop-opacity="0.18"/>
+      <stop offset="90%" stop-color="#FFD700" stop-opacity="0.33"/>
       <stop offset="100%" stop-color="#fff4e0" stop-opacity="0"/>
     </radialGradient>
     <!-- Glow radial dorado robot -->
@@ -53,8 +52,8 @@ draft: false
       <stop offset="100%" stop-color="#00e580"/>
     </linearGradient>
   </defs>
-  <!-- Glow dorado animado por los bordes (elipse más grande) -->
-  <ellipse class="glow-anim-borders" cx="200" cy="105" rx="196" ry="104" fill="url(#glow-borders)" />
+  <!-- Glow dorado animado por los bordes de la caja (efecto glow detrás) -->
+  <rect class="glow-anim-caja" x="0" y="0" width="400" height="210" rx="32" fill="url(#glow-caja)" />
   <!-- Fondo blanco degradado -->
   <rect width="400" height="210" rx="32" fill="url(#bg)" />
   <!-- Glow dorado detrás del robot -->
@@ -136,18 +135,18 @@ draft: false
   80%  { transform: translateY(8px);}
   100% { transform: translateY(0);}
 }
-.glow-anim-borders {
+.glow-anim-caja {
   filter: drop-shadow(0 0 0px #FFD700);
-  animation: bgGlowPulse 2.5s infinite alternate;
+  animation: glowCajaPulse 2.5s infinite alternate;
 }
-@keyframes bgGlowPulse {
+@keyframes glowCajaPulse {
   0% { filter: drop-shadow(0 0 0px #FFD700);}
-  80% { filter: drop-shadow(0 0 56px #FFD700);}
+  80% { filter: drop-shadow(0 0 38px #FFD700);}
   100% { filter: drop-shadow(0 0 0px #FFD700);}
 }
 .glow-anim-robot {
   filter: drop-shadow(0 0 0px #FFD700);
-  animation: bgGlowPulse 2.5s infinite alternate;
+  animation: glowCajaPulse 2.5s infinite alternate;
 }
 </style>
 
