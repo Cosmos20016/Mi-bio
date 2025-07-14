@@ -31,7 +31,7 @@ draft: false
 .wave-anim {
   stroke-dasharray: 900;
   stroke-dashoffset: 0;
-  animation: waveBounce 3.696s infinite; /* 10% más lenta que antes */
+  animation: waveBounce 4.065s infinite; /* 10% más lenta que antes (3.696s * 1.1) */
   transform-origin: center;
 }
 @keyframes waveBounce {
@@ -76,20 +76,42 @@ draft: false
   80%  { opacity: 1;   transform: scaleY(1.14) scaleX(0.96);}
   100% { opacity: 0.8; transform: scaleY(1) scaleX(1);}
 }
-/* Animación tortuga: recorre la línea de izquierda a derecha */
+/* Animación tortuga: recorre la línea de izquierda a derecha LENTA */
 .turtle-anim {
-  animation: turtleWalk 8.5s linear infinite;
+  animation: turtleWalk 22s linear infinite;
 }
 @keyframes turtleWalk {
   0%   { transform: translateX(0px);}
   100% { transform: translateX(390px);}
 }
 .turtle-leg {
-  animation: turtleLegs 0.7s infinite alternate;
+  animation: turtleLegs 1.4s infinite alternate; /* Patitas más lentas */
 }
 @keyframes turtleLegs {
   0%   { transform: rotate(-6deg);}
   100% { transform: rotate(12deg);}
+}
+.turtle-head {
+  animation: turtleHeadMove 2s infinite alternate;
+}
+@keyframes turtleHeadMove {
+  0%   { transform: rotate(-8deg);}
+  100% { transform: rotate(8deg);}
+}
+.turtle-eye {
+  animation: turtleBlink 6s infinite;
+}
+@keyframes turtleBlink {
+  0%, 85% { r: 0.7; }
+  90%, 92% { r: 0.2; }
+  94%, 100% { r: 0.7; }
+}
+.turtle-shell {
+  animation: shellShine 2.8s infinite alternate;
+}
+@keyframes shellShine {
+  0% { filter: brightness(1.05);}
+  100% { filter: brightness(1.25);}
 }
 </style>
 
@@ -172,21 +194,29 @@ draft: false
   <path class="wave-anim" d="M0,200 Q100,185 200,200 T400,200" fill="none" stroke="url(#wave)" stroke-width="7"/>
   <!-- Tortuga animada recorriendo la línea inferior -->
   <g class="turtle-anim" style="transform: translateY(-16px);">
+    <!-- Sombra -->
+    <ellipse cx="20" cy="207" rx="7" ry="2.2" fill="#222" opacity="0.19"/>
     <!-- Cuerpo -->
-    <ellipse cx="20" cy="200" rx="10" ry="7" fill="#3a6b34"/>
-    <!-- Caparazón -->
-    <ellipse cx="20" cy="196" rx="7" ry="5" fill="#84d36b" stroke="#3a6b34" stroke-width="2"/>
-    <!-- Cabeza -->
-    <ellipse cx="28" cy="200" rx="3" ry="2.2" fill="#3a6b34"/>
-    <!-- Ojo -->
-    <circle cx="29" cy="200" r="0.7" fill="#222"/>
-    <!-- Patas -->
-    <ellipse class="turtle-leg" cx="15.5" cy="205" rx="2.2" ry="0.8" fill="#5e914e"/>
-    <ellipse class="turtle-leg" cx="24.5" cy="205" rx="2.2" ry="0.8" fill="#5e914e"/>
-    <ellipse class="turtle-leg" cx="15.5" cy="196" rx="2.2" ry="0.7" fill="#5e914e"/>
-    <ellipse class="turtle-leg" cx="24.5" cy="196" rx="2.2" ry="0.7" fill="#5e914e"/>
+    <ellipse cx="20" cy="200" rx="9.5" ry="6.5" fill="#3a6b34"/>
+    <!-- Caparazón con brillo -->
+    <ellipse class="turtle-shell" cx="20" cy="196" rx="6.5" ry="4.7" fill="#84d36b" stroke="#3a6b34" stroke-width="2"/>
+    <!-- Detalles caparazón -->
+    <ellipse cx="17" cy="194" rx="1.2" ry="0.8" fill="#3a6b34" opacity="0.5"/>
+    <ellipse cx="23" cy="194" rx="1.2" ry="0.8" fill="#3a6b34" opacity="0.5"/>
+    <ellipse cx="20" cy="198" rx="2" ry="1.1" fill="#3a6b34" opacity="0.15"/>
+    <!-- Cabeza con movimiento -->
+    <ellipse class="turtle-head" cx="28.5" cy="200" rx="2.7" ry="2" fill="#3a6b34"/>
+    <!-- Ojo con animación de parpadeo -->
+    <circle class="turtle-eye" cx="29.2" cy="200" r="0.7" fill="#222"/>
+    <!-- Patas animadas -->
+    <ellipse class="turtle-leg" cx="15" cy="205" rx="2.2" ry="0.8" fill="#5e914e"/>
+    <ellipse class="turtle-leg" cx="25" cy="205" rx="2.2" ry="0.8" fill="#5e914e"/>
+    <ellipse class="turtle-leg" cx="15" cy="196" rx="2.2" ry="0.7" fill="#5e914e"/>
+    <ellipse class="turtle-leg" cx="25" cy="196" rx="2.2" ry="0.7" fill="#5e914e"/>
     <!-- Cola -->
-    <ellipse cx="12.5" cy="200" rx="1.1" ry="0.4" fill="#5e914e" />
+    <ellipse cx="12.2" cy="200" rx="1.1" ry="0.4" fill="#5e914e" />
+    <!-- Boca (sonrisa) -->
+    <path d="M29,202 Q28.5,201.5 29.5,201" stroke="#222" stroke-width="0.5" fill="none"/>
   </g>
   <!-- Cohete con llama sincronizada y estilizada -->
   <g class="rocket-anim">
