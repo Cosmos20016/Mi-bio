@@ -14,10 +14,10 @@ draft: false
 
 <svg width="400" height="190" viewBox="0 0 400 190" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <!-- Fondo blanco y borde dorado -->
-    <linearGradient id="border-gold" x1="0" y1="0" x2="0" y2="1">
+    <!-- Fondo blanco y borde degradado dorado -->
+    <linearGradient id="border-gold-gradient" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#FFD700" />
-      <stop offset="100%" stop-color="#FFD700" />
+      <stop offset="100%" stop-color="#fff4e0" />
     </linearGradient>
     <linearGradient id="wave" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="#FFD700" />
@@ -29,8 +29,8 @@ draft: false
       <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <!-- Marco dorado -->
-  <rect x="3" y="3" width="394" height="184" rx="30" fill="#fff" stroke="url(#border-gold)" stroke-width="6"/>
+  <!-- Marco dorado degradado -->
+  <rect x="3" y="3" width="394" height="184" rx="30" fill="#fff" stroke="url(#border-gold-gradient)" stroke-width="6"/>
   <!-- Glow dorado -->
   <ellipse cx="200" cy="90" rx="145" ry="70" fill="url(#glow)" />
   <!-- Robot/diadema centrado estilo minimalista y compatible -->
@@ -74,21 +74,32 @@ draft: false
   <!-- Esferas animadas con CSS -->
   <circle class="ball-anim-left" cx="70" cy="170" r="9" fill="#FFD700" opacity="0.85"/>
   <circle class="ball-anim-right" cx="330" cy="170" r="9" fill="#00e580" opacity="0.85"/>
-  <!-- Cohete animado en la esquina derecha -->
+  <!-- Cohete animado en la esquina derecha, estilizado -->
   <g class="rocket-anim">
     <!-- Estela -->
-    <rect x="370" y="155" width="5" height="23" rx="2.5" fill="#FFD700" opacity="0.7"/>
-    <rect x="372" y="170" width="3" height="10" rx="1.5" fill="#7c5fff" opacity="0.5"/>
-    <!-- Cuerpo -->
-    <rect x="366" y="131" width="12" height="21" rx="6" fill="#fff"/>
-    <!-- Punta -->
-    <polygon points="372,126 378,126 375,116" fill="#FFD700"/>
+    <rect x="370" y="155" width="5" height="23" rx="2.5" fill="url(#border-gold-gradient)" opacity="0.75"/>
+    <rect x="372.5" y="170" width="3" height="10" rx="1.5" fill="#7c5fff" opacity="0.5"/>
+    <!-- Cuerpo principal con degradado blanco-dorado -->
+    <linearGradient id="rocket-body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff4e0"/>
+      <stop offset="100%" stop-color="#FFD700"/>
+    </linearGradient>
+    <rect x="366" y="131" width="12" height="21" rx="6" fill="url(#rocket-body)" stroke="#FFD700" stroke-width="1"/>
+    <!-- Punta dorada con brillo -->
+    <polygon points="372,126 378,126 375,116" fill="#FFD700" stroke="#fffbe0" stroke-width="1"/>
     <!-- Ventana -->
-    <circle cx="372" cy="138" r="3" fill="#00e580"/>
+    <circle cx="372" cy="138" r="3.3" fill="#00e580" stroke="#FFD700" stroke-width="1"/>
     <!-- Base -->
     <rect x="369" y="151" width="6" height="6" rx="3" fill="#22223b"/>
-    <!-- Llama -->
-    <polygon points="368,157 376,157 372,167" fill="#00e580"/>
+    <!-- Llama con gradiente -->
+    <linearGradient id="flame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFD700"/>
+      <stop offset="100%" stop-color="#00e580"/>
+    </linearGradient>
+    <polygon points="368,157 376,157 372,167" fill="url(#flame)"/>
+    <!-- Detalles extra para estilizar -->
+    <ellipse cx="372" cy="133" rx="2.1" ry="1.1" fill="#fff" opacity="0.5"/>
+    <ellipse cx="370" cy="143" rx="1" ry="0.5" fill="#fff" opacity="0.3"/>
   </g>
 </svg>
 <style>
