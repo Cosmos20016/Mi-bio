@@ -213,34 +213,41 @@ draft: false
   <!-- Onda animada -->
   <path class="wave-anim" d="M0,200 Q100,185 200,200 T400,200" fill="none" stroke="url(#wave)" stroke-width="7"/>
   <!-- Tortuga animada recorriendo la línea inferior -->
-  <g class="turtle-anim" style="transform: translateY(-16px);">
-    <!-- Sombra -->
-    <ellipse cx="20" cy="207" rx="7" ry="2.2" fill="#222" opacity="0.17"/>
-    <!-- Cuerpo -->
-    <ellipse cx="20" cy="200" rx="10" ry="7" fill="#3a6b34"/>
-    <!-- Caparazón con brillo -->
-    <ellipse class="turtle-shell" cx="20" cy="196" rx="7" ry="5" fill="#84d36b" stroke="#3a6b34" stroke-width="2"/>
-    <!-- Detalles caparazón -->
-    <ellipse cx="17" cy="194" rx="1.2" ry="0.8" fill="#3a6b34" opacity="0.4"/>
-    <ellipse cx="23" cy="194" rx="1.2" ry="0.8" fill="#3a6b34" opacity="0.4"/>
-    <ellipse cx="20" cy="198" rx="2" ry="1.1" fill="#3a6b34" opacity="0.16"/>
-    <!-- Cuello flexible -->
-    <ellipse class="turtle-neck" cx="25.5" cy="199" rx="1.2" ry="0.7" fill="#5e914e" opacity="0.18"/>
-    <!-- Cabeza con movimiento fluido -->
-    <ellipse class="turtle-head" cx="28.5" cy="200" rx="3" ry="2.3" fill="#3a6b34"/>
-    <!-- Ojo con animación de parpadeo y brillo -->
-    <circle class="turtle-eye" cx="29.3" cy="200" r="0.7" fill="#222"/>
-    <circle cx="29.5" cy="199.5" r="0.23" fill="#fff" opacity="0.7"/>
-    <!-- Patas animadas -->
-    <ellipse class="turtle-leg" cx="15" cy="205" rx="2.5" ry="1.2" fill="#5e914e"/>
-    <ellipse class="turtle-leg" cx="25" cy="205" rx="2.5" ry="1.2" fill="#5e914e"/>
-    <ellipse class="turtle-leg" cx="15" cy="196" rx="2.1" ry="0.8" fill="#5e914e"/>
-    <ellipse class="turtle-leg" cx="25" cy="196" rx="2.1" ry="0.8" fill="#5e914e"/>
-    <!-- Cola -->
-    <ellipse cx="12.2" cy="200" rx="1.09" ry="0.38" fill="#5e914e" />
-    <!-- Boca (sonrisa animada) -->
-    <path class="turtle-mouth" d="M29,202 Q28.5,201.5 29.5,201" stroke="#222" stroke-width="0.5" fill="none"/>
-  </g>
+  <!-- Tortuga animada recorriendo la línea inferior -->
+<g class="turtle-anim" style="transform: translateY(-16px);">
+  <!-- Sombra -->
+  <ellipse cx="20" cy="207" rx="6" ry="2" fill="#222" opacity="0.15"/>
+  <!-- Caparazón ovalado y definido -->
+  <ellipse class="turtle-shell" cx="20" cy="198" rx="5.2" ry="3.6" fill="#84d36b" stroke="#3a6b34" stroke-width="1.2"/>
+  <!-- Cuerpo debajo del caparazón -->
+  <ellipse cx="20" cy="199.2" rx="7" ry="4.4" fill="#3a6b34"/>
+  <!-- Detalles caparazón -->
+  <ellipse cx="18.2" cy="197.2" rx="0.7" ry="0.38" fill="#3a6b34" opacity="0.4"/>
+  <ellipse cx="21.8" cy="197.2" rx="0.7" ry="0.38" fill="#3a6b34" opacity="0.4"/>
+  <ellipse cx="20" cy="199.2" rx="1.1" ry="0.43" fill="#3a6b34" opacity="0.13"/>
+  <!-- Cuello corto y pegado -->
+  <ellipse class="turtle-neck" cx="23.4" cy="199.5" rx="0.5" ry="0.18" fill="#5e914e" opacity="0.21"/>
+  <!-- Cabeza pequeña y pegada al caparazón -->
+  <ellipse class="turtle-head" cx="24.5" cy="199.3" rx="0.85" ry="0.55" fill="#3a6b34"/>
+  <!-- Ojo claro y centrado -->
+  <circle class="turtle-eye" cx="24.8" cy="199.1" r="0.5" fill="#222"/>
+  <circle cx="25" cy="199" r="0.09" fill="#fff" opacity="0.7"/>
+  <!-- Patas delanteras animadas y pegadas -->
+  <ellipse class="turtle-leg" cx="18.5" cy="200.85" rx="0.44" ry="0.17" fill="#5e914e"/>
+  <ellipse class="turtle-leg" cx="21.5" cy="200.85" rx="0.44" ry="0.17" fill="#5e914e"/>
+  <!-- Patas traseras animadas y pegadas -->
+  <ellipse class="turtle-leg" cx="18.5" cy="197.55" rx="0.36" ry="0.13" fill="#5e914e"/>
+  <ellipse class="turtle-leg" cx="21.5" cy="197.55" rx="0.36" ry="0.13" fill="#5e914e"/>
+  <!-- Uñitas para mayor realismo -->
+  <ellipse cx="18.3" cy="201.04" rx="0.08" ry="0.04" fill="#222" />
+  <ellipse cx="18.7" cy="201.04" rx="0.08" ry="0.04" fill="#222" />
+  <ellipse cx="21.3" cy="201.04" rx="0.08" ry="0.04" fill="#222" />
+  <ellipse cx="21.7" cy="201.04" rx="0.08" ry="0.04" fill="#222" />
+  <!-- Cola pequeña y pegada -->
+  <ellipse cx="16.8" cy="199.3" rx="0.18" ry="0.07" fill="#5e914e" />
+  <!-- Boca (sonrisa animada) pequeñita y centrada -->
+  <path class="turtle-mouth" d="M24.5,199.7 Q24.4,199.9 24.8,199.8" stroke="#222" stroke-width="0.18" fill="none"/>
+</g>
   <!-- Cohete con llama sincronizada y estilizada -->
   <g class="rocket-anim">
     <rect x="375" y="162" width="6" height="26" rx="3" fill="url(#rocket-border)" opacity="0.7"/>
