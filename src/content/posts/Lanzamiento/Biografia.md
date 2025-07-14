@@ -27,12 +27,15 @@ draft: false
   max-width: 400px;
   height: auto;
   display: block;
+  max-width: 100vw;
+  max-height: 98vh;
 }
 .wave-anim {
   stroke-dasharray: 900;
   stroke-dashoffset: 0;
-  animation: waveBounce 4.47s infinite; /* 10% más lenta que antes (4.065s * 1.1) */
+  animation: waveBounce 4.47s infinite;
   transform-origin: center;
+  animation-timing-function: cubic-bezier(.6,.2,.2,.8);
 }
 @keyframes waveBounce {
   0% { transform: translateY(0px);}
@@ -76,11 +79,31 @@ draft: false
   80%  { opacity: 1;   transform: scaleY(1.14) scaleX(0.96);}
   100% { opacity: 0.8; transform: scaleY(1) scaleX(1);}
 }
-/* --- Eliminadas todas las clases y animaciones de la tortuga --- */
+/* Glow dorado animado por los bordes */
+.glow-anim-borders {
+  animation: glowPulse 2.7s infinite;
+}
+@keyframes glowPulse {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.83; }
+}
+/* Glow robot menos opaco */
+.glow-anim-robot {
+  opacity: 0.8;
+}
+/* Sombra en textos para mejorar contraste */
+text {
+  text-shadow: 0 1px 3px #fff4e0;
+}
+/* Sombra extra en el título principal */
+text[font-size="26"] {
+  text-shadow: 0 2px 8px #FFD70055;
+}
 </style>
 
 <div class="center-svg">
-<svg class="svg-responsive" width="400" height="210" viewBox="0 0 400 210" xmlns="http://www.w3.org/2000/svg">
+<svg class="svg-responsive" width="400" height="210" viewBox="0 0 400 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Banner multimedia: música, videos y podcasts">
+  <title>Música, Videos y Podcasts - Banner multimedia</title>
   <defs>
     <!-- Fondo degradado blanco-dorado -->
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
