@@ -25,16 +25,16 @@ draft: false
       <stop offset="40%" stop-color="#00e580" />
       <stop offset="100%" stop-color="#FFD700" />
     </linearGradient>
-    <!-- Glow radial dorado -->
-    <radialGradient id="glow" cx="50%" cy="35%" r="85%">
-      <stop offset="0%" stop-color="#FFD700" stop-opacity="0.23"/>
+    <!-- Glow radial dorado fondo animado -->
+    <radialGradient id="glow-bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#FFD700" stop-opacity="0.22"/>
+      <stop offset="95%" stop-color="#fff4e0" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Glow radial dorado robot -->
+    <radialGradient id="glow-robot" cx="50%" cy="50%" r="85%">
+      <stop offset="0%" stop-color="#FFD700" stop-opacity="0.33"/>
       <stop offset="100%" stop-color="#fff4e0" stop-opacity="0"/>
     </radialGradient>
-    <!-- Degradado dorado para borde animado -->
-    <linearGradient id="border-gold" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#FFD700"/>
-      <stop offset="100%" stop-color="#fff4e0"/>
-    </linearGradient>
     <!-- Degradado dorado para borde del cohete -->
     <linearGradient id="rocket-border" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#FFD700"/>
@@ -51,12 +51,12 @@ draft: false
       <stop offset="100%" stop-color="#00e580"/>
     </linearGradient>
   </defs>
-  <!-- Fondo y glow -->
+  <!-- Fondo blanco con glow dorado ANIMADO detrás -->
   <rect width="400" height="210" rx="32" fill="url(#bg)" />
-  <ellipse cx="200" cy="90" rx="145" ry="70" fill="url(#glow)" />
+  <ellipse class="glow-anim-bg" cx="200" cy="105" rx="180" ry="90" fill="url(#glow-bg)" />
 
-  <!-- Borde animado dorado -->
-  <rect class="border-anim" x="3" y="3" width="394" height="204" rx="29" fill="none" stroke="url(#border-gold)" stroke-width="6"/>
+  <!-- Glow dorado detrás del robot (igual al robot) -->
+  <ellipse class="glow-anim-robot" cx="200" cy="50" rx="45" ry="23" fill="url(#glow-robot)" />
 
   <!-- Robot/diadema perfectamente centrado -->
   <g class="headphone-emoji">
@@ -154,14 +154,18 @@ draft: false
   80%  { transform: translateY(8px);}
   100% { transform: translateY(0);}
 }
-.border-anim {
+.glow-anim-bg {
   filter: drop-shadow(0 0 0px #FFD700);
-  animation: borderGoldPulse 2.5s infinite alternate;
+  animation: bgGlowPulse 2.5s infinite alternate;
 }
-@keyframes borderGoldPulse {
+@keyframes bgGlowPulse {
   0% { filter: drop-shadow(0 0 0px #FFD700);}
-  80% { filter: drop-shadow(0 0 24px #FFD700);}
+  80% { filter: drop-shadow(0 0 60px #FFD700);}
   100% { filter: drop-shadow(0 0 0px #FFD700);}
+}
+.glow-anim-robot {
+  filter: drop-shadow(0 0 0px #FFD700);
+  animation: bgGlowPulse 2.5s infinite alternate;
 }
 </style>
 
