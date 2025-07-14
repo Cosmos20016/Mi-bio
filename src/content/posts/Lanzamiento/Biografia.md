@@ -30,50 +30,28 @@ draft: false
       <stop offset="100%" stop-color="#232D3F" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <!-- Fondo + Glow central -->
   <rect width="400" height="190" rx="30" fill="url(#bg)" />
   <ellipse cx="200" cy="90" rx="145" ry="70" fill="url(#glow)" />
-
-  <!-- Título central -->
   <text x="200" y="50" text-anchor="middle" fill="#fff" font-size="30" font-family="monospace" font-weight="bold">
     🎧 Música, Videos, Podcasts
   </text>
-  <!-- Slogan -->
   <text x="200" y="80" text-anchor="middle" fill="#F9C846" font-size="20" font-family="monospace" font-weight="bold">
     Descubre, aprende y sonríe
   </text>
-  <!-- Innovador y chill -->
   <text x="200" y="108" text-anchor="middle" fill="#7C5FFF" font-size="18" font-family="monospace">
     🚀 Innovador & chill
   </text>
-  <!-- Temáticas -->
   <text x="200" y="134" text-anchor="middle" fill="#fff" font-size="17" font-family="monospace">
     🎨  |  🎵  |  🤓  |  🎬  |  🌈
   </text>
-  <!-- Frase final -->
   <text x="200" y="156" text-anchor="middle" fill="#F9C846" font-size="16" font-family="monospace">
     Relájate y disfruta contenido único
   </text>
-
-  <!-- Onda animada inferior -->
-  <path id="wavePath" d="M0,175 Q100,160 200,175 T400,175" fill="none" stroke="url(#wave)" stroke-width="6">
-    <animate attributeName="d"
-      values="
-        M0,175 Q100,160 200,175 T400,175;
-        M0,175 Q100,180 200,165 T400,175;
-        M0,175 Q100,160 200,175 T400,175
-      "
-      dur="2.2s"
-      repeatCount="indefinite"
-    />
-  </path>
-  <!-- Esferas animadas -->
-  <circle cx="70" cy="170" r="9" fill="#fff" opacity="0.8">
-    <animate attributeName="cy" values="170;150;170" dur="2s" repeatCount="indefinite"/>
-  </circle>
-  <circle cx="330" cy="170" r="9" fill="#F9C846" opacity="0.85">
-    <animate attributeName="cy" values="170;150;170" dur="2s" repeatCount="indefinite" begin="1s"/>
-  </circle>
+  <!-- Onda inferior estática -->
+  <path id="wavePath" d="M0,175 Q100,160 200,175 T400,175" fill="none" stroke="url(#wave)" stroke-width="6"/>
+  <!-- Esferas estáticas -->
+  <circle cx="70" cy="170" r="9" fill="#fff" opacity="0.8"/>
+  <circle cx="330" cy="170" r="9" fill="#F9C846" opacity="0.85"/>
 </svg>
 - Herramientas prácticas y guías útiles.
 - Un blog interactivo con tutoriales, reflexiones y experiencias en desarrollo web, tecnología y temas afines.
