@@ -51,7 +51,7 @@ draft: false
   <ellipse cx="200" cy="90" rx="145" ry="70" fill="url(#glow)" />
 
   <!-- Robot/diadema perfectamente centrado -->
-  <g>
+  <g class="headphone-emoji">
     <!-- Cara -->
     <circle cx="200" cy="50" r="36" fill="#fff"/>
     <!-- Diadema superior -->
@@ -88,11 +88,11 @@ draft: false
   <text x="200" y="190" text-anchor="middle" fill="#22223b" font-size="15" font-family="monospace">
     Relájate y disfruta contenido único
   </text>
-  <!-- Onda -->
-  <path d="M0,200 Q100,185 200,200 T400,200" fill="none" stroke="url(#wave)" stroke-width="7"/>
+  <!-- Onda animada -->
+  <path class="wave-anim" d="M0,200 Q100,185 200,200 T400,200" fill="none" stroke="url(#wave)" stroke-width="7"/>
   
-  <!-- Cohete estilizado con degradados en la esquina derecha -->
-  <g>
+  <!-- Cohete estilizado con degradados en la esquina derecha y animación -->
+  <g class="rocket-anim">
     <!-- Estela -->
     <rect x="375" y="162" width="6" height="26" rx="3" fill="url(#rocket-border)" opacity="0.7"/>
     <rect x="377" y="180" width="4" height="12" rx="2" fill="#7c5fff" opacity="0.5"/>
@@ -111,6 +111,42 @@ draft: false
     <ellipse cx="374" cy="160" rx="1.2" ry="0.6" fill="#fff" opacity="0.3"/>
   </g>
 </svg>
+<style>
+.wave-anim {
+  stroke-dasharray: 900;
+  stroke-dashoffset: 0;
+  animation: waveBounce 2.8s infinite;
+  transform-origin: center;
+}
+@keyframes waveBounce {
+  0% { transform: translateY(0px);}
+  18% { transform: translateY(-10px);}
+  40% { transform: translateY(7px);}
+  60% { transform: translateY(-4px);}
+  80% { transform: translateY(2px);}
+  100% { transform: translateY(0px);}
+}
+.headphone-emoji {
+  animation: headphonesPulse 2.5s infinite alternate;
+}
+@keyframes headphonesPulse {
+  0% { filter: drop-shadow(0 0 0px #FFD700);}
+  80% { filter: drop-shadow(0 0 14px #FFD700);}
+  100% { filter: drop-shadow(0 0 0px #FFD700);}
+}
+.rocket-anim {
+  animation: rocketUp 2.9s infinite cubic-bezier(.7,.2,.2,.8);
+}
+@keyframes rocketUp {
+  0%   { transform: translateY(0);}
+  14%  { transform: translateY(-14px);}
+  28%  { transform: translateY(-20px);}
+  50%  { transform: translateY(-10px);}
+  72%  { transform: translateY(0);}
+  80%  { transform: translateY(8px);}
+  100% { transform: translateY(0);}
+}
+</style>
 
 ---
 - Contenido entretenido y educativo.
