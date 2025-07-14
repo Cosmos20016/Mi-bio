@@ -164,7 +164,6 @@ draft: false
 }
 </style>
 
----
 - Contenido entretenido y educativo.
 - Herramientas prácticas y guías útiles.
 - Un blog interactivo con tutoriales, reflexiones y experiencias en desarrollo web, tecnología y temas afines.
