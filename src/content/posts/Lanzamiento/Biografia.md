@@ -12,15 +12,16 @@ draft: false
 
 ## ¿Qué podrás encontrar?
 
+<div class="center-svg">
 <svg width="400" height="210" viewBox="0 0 400 210" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <!-- Fondo degradado blanco-dorado animado -->
     <linearGradient id="bg-anim" x1="0" y1="0" x2="0.7" y2="1">
-      <stop offset="0%" stop-color="#fffbe0">
-        <animate attributeName="stop-color" values="#fffbe0;#FFD700;#fffbe0" dur="3s" repeatCount="indefinite"/>
+      <stop offset="0%" stop-color="#f6f8fa">
+        <animate attributeName="stop-color" values="#f6f8fa;#fff4e0;#FFD700;#f6f8fa" dur="6s" repeatCount="indefinite"/>
       </stop>
       <stop offset="100%" stop-color="#fff4e0">
-        <animate attributeName="stop-color" values="#fff4e0;#FFD700;#fff4e0" dur="3s" repeatCount="indefinite"/>
+        <animate attributeName="stop-color" values="#fff4e0;#FFD700;#f6f8fa;#fff4e0" dur="6s" repeatCount="indefinite"/>
       </stop>
     </linearGradient>
     <!-- Degradado multicolor para la onda -->
@@ -29,10 +30,11 @@ draft: false
       <stop offset="40%" stop-color="#00e580" />
       <stop offset="100%" stop-color="#FFD700" />
     </linearGradient>
-    <!-- Glow angular dorado para los bordes de la caja, más grande y estilizado -->
-    <radialGradient id="glow-caja" cx="50%" cy="50%" r="85%" gradientTransform="rotate(18 0.5 0.5) scale(1.4 1.15)">
-      <stop offset="62%" stop-color="#FFD700" stop-opacity="0.13"/>
-      <stop offset="88%" stop-color="#FFD700" stop-opacity="0.38"/>
+    <!-- Glow radial dorado para los bordes, más grande y angular -->
+    <radialGradient id="glow-borders" cx="50%" cy="50%" r="90%">
+      <stop offset="0%" stop-color="#FFD700" stop-opacity="0.0"/>
+      <stop offset="70%" stop-color="#FFD700" stop-opacity="0.14"/>
+      <stop offset="98%" stop-color="#FFD700" stop-opacity="0.25"/>
       <stop offset="100%" stop-color="#fff4e0" stop-opacity="0"/>
     </radialGradient>
     <!-- Glow radial dorado robot -->
@@ -56,8 +58,8 @@ draft: false
       <stop offset="100%" stop-color="#00e580"/>
     </linearGradient>
   </defs>
-  <!-- Glow dorado angular y grande por los bordes de la caja, animado y estilizado -->
-  <rect class="glow-anim-caja" x="-48" y="-39" width="496" height="288" rx="64" fill="url(#glow-caja)" />
+  <!-- Glow dorado animado por los bordes, más grande -->
+  <ellipse class="glow-anim-borders" cx="200" cy="105" rx="210" ry="120" fill="url(#glow-borders)" />
   <!-- Fondo blanco degradado animado -->
   <rect width="400" height="210" rx="32" fill="url(#bg-anim)" />
   <!-- Glow dorado detrás del robot -->
@@ -104,7 +106,15 @@ draft: false
     <ellipse cx="374" cy="160" rx="1.2" ry="0.6" fill="#fff" opacity="0.3"/>
   </g>
 </svg>
+</div>
 <style>
+.center-svg {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  min-height: 100vh;
+}
 .wave-anim {
   stroke-dasharray: 900;
   stroke-dashoffset: 0;
@@ -139,18 +149,18 @@ draft: false
   80%  { transform: translateY(8px);}
   100% { transform: translateY(0);}
 }
-.glow-anim-caja {
+.glow-anim-borders {
   filter: drop-shadow(0 0 0px #FFD700);
-  animation: glowCajaPulse 2.5s infinite alternate;
+  animation: bgGlowPulse 2.5s infinite alternate;
 }
-@keyframes glowCajaPulse {
+@keyframes bgGlowPulse {
   0% { filter: drop-shadow(0 0 0px #FFD700);}
-  80% { filter: drop-shadow(0 0 68px #FFD700);}
+  80% { filter: drop-shadow(0 0 56px #FFD700);}
   100% { filter: drop-shadow(0 0 0px #FFD700);}
 }
 .glow-anim-robot {
   filter: drop-shadow(0 0 0px #FFD700);
-  animation: glowCajaPulse 2.5s infinite alternate;
+  animation: bgGlowPulse 2.5s infinite alternate;
 }
 </style>
 
