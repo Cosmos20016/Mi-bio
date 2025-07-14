@@ -17,7 +17,7 @@ draft: false
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 54vh; /* Más corto verticalmente sin reducir SVG */
+  min-height: 54vh;
   width: 100%;
   padding: 0 10px;
   box-sizing: border-box;
@@ -31,7 +31,7 @@ draft: false
 .wave-anim {
   stroke-dasharray: 900;
   stroke-dashoffset: 0;
-  animation: waveBounce 3.36s infinite; /* 20% más lento */
+  animation: waveBounce 3.696s infinite; /* 10% más lenta que antes */
   transform-origin: center;
 }
 @keyframes waveBounce {
@@ -62,19 +62,34 @@ draft: false
   80%  { transform: translateY(8px);}
   100% { transform: translateY(0);}
 }
-/* Animación ignición llama cohete SINCRONIZADA con el cohete y más estilizada */
+/* Animación ignición llama cohete sincronizada y estilizada */
 .flame-anim {
   transform-origin: 378px 193px;
   animation: flameIgnite 2.9s infinite cubic-bezier(.7,.2,.2,.8);
 }
 @keyframes flameIgnite {
-  0%   { opacity: 0.82; transform: scaleY(1.1) scaleX(1) skewY(-2deg);}
-  14%  { opacity: 1;   transform: scaleY(1.2) scaleX(0.96) skewY(-6deg);}
-  28%  { opacity: 0.9;   transform: scaleY(0.95) scaleX(1.13) skewY(7deg);}
-  50%  { opacity: 1;   transform: scaleY(1.25) scaleX(0.9) skewY(-9deg);}
-  72%  { opacity: 0.92;   transform: scaleY(1.05) scaleX(1.08) skewY(4deg);}
-  80%  { opacity: 1;   transform: scaleY(1.17) scaleX(0.98) skewY(-4deg);}
-  100% { opacity: 0.82; transform: scaleY(1.1) scaleX(1) skewY(-2deg);}
+  0%   { opacity: 0.8; transform: scaleY(1) scaleX(1);}
+  14%  { opacity: 1;   transform: scaleY(1.18) scaleX(0.97);}
+  28%  { opacity: 0.92;   transform: scaleY(0.97) scaleX(1.11);}
+  50%  { opacity: 1;   transform: scaleY(1.2) scaleX(0.93);}
+  72%  { opacity: 0.92;   transform: scaleY(1.08) scaleX(1.07);}
+  80%  { opacity: 1;   transform: scaleY(1.14) scaleX(0.96);}
+  100% { opacity: 0.8; transform: scaleY(1) scaleX(1);}
+}
+/* Animación tortuga: recorre la línea de izquierda a derecha */
+.turtle-anim {
+  animation: turtleWalk 8.5s linear infinite;
+}
+@keyframes turtleWalk {
+  0%   { transform: translateX(0px);}
+  100% { transform: translateX(390px);}
+}
+.turtle-leg {
+  animation: turtleLegs 0.7s infinite alternate;
+}
+@keyframes turtleLegs {
+  0%   { transform: rotate(-6deg);}
+  100% { transform: rotate(12deg);}
 }
 </style>
 
@@ -153,8 +168,26 @@ draft: false
   <text x="200" y="190" text-anchor="middle" fill="#22223b" font-size="15" font-family="monospace">
     Relájate y disfruta contenido único
   </text>
-  <!-- Onda animada (20% más lenta) -->
+  <!-- Onda animada -->
   <path class="wave-anim" d="M0,200 Q100,185 200,200 T400,200" fill="none" stroke="url(#wave)" stroke-width="7"/>
+  <!-- Tortuga animada recorriendo la línea inferior -->
+  <g class="turtle-anim" style="transform: translateY(-16px);">
+    <!-- Cuerpo -->
+    <ellipse cx="20" cy="200" rx="10" ry="7" fill="#3a6b34"/>
+    <!-- Caparazón -->
+    <ellipse cx="20" cy="196" rx="7" ry="5" fill="#84d36b" stroke="#3a6b34" stroke-width="2"/>
+    <!-- Cabeza -->
+    <ellipse cx="28" cy="200" rx="3" ry="2.2" fill="#3a6b34"/>
+    <!-- Ojo -->
+    <circle cx="29" cy="200" r="0.7" fill="#222"/>
+    <!-- Patas -->
+    <ellipse class="turtle-leg" cx="15.5" cy="205" rx="2.2" ry="0.8" fill="#5e914e"/>
+    <ellipse class="turtle-leg" cx="24.5" cy="205" rx="2.2" ry="0.8" fill="#5e914e"/>
+    <ellipse class="turtle-leg" cx="15.5" cy="196" rx="2.2" ry="0.7" fill="#5e914e"/>
+    <ellipse class="turtle-leg" cx="24.5" cy="196" rx="2.2" ry="0.7" fill="#5e914e"/>
+    <!-- Cola -->
+    <ellipse cx="12.5" cy="200" rx="1.1" ry="0.4" fill="#5e914e" />
+  </g>
   <!-- Cohete con llama sincronizada y estilizada -->
   <g class="rocket-anim">
     <rect x="375" y="162" width="6" height="26" rx="3" fill="url(#rocket-border)" opacity="0.7"/>
