@@ -33,58 +33,58 @@ draft: false
     <rect width="400" height="210" rx="32" fill="url(#bg)" />
     <ellipse cx="200" cy="90" rx="145" ry="70" fill="url(#glow)" />
 
-    <!-- Robot/diadema perfectamente centrado -->
-    <g class="headphone-emoji" style="transform:translate(140px,18px) scale(2.5)">
+    <!-- Robot/diadema centrado -->
+    <g class="headphone-emoji">
       <!-- Cara -->
-      <circle cx="20" cy="20" r="16" fill="#fff"/>
+      <circle cx="200" cy="40" r="40" fill="#fff"/>
       <!-- Diadema superior -->
-      <rect x="6" y="14" width="28" height="10" rx="5" fill="#7c5fff"/>
+      <rect x="160" y="25" width="80" height="25" rx="12" fill="#7c5fff"/>
       <!-- Franja dorada superior -->
-      <rect x="11" y="10" width="18" height="4.5" rx="2" fill="#FFD700"/>
+      <rect x="175" y="20" width="50" height="10" rx="5" fill="#FFD700"/>
       <!-- Auriculares laterales -->
-      <rect x="8" y="20" width="7" height="7" rx="3.5" fill="#00e580"/>
-      <rect x="25" y="20" width="7" height="7" rx="3.5" fill="#00e580"/>
+      <rect x="165" y="50" width="18" height="18" rx="9" fill="#00e580"/>
+      <rect x="217" y="50" width="18" height="18" rx="9" fill="#00e580"/>
       <!-- Ojos robot -->
-      <circle cx="15" cy="22" r="2.5" fill="#22223b"/>
-      <circle cx="25" cy="22" r="2.5" fill="#22223b"/>
+      <circle cx="190" cy="50" r="6" fill="#22223b"/>
+      <circle cx="210" cy="50" r="6" fill="#22223b"/>
       <!-- Boca robot sonriente -->
-      <rect x="17" y="26" width="6" height="2" rx="1" fill="#FFD700"/>
+      <rect x="189" y="65" width="22" height="5" rx="2.5" fill="#FFD700"/>
     </g>
 
     <!-- Título central -->
-    <text x="200" y="73" text-anchor="middle" fill="#22223b" font-size="26" font-family="monospace" font-weight="bold">
+    <text x="200" y="105" text-anchor="middle" fill="#22223b" font-size="26" font-family="monospace" font-weight="bold">
       Música, Videos y Podcasts
     </text>
     <!-- Slogan -->
-    <text x="200" y="98" text-anchor="middle" fill="#FFD700" font-size="20" font-family="monospace" font-weight="bold">
+    <text x="200" y="130" text-anchor="middle" fill="#FFD700" font-size="20" font-family="monospace" font-weight="bold">
       Descubre, aprende y sonríe
     </text>
     <!-- Innovador y chill -->
-    <text x="200" y="119" text-anchor="middle" fill="#00e580" font-size="17" font-family="monospace">
+    <text x="200" y="148" text-anchor="middle" fill="#00e580" font-size="17" font-family="monospace">
       🚀 Innovador & chill
     </text>
     <!-- Temáticas -->
-    <text x="200" y="142" text-anchor="middle" fill="#7c5fff" font-size="16" font-family="monospace">
+    <text x="200" y="166" text-anchor="middle" fill="#7c5fff" font-size="16" font-family="monospace">
       🎨  |  🎵  |  🤓  |  🎬  |  🌈
     </text>
     <!-- Frase final -->
-    <text x="200" y="162" text-anchor="middle" fill="#22223b" font-size="15" font-family="monospace">
+    <text x="200" y="190" text-anchor="middle" fill="#22223b" font-size="15" font-family="monospace">
       Relájate y disfruta contenido único
     </text>
     <!-- Onda animada -->
-    <path id="wavePath" class="wave-anim" d="M0,180 Q100,165 200,180 T400,180" fill="none" stroke="url(#wave)" stroke-width="7"/>
+    <path id="wavePath" class="wave-anim" d="M0,200 Q100,185 200,200 T400,200" fill="none" stroke="url(#wave)" stroke-width="7"/>
     <!-- Cohete animado en la esquina derecha -->
     <g class="rocket-anim">
       <!-- Estela -->
-      <rect x="360" y="153" width="6" height="26" rx="3" fill="#FFD700" opacity="0.7"/>
-      <rect x="361" y="171" width="4" height="12" rx="2" fill="#7c5fff" opacity="0.5"/>
+      <rect x="370" y="155" width="6" height="26" rx="3" fill="#FFD700" opacity="0.7"/>
+      <rect x="372" y="175" width="4" height="12" rx="2" fill="#7c5fff" opacity="0.5"/>
       <!-- Cuerpo -->
-      <rect x="355" y="127" width="16" height="29" rx="8" fill="#fff"/>
-      <polygon points="363,125 371,125 367,113" fill="#FFD700"/>
-      <rect x="359" y="156" width="8" height="8" rx="4" fill="#22223b"/>
-      <polygon points="357,164 369,164 363,177" fill="#00e580"/>
+      <rect x="365" y="130" width="16" height="29" rx="8" fill="#fff"/>
+      <polygon points="373,128 381,128 377,116" fill="#FFD700"/>
+      <rect x="369" y="159" width="8" height="8" rx="4" fill="#22223b"/>
+      <polygon points="367,167 379,167 373,180" fill="#00e580"/>
       <!-- Ventana -->
-      <circle cx="363" cy="141" r="4" fill="#FFD700"/>
+      <circle cx="373" cy="144" r="4" fill="#FFD700"/>
     </g>
   </svg>
 </div>
@@ -100,8 +100,6 @@ draft: false
   position: relative;
   padding-bottom: 2px;
 }
-
-/* Onda animada */
 .wave-anim {
   stroke-dasharray: 900;
   stroke-dashoffset: 0;
@@ -115,8 +113,6 @@ draft: false
   80% { transform: translateY(2px);}
   100% { transform: translateY(0px);}
 }
-
-/* Diadema animada */
 .headphone-emoji {
   animation: headphonesPulse 2.5s infinite alternate;
 }
@@ -125,8 +121,6 @@ draft: false
   80% { filter: drop-shadow(0 0 14px #FFD700);}
   100% { filter: drop-shadow(0 0 0px #FFD700);}
 }
-
-/* Cohete animado con estela */
 .rocket-anim {
   animation: rocketUp 2.9s infinite cubic-bezier(.7,.2,.2,.8);
 }
@@ -141,7 +135,6 @@ draft: false
 }
 </style>
 
----
 - Contenido entretenido y educativo.
 - Herramientas prácticas y guías útiles.
 - Un blog interactivo con tutoriales, reflexiones y experiencias en desarrollo web, tecnología y temas afines.
