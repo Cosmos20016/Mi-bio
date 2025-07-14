@@ -14,10 +14,14 @@ draft: false
 
 <svg width="400" height="210" viewBox="0 0 400 210" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <!-- Fondo degradado blanco-dorado -->
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#f6f8fa" />
-      <stop offset="100%" stop-color="#fff4e0" />
+    <!-- Fondo degradado blanco-dorado animado -->
+    <linearGradient id="bg-anim" x1="0" y1="0" x2="0.7" y2="1">
+      <stop offset="0%" stop-color="#fffbe0">
+        <animate attributeName="stop-color" values="#fffbe0;#FFD700;#fffbe0" dur="3s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="100%" stop-color="#fff4e0">
+        <animate attributeName="stop-color" values="#fff4e0;#FFD700;#fff4e0" dur="3s" repeatCount="indefinite"/>
+      </stop>
     </linearGradient>
     <!-- Degradado multicolor para la onda -->
     <linearGradient id="wave" x1="0" y1="0" x2="1" y2="0">
@@ -25,10 +29,10 @@ draft: false
       <stop offset="40%" stop-color="#00e580" />
       <stop offset="100%" stop-color="#FFD700" />
     </linearGradient>
-    <!-- Glow angular dorado para los bordes de la caja -->
-    <radialGradient id="glow-caja" cx="50%" cy="50%" r="70%" gradientTransform="rotate(16 0.5 0.5) scale(1.18 0.95)">
-      <stop offset="59%" stop-color="#FFD700" stop-opacity="0.11"/>
-      <stop offset="88%" stop-color="#FFD700" stop-opacity="0.33"/>
+    <!-- Glow angular dorado para los bordes de la caja, más grande y estilizado -->
+    <radialGradient id="glow-caja" cx="50%" cy="50%" r="85%" gradientTransform="rotate(18 0.5 0.5) scale(1.4 1.15)">
+      <stop offset="62%" stop-color="#FFD700" stop-opacity="0.13"/>
+      <stop offset="88%" stop-color="#FFD700" stop-opacity="0.38"/>
       <stop offset="100%" stop-color="#fff4e0" stop-opacity="0"/>
     </radialGradient>
     <!-- Glow radial dorado robot -->
@@ -52,10 +56,10 @@ draft: false
       <stop offset="100%" stop-color="#00e580"/>
     </linearGradient>
   </defs>
-  <!-- Glow dorado angular y grande por los bordes de la caja -->
-  <rect class="glow-anim-caja" x="-28" y="-19" width="456" height="248" rx="42" fill="url(#glow-caja)" />
-  <!-- Fondo blanco degradado -->
-  <rect width="400" height="210" rx="32" fill="url(#bg)" />
+  <!-- Glow dorado angular y grande por los bordes de la caja, animado y estilizado -->
+  <rect class="glow-anim-caja" x="-48" y="-39" width="496" height="288" rx="64" fill="url(#glow-caja)" />
+  <!-- Fondo blanco degradado animado -->
+  <rect width="400" height="210" rx="32" fill="url(#bg-anim)" />
   <!-- Glow dorado detrás del robot -->
   <ellipse class="glow-anim-robot" cx="200" cy="50" rx="45" ry="23" fill="url(#glow-robot)" />
   <!-- Robot/diadema perfectamente centrado -->
@@ -141,7 +145,7 @@ draft: false
 }
 @keyframes glowCajaPulse {
   0% { filter: drop-shadow(0 0 0px #FFD700);}
-  80% { filter: drop-shadow(0 0 50px #FFD700);}
+  80% { filter: drop-shadow(0 0 68px #FFD700);}
   100% { filter: drop-shadow(0 0 0px #FFD700);}
 }
 .glow-anim-robot {
