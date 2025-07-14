@@ -13,7 +13,7 @@ draft: false
 ## ¿Qué podrás encontrar?
 
 <div class="banner-mibio">
-  <svg width="400" height="210" viewBox="0 0 400 210" xmlns="http://www.w3.org/2000/svg">
+  <svg width="400" height="210" viewBox="0 0 400 210" xmlns="http://www.w3.org/2000/svg" class="banner-svg">
     <defs>
       <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stop-color="#f6f8fa" />
@@ -36,19 +36,19 @@ draft: false
     <!-- Robot/diadema centrado -->
     <g class="headphone-emoji">
       <!-- Cara -->
-      <circle cx="200" cy="40" r="40" fill="#fff"/>
+      <circle cx="200" cy="50" r="36" fill="#fff"/>
       <!-- Diadema superior -->
-      <rect x="160" y="25" width="80" height="25" rx="12" fill="#7c5fff"/>
+      <rect x="164" y="31" width="72" height="22" rx="11" fill="#7c5fff"/>
       <!-- Franja dorada superior -->
-      <rect x="175" y="20" width="50" height="10" rx="5" fill="#FFD700"/>
+      <rect x="178" y="26" width="44" height="8" rx="4" fill="#FFD700"/>
       <!-- Auriculares laterales -->
-      <rect x="165" y="50" width="18" height="18" rx="9" fill="#00e580"/>
-      <rect x="217" y="50" width="18" height="18" rx="9" fill="#00e580"/>
+      <rect x="170" y="62" width="14" height="14" rx="7" fill="#00e580"/>
+      <rect x="216" y="62" width="14" height="14" rx="7" fill="#00e580"/>
       <!-- Ojos robot -->
-      <circle cx="190" cy="50" r="6" fill="#22223b"/>
-      <circle cx="210" cy="50" r="6" fill="#22223b"/>
+      <circle cx="190" cy="58" r="5" fill="#22223b"/>
+      <circle cx="210" cy="58" r="5" fill="#22223b"/>
       <!-- Boca robot sonriente -->
-      <rect x="189" y="65" width="22" height="5" rx="2.5" fill="#FFD700"/>
+      <rect x="191" y="71" width="18" height="4" rx="2" fill="#FFD700"/>
     </g>
 
     <!-- Título central -->
@@ -76,64 +76,18 @@ draft: false
     <!-- Cohete animado en la esquina derecha -->
     <g class="rocket-anim">
       <!-- Estela -->
-      <rect x="370" y="155" width="6" height="26" rx="3" fill="#FFD700" opacity="0.7"/>
-      <rect x="372" y="175" width="4" height="12" rx="2" fill="#7c5fff" opacity="0.5"/>
+      <rect x="375" y="155" width="6" height="26" rx="3" fill="#FFD700" opacity="0.7"/>
+      <rect x="377" y="175" width="4" height="12" rx="2" fill="#7c5fff" opacity="0.5"/>
       <!-- Cuerpo -->
-      <rect x="365" y="130" width="16" height="29" rx="8" fill="#fff"/>
-      <polygon points="373,128 381,128 377,116" fill="#FFD700"/>
-      <rect x="369" y="159" width="8" height="8" rx="4" fill="#22223b"/>
-      <polygon points="367,167 379,167 373,180" fill="#00e580"/>
+      <rect x="370" y="130" width="16" height="29" rx="8" fill="#fff"/>
+      <polygon points="378,128 386,128 382,116" fill="#FFD700"/>
+      <rect x="374" y="159" width="8" height="8" rx="4" fill="#22223b"/>
+      <polygon points="372,167 384,167 378,180" fill="#00e580"/>
       <!-- Ventana -->
-      <circle cx="373" cy="144" r="4" fill="#FFD700"/>
+      <circle cx="378" cy="144" r="4" fill="#FFD700"/>
     </g>
   </svg>
 </div>
-
-<style>
-.banner-mibio {
-  background: linear-gradient(135deg,#f6f8fa 0%, #fff4e0 100%);
-  border-radius: 32px;
-  overflow: hidden;
-  width: 400px;
-  margin: auto;
-  box-shadow: 0 8px 32px #FFD70044;
-  position: relative;
-  padding-bottom: 2px;
-}
-.wave-anim {
-  stroke-dasharray: 900;
-  stroke-dashoffset: 0;
-  animation: waveBounce 2.8s infinite;
-}
-@keyframes waveBounce {
-  0% { transform: translateY(0px);}
-  18% { transform: translateY(-10px);}
-  40% { transform: translateY(7px);}
-  60% { transform: translateY(-4px);}
-  80% { transform: translateY(2px);}
-  100% { transform: translateY(0px);}
-}
-.headphone-emoji {
-  animation: headphonesPulse 2.5s infinite alternate;
-}
-@keyframes headphonesPulse {
-  0% { filter: drop-shadow(0 0 0px #FFD700);}
-  80% { filter: drop-shadow(0 0 14px #FFD700);}
-  100% { filter: drop-shadow(0 0 0px #FFD700);}
-}
-.rocket-anim {
-  animation: rocketUp 2.9s infinite cubic-bezier(.7,.2,.2,.8);
-}
-@keyframes rocketUp {
-  0%   { transform: translateY(0);}
-  14%  { transform: translateY(-20px);}
-  28%  { transform: translateY(-38px);}
-  50%  { transform: translateY(-18px);}
-  72%  { transform: translateY(0);}
-  80%  { transform: translateY(10px);}
-  100% { transform: translateY(0);}
-}
-</style>
 
 - Contenido entretenido y educativo.
 - Herramientas prácticas y guías útiles.
