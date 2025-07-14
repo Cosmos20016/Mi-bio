@@ -33,22 +33,22 @@ draft: false
     <rect width="400" height="210" rx="32" fill="url(#bg)" />
     <ellipse cx="200" cy="90" rx="145" ry="70" fill="url(#glow)" />
 
-    <!-- Emoji diadema/robot SVG, CENTRADO y claro -->
-    <g class="headphone-emoji" style="transform:translate(87px,22px) scale(2.5)">
-      <!-- Cara de robot circular -->
-      <circle cx="80" cy="20" r="16" fill="#fff"/>
+    <!-- Robot/diadema perfectamente centrado -->
+    <g class="headphone-emoji" style="transform:translate(140px,18px) scale(2.5)">
+      <!-- Cara -->
+      <circle cx="20" cy="20" r="16" fill="#fff"/>
       <!-- Diadema superior -->
-      <rect x="66" y="14" width="28" height="10" rx="5" fill="#7c5fff"/>
-      <!-- Franja superior de color dorado -->
-      <rect x="71" y="10" width="18" height="4.5" rx="2" fill="#FFD700"/>
+      <rect x="6" y="14" width="28" height="10" rx="5" fill="#7c5fff"/>
+      <!-- Franja dorada superior -->
+      <rect x="11" y="10" width="18" height="4.5" rx="2" fill="#FFD700"/>
       <!-- Auriculares laterales -->
-      <rect x="68" y="20" width="7" height="7" rx="3.5" fill="#00e580"/>
-      <rect x="85" y="20" width="7" height="7" rx="3.5" fill="#00e580"/>
+      <rect x="8" y="20" width="7" height="7" rx="3.5" fill="#00e580"/>
+      <rect x="25" y="20" width="7" height="7" rx="3.5" fill="#00e580"/>
       <!-- Ojos robot -->
-      <circle cx="75" cy="22" r="2.5" fill="#22223b"/>
-      <circle cx="85" cy="22" r="2.5" fill="#22223b"/>
+      <circle cx="15" cy="22" r="2.5" fill="#22223b"/>
+      <circle cx="25" cy="22" r="2.5" fill="#22223b"/>
       <!-- Boca robot sonriente -->
-      <rect x="77" y="26" width="6" height="2" rx="1" fill="#FFD700"/>
+      <rect x="17" y="26" width="6" height="2" rx="1" fill="#FFD700"/>
     </g>
 
     <!-- Título central -->
@@ -73,18 +73,18 @@ draft: false
     </text>
     <!-- Onda animada -->
     <path id="wavePath" class="wave-anim" d="M0,180 Q100,165 200,180 T400,180" fill="none" stroke="url(#wave)" stroke-width="7"/>
-    <!-- Cohete animado en la esquina derecha cerca del arcoiris -->
-    <g class="rocket-anim" style="transform:translate(100px,0px);">
+    <!-- Cohete animado en la esquina derecha -->
+    <g class="rocket-anim">
       <!-- Estela -->
-      <rect x="325" y="153" width="6" height="26" rx="3" fill="#FFD700" opacity="0.7"/>
-      <rect x="326" y="171" width="4" height="12" rx="2" fill="#7c5fff" opacity="0.5"/>
+      <rect x="360" y="153" width="6" height="26" rx="3" fill="#FFD700" opacity="0.7"/>
+      <rect x="361" y="171" width="4" height="12" rx="2" fill="#7c5fff" opacity="0.5"/>
       <!-- Cuerpo -->
-      <rect x="320" y="127" width="16" height="29" rx="8" fill="#fff"/>
-      <polygon points="328,125 336,125 332,113" fill="#FFD700"/>
-      <rect x="324" y="156" width="8" height="8" rx="4" fill="#22223b"/>
-      <polygon points="322,164 334,164 328,177" fill="#00e580"/>
+      <rect x="355" y="127" width="16" height="29" rx="8" fill="#fff"/>
+      <polygon points="363,125 371,125 367,113" fill="#FFD700"/>
+      <rect x="359" y="156" width="8" height="8" rx="4" fill="#22223b"/>
+      <polygon points="357,164 369,164 363,177" fill="#00e580"/>
       <!-- Ventana -->
-      <circle cx="328" cy="141" r="4" fill="#FFD700"/>
+      <circle cx="363" cy="141" r="4" fill="#FFD700"/>
     </g>
   </svg>
 </div>
