@@ -12,108 +12,22 @@ draft: false
 
 ## ¿Qué podrás encontrar?
 
-<div class="center-svg">
-<svg width="400" height="210" viewBox="0 0 400 210" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <!-- Fondo degradado blanco-dorado animado -->
-    <linearGradient id="bg-anim" x1="0" y1="0" x2="0.7" y2="1">
-      <stop offset="0%" stop-color="#f6f8fa">
-        <animate attributeName="stop-color" values="#f6f8fa;#fff4e0;#FFD700;#f6f8fa" dur="6s" repeatCount="indefinite"/>
-      </stop>
-      <stop offset="100%" stop-color="#fff4e0">
-        <animate attributeName="stop-color" values="#fff4e0;#FFD700;#f6f8fa;#fff4e0" dur="6s" repeatCount="indefinite"/>
-      </stop>
-    </linearGradient>
-    <!-- Degradado multicolor para la onda -->
-    <linearGradient id="wave" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#7c5fff" />
-      <stop offset="40%" stop-color="#00e580" />
-      <stop offset="100%" stop-color="#FFD700" />
-    </linearGradient>
-    <!-- Glow radial dorado para los bordes, más grande y angular -->
-    <radialGradient id="glow-borders" cx="50%" cy="50%" r="90%">
-      <stop offset="0%" stop-color="#FFD700" stop-opacity="0.0"/>
-      <stop offset="70%" stop-color="#FFD700" stop-opacity="0.14"/>
-      <stop offset="98%" stop-color="#FFD700" stop-opacity="0.25"/>
-      <stop offset="100%" stop-color="#fff4e0" stop-opacity="0"/>
-    </radialGradient>
-    <!-- Glow radial dorado robot -->
-    <radialGradient id="glow-robot" cx="50%" cy="50%" r="85%">
-      <stop offset="0%" stop-color="#FFD700" stop-opacity="0.33"/>
-      <stop offset="100%" stop-color="#fff4e0" stop-opacity="0"/>
-    </radialGradient>
-    <!-- Degradado dorado para borde del cohete -->
-    <linearGradient id="rocket-border" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#FFD700"/>
-      <stop offset="100%" stop-color="#fff4e0"/>
-    </linearGradient>
-    <!-- Degradado para cuerpo del cohete -->
-    <linearGradient id="rocket-body" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#fff"/>
-      <stop offset="100%" stop-color="#fff4e0"/>
-    </linearGradient>
-    <!-- Degradado para la llama -->
-    <linearGradient id="flame" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#FFD700"/>
-      <stop offset="100%" stop-color="#00e580"/>
-    </linearGradient>
-  </defs>
-  <!-- Glow dorado animado por los bordes, más grande -->
-  <ellipse class="glow-anim-borders" cx="200" cy="105" rx="210" ry="120" fill="url(#glow-borders)" />
-  <!-- Fondo blanco degradado animado -->
-  <rect width="400" height="210" rx="32" fill="url(#bg-anim)" />
-  <!-- Glow dorado detrás del robot -->
-  <ellipse class="glow-anim-robot" cx="200" cy="50" rx="45" ry="23" fill="url(#glow-robot)" />
-  <!-- Robot/diadema perfectamente centrado -->
-  <g class="headphone-emoji">
-    <circle cx="200" cy="50" r="36" fill="#fff"/>
-    <rect x="164" y="31" width="72" height="22" rx="11" fill="#7c5fff"/>
-    <rect x="178" y="26" width="44" height="8" rx="4" fill="#FFD700"/>
-    <rect x="170" y="62" width="14" height="14" rx="7" fill="#00e580"/>
-    <rect x="216" y="62" width="14" height="14" rx="7" fill="#00e580"/>
-    <circle cx="190" cy="58" r="5" fill="#22223b"/>
-    <circle cx="210" cy="58" r="5" fill="#22223b"/>
-    <rect x="191" y="71" width="18" height="4" rx="2" fill="#FFD700"/>
-  </g>
-  <!-- Título central -->
-  <text x="200" y="105" text-anchor="middle" fill="#22223b" font-size="26" font-family="monospace" font-weight="bold">
-    Música, Videos y Podcasts
-  </text>
-  <text x="200" y="130" text-anchor="middle" fill="#FFD700" font-size="20" font-family="monospace" font-weight="bold">
-    Descubre, aprende y sonríe
-  </text>
-  <text x="200" y="148" text-anchor="middle" fill="#00e580" font-size="17" font-family="monospace">
-    🚀 Innovador & chill
-  </text>
-  <text x="200" y="166" text-anchor="middle" fill="#7c5fff" font-size="16" font-family="monospace">
-    🎨  |  🎵  |  🤓  |  🎬  |  🌈
-  </text>
-  <text x="200" y="190" text-anchor="middle" fill="#22223b" font-size="15" font-family="monospace">
-    Relájate y disfruta contenido único
-  </text>
-  <!-- Onda animada -->
-  <path class="wave-anim" d="M0,200 Q100,185 200,200 T400,200" fill="none" stroke="url(#wave)" stroke-width="7"/>
-  <!-- Cohete estilizado con degradados en la esquina derecha y animación -->
-  <g class="rocket-anim">
-    <rect x="375" y="162" width="6" height="26" rx="3" fill="url(#rocket-border)" opacity="0.7"/>
-    <rect x="377" y="180" width="4" height="12" rx="2" fill="#7c5fff" opacity="0.5"/>
-    <rect x="370" y="138" width="16" height="29" rx="8" fill="url(#rocket-body)" stroke="url(#rocket-border)" stroke-width="2"/>
-    <polygon points="378,136 386,136 382,122" fill="#FFD700" stroke="#fff4e0" stroke-width="1"/>
-    <circle cx="378" cy="152" r="4" fill="#00e580" stroke="#FFD700" stroke-width="1"/>
-    <rect x="374" y="167" width="8" height="8" rx="4" fill="#22223b"/>
-    <polygon points="372,175 384,175 378,193" fill="url(#flame)"/>
-    <ellipse cx="378" cy="144" rx="2.2" ry="1.1" fill="#fff" opacity="0.5"/>
-    <ellipse cx="374" cy="160" rx="1.2" ry="0.6" fill="#fff" opacity="0.3"/>
-  </g>
-</svg>
-</div>
 <style>
 .center-svg {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 100vw;
-  min-height: 100vh;
+  width: 100%;
+  max-width: 800px;
+  margin: 40px auto;
+  /* Opcional: para responsive */
+  padding: 0 10px;
+}
+.svg-responsive {
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+  display: block;
 }
 .wave-anim {
   stroke-dasharray: 900;
@@ -122,12 +36,12 @@ draft: false
   transform-origin: center;
 }
 @keyframes waveBounce {
-  0% { transform: translateY(0px);}
+  0% { transform: translateY(0);}
   18% { transform: translateY(-10px);}
   40% { transform: translateY(7px);}
   60% { transform: translateY(-4px);}
   80% { transform: translateY(2px);}
-  100% { transform: translateY(0px);}
+  100% { transform: translateY(0);}
 }
 .headphone-emoji {
   animation: headphonesPulse 2.5s infinite alternate;
@@ -163,6 +77,90 @@ draft: false
   animation: bgGlowPulse 2.5s infinite alternate;
 }
 </style>
+
+<div class="center-svg">
+<svg class="svg-responsive" width="400" height="210" viewBox="0 0 400 210" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg-anim" x1="0" y1="0" x2="0.7" y2="1">
+      <stop offset="0%" stop-color="#f6f8fa">
+        <animate attributeName="stop-color" values="#f6f8fa;#fff4e0;#FFD700;#f6f8fa" dur="6s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="100%" stop-color="#fff4e0">
+        <animate attributeName="stop-color" values="#fff4e0;#FFD700;#f6f8fa;#fff4e0" dur="6s" repeatCount="indefinite"/>
+      </stop>
+    </linearGradient>
+    <linearGradient id="wave" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7c5fff" />
+      <stop offset="40%" stop-color="#00e580" />
+      <stop offset="100%" stop-color="#FFD700" />
+    </linearGradient>
+    <radialGradient id="glow-borders" cx="50%" cy="50%" r="90%">
+      <stop offset="0%" stop-color="#FFD700" stop-opacity="0.0"/>
+      <stop offset="70%" stop-color="#FFD700" stop-opacity="0.14"/>
+      <stop offset="98%" stop-color="#FFD700" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#fff4e0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-robot" cx="50%" cy="50%" r="85%">
+      <stop offset="0%" stop-color="#FFD700" stop-opacity="0.33"/>
+      <stop offset="100%" stop-color="#fff4e0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rocket-border" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFD700"/>
+      <stop offset="100%" stop-color="#fff4e0"/>
+    </linearGradient>
+    <linearGradient id="rocket-body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff"/>
+      <stop offset="100%" stop-color="#fff4e0"/>
+    </linearGradient>
+    <linearGradient id="flame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFD700"/>
+      <stop offset="100%" stop-color="#00e580"/>
+    </linearGradient>
+  </defs>
+  <!-- Glow dorado animado por los bordes, más grande y DETRÁS del fondo -->
+  <ellipse class="glow-anim-borders" cx="200" cy="105" rx="210" ry="120" fill="url(#glow-borders)" />
+  <!-- Fondo blanco degradado animado -->
+  <rect width="400" height="210" rx="32" fill="url(#bg-anim)" />
+  <ellipse class="glow-anim-robot" cx="200" cy="50" rx="45" ry="23" fill="url(#glow-robot)" />
+  <g class="headphone-emoji">
+    <circle cx="200" cy="50" r="36" fill="#fff"/>
+    <rect x="164" y="31" width="72" height="22" rx="11" fill="#7c5fff"/>
+    <rect x="178" y="26" width="44" height="8" rx="4" fill="#FFD700"/>
+    <rect x="170" y="62" width="14" height="14" rx="7" fill="#00e580"/>
+    <rect x="216" y="62" width="14" height="14" rx="7" fill="#00e580"/>
+    <circle cx="190" cy="58" r="5" fill="#22223b"/>
+    <circle cx="210" cy="58" r="5" fill="#22223b"/>
+    <rect x="191" y="71" width="18" height="4" rx="2" fill="#FFD700"/>
+  </g>
+  <text x="200" y="105" text-anchor="middle" fill="#22223b" font-size="26" font-family="monospace" font-weight="bold">
+    Música, Videos y Podcasts
+  </text>
+  <text x="200" y="130" text-anchor="middle" fill="#FFD700" font-size="20" font-family="monospace" font-weight="bold">
+    Descubre, aprende y sonríe
+  </text>
+  <text x="200" y="148" text-anchor="middle" fill="#00e580" font-size="17" font-family="monospace">
+    🚀 Innovador & chill
+  </text>
+  <text x="200" y="166" text-anchor="middle" fill="#7c5fff" font-size="16" font-family="monospace">
+    🎨  |  🎵  |  🤓  |  🎬  |  🌈
+  </text>
+  <text x="200" y="190" text-anchor="middle" fill="#22223b" font-size="15" font-family="monospace">
+    Relájate y disfruta contenido único
+  </text>
+  <path class="wave-anim" d="M0,200 Q100,185 200,200 T400,200" fill="none" stroke="url(#wave)" stroke-width="7"/>
+  <g class="rocket-anim">
+    <rect x="375" y="162" width="6" height="26" rx="3" fill="url(#rocket-border)" opacity="0.7"/>
+    <rect x="377" y="180" width="4" height="12" rx="2" fill="#7c5fff" opacity="0.5"/>
+    <rect x="370" y="138" width="16" height="29" rx="8" fill="url(#rocket-body)" stroke="url(#rocket-border)" stroke-width="2"/>
+    <polygon points="378,136 386,136 382,122" fill="#FFD700" stroke="#fff4e0" stroke-width="1"/>
+    <circle cx="378" cy="152" r="4" fill="#00e580" stroke="#FFD700" stroke-width="1"/>
+    <rect x="374" y="167" width="8" height="8" rx="4" fill="#22223b"/>
+    <polygon points="372,175 384,175 378,193" fill="url(#flame)"/>
+    <ellipse cx="378" cy="144" rx="2.2" ry="1.1" fill="#fff" opacity="0.5"/>
+    <ellipse cx="374" cy="160" rx="1.2" ry="0.6" fill="#fff" opacity="0.3"/>
+  </g>
+</svg>
+</div>
 
 - Contenido entretenido y educativo.
 - Herramientas prácticas y guías útiles.
