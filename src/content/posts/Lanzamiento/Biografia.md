@@ -30,6 +30,11 @@ draft: false
       <stop offset="0%" stop-color="#FFD700" stop-opacity="0.23"/>
       <stop offset="100%" stop-color="#fff4e0" stop-opacity="0"/>
     </radialGradient>
+    <!-- Degradado dorado para borde animado -->
+    <linearGradient id="border-gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFD700"/>
+      <stop offset="100%" stop-color="#fff4e0"/>
+    </linearGradient>
     <!-- Degradado dorado para borde del cohete -->
     <linearGradient id="rocket-border" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#FFD700"/>
@@ -49,6 +54,9 @@ draft: false
   <!-- Fondo y glow -->
   <rect width="400" height="210" rx="32" fill="url(#bg)" />
   <ellipse cx="200" cy="90" rx="145" ry="70" fill="url(#glow)" />
+
+  <!-- Borde animado dorado -->
+  <rect class="border-anim" x="3" y="3" width="394" height="204" rx="29" fill="none" stroke="url(#border-gold)" stroke-width="6"/>
 
   <!-- Robot/diadema perfectamente centrado -->
   <g class="headphone-emoji">
@@ -145,6 +153,15 @@ draft: false
   72%  { transform: translateY(0);}
   80%  { transform: translateY(8px);}
   100% { transform: translateY(0);}
+}
+.border-anim {
+  filter: drop-shadow(0 0 0px #FFD700);
+  animation: borderGoldPulse 2.5s infinite alternate;
+}
+@keyframes borderGoldPulse {
+  0% { filter: drop-shadow(0 0 0px #FFD700);}
+  80% { filter: drop-shadow(0 0 24px #FFD700);}
+  100% { filter: drop-shadow(0 0 0px #FFD700);}
 }
 </style>
 
