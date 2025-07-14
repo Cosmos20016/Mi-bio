@@ -82,7 +82,7 @@ draft: false
 }
 @keyframes turtleWalk {
   0%   { transform: translateX(0px);}
-  100% { transform: translateX(390px);}
+  100% { transform: translateX(-360px);}
 }
 /* Patas con movimiento fluido */
 .turtle-leg {
@@ -245,7 +245,6 @@ draft: false
   <!-- Onda animada -->
   <path class="wave-anim" d="M0,200 Q100,185 200,200 T400,200" fill="none" stroke="url(#wave)" stroke-width="7"/>
   <!-- Tortuga animada recorriendo la línea inferior -->
-  <!-- Tortuga animada recorriendo la línea inferior -->
 <g class="turtle-anim" style="transform: translateY(-16px);">
   <!-- Sombra -->
   <ellipse cx="380" cy="207" rx="6" ry="2" fill="#222" opacity="0.15"/>
@@ -280,7 +279,7 @@ draft: false
     <rect x="375" y="162" width="6" height="26" rx="3" fill="url(#rocket-border)" opacity="0.7"/>
     <rect x="377" y="180" width="4" height="12" rx="2" fill="#7c5fff" opacity="0.5"/>
     <rect x="370" y="138" width="16" height="29" rx="8" fill="url(#rocket-body)" stroke="url(#rocket-border)" stroke-width="2"/>
-    <polygon points="378,136 386,136 382,122" fill="#FFD700" stroke="#fff4e0" stroke-width="1"/>
+    <polygon points="378,136 386,136 382,122" fill="#FFD700"stroke="#fff4e0" stroke-width="1"/>
     <circle cx="378" cy="152" r="4" fill="#00e580" stroke="#FFD700" stroke-width="1"/>
     <rect x="374" y="167" width="8" height="8" rx="4" fill="#22223b"/>
     <!-- Llama animada, sincronizada y estilizada -->
