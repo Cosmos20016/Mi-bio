@@ -20,7 +20,6 @@ draft: false
   width: 100%;
   max-width: 800px;
   margin: 40px auto;
-  /* Opcional: para responsive */
   padding: 0 10px;
 }
 .svg-responsive {
@@ -32,7 +31,7 @@ draft: false
 .wave-anim {
   stroke-dasharray: 900;
   stroke-dashoffset: 0;
-  animation: waveBounce 2.8s infinite;
+  animation: waveBounce 4.5s infinite; /* más lento */
   transform-origin: center;
 }
 @keyframes waveBounce {
@@ -63,24 +62,12 @@ draft: false
   80%  { transform: translateY(8px);}
   100% { transform: translateY(0);}
 }
-.glow-anim-borders {
-  filter: drop-shadow(0 0 0px #FFD700);
-  animation: bgGlowPulse 2.5s infinite alternate;
-}
-@keyframes bgGlowPulse {
-  0% { filter: drop-shadow(0 0 0px #FFD700);}
-  80% { filter: drop-shadow(0 0 56px #FFD700);}
-  100% { filter: drop-shadow(0 0 0px #FFD700);}
-}
-.glow-anim-robot {
-  filter: drop-shadow(0 0 0px #FFD700);
-  animation: bgGlowPulse 2.5s infinite alternate;
-}
 </style>
 
 <div class="center-svg">
 <svg class="svg-responsive" width="400" height="210" viewBox="0 0 400 210" xmlns="http://www.w3.org/2000/svg">
   <defs>
+    <!-- Fondo degradado blanco-dorado animado -->
     <linearGradient id="bg-anim" x1="0" y1="0" x2="0.7" y2="1">
       <stop offset="0%" stop-color="#f6f8fa">
         <animate attributeName="stop-color" values="#f6f8fa;#fff4e0;#FFD700;#f6f8fa" dur="6s" repeatCount="indefinite"/>
@@ -89,38 +76,44 @@ draft: false
         <animate attributeName="stop-color" values="#fff4e0;#FFD700;#f6f8fa;#fff4e0" dur="6s" repeatCount="indefinite"/>
       </stop>
     </linearGradient>
+    <!-- Degradado radiante dorado para los bordes del cuadrado -->
+    <radialGradient id="radiant-gold" cx="50%" cy="50%" r="80%">
+      <stop offset="75%" stop-color="#FFD700" stop-opacity="0.19"/>
+      <stop offset="85%" stop-color="#FFD700" stop-opacity="0.44"/>
+      <stop offset="100%" stop-color="#fff4e0" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Degradado multicolor para la onda -->
     <linearGradient id="wave" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="#7c5fff" />
       <stop offset="40%" stop-color="#00e580" />
       <stop offset="100%" stop-color="#FFD700" />
     </linearGradient>
-    <radialGradient id="glow-borders" cx="50%" cy="50%" r="90%">
-      <stop offset="0%" stop-color="#FFD700" stop-opacity="0.0"/>
-      <stop offset="70%" stop-color="#FFD700" stop-opacity="0.14"/>
-      <stop offset="98%" stop-color="#FFD700" stop-opacity="0.25"/>
-      <stop offset="100%" stop-color="#fff4e0" stop-opacity="0"/>
-    </radialGradient>
+    <!-- Glow radial dorado robot -->
     <radialGradient id="glow-robot" cx="50%" cy="50%" r="85%">
       <stop offset="0%" stop-color="#FFD700" stop-opacity="0.33"/>
       <stop offset="100%" stop-color="#fff4e0" stop-opacity="0"/>
     </radialGradient>
+    <!-- Degradado dorado para borde del cohete -->
     <linearGradient id="rocket-border" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#FFD700"/>
       <stop offset="100%" stop-color="#fff4e0"/>
     </linearGradient>
+    <!-- Degradado para cuerpo del cohete -->
     <linearGradient id="rocket-body" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#fff"/>
       <stop offset="100%" stop-color="#fff4e0"/>
     </linearGradient>
+    <!-- Degradado para la llama -->
     <linearGradient id="flame" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#FFD700"/>
       <stop offset="100%" stop-color="#00e580"/>
     </linearGradient>
   </defs>
-  <!-- Glow dorado animado por los bordes, más grande y DETRÁS del fondo -->
-  <ellipse class="glow-anim-borders" cx="200" cy="105" rx="210" ry="120" fill="url(#glow-borders)" />
   <!-- Fondo blanco degradado animado -->
   <rect width="400" height="210" rx="32" fill="url(#bg-anim)" />
+  <!-- Borde radiante dorado -->
+  <rect x="1" y="1" width="398" height="208" rx="31" fill="none" stroke="url(#radiant-gold)" stroke-width="12"/>
+  <!-- Glow dorado detrás del robot -->
   <ellipse class="glow-anim-robot" cx="200" cy="50" rx="45" ry="23" fill="url(#glow-robot)" />
   <g class="headphone-emoji">
     <circle cx="200" cy="50" r="36" fill="#fff"/>
