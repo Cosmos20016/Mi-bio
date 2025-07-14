@@ -11,7 +11,6 @@ draft: false
 ¡Hola! Soy Kevin Borja y te doy la bienvenida a mi web: **Kevinborja.com**. Este espacio nace de mi pasión por la tecnología, el desarrollo web y la curiosidad constante. Aquí comparto proyectos, experimentos, ideas y recursos. Quiero que este sitio sea un punto de encuentro para quienes buscan aprender, colaborar y crecer.
 
 ## ¿Qué podrás encontrar?
----
 
 <div class="banner-mibio">
   <svg width="400" height="210" viewBox="0 0 400 210" xmlns="http://www.w3.org/2000/svg">
@@ -142,6 +141,7 @@ draft: false
 }
 </style>
 
+---
 - Contenido entretenido y educativo.
 - Herramientas prácticas y guías útiles.
 - Un blog interactivo con tutoriales, reflexiones y experiencias en desarrollo web, tecnología y temas afines.
