@@ -147,5 +147,22 @@ const jsonLd = {
         crossorigin="anonymous"
         async>
 </script>
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const interval = setInterval(() => {
+      const giscusFrame = document.querySelector('iframe.giscus-frame');
+      if (giscusFrame) {
+        giscusFrame.onload = () => {
+          const giscusShadow = giscusFrame.contentDocument;
+          const powered = giscusShadow.querySelector('.giscus-powered-by');
+          if (powered) {
+            powered.style.display = 'none';
+            clearInterval(interval);
+          }
+        };
+      }
+    }, 1000);
+  });
+</script>
 
 </MainGridLayout>
