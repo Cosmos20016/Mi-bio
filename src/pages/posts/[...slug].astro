@@ -131,4 +131,18 @@ const jsonLd = {
         </a>
     </div>
 
+<!-- Bloque de comentarios Cusdis aquí -->
+<div id="cusdis_thread"
+  data-host="https://cusdis.com"
+  data-app-id="c3375163-9ff7-4e07-b5ce-5dcc124945cf"
+  data-page-id={entry.slug}
+  data-page-url={`https://kevinborja.com${Astro.url.pathname}`}
+  data-page-title={entry.data.title}
+></div>
+<script async defer src="https://cusdis.com/js/cusdis.es.js"></script>
+<style>
+.cusdis-powered-by { display: none !important; }
+</style>
+<!-- Fin bloque Cusdis -->
+
 </MainGridLayout>
