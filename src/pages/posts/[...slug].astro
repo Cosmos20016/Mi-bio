@@ -140,7 +140,6 @@ const jsonLd = {
       xfbml      : true,
       version    : 'v23.0'
     });
-
     FB.AppEvents.logPageView();
   };
 
@@ -153,7 +152,7 @@ const jsonLd = {
    }(document, 'script', 'facebook-jssdk'));
 </script>
 
-<!-- Botón de inicio de sesión de Facebook -->
+<!-- Botón de inicio de sesión de Facebook con permisos -->
 <div style="margin-top:2rem;">
   <div 
     class="fb-login-button"
@@ -163,6 +162,7 @@ const jsonLd = {
     data-layout="default"
     data-auto-logout-link="true"
     data-use-continue-as="true"
+    scope="public_profile,email"
     onlogin="checkLoginState();">
   </div>
 </div>
@@ -181,26 +181,24 @@ const jsonLd = {
   function checkLoginState() {
     FB.getLoginStatus(function(response) {
       if (response.status === 'connected') {
-        // Mostrar comentarios
         document.getElementById('fb-comments-container').style.display = 'block';
-
-        // Obtener información del usuario
-        FB.api('/me', {fields: 'name,picture'}, function(user) {
-          // Crear el contenido de bienvenida
-          const userInfoDiv = document.createElement('div');
-          userInfoDiv.style.marginTop = '1rem';
-          userInfoDiv.innerHTML = `
-            <strong>Bienvenido, ${user.name}!</strong><br>
-            <img src="${user.picture.data.url}" alt="Foto de perfil" style="border-radius:50%;width:48px;height:48px;">
-          `;
-          // Insertar el saludo debajo del botón
-          const loginButton = document.querySelector('.fb-login-button');
-          loginButton.parentNode.insertBefore(userInfoDiv, loginButton.nextSibling);
-          // Oculta el botón tras iniciar sesión
-          loginButton.style.display = 'none';
+        FB.api('/me', {fields: 'name,picture,email'}, function(user) {
+          // Evita duplicar el saludo si ya existe
+          if (!document.getElementById('fb-user-info')) {
+            const userInfoDiv = document.createElement('div');
+            userInfoDiv.id = 'fb-user-info';
+            userInfoDiv.style.marginTop = '1rem';
+            userInfoDiv.innerHTML = `
+              <strong>Bienvenido, ${user.name}!</strong><br>
+              <img src="${user.picture.data.url}" alt="Foto de perfil" style="border-radius:50%;width:48px;height:48px;"><br>
+              <small>${user.email ? 'Email: ' + user.email : ''}</small>
+            `;
+            const loginButton = document.querySelector('.fb-login-button');
+            loginButton.parentNode.insertBefore(userInfoDiv, loginButton.nextSibling);
+            loginButton.style.display = 'none';
+          }
         });
       } else {
-        // Oculta comentarios si no está logueado
         document.getElementById('fb-comments-container').style.display = 'none';
         alert('Por favor, inicia sesión con Facebook.');
       }
