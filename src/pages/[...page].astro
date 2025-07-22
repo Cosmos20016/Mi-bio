@@ -19,33 +19,5 @@ const len = page.data.length;
 
 <MainGridLayout>
     <PostPage page={page}></PostPage>
-
-<!-- Aquí agregas el botón de inicio de Facebook -->
-    <div style="margin-top:2rem;">
-      <div 
-        class="fb-login-button"
-        data-width="300"
-        data-size="large"
-        data-button-type="continue_with"
-        data-layout="default"
-        data-auto-logout-link="true"
-        data-use-continue-as="true"
-        onlogin="checkLoginState();">
-      </div>
-    </div>
-
-    <script>
-      function checkLoginState() {
-        FB.getLoginStatus(function(response) {
-          if (response.status === 'connected') {
-            alert('¡Has iniciado sesión con Facebook!');
-            // Aquí puedes mostrar más contenido, cargar datos, etc.
-          } else {
-            alert('Por favor, inicia sesión con Facebook.');
-          }
-        });
-      }
-    </script>
-
     <Pagination class="mx-auto onload-animation" page={page} style={`animation-delay: calc(var(--content-delay) + ${(len)*50}ms)`}></Pagination>
 </MainGridLayout>
