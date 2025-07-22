@@ -131,42 +131,81 @@ const jsonLd = {
         </a>
     </div>
 
-
+<!-- Carga e inicializa el SDK de Facebook -->
 <script>
   window.fbAsyncInit = function() {
     FB.init({
-      appId      : '{your-app-id}',
+      appId      : '1076189981122239',
       cookie     : true,
       xfbml      : true,
-      version    : '{api-version}'
+      version    : 'v23.0'
     });
-      
-    FB.AppEvents.logPageView();   
-      
+
+    FB.AppEvents.logPageView();
   };
 
   (function(d, s, id){
      var js, fjs = d.getElementsByTagName(s)[0];
      if (d.getElementById(id)) {return;}
      js = d.createElement(s); js.id = id;
-     js.src = "https://connect.facebook.net/en_US/sdk.js";
+     js.src = "https://connect.facebook.net/es_LA/sdk.js";
      fjs.parentNode.insertBefore(js, fjs);
    }(document, 'script', 'facebook-jssdk'));
 </script>
 
+<!-- Botón de inicio de sesión de Facebook -->
+<div style="margin-top:2rem;">
+  <div 
+    class="fb-login-button"
+    data-width="300"
+    data-size="large"
+    data-button-type="continue_with"
+    data-layout="default"
+    data-auto-logout-link="true"
+    data-use-continue-as="true"
+    onlogin="checkLoginState();">
+  </div>
+</div>
 
-FB.getLoginStatus(function(response) {
-    statusChangeCallback(response);
-});
+<!-- Contenedor de comentarios de Facebook, oculto por defecto -->
+<div id="fb-comments-container" style="display:none;">
+  <div class="fb-comments"
+       data-href={Astro.url}
+       data-width="100%"
+       data-numposts="10"
+       data-order-by="social">
+  </div>
+</div>
 
-{
-    status: 'connected',
-    authResponse: {
-        accessToken: '...',
-        expiresIn:'...',
-        signedRequest:'...',
-        userID:'...'
-    }
-}
+<script>
+  function checkLoginState() {
+    FB.getLoginStatus(function(response) {
+      if (response.status === 'connected') {
+        // Mostrar comentarios
+        document.getElementById('fb-comments-container').style.display = 'block';
+
+        // Obtener información del usuario
+        FB.api('/me', {fields: 'name,picture'}, function(user) {
+          // Crear el contenido de bienvenida
+          const userInfoDiv = document.createElement('div');
+          userInfoDiv.style.marginTop = '1rem';
+          userInfoDiv.innerHTML = `
+            <strong>Bienvenido, ${user.name}!</strong><br>
+            <img src="${user.picture.data.url}" alt="Foto de perfil" style="border-radius:50%;width:48px;height:48px;">
+          `;
+          // Insertar el saludo debajo del botón
+          const loginButton = document.querySelector('.fb-login-button');
+          loginButton.parentNode.insertBefore(userInfoDiv, loginButton.nextSibling);
+          // Oculta el botón tras iniciar sesión
+          loginButton.style.display = 'none';
+        });
+      } else {
+        // Oculta comentarios si no está logueado
+        document.getElementById('fb-comments-container').style.display = 'none';
+        alert('Por favor, inicia sesión con Facebook.');
+      }
+    });
+  }
+</script>
 
 </MainGridLayout>
