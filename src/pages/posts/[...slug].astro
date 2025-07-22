@@ -131,7 +131,7 @@ const jsonLd = {
         </a>
     </div>
 
-<!-- Carga e inicializa el SDK de Facebook -->
+<!-- SDK de Facebook -->
 <script>
   window.fbAsyncInit = function() {
     FB.init({
@@ -152,8 +152,9 @@ const jsonLd = {
    }(document, 'script', 'facebook-jssdk'));
 </script>
 
-<!-- Botón de inicio de sesión de Facebook con permisos -->
-<div style="margin-top:2rem;">
+<!-- Mensaje animando a comentar (solo visible si no logueado) -->
+<div id="fb-invite" style="margin-top:2rem;">
+  <span>Inicia sesión con Facebook para poder comentar o reaccionar 😊</span>
   <div 
     class="fb-login-button"
     data-width="300"
@@ -167,8 +168,8 @@ const jsonLd = {
   </div>
 </div>
 
-<!-- Contenedor de comentarios de Facebook, oculto por defecto -->
-<div id="fb-comments-container" style="display:none;">
+<!-- Contenedor de comentarios de Facebook SIEMPRE visible -->
+<div id="fb-comments-container">
   <div class="fb-comments"
        data-href={Astro.url}
        data-width="100%"
@@ -177,33 +178,37 @@ const jsonLd = {
   </div>
 </div>
 
+<!-- Saludo tras login -->
+<div id="fb-user-info"></div>
+
 <script>
   function checkLoginState() {
     FB.getLoginStatus(function(response) {
       if (response.status === 'connected') {
-        document.getElementById('fb-comments-container').style.display = 'block';
+        // Oculta el mensaje de invitación y muestra el saludo
+        document.getElementById('fb-invite').style.display = 'none';
         FB.api('/me', {fields: 'name,picture,email'}, function(user) {
-          // Evita duplicar el saludo si ya existe
-          if (!document.getElementById('fb-user-info')) {
-            const userInfoDiv = document.createElement('div');
-            userInfoDiv.id = 'fb-user-info';
-            userInfoDiv.style.marginTop = '1rem';
-            userInfoDiv.innerHTML = `
-              <strong>Bienvenido, ${user.name}!</strong><br>
-              <img src="${user.picture.data.url}" alt="Foto de perfil" style="border-radius:50%;width:48px;height:48px;"><br>
-              <small>${user.email ? 'Email: ' + user.email : ''}</small>
-            `;
-            const loginButton = document.querySelector('.fb-login-button');
-            loginButton.parentNode.insertBefore(userInfoDiv, loginButton.nextSibling);
-            loginButton.style.display = 'none';
-          }
+          const userInfoDiv = document.getElementById('fb-user-info');
+          userInfoDiv.innerHTML = `
+            <strong>Bienvenido, ${user.name}!</strong><br>
+            <img src="${user.picture.data.url}" alt="Foto de perfil" style="border-radius:50%;width:48px;height:48px;"><br>
+            <small>${user.email ? 'Email: ' + user.email : ''}</small>
+          `;
         });
       } else {
-        document.getElementById('fb-comments-container').style.display = 'none';
-        alert('Por favor, inicia sesión con Facebook.');
+        // Muestra el mensaje de invitación si el usuario NO está logueado
+        document.getElementById('fb-invite').style.display = 'block';
+        document.getElementById('fb-user-info').innerHTML = '';
       }
     });
   }
+
+  // Comprobar login al cargar la página
+  window.onload = function() {
+    setTimeout(function() {
+      if (window.FB) checkLoginState();
+    }, 1000); // Da tiempo a cargar el SDK
+  };
 </script>
 
 </MainGridLayout>
