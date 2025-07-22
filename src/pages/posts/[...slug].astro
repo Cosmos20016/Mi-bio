@@ -131,6 +131,7 @@ const jsonLd = {
         </a>
     </div>
 
+<!-- SDK de Facebook -->
 <script>
   window.fbAsyncInit = function() {
     FB.init({
@@ -166,13 +167,17 @@ const jsonLd = {
   </div>
 </div>
 
-<!-- Contenedor de comentarios de Facebook, oculto por defecto -->
-<div id="fb-comments-container" style="display:none;">
+<!-- Saludo tras login (aparece debajo del botón) -->
+<div id="fb-user-info" style="margin-top:1rem;"></div>
+
+<!-- Contenedor de comentarios de Facebook SIEMPRE visible -->
+<div id="fb-comments-container" style="margin-top:2rem;">
   <div class="fb-comments"
        data-href={Astro.url}
        data-width="100%"
        data-numposts="10"
-       data-order-by="social">
+       data-order-by="social"
+       data-colorscheme="dark">
   </div>
 </div>
 
@@ -180,29 +185,26 @@ const jsonLd = {
   function checkLoginState() {
     FB.getLoginStatus(function(response) {
       if (response.status === 'connected') {
-        document.getElementById('fb-comments-container').style.display = 'block';
         FB.api('/me', {fields: 'name,picture,email'}, function(user) {
-          // Evita duplicar el saludo si ya existe
-          if (!document.getElementById('fb-user-info')) {
-            const userInfoDiv = document.createElement('div');
-            userInfoDiv.id = 'fb-user-info';
-            userInfoDiv.style.marginTop = '1rem';
+          // Mostrar saludo solo si no existe ya
+          if (!document.getElementById('fb-user-info').innerHTML) {
+            const userInfoDiv = document.getElementById('fb-user-info');
             userInfoDiv.innerHTML = `
               <strong>Bienvenido, ${user.name}!</strong><br>
               <img src="${user.picture.data.url}" alt="Foto de perfil" style="border-radius:50%;width:48px;height:48px;"><br>
               <small>${user.email ? 'Email: ' + user.email : ''}</small>
             `;
-            const loginButton = document.querySelector('.fb-login-button');
-            loginButton.parentNode.insertBefore(userInfoDiv, loginButton.nextSibling);
-            loginButton.style.display = 'none';
+            // Ocultar el botón tras login
+            document.querySelector('.fb-login-button').style.display = 'none';
           }
         });
       } else {
-        document.getElementById('fb-comments-container').style.display = 'none';
-        alert('Por favor, inicia sesión con Facebook.');
+        // Mostrar el botón y ocultar saludo si no está logueado
+        document.querySelector('.fb-login-button').style.display = 'block';
+        document.getElementById('fb-user-info').innerHTML = '';
       }
     });
   }
-</script> 
+</script>
 
 </MainGridLayout>
