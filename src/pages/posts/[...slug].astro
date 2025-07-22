@@ -131,14 +131,28 @@ const jsonLd = {
         </a>
     </div>
 
-<div id="fb-root"></div>
-<script async defer crossorigin="anonymous"
-  src="https://connect.facebook.net/es_LA/sdk.js#xfbml=1&version=v23.0&appId=1076189981122239">
+<script>
+  window.fbAsyncInit = function() {
+    FB.init({
+      appId      : '1076189981122239',
+      cookie     : true,
+      xfbml      : true,
+      version    : 'v23.0'
+    });
+    FB.AppEvents.logPageView();
+  };
+
+  (function(d, s, id){
+     var js, fjs = d.getElementsByTagName(s)[0];
+     if (d.getElementById(id)) {return;}
+     js = d.createElement(s); js.id = id;
+     js.src = "https://connect.facebook.net/es_LA/sdk.js";
+     fjs.parentNode.insertBefore(js, fjs);
+   }(document, 'script', 'facebook-jssdk'));
 </script>
 
-<!-- Mensaje animando a comentar (solo visible si no logueado) -->
-<div id="fb-invite" style="margin-top:2rem;">
-  <span style="color:white;">Inicia sesión con Facebook para poder comentar o reaccionar 😊</span>
+<!-- Botón de inicio de sesión de Facebook con permisos -->
+<div style="margin-top:2rem;">
   <div 
     class="fb-login-button"
     data-width="300"
@@ -152,48 +166,43 @@ const jsonLd = {
   </div>
 </div>
 
-<!-- Contenedor de comentarios de Facebook SIEMPRE visible, modo oscuro -->
-<div id="fb-comments-container" style="margin-top:2rem;">
+<!-- Contenedor de comentarios de Facebook, oculto por defecto -->
+<div id="fb-comments-container" style="display:none;">
   <div class="fb-comments"
        data-href={Astro.url}
        data-width="100%"
        data-numposts="10"
-       data-order-by="social"
-       data-colorscheme="dark">
+       data-order-by="social">
   </div>
 </div>
-
-<!-- Saludo tras login -->
-<div id="fb-user-info" style="color:white;"></div>
 
 <script>
   function checkLoginState() {
     FB.getLoginStatus(function(response) {
       if (response.status === 'connected') {
-        // Oculta el mensaje de invitación y muestra el saludo
-        document.getElementById('fb-invite').style.display = 'none';
+        document.getElementById('fb-comments-container').style.display = 'block';
         FB.api('/me', {fields: 'name,picture,email'}, function(user) {
-          const userInfoDiv = document.getElementById('fb-user-info');
-          userInfoDiv.innerHTML = `
-            <strong>Bienvenido, ${user.name}!</strong><br>
-            <img src="${user.picture.data.url}" alt="Foto de perfil" style="border-radius:50%;width:48px;height:48px;"><br>
-            <small>${user.email ? 'Email: ' + user.email : ''}</small>
-          `;
+          // Evita duplicar el saludo si ya existe
+          if (!document.getElementById('fb-user-info')) {
+            const userInfoDiv = document.createElement('div');
+            userInfoDiv.id = 'fb-user-info';
+            userInfoDiv.style.marginTop = '1rem';
+            userInfoDiv.innerHTML = `
+              <strong>Bienvenido, ${user.name}!</strong><br>
+              <img src="${user.picture.data.url}" alt="Foto de perfil" style="border-radius:50%;width:48px;height:48px;"><br>
+              <small>${user.email ? 'Email: ' + user.email : ''}</small>
+            `;
+            const loginButton = document.querySelector('.fb-login-button');
+            loginButton.parentNode.insertBefore(userInfoDiv, loginButton.nextSibling);
+            loginButton.style.display = 'none';
+          }
         });
       } else {
-        // Muestra el mensaje de invitación si el usuario NO está logueado
-        document.getElementById('fb-invite').style.display = 'block';
-        document.getElementById('fb-user-info').innerHTML = '';
+        document.getElementById('fb-comments-container').style.display = 'none';
+        alert('Por favor, inicia sesión con Facebook.');
       }
     });
   }
-
-  // Comprobar login al cargar la página
-  window.onload = function() {
-    setTimeout(function() {
-      if (window.FB) checkLoginState();
-    }, 1000); // Da tiempo a cargar el SDK
-  };
-</script>
+</script> 
 
 </MainGridLayout>
