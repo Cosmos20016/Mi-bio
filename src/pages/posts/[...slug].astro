@@ -131,30 +131,14 @@ const jsonLd = {
         </a>
     </div>
 
-<!-- SDK de Facebook -->
-<script>
-  window.fbAsyncInit = function() {
-    FB.init({
-      appId      : '1076189981122239',
-      cookie     : true,
-      xfbml      : true,
-      version    : 'v23.0'
-    });
-    FB.AppEvents.logPageView();
-  };
-
-  (function(d, s, id){
-     var js, fjs = d.getElementsByTagName(s)[0];
-     if (d.getElementById(id)) {return;}
-     js = d.createElement(s); js.id = id;
-     js.src = "https://connect.facebook.net/es_LA/sdk.js";
-     fjs.parentNode.insertBefore(js, fjs);
-   }(document, 'script', 'facebook-jssdk'));
+<div id="fb-root"></div>
+<script async defer crossorigin="anonymous"
+  src="https://connect.facebook.net/es_LA/sdk.js#xfbml=1&version=v23.0&appId=1076189981122239">
 </script>
 
 <!-- Mensaje animando a comentar (solo visible si no logueado) -->
 <div id="fb-invite" style="margin-top:2rem;">
-  <span>Inicia sesión con Facebook para poder comentar o reaccionar 😊</span>
+  <span style="color:white;">Inicia sesión con Facebook para poder comentar o reaccionar 😊</span>
   <div 
     class="fb-login-button"
     data-width="300"
@@ -168,18 +152,19 @@ const jsonLd = {
   </div>
 </div>
 
-<!-- Contenedor de comentarios de Facebook SIEMPRE visible -->
-<div id="fb-comments-container">
+<!-- Contenedor de comentarios de Facebook SIEMPRE visible, modo oscuro -->
+<div id="fb-comments-container" style="margin-top:2rem;">
   <div class="fb-comments"
        data-href={Astro.url}
        data-width="100%"
        data-numposts="10"
-       data-order-by="social">
+       data-order-by="social"
+       data-colorscheme="dark">
   </div>
 </div>
 
 <!-- Saludo tras login -->
-<div id="fb-user-info"></div>
+<div id="fb-user-info" style="color:white;"></div>
 
 <script>
   function checkLoginState() {
