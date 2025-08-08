@@ -41,139 +41,59 @@ Actualmente trabajo en nuevas mejoras, que incluirán:
 }
 .svg-responsive {
   width: 100%;
-  max-width: 400px;
+  max-width: 340px;
   height: auto;
   display: block;
   max-width: 100vw;
   max-height: 98vh;
 }
-.wave-anim {
-  stroke-dasharray: 900;
-  stroke-dashoffset: 0;
-  animation: waveBounce 4.47s infinite;
+/* Animación brazos */
+.arm-anim-left, .arm-anim-right {
   transform-origin: center;
-  animation-timing-function: cubic-bezier(.6,.2,.2,.8);
+  animation: typingArm 1.4s infinite alternate;
 }
-@keyframes waveBounce {
-  0% { transform: translateY(0px);}
-  18% { transform: translateY(-10px);}
-  40% { transform: translateY(7px);}
-  60% { transform: translateY(-4px);}
-  80% { transform: translateY(2px);}
-  100% { transform: translateY(0px);}
+.arm-anim-right {
+  animation-delay: .7s;
 }
-.laptop-anim {
-  animation: laptopGlow 2.3s infinite alternate;
+@keyframes typingArm {
+  0% { transform: rotate(0deg);}
+  60% { transform: rotate(8deg);}
+  100% { transform: rotate(0deg);}
 }
-@keyframes laptopGlow {
-  0% { filter: drop-shadow(0 0 0px #00e580);}
-  80% { filter: drop-shadow(0 0 14px #00e580);}
-  100% { filter: drop-shadow(0 0 0px #00e580);}
+/* Animación parpadeo pantalla */
+.screen-anim {
+  animation: screenBlink 1.5s infinite steps(2);
 }
-.code-anim {
-  animation: codeBlink 1.4s infinite steps(2);
-}
-@keyframes codeBlink {
-  0%,60%,100% { opacity: 1;}
-  50% { opacity: 0.22;}
-}
-.glow-anim-borders {
-  animation: glowPulse 2.7s infinite;
-}
-@keyframes glowPulse {
-  0%,100% { opacity: 1; }
-  50% { opacity: 0.83; }
-}
-.glow-anim-person {
-  opacity: 0.7;
-}
-text {
-  text-shadow: 0 1px 3px #fff4e0;
-}
-text[font-size="26"] {
-  text-shadow: 0 2px 8px #FFD70055;
+@keyframes screenBlink {
+  0%,100% { opacity: 1;}
+  50% { opacity: 0.7;}
 }
 </style>
 
 <div class="center-svg">
-  <svg class="svg-responsive" width="400" height="210" viewBox="0 0 400 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Banner multimedia: persona programando">
-    <title>Programando una Página Web</title>
-    <defs>
-      <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#f6f8fa" />
-        <stop offset="100%" stop-color="#fff4e0" />
-      </linearGradient>
-      <radialGradient id="glow-borders" cx="50%" cy="50%" r="80%">
-        <stop offset="0%" stop-color="#FFD700" stop-opacity="0.0"/>
-        <stop offset="68%" stop-color="#FFD700" stop-opacity="0.12"/>
-        <stop offset="98%" stop-color="#FFD700" stop-opacity="0.22"/>
-        <stop offset="100%" stop-color="#fff4e0" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="glow-person" cx="50%" cy="38%" r="55%">
-        <stop offset="0%" stop-color="#00e580" stop-opacity="0.23"/>
-        <stop offset="100%" stop-color="#fff4e0" stop-opacity="0"/>
-      </radialGradient>
-      <linearGradient id="laptop" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#fff"/>
-        <stop offset="100%" stop-color="#7c5fff"/>
-      </linearGradient>
-      <linearGradient id="code" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0%" stop-color="#7c5fff" />
-        <stop offset="100%" stop-color="#00e580" />
-      </linearGradient>
-      <linearGradient id="gold-detail" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0%" stop-color="#FFD700"/>
-        <stop offset="100%" stop-color="#fff4e0"/>
-      </linearGradient>
-    </defs>
-    <!-- Glow dorado animado por los bordes -->
-    <ellipse class="glow-anim-borders" cx="200" cy="105" rx="196" ry="104" fill="url(#glow-borders)" />
-    <!-- Fondo blanco degradado -->
-    <rect width="400" height="210" rx="32" fill="url(#bg)" />
-    <!-- Glow detrás de la persona programando -->
-    <ellipse class="glow-anim-person" cx="140" cy="70" rx="50" ry="23" fill="url(#glow-person)" />
-    <!-- Persona programando: cabeza, torso y brazos -->
-    <g>
-      <circle cx="140" cy="50" r="12" fill="#FFD700"/>
-      <rect x="132" y="62" width="16" height="22" rx="9" fill="#7c5fff"/>
-      <rect x="124" y="68" width="9" height="23" rx="4.5" fill="#00e580"/>
-      <rect x="147" y="68" width="9" height="23" rx="4.5" fill="#00e580"/>
-      <ellipse cx="140" cy="53" rx="4" ry="2" fill="#fff"/>
-      <!-- Cuello -->
-      <rect x="138" y="87" width="4" height="10" rx="2" fill="#FFD700"/>
-      <!-- Mano izquierda -->
-      <ellipse cx="127" cy="92" rx="3" ry="2" fill="#FFD700"/>
-      <!-- Mano derecha -->
-      <ellipse cx="153" cy="92" rx="3" ry="2" fill="#FFD700"/>
+  <svg class="svg-responsive" width="340" height="200" viewBox="0 0 340 200" xmlns="http://www.w3.org/2000/svg" aria-label="Persona programando en PC">
+    <title>Persona programando en PC</title>
+    <!-- Cabeza -->
+    <circle cx="120" cy="60" r="18" fill="#FFD700"/>
+    <!-- Cuerpo -->
+    <rect x="108" y="78" width="24" height="38" rx="12" fill="#7c5fff"/>
+    <!-- Brazo izquierdo animado -->
+    <g class="arm-anim-left">
+      <rect x="89" y="95" width="20" height="8" rx="4" fill="#00e580"/>
+      <ellipse cx="91" cy="99" rx="5" ry="4" fill="#FFD700"/>
     </g>
-    <!-- Laptop animada -->
-    <g class="laptop-anim">
-      <rect x="122" y="93" width="36" height="13" rx="5" fill="url(#laptop)" stroke="url(#gold-detail)" stroke-width="1.5"/>
-      <rect x="124" y="95" width="32" height="7" rx="3.5" fill="#22223b"/>
-      <!-- Líneas de código animadas -->
-      <rect class="code-anim" x="127" y="97" width="8" height="2" rx="1" fill="url(#code)" />
-      <rect class="code-anim" x="137" y="99" width="16" height="2" rx="1" fill="url(#code)" />
-      <rect class="code-anim" x="127" y="101" width="14" height="2" rx="1" fill="url(#code)" />
-      <rect x="145" y="103" width="10" height="2" rx="1" fill="#FFD700" />
+    <!-- Brazo derecho animado -->
+    <g class="arm-anim-right">
+      <rect x="132" y="95" width="20" height="8" rx="4" fill="#00e580"/>
+      <ellipse cx="150" cy="99" rx="5" ry="4" fill="#FFD700"/>
     </g>
-    <!-- Título central -->
-    <text x="200" y="105" text-anchor="middle" fill="#22223b" font-size="26" font-family="monospace" font-weight="bold">
-      Programando una Página Web
-    </text>
-    <text x="200" y="130" text-anchor="middle" fill="#FFD700" font-size="20" font-family="monospace" font-weight="bold">
-      Creatividad y código en acción
-    </text>
-    <text x="200" y="148" text-anchor="middle" fill="#00e580" font-size="17" font-family="monospace">
-      Frontend & Backend & UX/UI
-    </text>
-    <text x="200" y="166" text-anchor="middle" fill="#7c5fff" font-size="16" font-family="monospace">
-      💻  |  👨‍💻  |  🚀  |  📦  
-    </text>
-    <text x="200" y="190" text-anchor="middle" fill="#22223b" font-size="15" font-family="monospace">
-      Imagina, diseña y desarrolla tu web
-    </text>
-    <!-- Onda animada -->
-    <path class="wave-anim" d="M0,200 Q100,185 200,200 T400,200" fill="none" stroke="url(#code)" stroke-width="7"/>
+    <!-- PC portátil -->
+    <rect x="103" y="110" width="34" height="18" rx="4" fill="#22223b"/>
+    <rect x="106" y="113" width="28" height="10" rx="2" class="screen-anim" fill="#f6f8fa"/>
+    <!-- Línea de teclado -->
+    <rect x="110" y="125" width="20" height="2" rx="1" fill="#FFD700"/>
+    <!-- Silla (opcional, minimalista) -->
+    <rect x="116" y="150" width="12" height="22" rx="6" fill="#7c5fff" opacity="0.4"/>
   </svg>
 </div>
 
