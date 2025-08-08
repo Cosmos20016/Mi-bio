@@ -19,8 +19,15 @@ draft: false
 - Espacios abiertos para participar, compartir y debatir ideas.
 
 ## Próximas novedades
-Actualmente estoy trabajando en nuevas funcionalidades que pronto estarán disponibles:
 ---
+Actualmente estoy trabajando en nuevas funcionalidades que pronto estarán disponibles:
+
+```yaml
+Actualmente trabajo en nuevas mejoras, que incluirán:
+- Integración de contenido multimedia (videos, podcasts, etc).
+- Sección de comentarios y contacto directo.
+- Recursos exclusivos para la comunidad.
+```
 
 <style>
 .center-svg {
@@ -56,19 +63,19 @@ Actualmente estoy trabajando en nuevas funcionalidades que pronto estarán dispo
   100% { transform: translateY(0px);}
 }
 .laptop-anim {
-  animation: laptopGlow 2.2s infinite alternate;
+  animation: laptopGlow 2.3s infinite alternate;
 }
 @keyframes laptopGlow {
   0% { filter: drop-shadow(0 0 0px #00e580);}
-  80% { filter: drop-shadow(0 0 12px #00e580);}
+  80% { filter: drop-shadow(0 0 14px #00e580);}
   100% { filter: drop-shadow(0 0 0px #00e580);}
 }
 .code-anim {
-  animation: codeBlink 1.3s infinite steps(2);
+  animation: codeBlink 1.4s infinite steps(2);
 }
 @keyframes codeBlink {
   0%,60%,100% { opacity: 1;}
-  50% { opacity: 0.25;}
+  50% { opacity: 0.22;}
 }
 .glow-anim-borders {
   animation: glowPulse 2.7s infinite;
@@ -80,7 +87,6 @@ Actualmente estoy trabajando en nuevas funcionalidades que pronto estarán dispo
 .glow-anim-person {
   opacity: 0.7;
 }
-/* Sombra en textos para mejorar contraste */
 text {
   text-shadow: 0 1px 3px #fff4e0;
 }
@@ -90,26 +96,86 @@ text[font-size="26"] {
 </style>
 
 <div class="center-svg">
-<svg class="svg-responsive" width="400" height="210" viewBox="0 0 400 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Banner multimedia: persona programando">
-  <title>Programando una Página Web</title>
-  <defs>
-    <!-- Fondo degradado blanco-dorado -->
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#f6f8fa" />
-      <stop offset="100%" stop-color="#fff4e0" />
-    </linearGradient>
-    <!-- Glow radial para los bordes -->
-    <radialGradient id="glow-borders" cx="50%" cy="50%" r="80%">
-      <stop offset="0%" stop-color="#FFD700" stop-opacity="0.0"/>
-      <*
-
-
-```yaml
-Actualmente trabajo en nuevas mejoras, que incluirán:
-- Integración de contenido multimedia (videos, podcasts, etc).
-- Sección de comentarios y contacto directo.
-- Recursos exclusivos para la comunidad.
-```
+  <svg class="svg-responsive" width="400" height="210" viewBox="0 0 400 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Banner multimedia: persona programando">
+    <title>Programando una Página Web</title>
+    <defs>
+      <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#f6f8fa" />
+        <stop offset="100%" stop-color="#fff4e0" />
+      </linearGradient>
+      <radialGradient id="glow-borders" cx="50%" cy="50%" r="80%">
+        <stop offset="0%" stop-color="#FFD700" stop-opacity="0.0"/>
+        <stop offset="68%" stop-color="#FFD700" stop-opacity="0.12"/>
+        <stop offset="98%" stop-color="#FFD700" stop-opacity="0.22"/>
+        <stop offset="100%" stop-color="#fff4e0" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="glow-person" cx="50%" cy="38%" r="55%">
+        <stop offset="0%" stop-color="#00e580" stop-opacity="0.23"/>
+        <stop offset="100%" stop-color="#fff4e0" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="laptop" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#fff"/>
+        <stop offset="100%" stop-color="#7c5fff"/>
+      </linearGradient>
+      <linearGradient id="code" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#7c5fff" />
+        <stop offset="100%" stop-color="#00e580" />
+      </linearGradient>
+      <linearGradient id="gold-detail" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#FFD700"/>
+        <stop offset="100%" stop-color="#fff4e0"/>
+      </linearGradient>
+    </defs>
+    <!-- Glow dorado animado por los bordes -->
+    <ellipse class="glow-anim-borders" cx="200" cy="105" rx="196" ry="104" fill="url(#glow-borders)" />
+    <!-- Fondo blanco degradado -->
+    <rect width="400" height="210" rx="32" fill="url(#bg)" />
+    <!-- Glow detrás de la persona programando -->
+    <ellipse class="glow-anim-person" cx="140" cy="70" rx="50" ry="23" fill="url(#glow-person)" />
+    <!-- Persona programando: cabeza, torso y brazos -->
+    <g>
+      <circle cx="140" cy="50" r="12" fill="#FFD700"/>
+      <rect x="132" y="62" width="16" height="22" rx="9" fill="#7c5fff"/>
+      <rect x="124" y="68" width="9" height="23" rx="4.5" fill="#00e580"/>
+      <rect x="147" y="68" width="9" height="23" rx="4.5" fill="#00e580"/>
+      <ellipse cx="140" cy="53" rx="4" ry="2" fill="#fff"/>
+      <!-- Cuello -->
+      <rect x="138" y="87" width="4" height="10" rx="2" fill="#FFD700"/>
+      <!-- Mano izquierda -->
+      <ellipse cx="127" cy="92" rx="3" ry="2" fill="#FFD700"/>
+      <!-- Mano derecha -->
+      <ellipse cx="153" cy="92" rx="3" ry="2" fill="#FFD700"/>
+    </g>
+    <!-- Laptop animada -->
+    <g class="laptop-anim">
+      <rect x="122" y="93" width="36" height="13" rx="5" fill="url(#laptop)" stroke="url(#gold-detail)" stroke-width="1.5"/>
+      <rect x="124" y="95" width="32" height="7" rx="3.5" fill="#22223b"/>
+      <!-- Líneas de código animadas -->
+      <rect class="code-anim" x="127" y="97" width="8" height="2" rx="1" fill="url(#code)" />
+      <rect class="code-anim" x="137" y="99" width="16" height="2" rx="1" fill="url(#code)" />
+      <rect class="code-anim" x="127" y="101" width="14" height="2" rx="1" fill="url(#code)" />
+      <rect x="145" y="103" width="10" height="2" rx="1" fill="#FFD700" />
+    </g>
+    <!-- Título central -->
+    <text x="200" y="105" text-anchor="middle" fill="#22223b" font-size="26" font-family="monospace" font-weight="bold">
+      Programando una Página Web
+    </text>
+    <text x="200" y="130" text-anchor="middle" fill="#FFD700" font-size="20" font-family="monospace" font-weight="bold">
+      Creatividad y código en acción
+    </text>
+    <text x="200" y="148" text-anchor="middle" fill="#00e580" font-size="17" font-family="monospace">
+      Frontend & Backend & UX/UI
+    </text>
+    <text x="200" y="166" text-anchor="middle" fill="#7c5fff" font-size="16" font-family="monospace">
+      💻  |  👨‍💻  |  🚀  |  📦  
+    </text>
+    <text x="200" y="190" text-anchor="middle" fill="#22223b" font-size="15" font-family="monospace">
+      Imagina, diseña y desarrolla tu web
+    </text>
+    <!-- Onda animada -->
+    <path class="wave-anim" d="M0,200 Q100,185 200,200 T400,200" fill="none" stroke="url(#code)" stroke-width="7"/>
+  </svg>
+</div>
 
 ## Mi visión
 ---
