@@ -27,38 +27,33 @@ Actualmente estoy trabajando en nuevas funcionalidades que pronto estarán dispo
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 40vh;
+  min-height: 30vh;
   width: 100%;
 }
 .gear-anim {
-  animation: spinGear 2.4s linear infinite;
+  animation: spinGear 2.3s linear infinite;
   transform-origin: 50% 50%;
+  display: block;
 }
 @keyframes spinGear {
-  100% { transform: rotate(360deg); }
+  to { transform: rotate(360deg);}
 }
 </style>
 
 <div class="center-svg">
-  <svg class="gear-anim" width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="Engranaje girando">
+  <svg class="gear-anim" width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="Engranaje girando">
     <title>Engranaje girando</title>
-    <g>
-      <!-- Dientes del engranaje -->
-      <g>
-        <rect x="47" y="6" width="6" height="16" rx="3" fill="#FFD700"/>
-        <rect x="47" y="78" width="6" height="16" rx="3" fill="#FFD700"/>
-        <rect x="6" y="47" width="16" height="6" rx="3" fill="#FFD700"/>
-        <rect x="78" y="47" width="16" height="6" rx="3" fill="#FFD700"/>
-        <rect x="20" y="20" width="6" height="16" rx="3" transform="rotate(-45 23 28)" fill="#FFD700"/>
-        <rect x="74" y="20" width="6" height="16" rx="3" transform="rotate(45 77 28)" fill="#FFD700"/>
-        <rect x="20" y="74" width="6" height="16" rx="3" transform="rotate(45 23 82)" fill="#FFD700"/>
-        <rect x="74" y="74" width="6" height="16" rx="3" transform="rotate(-45 77 82)" fill="#FFD700"/>
-      </g>
-      <!-- Cuerpo del engranaje -->
-      <circle cx="50" cy="50" r="28" fill="#7c5fff" stroke="#FFD700" stroke-width="4"/>
-      <!-- Agujero central -->
-      <circle cx="50" cy="50" r="10" fill="#00e580"/>
-    </g>
+    <!-- Engranaje real estilizado, sin bordes ni fondos -->
+    <path
+      d="M32 12
+        L35 7 Q36 6 37 7 L41 12
+        Q43 13 45 13 L48 10 Q49 9 50 10 L54 14 Q55 15 54 16 L51 19 Q52 21 53 23 L58 24 Q59 24 59 25 L59 31 Q59 32 58 32 L53 33 Q52 35 51 37 L54 40 Q55 41 54 42 L50 46 Q49 47 48 46 L45 43 Q43 44 41 45 L37 49 Q36 50 35 49 L32 44 Q30 44 28 44 L25 49 Q24 50 23 49 L19 45 Q17 44 15 43 L12 46 Q11 47 10 46 L6 42 Q5 41 6 40 L9 37 Q8 35 7 33 L2 32 Q1 32 1 31 L1 25 Q1 24 2 24 L7 23 Q8 21 9 19 L6 16 Q5 15 6 14 L10 10 Q11 9 12 10 L15 13 Q17 13 19 12 L23 7 Q24 6 25 7 L28 12 Q30 12 32 12 Z
+        M32 20
+        A12 12 0 1 1 31.99 20"
+      fill="#666"
+    />
+    <!-- Agujero central -->
+    <circle cx="32" cy="32" r="6" fill="#bbb"/>
   </svg>
 </div>
 
