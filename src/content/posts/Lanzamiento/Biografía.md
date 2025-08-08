@@ -27,11 +27,11 @@ Actualmente estoy trabajando en nuevas funcionalidades que pronto estarán dispo
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 30vh;
+  min-height: 20vh;
   width: 100%;
 }
 .gear-anim {
-  animation: spinGear 2.3s linear infinite;
+  animation: spinGear 2s linear infinite;
   transform-origin: 50% 50%;
   display: block;
 }
@@ -41,19 +41,45 @@ Actualmente estoy trabajando en nuevas funcionalidades que pronto estarán dispo
 </style>
 
 <div class="center-svg">
-  <svg class="gear-anim" width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="Engranaje girando">
+  <svg class="gear-anim" width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-label="Engranaje girando">
     <title>Engranaje girando</title>
-    <!-- Engranaje real estilizado, sin bordes ni fondos -->
-    <path
-      d="M32 12
-        L35 7 Q36 6 37 7 L41 12
-        Q43 13 45 13 L48 10 Q49 9 50 10 L54 14 Q55 15 54 16 L51 19 Q52 21 53 23 L58 24 Q59 24 59 25 L59 31 Q59 32 58 32 L53 33 Q52 35 51 37 L54 40 Q55 41 54 42 L50 46 Q49 47 48 46 L45 43 Q43 44 41 45 L37 49 Q36 50 35 49 L32 44 Q30 44 28 44 L25 49 Q24 50 23 49 L19 45 Q17 44 15 43 L12 46 Q11 47 10 46 L6 42 Q5 41 6 40 L9 37 Q8 35 7 33 L2 32 Q1 32 1 31 L1 25 Q1 24 2 24 L7 23 Q8 21 9 19 L6 16 Q5 15 6 14 L10 10 Q11 9 12 10 L15 13 Q17 13 19 12 L23 7 Q24 6 25 7 L28 12 Q30 12 32 12 Z
-        M32 20
-        A12 12 0 1 1 31.99 20"
-      fill="#666"
-    />
-    <!-- Agujero central -->
-    <circle cx="32" cy="32" r="6" fill="#bbb"/>
+    <path d="M24 13
+      L26.2 7.5
+      A2 2 0 0 1 29.8 7.5
+      L32 13
+      A2 2 0 0 1 36.3 14.1
+      L39.9 10.7
+      A2 2 0 0 1 42.6 13.4
+      L39.2 17
+      A2 2 0 0 1 40.3 21.3
+      L45.8 23.5
+      A2 2 0 0 1 45.8 27.1
+      L40.3 29.3
+      A2 2 0 0 1 39.2 33.6
+      L42.6 37.2
+      A2 2 0 0 1 39.9 39.9
+      L36.3 36.5
+      A2 2 0 0 1 32 37.6
+      L29.8 43.1
+      A2 2 0 0 1 26.2 43.1
+      L24 37.6
+      A2 2 0 0 1 19.7 36.5
+      L16.1 39.9
+      A2 2 0 0 1 13.4 37.2
+      L16.8 33.6
+      A2 2 0 0 1 15.7 29.3
+      L10.2 27.1
+      A2 2 0 0 1 10.2 23.5
+      L15.7 21.3
+      A2 2 0 0 1 16.8 17
+      L13.4 13.4
+      A2 2 0 0 1 16.1 10.7
+      L19.7 14.1
+      A2 2 0 0 1 24 13
+      Z
+      M24 18
+      A6 6 0 1 1 23.99 18"
+      fill="#666"/>
   </svg>
 </div>
 
