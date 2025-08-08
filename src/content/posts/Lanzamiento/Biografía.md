@@ -22,13 +22,6 @@ draft: false
 ---
 Actualmente estoy trabajando en nuevas funcionalidades que pronto estarán disponibles:
 
-```yaml
-Actualmente trabajo en nuevas mejoras, que incluirán:
-- Integración de contenido multimedia (videos, podcasts, etc).
-- Sección de comentarios y contacto directo.
-- Recursos exclusivos para la comunidad.
-```
-
 <style>
 .center-svg {
   display: flex;
@@ -38,7 +31,7 @@ Actualmente trabajo en nuevas mejoras, que incluirán:
   width: 100%;
 }
 .gear-anim {
-  animation: spinGear 2s linear infinite;
+  animation: spinGear 2.4s linear infinite;
   transform-origin: 50% 50%;
 }
 @keyframes spinGear {
@@ -50,21 +43,31 @@ Actualmente trabajo en nuevas mejoras, que incluirán:
   <svg class="gear-anim" width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="Engranaje girando">
     <title>Engranaje girando</title>
     <g>
-      <circle cx="50" cy="50" r="22" fill="#FFD700"/>
+      <!-- Dientes del engranaje -->
       <g>
-        <rect x="48" y="12" width="4" height="16" rx="2" fill="#7c5fff"/>
-        <rect x="48" y="72" width="4" height="16" rx="2" fill="#7c5fff"/>
-        <rect x="12" y="48" width="16" height="4" rx="2" fill="#7c5fff"/>
-        <rect x="72" y="48" width="16" height="4" rx="2" fill="#7c5fff"/>
-        <rect x="23" y="23" width="4" height="16" rx="2" transform="rotate(-45 25 31)" fill="#7c5fff"/>
-        <rect x="73" y="23" width="4" height="16" rx="2" transform="rotate(45 75 31)" fill="#7c5fff"/>
-        <rect x="23" y="73" width="4" height="16" rx="2" transform="rotate(45 25 81)" fill="#7c5fff"/>
-        <rect x="73" y="73" width="4" height="16" rx="2" transform="rotate(-45 75 81)" fill="#7c5fff"/>
+        <rect x="47" y="6" width="6" height="16" rx="3" fill="#FFD700"/>
+        <rect x="47" y="78" width="6" height="16" rx="3" fill="#FFD700"/>
+        <rect x="6" y="47" width="16" height="6" rx="3" fill="#FFD700"/>
+        <rect x="78" y="47" width="16" height="6" rx="3" fill="#FFD700"/>
+        <rect x="20" y="20" width="6" height="16" rx="3" transform="rotate(-45 23 28)" fill="#FFD700"/>
+        <rect x="74" y="20" width="6" height="16" rx="3" transform="rotate(45 77 28)" fill="#FFD700"/>
+        <rect x="20" y="74" width="6" height="16" rx="3" transform="rotate(45 23 82)" fill="#FFD700"/>
+        <rect x="74" y="74" width="6" height="16" rx="3" transform="rotate(-45 77 82)" fill="#FFD700"/>
       </g>
+      <!-- Cuerpo del engranaje -->
+      <circle cx="50" cy="50" r="28" fill="#7c5fff" stroke="#FFD700" stroke-width="4"/>
+      <!-- Agujero central -->
       <circle cx="50" cy="50" r="10" fill="#00e580"/>
     </g>
   </svg>
 </div>
+
+```yaml
+Actualmente trabajo en nuevas mejoras, que incluirán:
+- Integración de contenido multimedia (videos, podcasts, etc).
+- Sección de comentarios y contacto directo.
+- Recursos exclusivos para la comunidad.
+```
 
 ## Mi visión
 ---
