@@ -8,31 +8,113 @@ category: Lanzamiento oficial
 draft: false
 ---
 
-¡Hola! Soy Kevin Borja y te doy la bienvenida a mi web: **Kevinborja.com**. Este espacio nace de mi pasión por la tecnología, el desarrollo web y la curiosidad constante. Aquí comparto proyectos, experimentos, ideas y recursos. Quiero que este sitio sea un punto de encuentro para quienes buscan aprender, colaborar y crecer.
+¡Hola! Soy Kevin Borja, y te doy la bienvenida a mi sitio web: Kevinborja.com. Este espacio surge de mi entusiasmo por la tecnología y el desarrollo web, acompañado de una curiosidad que nunca termina. Aquí encontrarás proyectos, experimentos, ideas y recursos que comparto con la intención de aportar y conectar con personas como tú.
 
-## ¿Qué podrás encontrar?
+## ¿Qué encontrarás aquí?
 ---
 
-- Contenido entretenido y educativo.
+- Contenido educativo y entretenido pensado para inspirar y facilitar el aprendizaje.
 - Herramientas prácticas y guías útiles.
-- Un blog interactivo con tutoriales, reflexiones y experiencias en desarrollo web, tecnología y temas afines.
-- Espacios para la participación y el intercambio de ideas.
+- Un blog interactivo con tutoriales, reflexiones y experiencias, tecnología y temas afines.
+- Espacios abiertos para participar, compartir y debatir ideas.
 
-## Próximas funcionalidades
+## Próximas novedades
+Actualmente estoy trabajando en nuevas funcionalidades que pronto estarán disponibles:
 ---
+
+<style>
+.center-svg {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 54vh;
+  width: 100%;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+.svg-responsive {
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+  display: block;
+  max-width: 100vw;
+  max-height: 98vh;
+}
+.wave-anim {
+  stroke-dasharray: 900;
+  stroke-dashoffset: 0;
+  animation: waveBounce 4.47s infinite;
+  transform-origin: center;
+  animation-timing-function: cubic-bezier(.6,.2,.2,.8);
+}
+@keyframes waveBounce {
+  0% { transform: translateY(0px);}
+  18% { transform: translateY(-10px);}
+  40% { transform: translateY(7px);}
+  60% { transform: translateY(-4px);}
+  80% { transform: translateY(2px);}
+  100% { transform: translateY(0px);}
+}
+.laptop-anim {
+  animation: laptopGlow 2.2s infinite alternate;
+}
+@keyframes laptopGlow {
+  0% { filter: drop-shadow(0 0 0px #00e580);}
+  80% { filter: drop-shadow(0 0 12px #00e580);}
+  100% { filter: drop-shadow(0 0 0px #00e580);}
+}
+.code-anim {
+  animation: codeBlink 1.3s infinite steps(2);
+}
+@keyframes codeBlink {
+  0%,60%,100% { opacity: 1;}
+  50% { opacity: 0.25;}
+}
+.glow-anim-borders {
+  animation: glowPulse 2.7s infinite;
+}
+@keyframes glowPulse {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.83; }
+}
+.glow-anim-person {
+  opacity: 0.7;
+}
+/* Sombra en textos para mejorar contraste */
+text {
+  text-shadow: 0 1px 3px #fff4e0;
+}
+text[font-size="26"] {
+  text-shadow: 0 2px 8px #FFD70055;
+}
+</style>
+
+<div class="center-svg">
+<svg class="svg-responsive" width="400" height="210" viewBox="0 0 400 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Banner multimedia: persona programando">
+  <title>Programando una Página Web</title>
+  <defs>
+    <!-- Fondo degradado blanco-dorado -->
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f6f8fa" />
+      <stop offset="100%" stop-color="#fff4e0" />
+    </linearGradient>
+    <!-- Glow radial para los bordes -->
+    <radialGradient id="glow-borders" cx="50%" cy="50%" r="80%">
+      <stop offset="0%" stop-color="#FFD700" stop-opacity="0.0"/>
+      <*
+
 
 ```yaml
 Actualmente trabajo en nuevas mejoras, que incluirán:
 - Integración de contenido multimedia (videos, podcasts, etc).
 - Sección de comentarios y contacto directo.
-- Incorporación de tecnologías emergentes.
 - Recursos exclusivos para la comunidad.
 ```
 
 ## Mi visión
 ---
 
-> "Deseo que **Kevinborja.com** sea una web viva, en constante evolución. Lo que ves ahora es solo el comienzo: mi meta es seguir sumando valor, creciendo y ofreciendo contenido relevante para ti."
+> "Quiero que Kevinborja.com sea un espacio dinámico, en constante evolución. Lo que ves ahora es solo el inicio; mi objetivo es continuar creciendo, aportando valor y creando contenido relevante."
 
 Espero que disfrutes la experiencia y te sumes a esta aventura. ¡Gracias por tu visita y bienvenido/a!
 
