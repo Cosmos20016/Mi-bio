@@ -193,7 +193,7 @@ text[font-size="26"] {
     Descubre, aprende y sonríe
   </text>
   <text x="200" y="148" text-anchor="middle" fill="#00e580" font-size="17" font-family="monospace">
-    🚀 Innovador & chill
+    Innovador & chill
   </text>
   <text x="200" y="166" text-anchor="middle" fill="#7c5fff" font-size="16" font-family="monospace">
     🎨  |  🎵  |  🤓  |  🎬  
