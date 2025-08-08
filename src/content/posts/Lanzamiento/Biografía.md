@@ -34,66 +34,35 @@ Actualmente trabajo en nuevas mejoras, que incluirán:
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 54vh;
+  min-height: 40vh;
   width: 100%;
-  padding: 0 10px;
-  box-sizing: border-box;
 }
-.svg-responsive {
-  width: 100%;
-  max-width: 340px;
-  height: auto;
-  display: block;
-  max-width: 100vw;
-  max-height: 98vh;
+.gear-anim {
+  animation: spinGear 2s linear infinite;
+  transform-origin: 50% 50%;
 }
-/* Animación brazos */
-.arm-anim-left, .arm-anim-right {
-  transform-origin: center;
-  animation: typingArm 1.4s infinite alternate;
-}
-.arm-anim-right {
-  animation-delay: .7s;
-}
-@keyframes typingArm {
-  0% { transform: rotate(0deg);}
-  60% { transform: rotate(8deg);}
-  100% { transform: rotate(0deg);}
-}
-/* Animación parpadeo pantalla */
-.screen-anim {
-  animation: screenBlink 1.5s infinite steps(2);
-}
-@keyframes screenBlink {
-  0%,100% { opacity: 1;}
-  50% { opacity: 0.7;}
+@keyframes spinGear {
+  100% { transform: rotate(360deg); }
 }
 </style>
 
 <div class="center-svg">
-  <svg class="svg-responsive" width="340" height="200" viewBox="0 0 340 200" xmlns="http://www.w3.org/2000/svg" aria-label="Persona programando en PC">
-    <title>Persona programando en PC</title>
-    <!-- Cabeza -->
-    <circle cx="120" cy="60" r="18" fill="#FFD700"/>
-    <!-- Cuerpo -->
-    <rect x="108" y="78" width="24" height="38" rx="12" fill="#7c5fff"/>
-    <!-- Brazo izquierdo animado -->
-    <g class="arm-anim-left">
-      <rect x="89" y="95" width="20" height="8" rx="4" fill="#00e580"/>
-      <ellipse cx="91" cy="99" rx="5" ry="4" fill="#FFD700"/>
+  <svg class="gear-anim" width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="Engranaje girando">
+    <title>Engranaje girando</title>
+    <g>
+      <circle cx="50" cy="50" r="22" fill="#FFD700"/>
+      <g>
+        <rect x="48" y="12" width="4" height="16" rx="2" fill="#7c5fff"/>
+        <rect x="48" y="72" width="4" height="16" rx="2" fill="#7c5fff"/>
+        <rect x="12" y="48" width="16" height="4" rx="2" fill="#7c5fff"/>
+        <rect x="72" y="48" width="16" height="4" rx="2" fill="#7c5fff"/>
+        <rect x="23" y="23" width="4" height="16" rx="2" transform="rotate(-45 25 31)" fill="#7c5fff"/>
+        <rect x="73" y="23" width="4" height="16" rx="2" transform="rotate(45 75 31)" fill="#7c5fff"/>
+        <rect x="23" y="73" width="4" height="16" rx="2" transform="rotate(45 25 81)" fill="#7c5fff"/>
+        <rect x="73" y="73" width="4" height="16" rx="2" transform="rotate(-45 75 81)" fill="#7c5fff"/>
+      </g>
+      <circle cx="50" cy="50" r="10" fill="#00e580"/>
     </g>
-    <!-- Brazo derecho animado -->
-    <g class="arm-anim-right">
-      <rect x="132" y="95" width="20" height="8" rx="4" fill="#00e580"/>
-      <ellipse cx="150" cy="99" rx="5" ry="4" fill="#FFD700"/>
-    </g>
-    <!-- PC portátil -->
-    <rect x="103" y="110" width="34" height="18" rx="4" fill="#22223b"/>
-    <rect x="106" y="113" width="28" height="10" rx="2" class="screen-anim" fill="#f6f8fa"/>
-    <!-- Línea de teclado -->
-    <rect x="110" y="125" width="20" height="2" rx="1" fill="#FFD700"/>
-    <!-- Silla (opcional, minimalista) -->
-    <rect x="116" y="150" width="12" height="22" rx="6" fill="#7c5fff" opacity="0.4"/>
   </svg>
 </div>
 
