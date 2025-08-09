@@ -21,17 +21,17 @@ draft: false
   max-width: 98vw;
   height: 340px;
 }
-@keyframes electron-rotate1 {
+@keyframes electron-ellipse1 {
   from { transform: rotate(0deg);}
   to   { transform: rotate(360deg);}
 }
-@keyframes electron-rotate2 {
-  from { transform: rotate(120deg);}
-  to   { transform: rotate(480deg);}
+@keyframes electron-ellipse2 {
+  from { transform: rotate(0deg);}
+  to   { transform: rotate(360deg);}
 }
-@keyframes electron-rotate3 {
-  from { transform: rotate(240deg);}
-  to   { transform: rotate(600deg);}
+@keyframes electron-ellipse3 {
+  from { transform: rotate(0deg);}
+  to   { transform: rotate(360deg);}
 }
 @keyframes nucleus-pulse {
   0%,100% { filter: drop-shadow(0 0 10px #65e3ff);}
@@ -40,16 +40,24 @@ draft: false
 .nucleus-anim {
   animation: nucleus-pulse 2.8s infinite;
 }
-.electron1, .electron2, .electron3 {
+.electron1 {
+  animation: electron-ellipse1 6s linear infinite;
   transform-box: fill-box;
   transform-origin: 170px 170px;
 }
-.electron1 { animation: electron-rotate1 6s linear infinite;}
-.electron2 { animation: electron-rotate2 8s linear infinite;}
-.electron3 { animation: electron-rotate3 10s linear infinite;}
+.electron2 {
+  animation: electron-ellipse2 8s linear infinite;
+  transform-box: fill-box;
+  transform-origin: 170px 170px;
+}
+.electron3 {
+  animation: electron-ellipse3 10s linear infinite;
+  transform-box: fill-box;
+  transform-origin: 170px 170px;
+}
 </style>
 
-<svg class="atom-svg" viewBox="0 0 340 340" xmlns="http://www.w3.org/2000/svg" aria-label="Átomo avanzado animado">
+<svg class="atom-svg" viewBox="0 0 340 340" xmlns="http://www.w3.org/2000/svg" aria-label="Átomo con electrones siguiendo órbitas elípticas">
   <defs>
     <radialGradient id="nucleus-gradient" cx="50%" cy="50%" r="50%">
       <stop offset="0%" stop-color="#65e3ff"/>
@@ -68,15 +76,18 @@ draft: false
   <ellipse transform="rotate(60 170 170)" cx="170" cy="170" rx="110" ry="38" fill="none" stroke="url(#orbit-gradient)" stroke-width="3"/>
   <!-- Núcleo animado -->
   <circle class="nucleus-anim" cx="170" cy="170" r="30" fill="url(#nucleus-gradient)" />
-  <!-- Electrones orbitando -->
+  <!-- Electrones orbitando LAS ELIPSES -->
+  <!-- Elipse horizontal -->
   <g class="electron1">
     <circle cx="280" cy="170" r="9" fill="#65e3ff" stroke="#fff" stroke-width="2"/>
   </g>
+  <!-- Elipse vertical -->
   <g class="electron2">
     <circle cx="170" cy="60" r="9" fill="#9d7bff" stroke="#fff" stroke-width="2"/>
   </g>
-  <g class="electron3">
-    <circle cx="60" cy="170" r="9" fill="#ff6ec7" stroke="#fff" stroke-width="2"/>
+  <!-- Elipse inclinada -->
+  <g class="electron3" style="transform: rotate(60deg); animation: electron-ellipse3 10s linear infinite;">
+    <circle cx="280" cy="170" r="9" fill="#ff6ec7" stroke="#fff" stroke-width="2"/>
   </g>
   <!-- Sombra y profundidad -->
   <ellipse cx="170" cy="260" rx="40" ry="12" fill="#22223b" opacity="0.13"/>
