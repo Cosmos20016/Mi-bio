@@ -21,18 +21,6 @@ draft: false
   max-width: 98vw;
   height: 340px;
 }
-@keyframes electron-rotate1 {
-  from { transform: rotate(0deg);}
-  to   { transform: rotate(360deg);}
-}
-@keyframes electron-rotate2 {
-  from { transform: rotate(90deg);}
-  to   { transform: rotate(450deg);}
-}
-@keyframes electron-rotate3 {
-  from { transform: rotate(180deg);}
-  to   { transform: rotate(540deg);}
-}
 @keyframes nucleus-pulse {
   0%,100% { filter: drop-shadow(0 0 10px #65e3ff); }
   50%     { filter: drop-shadow(0 0 22px #9d7bff);}
@@ -40,21 +28,24 @@ draft: false
 .nucleus-anim {
   animation: nucleus-pulse 2.8s infinite;
 }
-.electron1 { 
-  transform-box: fill-box; transform-origin: 50% 50%;
-  animation: electron-rotate1 6s linear infinite;
+.electron {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
 }
-.electron2 { 
-  transform-box: fill-box; transform-origin: 50% 50%;
-  animation: electron-rotate2 8s linear infinite;
-}
-.electron3 { 
-  transform-box: fill-box; transform-origin: 50% 50%;
-  animation: electron-rotate3 10s linear infinite;
-}
+.electron1 { animation: electron-rotate1 6s linear infinite; }
+.electron2 { animation: electron-rotate2 7.2s linear infinite; }
+.electron3 { animation: electron-rotate3 8.4s linear infinite; }
+.electron4 { animation: electron-rotate4 9.6s linear infinite; }
+.electron5 { animation: electron-rotate5 10.8s linear infinite; }
+
+@keyframes electron-rotate1 { from { transform: rotate(0deg);}   to { transform: rotate(360deg);} }
+@keyframes electron-rotate2 { from { transform: rotate(72deg);}  to { transform: rotate(432deg);} }
+@keyframes electron-rotate3 { from { transform: rotate(144deg);} to { transform: rotate(504deg);} }
+@keyframes electron-rotate4 { from { transform: rotate(216deg);} to { transform: rotate(576deg);} }
+@keyframes electron-rotate5 { from { transform: rotate(288deg);} to { transform: rotate(648deg);} }
 </style>
 
-<svg class="atom-svg" viewBox="0 0 340 340" xmlns="http://www.w3.org/2000/svg" aria-label="Átomo avanzado animado">
+<svg class="atom-svg" viewBox="0 0 340 340" xmlns="http://www.w3.org/2000/svg" aria-label="Átomo con cinco electrones animados">
   <defs>
     <radialGradient id="nucleus-gradient" cx="50%" cy="50%" r="50%">
       <stop offset="0%" stop-color="#65e3ff"/>
@@ -62,9 +53,9 @@ draft: false
       <stop offset="100%" stop-color="#ff6ec7"/>
     </radialGradient>
     <linearGradient id="orbit-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#65e3ff" stop-opacity="0.1"/>
-      <stop offset="50%" stop-color="#9d7bff" stop-opacity="0.3"/>
-      <stop offset="100%" stop-color="#ff6ec7" stop-opacity="0.2"/>
+      <stop offset="0%" stop-color="#65e3ff" stop-opacity="0.13"/>
+      <stop offset="50%" stop-color="#9d7bff" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#ff6ec7" stop-opacity="0.17"/>
     </linearGradient>
   </defs>
   <!-- Órbitas -->
@@ -73,15 +64,21 @@ draft: false
   <ellipse transform="rotate(60 170 170)" cx="170" cy="170" rx="110" ry="38" fill="none" stroke="url(#orbit-gradient)" stroke-width="3"/>
   <!-- Núcleo animado -->
   <circle class="nucleus-anim" cx="170" cy="170" r="30" fill="url(#nucleus-gradient)" />
-  <!-- Electrones animados -->
-  <g class="electron1">
+  <!-- Cinco electrones girando -->
+  <g class="electron electron1">
     <circle cx="280" cy="170" r="9" fill="#65e3ff" stroke="#fff" stroke-width="2"/>
   </g>
-  <g class="electron2">
-    <circle cx="170" cy="60" r="9" fill="#9d7bff" stroke="#fff" stroke-width="2"/>
+  <g class="electron electron2">
+    <circle cx="223" cy="80" r="9" fill="#9d7bff" stroke="#fff" stroke-width="2"/>
   </g>
-  <g class="electron3">
-    <circle cx="60" cy="170" r="9" fill="#ff6ec7" stroke="#fff" stroke-width="2"/>
+  <g class="electron electron3">
+    <circle cx="117" cy="80" r="9" fill="#ff6ec7" stroke="#fff" stroke-width="2"/>
+  </g>
+  <g class="electron electron4">
+    <circle cx="60" cy="170" r="9" fill="#00e580" stroke="#fff" stroke-width="2"/>
+  </g>
+  <g class="electron electron5">
+    <circle cx="117" cy="260" r="9" fill="#FFD700" stroke="#fff" stroke-width="2"/>
   </g>
   <!-- Sombra y profundidad -->
   <ellipse cx="170" cy="260" rx="40" ry="12" fill="#22223b" opacity="0.13"/>
