@@ -23,7 +23,6 @@ draft: false
 Actualmente estoy trabajando en nuevas funcionalidades que pronto estarán disponibles:
 
 ```yaml
-Actualmente trabajo en nuevas mejoras, que incluirán:
 - Integración de contenido multimedia (videos, podcasts, etc).
 - Sección de comentarios y contacto directo.
 - Recursos exclusivos para la comunidad.
