@@ -33,8 +33,6 @@ Actualmente estoy trabajando en nuevas funcionalidades que pronto estarán dispo
 
 > "Quiero que Kevinborja.com sea un espacio dinámico, en constante evolución. Lo que ves ahora es solo el inicio; mi objetivo es continuar creciendo, aportando valor y creando contenido relevante."
 
-Espero que disfrutes la experiencia y te sumes a esta aventura. ¡Gracias por tu visita y bienvenido/a!
-
 <style>
 .center-svg {
   display: flex;
@@ -220,3 +218,5 @@ text[font-size="26"] {
   </g>
 </svg>
 </div>
+
+Espero que disfrutes la experiencia y te sumes a esta aventura. ¡Gracias por tu visita y bienvenido/a!
