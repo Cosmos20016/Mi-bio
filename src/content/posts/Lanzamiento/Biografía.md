@@ -13,105 +13,106 @@ draft: false
 ## ¿Qué encontrarás aquí?
 ---
 
-<svg class="svg-responsive" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
-    <!-- Anillos orbitales con animación de onda -->
-    <g class="wave-anim" stroke="url(#gradient-ring)" stroke-width="4" fill="none" stroke-linecap="round" stroke-dasharray="20,10">
-        <path d="M400,300 m-200,0 a200,200 0 1,0 400,0 a200,200 0 1,0 -400,0"/>
-        <path d="M400,300 m-150,0 a150,150 0 1,0 300,0 a150,150 0 1,0 -300,0"/>
-        <path d="M400,300 m-250,0 a250,250 0 1,0 500,0 a250,250 0 1,0 -500,0"/>
-    </g>
-    
-    <!-- Núcleo energético principal -->
-    <g transform="translate(400,300)">
-        <!-- Hexágonos internos con glow -->
-        <g class="glow-anim-borders" stroke="#65e3ff" stroke-width="0.8" fill="none" stroke-opacity="0.3">
-            <path d="M0,-60 L51.96,-30 L51.96,30 L0,60 L-51.96,30 L-51.96,-30 Z"/>
-            <path d="M0,-40 L34.64,-20 L34.64,20 L0,40 L-34.64,20 L-34.64,-20 Z"/>
-            <path d="M0,-20 L17.32,-10 L17.32,10 L0,20 L-17.32,10 L-17.32,-10 Z"/>
-        </g>
-        
-        <!-- Rejilla interna con glow robot -->
-        <g class="glow-anim-robot" stroke="#9d7bff" stroke-width="0.5" stroke-opacity="0.4">
-            <line x1="0" y1="-60" x2="0" y2="60"/>
-            <line x1="-51.96" y1="-30" x2="51.96" y2="30"/>
-            <line x1="-51.96" y1="30" x2="51.96" y2="-30"/>
-            <line x1="0" y1="-60" x2="51.96" y2="-30"/>
-            <line x1="0" y1="-60" x2="-51.96" y2="-30"/>
-            <line x1="51.96" y1="-30" x2="51.96" y2="30"/>
-            <line x1="51.96" y1="30" x2="0" y2="60"/>
-            <line x1="0" y1="60" x2="-51.96" y2="30"/>
-            <line x1="-51.96" y1="30" x2="-51.96" y2="-30"/>
-        </g>
-        
-        <!-- Esfera central con animación de auriculares -->
-        <circle class="headphone-emoji" r="60" fill="url(#quantum-core)" stroke="url(#core-glow)" stroke-width="3"/>
-        
-        <!-- Partículas con animación de cohete -->
-        <circle class="rocket-anim" cx="0" cy="0" r="2" fill="#65e3ff" transform="translate(20,0)"/>
-        <circle class="rocket-anim" cx="0" cy="0" r="2" fill="#9d7bff" transform="translate(0,25)" style="animation-delay: 0.5s"/>
-        <circle class="rocket-anim" cx="0" cy="0" r="2" fill="#ff6ec7" transform="translate(-30,0)" style="animation-delay: 1s"/>
-        
-        <!-- Anillo de energía con llama -->
-        <g transform="rotate(0)">
-            <circle r="80" fill="none" stroke="url(#ring-gradient)" stroke-width="3" stroke-dasharray="10,15"/>
-            <g transform="rotate(0)">
-                <circle class="flame-anim" cx="80" cy="0" r="5" fill="#65e3ff"/>
-            </g>
-        </g>
-        
-        <!-- Rayos de energía con animación de llama -->
-        <g class="flame-anim" stroke="url(#gradient-ray)" stroke-width="3" stroke-linecap="round">
-            <line x1="-80" y1="0" x2="-180" y2="0"/>
-            <line x1="80" y1="0" x2="180" y2="0"/>
-            <line x1="0" y1="-80" x2="0" y2="-180"/>
-            <line x1="0" y1="80" x2="0" y2="180"/>
-            <line x1="-56.6" y1="-56.6" x2="-141.4" y2="-141.4"/>
-            <line x1="56.6" y1="56.6" x2="141.4" y2="141.4"/>
-        </g>
-    </g>
-    
-    <!-- Texto de título con sombra -->
-    <text class="glow-anim-borders" x="400" y="100" text-anchor="middle" font-size="26" fill="#65e3ff" font-family="Arial, sans-serif">
-        Kevinborja.com
-    </text>
-    
-    <!-- Texto descriptivo -->
-    <text x="400" y="530" text-anchor="middle" font-size="18" fill="#9d7bff" font-family="Arial, sans-serif">
-        Música, Videos y Podcasts
-    </text>
-    
-    <!-- Gradientes -->
-    <defs>
-        <radialGradient id="quantum-core" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-            <stop offset="0%" stop-color="#65e3ff" stop-opacity="0.9"/>
-            <stop offset="40%" stop-color="#9d7bff" stop-opacity="0.7"/>
-            <stop offset="70%" stop-color="#ff6ec7" stop-opacity="0.5"/>
-            <stop offset="100%" stop-color="#0a1128" stop-opacity="0"/>
-        </radialGradient>
-        
-        <linearGradient id="core-glow" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#65e3ff"/>
-            <stop offset="100%" stop-color="#ff6ec7"/>
-        </linearGradient>
-        
-        <linearGradient id="gradient-ray" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#65e3ff" stop-opacity="0.8"/>
-            <stop offset="100%" stop-color="#ff6ec7" stop-opacity="0.2"/>
-        </linearGradient>
-        
-        <linearGradient id="gradient-ring" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#65e3ff"/>
-            <stop offset="50%" stop-color="#9d7bff" stop-opacity="0.7"/>
-            <stop offset="100%" stop-color="#ff6ec7" stop-opacity="0.4"/>
-        </linearGradient>
-        
-        <linearGradient id="ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#65e3ff"/>
-            <stop offset="50%" stop-color="#9d7bff"/>
-            <stop offset="100%" stop-color="#ff6ec7"/>
-        </linearGradient>
-    </defs>
+<style>
+.center-svg {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 30vh;
+}
+.svg-anim {
+  width: 380px;
+  height: 180px;
+  max-width: 98vw;
+  display: block;
+}
+.book-anim {
+  animation: bookOpen 2.5s infinite alternate;
+  transform-origin: 60px 90px;
+}
+@keyframes bookOpen {
+  0% { transform: scaleY(1);}
+  100% { transform: scaleY(1.07);}
+}
+.wrench-anim {
+  animation: wrenchMove 2.2s infinite alternate;
+  transform-origin: 110px 60px;
+}
+@keyframes wrenchMove {
+  0% { transform: rotate(-8deg);}
+  100% { transform: rotate(8deg);}
+}
+.screen-anim {
+  animation: screenPulse 1.8s infinite alternate;
+}
+@keyframes screenPulse {
+  0% { filter: drop-shadow(0 0 0px #65e3ff);}
+  100% { filter: drop-shadow(0 0 12px #65e3ff);}
+}
+.bubble-anim1 {
+  animation: bubbleFloat1 3.2s infinite alternate;
+}
+.bubble-anim2 {
+  animation: bubbleFloat2 3.5s infinite alternate;
+}
+.bubble-anim3 {
+  animation: bubbleFloat3 3.8s infinite alternate;
+}
+@keyframes bubbleFloat1 {
+  0% { transform: translateY(0);}
+  100% { transform: translateY(-7px);}
+}
+@keyframes bubbleFloat2 {
+  0% { transform: translateY(0);}
+  100% { transform: translateY(-11px);}
+}
+@keyframes bubbleFloat3 {
+  0% { transform: translateY(0);}
+  100% { transform: translateY(-5px);}
+}
+</style>
+
+<div class="center-svg">
+<svg class="svg-anim" viewBox="0 0 380 180" xmlns="http://www.w3.org/2000/svg" aria-label="Ilustración de secciones web">
+  <!-- Libro abierto, contenido educativo -->
+  <g class="book-anim">
+    <rect x="40" y="80" width="40" height="28" rx="7" fill="#FFD700"/>
+    <rect x="80" y="80" width="40" height="28" rx="7" fill="#fff"/>
+    <line x1="60" y1="90" x2="80" y2="90" stroke="#7c5fff" stroke-width="2"/>
+    <line x1="100" y1="90" x2="120" y2="90" stroke="#7c5fff" stroke-width="2"/>
+    <line x1="60" y1="100" x2="80" y2="100" stroke="#00e580" stroke-width="2"/>
+    <line x1="100" y1="100" x2="120" y2="100" stroke="#00e580" stroke-width="2"/>
+  </g>
+  <!-- Llave inglesa, herramientas prácticas -->
+  <g class="wrench-anim">
+    <rect x="110" y="55" width="32" height="10" rx="5" fill="#7c5fff"/>
+    <circle cx="142" cy="60" r="7" fill="#FFD700"/>
+    <rect x="110" y="60" width="28" height="7" rx="3.5" fill="#00e580"/>
+    <rect x="116" y="53" width="13" height="5" rx="2.5" fill="#fff"/>
+  </g>
+  <!-- Pantalla blog interactivo -->
+  <g class="screen-anim">
+    <rect x="180" y="50" width="60" height="40" rx="9" fill="#fff" stroke="#7c5fff" stroke-width="2"/>
+    <rect x="190" y="60" width="40" height="7" rx="3.5" fill="#FFD700"/>
+    <rect x="190" y="70" width="28" height="5" rx="2.5" fill="#00e580"/>
+    <rect x="190" y="78" width="14" height="4" rx="2" fill="#9d7bff"/>
+  </g>
+  <!-- Burbujas de diálogo, espacio para debatir -->
+  <g>
+    <ellipse class="bubble-anim1" cx="295" cy="70" rx="16" ry="11" fill="#65e3ff" opacity="0.85"/>
+    <ellipse class="bubble-anim2" cx="325" cy="60" rx="14" ry="10" fill="#ff6ec7" opacity="0.8"/>
+    <ellipse class="bubble-anim3" cx="310" cy="95" rx="13" ry="9" fill="#9d7bff" opacity="0.7"/>
+    <circle cx="290" cy="80" r="2.7" fill="#fff"/>
+    <circle cx="320" cy="66" r="2.7" fill="#fff"/>
+    <circle cx="310" cy="105" r="2.7" fill="#fff"/>
+  </g>
+  <!-- Texto descriptivo -->
+  <text x="190" y="150" text-anchor="middle" fill="#22223b" font-size="18" font-family="monospace" font-weight="bold">
+    Aprende, comparte y participa
+  </text>
 </svg>
+</div>
 
 - Contenido educativo y entretenido pensado para inspirar y facilitar el aprendizaje.
 - Herramientas prácticas y guías útiles.
