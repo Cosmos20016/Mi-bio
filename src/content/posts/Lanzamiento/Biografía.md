@@ -22,15 +22,12 @@ draft: false
   height: 340px;
 }
 @keyframes electron-ellipse1 {
-  from { transform: rotate(0deg);}
   to   { transform: rotate(360deg);}
 }
 @keyframes electron-ellipse2 {
-  from { transform: rotate(0deg);}
   to   { transform: rotate(360deg);}
 }
 @keyframes electron-ellipse3 {
-  from { transform: rotate(0deg);}
   to   { transform: rotate(360deg);}
 }
 @keyframes nucleus-pulse {
@@ -57,7 +54,7 @@ draft: false
 }
 </style>
 
-<svg class="atom-svg" viewBox="0 0 340 340" xmlns="http://www.w3.org/2000/svg" aria-label="Átomo con electrones siguiendo órbitas elípticas">
+<svg class="atom-svg" viewBox="0 0 340 340" xmlns="http://www.w3.org/2000/svg" aria-label="Átomo con electrones siguiendo órbitas elípticas cerca del núcleo">
   <defs>
     <radialGradient id="nucleus-gradient" cx="50%" cy="50%" r="50%">
       <stop offset="0%" stop-color="#65e3ff"/>
@@ -70,27 +67,27 @@ draft: false
       <stop offset="100%" stop-color="#ff6ec7" stop-opacity="0.2"/>
     </linearGradient>
   </defs>
-  <!-- Órbitas -->
-  <ellipse cx="170" cy="170" rx="110" ry="38" fill="none" stroke="url(#orbit-gradient)" stroke-width="3"/>
-  <ellipse cx="170" cy="170" rx="38" ry="110" fill="none" stroke="url(#orbit-gradient)" stroke-width="3"/>
-  <ellipse transform="rotate(60 170 170)" cx="170" cy="170" rx="110" ry="38" fill="none" stroke="url(#orbit-gradient)" stroke-width="3"/>
+  <!-- Órbitas más cerca del núcleo -->
+  <ellipse cx="170" cy="170" rx="65" ry="22" fill="none" stroke="url(#orbit-gradient)" stroke-width="3"/>
+  <ellipse cx="170" cy="170" rx="22" ry="65" fill="none" stroke="url(#orbit-gradient)" stroke-width="3"/>
+  <ellipse transform="rotate(60 170 170)" cx="170" cy="170" rx="65" ry="22" fill="none" stroke="url(#orbit-gradient)" stroke-width="3"/>
   <!-- Núcleo animado -->
   <circle class="nucleus-anim" cx="170" cy="170" r="30" fill="url(#nucleus-gradient)" />
-  <!-- Electrones orbitando LAS ELIPSES -->
-  <!-- Elipse horizontal -->
+  <!-- Electrones sobre cada órbita (borde exacto de la elipse) -->
+  <!-- Órbita horizontal -->
   <g class="electron1">
-    <circle cx="280" cy="170" r="9" fill="#65e3ff" stroke="#fff" stroke-width="2"/>
+    <circle cx="235" cy="170" r="9" fill="#65e3ff" stroke="#fff" stroke-width="2"/>
   </g>
-  <!-- Elipse vertical -->
+  <!-- Órbita vertical -->
   <g class="electron2">
-    <circle cx="170" cy="60" r="9" fill="#9d7bff" stroke="#fff" stroke-width="2"/>
+    <circle cx="170" cy="105" r="9" fill="#9d7bff" stroke="#fff" stroke-width="2"/>
   </g>
-  <!-- Elipse inclinada -->
+  <!-- Órbita inclinada -->
   <g class="electron3" style="transform: rotate(60deg); animation: electron-ellipse3 10s linear infinite;">
-    <circle cx="280" cy="170" r="9" fill="#ff6ec7" stroke="#fff" stroke-width="2"/>
+    <circle cx="235" cy="170" r="9" fill="#ff6ec7" stroke="#fff" stroke-width="2"/>
   </g>
   <!-- Sombra y profundidad -->
-  <ellipse cx="170" cy="260" rx="40" ry="12" fill="#22223b" opacity="0.13"/>
+  <ellipse cx="170" cy="260" rx="30" ry="9" fill="#22223b" opacity="0.13"/>
 </svg>
 
 - Contenido educativo y entretenido pensado para inspirar y facilitar el aprendizaje.
