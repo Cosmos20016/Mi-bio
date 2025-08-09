@@ -13,205 +13,102 @@ draft: false
 ## ¿Qué encontrarás aquí?
 ---
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
-    <!-- Fondo transparente -->
-    <rect width="100%" height="100%" fill="none"/>
-    
-    <!-- Anillos orbitales épicos -->
-    <g stroke="url(#gradient-ring)" stroke-width="4" fill="none" stroke-linecap="round" stroke-dasharray="20,10">
-        <path d="M400,300 m-200,0 a200,200 0 1,0 400,0 a200,200 0 1,0 -400,0">
-            <animate attributeName="stroke-dashoffset" from="0" to="628" dur="25s" repeatCount="indefinite" />
-        </path>
-        <path d="M400,300 m-150,0 a150,150 0 1,0 300,0 a150,150 0 1,0 -300,0">
-            <animate attributeName="stroke-dashoffset" from="628" to="0" dur="20s" repeatCount="indefinite" />
-        </path>
-        <path d="M400,300 m-250,0 a250,250 0 1,0 500,0 a250,250 0 1,0 -500,0">
-            <animate attributeName="stroke-dashoffset" from="0" to="1570" dur="30s" repeatCount="indefinite" />
-        </path>
+<svg class="svg-responsive" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+    <!-- Anillos orbitales con animación de onda -->
+    <g class="wave-anim" stroke="url(#gradient-ring)" stroke-width="4" fill="none" stroke-linecap="round" stroke-dasharray="20,10">
+        <path d="M400,300 m-200,0 a200,200 0 1,0 400,0 a200,200 0 1,0 -400,0"/>
+        <path d="M400,300 m-150,0 a150,150 0 1,0 300,0 a150,150 0 1,0 -300,0"/>
+        <path d="M400,300 m-250,0 a250,250 0 1,0 500,0 a250,250 0 1,0 -500,0"/>
     </g>
     
-    <!-- Núcleo energético avanzado -->
+    <!-- Núcleo energético principal -->
     <g transform="translate(400,300)">
-        <!-- Matriz de hexágonos internos -->
-        <g stroke="#65e3ff" stroke-width="0.8" fill="none" stroke-opacity="0.3">
-            <path d="M0,-60 L51.96,-30 L51.96,30 L0,60 L-51.96,30 L-51.96,-30 Z">
-                <animate attributeName="stroke-opacity" values="0.3;0.7;0.3" dur="4s" repeatCount="indefinite" />
-            </path>
-            <path d="M0,-40 L34.64,-20 L34.64,20 L0,40 L-34.64,20 L-34.64,-20 Z">
-                <animate attributeName="stroke-opacity" values="0.3;0.8;0.3" dur="3.5s" repeatCount="indefinite" />
-            </path>
-            <path d="M0,-20 L17.32,-10 L17.32,10 L0,20 L-17.32,10 L-17.32,-10 Z">
-                <animate attributeName="stroke-opacity" values="0.3;0.9;0.3" dur="3s" repeatCount="indefinite" />
-            </path>
+        <!-- Hexágonos internos con glow -->
+        <g class="glow-anim-borders" stroke="#65e3ff" stroke-width="0.8" fill="none" stroke-opacity="0.3">
+            <path d="M0,-60 L51.96,-30 L51.96,30 L0,60 L-51.96,30 L-51.96,-30 Z"/>
+            <path d="M0,-40 L34.64,-20 L34.64,20 L0,40 L-34.64,20 L-34.64,-20 Z"/>
+            <path d="M0,-20 L17.32,-10 L17.32,10 L0,20 L-17.32,10 L-17.32,-10 Z"/>
         </g>
         
-        <!-- Rejilla tecnológica interna -->
-        <g stroke="#9d7bff" stroke-width="0.5" stroke-opacity="0.4">
-            <line x1="0" y1="-60" x2="0" y2="60" />
-            <line x1="-51.96" y1="-30" x2="51.96" y2="30" />
-            <line x1="-51.96" y1="30" x2="51.96" y2="-30" />
-            <line x1="0" y1="-60" x2="51.96" y2="-30" />
-            <line x1="0" y1="-60" x2="-51.96" y2="-30" />
-            <line x1="51.96" y1="-30" x2="51.96" y2="30" />
-            <line x1="51.96" y1="30" x2="0" y2="60" />
-            <line x1="0" y1="60" x2="-51.96" y2="30" />
-            <line x1="-51.96" y1="30" x2="-51.96" y2="-30" />
+        <!-- Rejilla interna con glow robot -->
+        <g class="glow-anim-robot" stroke="#9d7bff" stroke-width="0.5" stroke-opacity="0.4">
+            <line x1="0" y1="-60" x2="0" y2="60"/>
+            <line x1="-51.96" y1="-30" x2="51.96" y2="30"/>
+            <line x1="-51.96" y1="30" x2="51.96" y2="-30"/>
+            <line x1="0" y1="-60" x2="51.96" y2="-30"/>
+            <line x1="0" y1="-60" x2="-51.96" y2="-30"/>
+            <line x1="51.96" y1="-30" x2="51.96" y2="30"/>
+            <line x1="51.96" y1="30" x2="0" y2="60"/>
+            <line x1="0" y1="60" x2="-51.96" y2="30"/>
+            <line x1="-51.96" y1="30" x2="-51.96" y2="-30"/>
         </g>
         
-        <!-- Esfera central con efecto cuántico -->
-        <circle r="60" fill="url(#quantum-core)" stroke="url(#core-glow)" stroke-width="3">
-            <animate attributeName="r" values="60;70;60" dur="3s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0.8;1;0.8" dur="3s" repeatCount="indefinite" />
-        </circle>
+        <!-- Esfera central con animación de auriculares -->
+        <circle class="headphone-emoji" r="60" fill="url(#quantum-core)" stroke="url(#core-glow)" stroke-width="3"/>
         
-        <!-- Partículas cuánticas -->
-        <g>
-            <circle cx="0" cy="0" r="2" fill="#65e3ff">
-                <animate attributeName="r" values="2;5;2" dur="1.5s" repeatCount="indefinite" />
-                <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="8s" repeatCount="indefinite" />
-                <animate attributeName="cx" values="0;20;0" dur="4s" repeatCount="indefinite" />
-            </circle>
-            <circle cx="0" cy="0" r="2" fill="#9d7bff">
-                <animate attributeName="r" values="2;4;2" dur="1.8s" repeatCount="indefinite" />
-                <animateTransform attributeName="transform" type="rotate" from="120" to="480" dur="10s" repeatCount="indefinite" />
-                <animate attributeName="cx" values="0;25;0" dur="5s" repeatCount="indefinite" />
-            </circle>
-            <circle cx="0" cy="0" r="2" fill="#ff6ec7">
-                <animate attributeName="r" values="2;6;2" dur="2.2s" repeatCount="indefinite" />
-                <animateTransform attributeName="transform" type="rotate" from="240" to="600" dur="12s" repeatCount="indefinite" />
-                <animate attributeName="cx" values="0;30;0" dur="6s" repeatCount="indefinite" />
-            </circle>
-        </g>
+        <!-- Partículas con animación de cohete -->
+        <circle class="rocket-anim" cx="0" cy="0" r="2" fill="#65e3ff" transform="translate(20,0)"/>
+        <circle class="rocket-anim" cx="0" cy="0" r="2" fill="#9d7bff" transform="translate(0,25)" style="animation-delay: 0.5s"/>
+        <circle class="rocket-anim" cx="0" cy="0" r="2" fill="#ff6ec7" transform="translate(-30,0)" style="animation-delay: 1s"/>
         
-        <!-- Anillo de energía rotatorio -->
+        <!-- Anillo de energía con llama -->
         <g transform="rotate(0)">
-            <circle r="80" fill="none" stroke="url(#ring-gradient)" stroke-width="3" stroke-dasharray="10,15">
-                <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="20s" repeatCount="indefinite" />
-            </circle>
+            <circle r="80" fill="none" stroke="url(#ring-gradient)" stroke-width="3" stroke-dasharray="10,15"/>
             <g transform="rotate(0)">
-                <circle cx="80" cy="0" r="5" fill="#65e3ff">
-                    <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="15s" repeatCount="indefinite" />
-                    <animate attributeName="r" values="5;8;5" dur="3s" repeatCount="indefinite" />
-                </circle>
-                <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="25s" repeatCount="indefinite" />
+                <circle class="flame-anim" cx="80" cy="0" r="5" fill="#65e3ff"/>
             </g>
         </g>
         
-        <!-- Rayos de energía avanzados -->
-        <g stroke="url(#gradient-ray)" stroke-width="3" stroke-linecap="round">
-            <line x1="-80" y1="0" x2="-180" y2="0">
-                <animate attributeName="x2" values="-180; -220; -180" dur="4s" repeatCount="indefinite" />
-                <animate attributeName="stroke-opacity" values="0.5;0.9;0.5" dur="3s" repeatCount="indefinite" />
-            </line>
-            <line x1="80" y1="0" x2="180" y2="0">
-                <animate attributeName="x2" values="180; 220; 180" dur="4s" repeatCount="indefinite" />
-                <animate attributeName="stroke-opacity" values="0.5;0.9;0.5" dur="3s" repeatCount="indefinite" />
-            </line>
-            <line x1="0" y1="-80" x2="0" y2="-180">
-                <animate attributeName="y2" values="-180; -220; -180" dur="4s" repeatCount="indefinite" />
-                <animate attributeName="stroke-opacity" values="0.5;0.9;0.5" dur="3s" repeatCount="indefinite" />
-            </line>
-            <line x1="0" y1="80" x2="0" y2="180">
-                <animate attributeName="y2" values="180; 220; 180" dur="4s" repeatCount="indefinite" />
-                <animate attributeName="stroke-opacity" values="0.5;0.9;0.5" dur="3s" repeatCount="indefinite" />
-            </line>
-            <line x1="-56.6" y1="-56.6" x2="-141.4" y2="-141.4">
-                <animate attributeName="x2" values="-141.4; -176.8; -141.4" dur="4s" repeatCount="indefinite" />
-                <animate attributeName="y2" values="-141.4; -176.8; -141.4" dur="4s" repeatCount="indefinite" />
-            </line>
-            <line x1="56.6" y1="56.6" x2="141.4" y2="141.4">
-                <animate attributeName="x2" values="141.4; 176.8; 141.4" dur="4s" repeatCount="indefinite" />
-                <animate attributeName="y2" values="141.4; 176.8; 141.4" dur="4s" repeatCount="indefinite" />
-            </line>
-        </g>
-        
-        <!-- Emisión de partículas -->
-        <g>
-            <circle cx="0" cy="0" r="1" fill="#65e3ff" opacity="0">
-                <animate attributeName="opacity" values="0;1;0" dur="1s" begin="0s" repeatCount="indefinite" />
-                <animate attributeName="cx" values="0;100" dur="2s" repeatCount="indefinite" />
-                <animate attributeName="cy" values="0;50" dur="2s" repeatCount="indefinite" />
-            </circle>
-            <circle cx="0" cy="0" r="1" fill="#9d7bff" opacity="0">
-                <animate attributeName="opacity" values="0;1;0" dur="1s" begin="0.3s" repeatCount="indefinite" />
-                <animate attributeName="cx" values="0;-120" dur="2.5s" repeatCount="indefinite" />
-                <animate attributeName="cy" values="0;-70" dur="2.5s" repeatCount="indefinite" />
-            </circle>
-            <circle cx="0" cy="0" r="1" fill="#ff6ec7" opacity="0">
-                <animate attributeName="opacity" values="0;1;0" dur="1s" begin="0.6s" repeatCount="indefinite" />
-                <animate attributeName="cx" values="0;90" dur="3s" repeatCount="indefinite" />
-                <animate attributeName="cy" values="0;-100" dur="3s" repeatCount="indefinite" />
-            </circle>
+        <!-- Rayos de energía con animación de llama -->
+        <g class="flame-anim" stroke="url(#gradient-ray)" stroke-width="3" stroke-linecap="round">
+            <line x1="-80" y1="0" x2="-180" y2="0"/>
+            <line x1="80" y1="0" x2="180" y2="0"/>
+            <line x1="0" y1="-80" x2="0" y2="-180"/>
+            <line x1="0" y1="80" x2="0" y2="180"/>
+            <line x1="-56.6" y1="-56.6" x2="-141.4" y2="-141.4"/>
+            <line x1="56.6" y1="56.6" x2="141.4" y2="141.4"/>
         </g>
     </g>
     
-    <!-- Circuitos complejos -->
-    <g stroke="url(#gradient-circuit)" stroke-width="2" fill="none" stroke-linecap="round" stroke-dasharray="10,5">
-        <path d="M100,100 Q200,50 300,100 T500,100">
-            <animate attributeName="stroke-dashoffset" from="0" to="100" dur="8s" repeatCount="indefinite" />
-        </path>
-        <path d="M100,500 Q200,550 300,500 T500,500">
-            <animate attributeName="stroke-dashoffset" from="100" to="0" dur="7s" repeatCount="indefinite" />
-        </path>
-        <path d="M700,200 Q650,300 700,400">
-            <animate attributeName="stroke-dashoffset" from="0" to="50" dur="6s" repeatCount="indefinite" />
-        </path>
-    </g>
+    <!-- Texto de título con sombra -->
+    <text class="glow-anim-borders" x="400" y="100" text-anchor="middle" font-size="26" fill="#65e3ff" font-family="Arial, sans-serif">
+        Kevinborja.com
+    </text>
     
-    <!-- Fragmentos de código holográficos -->
-    <g font-family="monospace" font-size="14" fill="#65e3ff" opacity="0.7" text-anchor="middle">
-        <text x="200" y="400">
-            <tspan x="200" dy="0">const quantumCore = new Core({</tspan>
-            <tspan x="200" dy="20">energy: "infinite",</tspan>
-            <tspan x="200" dy="20">tech: "quantum"</tspan>
-            <tspan x="200" dy="20">});</tspan>
-            <animate attributeName="opacity" values="0.4;0.8;0.4" dur="6s" repeatCount="indefinite" />
-            <animateTransform attributeName="transform" type="translate" values="0,0; 0,-5; 0,0" dur="5s" repeatCount="indefinite" />
-        </text>
-        
-        <text x="600" y="200">
-            <tspan x="600" dy="0">function emitParticles() {</tspan>
-            <tspan x="600" dy="20">core.generateEnergy();</tspan>
-            <tspan x="600" dy="20">}</tspan>
-            <animate attributeName="opacity" values="0.4;0.8;0.4" dur="5s" repeatCount="indefinite" />
-            <animateTransform attributeName="transform" type="translate" values="0,0; 0,-5; 0,0" dur="6s" repeatCount="indefinite" />
-        </text>
-    </g>
+    <!-- Texto descriptivo -->
+    <text x="400" y="530" text-anchor="middle" font-size="18" fill="#9d7bff" font-family="Arial, sans-serif">
+        Música, Videos y Podcasts
+    </text>
     
     <!-- Gradientes -->
     <defs>
         <radialGradient id="quantum-core" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-            <stop offset="0%" stop-color="#65e3ff" stop-opacity="0.9" />
-            <stop offset="40%" stop-color="#9d7bff" stop-opacity="0.7" />
-            <stop offset="70%" stop-color="#ff6ec7" stop-opacity="0.5" />
-            <stop offset="100%" stop-color="#0a1128" stop-opacity="0" />
+            <stop offset="0%" stop-color="#65e3ff" stop-opacity="0.9"/>
+            <stop offset="40%" stop-color="#9d7bff" stop-opacity="0.7"/>
+            <stop offset="70%" stop-color="#ff6ec7" stop-opacity="0.5"/>
+            <stop offset="100%" stop-color="#0a1128" stop-opacity="0"/>
         </radialGradient>
         
         <linearGradient id="core-glow" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#65e3ff" />
-            <stop offset="100%" stop-color="#ff6ec7" />
+            <stop offset="0%" stop-color="#65e3ff"/>
+            <stop offset="100%" stop-color="#ff6ec7"/>
         </linearGradient>
         
         <linearGradient id="gradient-ray" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#65e3ff" stop-opacity="0.8" />
-            <stop offset="100%" stop-color="#ff6ec7" stop-opacity="0.2" />
-        </linearGradient>
-        
-        <linearGradient id="gradient-circuit" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#65e3ff" />
-            <stop offset="100%" stop-color="#9d7bff" />
+            <stop offset="0%" stop-color="#65e3ff" stop-opacity="0.8"/>
+            <stop offset="100%" stop-color="#ff6ec7" stop-opacity="0.2"/>
         </linearGradient>
         
         <linearGradient id="gradient-ring" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#65e3ff" />
-            <stop offset="50%" stop-color="#9d7bff" stop-opacity="0.7" />
-            <stop offset="100%" stop-color="#ff6ec7" stop-opacity="0.4" />
+            <stop offset="0%" stop-color="#65e3ff"/>
+            <stop offset="50%" stop-color="#9d7bff" stop-opacity="0.7"/>
+            <stop offset="100%" stop-color="#ff6ec7" stop-opacity="0.4"/>
         </linearGradient>
         
         <linearGradient id="ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#65e3ff" />
-            <stop offset="50%" stop-color="#9d7bff" />
-            <stop offset="100%" stop-color="#ff6ec7" />
+            <stop offset="0%" stop-color="#65e3ff"/>
+            <stop offset="50%" stop-color="#9d7bff"/>
+            <stop offset="100%" stop-color="#ff6ec7"/>
         </linearGradient>
     </defs>
 </svg>
