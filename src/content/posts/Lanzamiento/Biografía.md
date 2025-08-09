@@ -14,90 +14,77 @@ draft: false
 ---
 
 <style>
-.svg-chill {
+.atom-svg {
   display: block;
   margin: 0 auto;
   width: 340px;
-  max-width: 95vw;
-  height: 170px;
+  max-width: 98vw;
+  height: 340px;
 }
-@keyframes bookAnim {
-  0%, 100% { transform: scaleY(1);}
-  50% { transform: scaleY(1.06);}
+@keyframes electron-rotate1 {
+  from { transform: rotate(0deg);}
+  to   { transform: rotate(360deg);}
 }
-.book-anim {
-  transform-origin: 58px 110px;
-  animation: bookAnim 2.7s ease-in-out infinite;
+@keyframes electron-rotate2 {
+  from { transform: rotate(90deg);}
+  to   { transform: rotate(450deg);}
 }
-@keyframes toolAnim {
-  0%, 100% { transform: rotate(-5deg);}
-  50% { transform: rotate(7deg);}
+@keyframes electron-rotate3 {
+  from { transform: rotate(180deg);}
+  to   { transform: rotate(540deg);}
 }
-.tool-anim {
-  transform-origin: 110px 85px;
-  animation: toolAnim 2.3s ease-in-out infinite;
+@keyframes nucleus-pulse {
+  0%,100% { filter: drop-shadow(0 0 10px #65e3ff); }
+  50%     { filter: drop-shadow(0 0 22px #9d7bff);}
 }
-@keyframes screenAnim {
-  0%, 100% { filter: drop-shadow(0 0 0px #65e3ff);}
-  50% { filter: drop-shadow(0 0 12px #65e3ff);}
+.nucleus-anim {
+  animation: nucleus-pulse 2.8s infinite;
 }
-.screen-anim {
-  animation: screenAnim 2s infinite;
+.electron1 { 
+  transform-box: fill-box; transform-origin: 50% 50%;
+  animation: electron-rotate1 6s linear infinite;
 }
-@keyframes bubbleFloat1 {
-  0%,100% { transform: translateY(0);}
-  50% { transform: translateY(-8px);}
+.electron2 { 
+  transform-box: fill-box; transform-origin: 50% 50%;
+  animation: electron-rotate2 8s linear infinite;
 }
-@keyframes bubbleFloat2 {
-  0%,100% { transform: translateY(0);}
-  50% { transform: translateY(-15px);}
+.electron3 { 
+  transform-box: fill-box; transform-origin: 50% 50%;
+  animation: electron-rotate3 10s linear infinite;
 }
-@keyframes bubbleFloat3 {
-  0%,100% { transform: translateY(0);}
-  50% { transform: translateY(-5px);}
-}
-.bubble-anim1 {animation: bubbleFloat1 3.2s infinite;}
-.bubble-anim2 {animation: bubbleFloat2 3.8s infinite;}
-.bubble-anim3 {animation: bubbleFloat3 3s infinite;}
 </style>
 
-<svg class="svg-chill" viewBox="0 0 340 170" xmlns="http://www.w3.org/2000/svg" aria-label="Ilustración educativa, blog y comunidad">
-  <!-- Libro minimalista -->
-  <g class="book-anim">
-    <rect x="35" y="95" width="36" height="24" rx="7" fill="#FFD700" opacity="0.85"/>
-    <rect x="71" y="95" width="36" height="24" rx="7" fill="#fff" opacity="0.92"/>
-    <line x1="53" y1="104" x2="71" y2="104" stroke="#7c5fff" stroke-width="2"/>
-    <line x1="89" y1="104" x2="107" y2="104" stroke="#7c5fff" stroke-width="2"/>
-    <line x1="53" y1="112" x2="71" y2="112" stroke="#00e580" stroke-width="2"/>
-    <line x1="89" y1="112" x2="107" y2="112" stroke="#00e580" stroke-width="2"/>
+<svg class="atom-svg" viewBox="0 0 340 340" xmlns="http://www.w3.org/2000/svg" aria-label="Átomo avanzado animado">
+  <defs>
+    <radialGradient id="nucleus-gradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#65e3ff"/>
+      <stop offset="60%" stop-color="#9d7bff"/>
+      <stop offset="100%" stop-color="#ff6ec7"/>
+    </radialGradient>
+    <linearGradient id="orbit-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#65e3ff" stop-opacity="0.1"/>
+      <stop offset="50%" stop-color="#9d7bff" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#ff6ec7" stop-opacity="0.2"/>
+    </linearGradient>
+  </defs>
+  <!-- Órbitas -->
+  <ellipse cx="170" cy="170" rx="110" ry="38" fill="none" stroke="url(#orbit-gradient)" stroke-width="3"/>
+  <ellipse cx="170" cy="170" rx="38" ry="110" fill="none" stroke="url(#orbit-gradient)" stroke-width="3"/>
+  <ellipse transform="rotate(60 170 170)" cx="170" cy="170" rx="110" ry="38" fill="none" stroke="url(#orbit-gradient)" stroke-width="3"/>
+  <!-- Núcleo animado -->
+  <circle class="nucleus-anim" cx="170" cy="170" r="30" fill="url(#nucleus-gradient)" />
+  <!-- Electrones animados -->
+  <g class="electron1">
+    <circle cx="280" cy="170" r="9" fill="#65e3ff" stroke="#fff" stroke-width="2"/>
   </g>
-  <!-- Llave inglesa minimalista -->
-  <g class="tool-anim">
-    <rect x="110" y="80" width="26" height="9" rx="4.5" fill="#7c5fff" opacity="0.92"/>
-    <circle cx="136" cy="84.5" r="6" fill="#FFD700" opacity="0.88"/>
-    <rect x="110" y="87" width="20" height="6" rx="3" fill="#00e580" opacity="0.86"/>
-    <rect x="117" y="78" width="10" height="4" rx="2" fill="#fff"/>
+  <g class="electron2">
+    <circle cx="170" cy="60" r="9" fill="#9d7bff" stroke="#fff" stroke-width="2"/>
   </g>
-  <!-- Pantalla blog minimalista -->
-  <g class="screen-anim">
-    <rect x="170" y="70" width="54" height="28" rx="8" fill="#fff" stroke="#7c5fff" stroke-width="2"/>
-    <rect x="180" y="80" width="32" height="6" rx="3" fill="#FFD700" opacity="0.9"/>
-    <rect x="180" y="89" width="22" height="4" rx="2" fill="#00e580" opacity="0.8"/>
-    <rect x="180" y="95" width="10" height="3" rx="1.5" fill="#9d7bff" opacity="0.7"/>
+  <g class="electron3">
+    <circle cx="60" cy="170" r="9" fill="#ff6ec7" stroke="#fff" stroke-width="2"/>
   </g>
-  <!-- Burbujas de diálogo minimalistas -->
-  <g>
-    <ellipse class="bubble-anim1" cx="260" cy="92" rx="14" ry="10" fill="#65e3ff" opacity="0.83"/>
-    <ellipse class="bubble-anim2" cx="284" cy="82" rx="12" ry="9" fill="#ff6ec7" opacity="0.77"/>
-    <ellipse class="bubble-anim3" cx="272" cy="111" rx="11" ry="8" fill="#9d7bff" opacity="0.7"/>
-    <circle cx="255" cy="100" r="2.3" fill="#fff"/>
-    <circle cx="281" cy="87" r="2.3" fill="#fff"/>
-    <circle cx="272" cy="117" r="2.3" fill="#fff"/>
-  </g>
-  <!-- Texto descriptivo -->
-  <text x="170" y="155" text-anchor="middle" fill="#22223b" font-size="17" font-family="monospace" font-weight="bold" opacity="0.82">
-    Inspira, aprende, comparte
-  </text>
+  <!-- Sombra y profundidad -->
+  <ellipse cx="170" cy="260" rx="40" ry="12" fill="#22223b" opacity="0.13"/>
 </svg>
 
 - Contenido educativo y entretenido pensado para inspirar y facilitar el aprendizaje.
