@@ -20,86 +20,71 @@ draft: false
   width: 340px;
   max-width: 98vw;
   height: 340px;
-  background: transparent;
 }
-.nucleus-anim {
-  animation: nucleus-pulse 3s ease-in-out infinite;
+@keyframes electron-rotate1 {
+  from { transform: rotate(0deg);}
+  to   { transform: rotate(360deg);}
+}
+@keyframes electron-rotate2 {
+  from { transform: rotate(90deg);}
+  to   { transform: rotate(450deg);}
+}
+@keyframes electron-rotate3 {
+  from { transform: rotate(180deg);}
+  to   { transform: rotate(540deg);}
 }
 @keyframes nucleus-pulse {
-  0%,100% { filter: drop-shadow(0 0 14px #65e3ff);}
-  50%     { filter: drop-shadow(0 0 30px #9d7bff);}
+  0%,100% { filter: drop-shadow(0 0 10px #65e3ff); }
+  50%     { filter: drop-shadow(0 0 22px #9d7bff);}
 }
-.electron {
-  transform-box: fill-box;
-  transform-origin: 170px 170px;
+.nucleus-anim {
+  animation: nucleus-pulse 2.8s infinite;
 }
-.electron1 { animation: electron-orbit1 6.5s linear infinite;}
-.electron2 { animation: electron-orbit2 7.5s linear infinite;}
-.electron3 { animation: electron-orbit3 8.5s linear infinite;}
-.electron4 { animation: electron-orbit4 9.5s linear infinite;}
-.electron5 { animation: electron-orbit5 10.5s linear infinite;}
-@keyframes electron-orbit1 { to { transform: rotate(360deg);} }
-@keyframes electron-orbit2 { to { transform: rotate(360deg);} }
-@keyframes electron-orbit3 { to { transform: rotate(360deg);} }
-@keyframes electron-orbit4 { to { transform: rotate(360deg);} }
-@keyframes electron-orbit5 { to { transform: rotate(360deg);} }
+.electron1 { 
+  transform-box: fill-box; transform-origin: 50% 50%;
+  animation: electron-rotate1 6s linear infinite;
+}
+.electron2 { 
+  transform-box: fill-box; transform-origin: 50% 50%;
+  animation: electron-rotate2 8s linear infinite;
+}
+.electron3 { 
+  transform-box: fill-box; transform-origin: 50% 50%;
+  animation: electron-rotate3 10s linear infinite;
+}
 </style>
 
-<svg class="atom-svg" viewBox="0 0 340 340" xmlns="http://www.w3.org/2000/svg" aria-label="Átomo avanzado profesional">
+<svg class="atom-svg" viewBox="0 0 340 340" xmlns="http://www.w3.org/2000/svg" aria-label="Átomo avanzado animado">
   <defs>
-    <!-- Gradientes para núcleo y órbitas -->
-    <radialGradient id="nucleus-gradient" cx="55%" cy="42%" r="70%">
-      <stop offset="0%" stop-color="#fff" stop-opacity="0.85"/>
-      <stop offset="40%" stop-color="#65e3ff"/>
-      <stop offset="80%" stop-color="#9d7bff"/>
+    <radialGradient id="nucleus-gradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#65e3ff"/>
+      <stop offset="60%" stop-color="#9d7bff"/>
       <stop offset="100%" stop-color="#ff6ec7"/>
     </radialGradient>
-    <radialGradient id="nucleus-central" cx="50%" cy="50%" r="40%">
-      <stop offset="0%" stop-color="#fff" stop-opacity="0.7"/>
-      <stop offset="100%" stop-color="#65e3ff" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="orbit-gradient1" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#65e3ff" stop-opacity="0.18"/>
-      <stop offset="50%" stop-color="#9d7bff" stop-opacity="0.27"/>
-      <stop offset="100%" stop-color="#ff6ec7" stop-opacity="0.18"/>
-    </linearGradient>
-    <linearGradient id="orbit-gradient2" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#FFD700" stop-opacity="0.14"/>
-      <stop offset="100%" stop-color="#00e580" stop-opacity="0.18"/>
+    <linearGradient id="orbit-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#65e3ff" stop-opacity="0.1"/>
+      <stop offset="50%" stop-color="#9d7bff" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#ff6ec7" stop-opacity="0.2"/>
     </linearGradient>
   </defs>
-  <!-- Sombra debajo del núcleo -->
-  <ellipse cx="170" cy="260" rx="35" ry="10" fill="#22223b" opacity="0.13"/>
-  <!-- Órbitas reales (más cerca y diferentes ángulos) -->
-  <ellipse cx="170" cy="170" rx="58" ry="21" fill="none" stroke="url(#orbit-gradient1)" stroke-width="2.2"/>
-  <ellipse cx="170" cy="170" rx="31" ry="51" fill="none" stroke="url(#orbit-gradient1)" stroke-width="2.2"/>
-  <ellipse transform="rotate(38 170 170)" cx="170" cy="170" rx="54" ry="18" fill="none" stroke="url(#orbit-gradient2)" stroke-width="2"/>
-  <ellipse transform="rotate(-33 170 170)" cx="170" cy="170" rx="45" ry="15" fill="none" stroke="url(#orbit-gradient2)" stroke-width="2"/>
-  <ellipse transform="rotate(80 170 170)" cx="170" cy="170" rx="33" ry="7.5" fill="none" stroke="url(#orbit-gradient1)" stroke-width="1.7"/>
-  <!-- Núcleo con brillo y profundidad -->
-  <circle class="nucleus-anim" cx="170" cy="170" r="28" fill="url(#nucleus-gradient)" />
-  <circle cx="170" cy="170" r="12" fill="url(#nucleus-central)" opacity="0.8"/>
-  <!-- Electrones animados, siguiendo sus órbitas -->
-  <!-- Órbita horizontal -->
-  <g class="electron electron1">
-    <circle cx="228" cy="170" r="6.5" fill="#65e3ff" stroke="#fff" stroke-width="1.5"/>
+  <!-- Órbitas -->
+  <ellipse cx="170" cy="170" rx="110" ry="38" fill="none" stroke="url(#orbit-gradient)" stroke-width="3"/>
+  <ellipse cx="170" cy="170" rx="38" ry="110" fill="none" stroke="url(#orbit-gradient)" stroke-width="3"/>
+  <ellipse transform="rotate(60 170 170)" cx="170" cy="170" rx="110" ry="38" fill="none" stroke="url(#orbit-gradient)" stroke-width="3"/>
+  <!-- Núcleo animado -->
+  <circle class="nucleus-anim" cx="170" cy="170" r="30" fill="url(#nucleus-gradient)" />
+  <!-- Electrones animados -->
+  <g class="electron1">
+    <circle cx="280" cy="170" r="9" fill="#65e3ff" stroke="#fff" stroke-width="2"/>
   </g>
-  <!-- Órbita vertical (arriba) -->
-  <g class="electron electron2">
-    <circle cx="170" cy="119" r="7.2" fill="#9d7bff" stroke="#fff" stroke-width="1.2"/>
+  <g class="electron2">
+    <circle cx="170" cy="60" r="9" fill="#9d7bff" stroke="#fff" stroke-width="2"/>
   </g>
-  <!-- Órbita inclinada -->
-  <g class="electron electron3" style="transform: rotate(38deg); animation: electron-orbit3 8.5s linear infinite;">
-    <circle cx="224" cy="170" r="6.5" fill="#ff6ec7" stroke="#fff" stroke-width="1.2"/>
+  <g class="electron3">
+    <circle cx="60" cy="170" r="9" fill="#ff6ec7" stroke="#fff" stroke-width="2"/>
   </g>
-  <!-- Órbita inclinada contraria -->
-  <g class="electron electron4" style="transform: rotate(-33deg); animation: electron-orbit4 9.5s linear infinite;">
-    <circle cx="215" cy="170" r="6" fill="#FFD700" stroke="#fff" stroke-width="1.2"/>
-  </g>
-  <!-- Órbita pequeña -->
-  <g class="electron electron5" style="transform: rotate(80deg); animation: electron-orbit5 10.5s linear infinite;">
-    <circle cx="203" cy="170" r="5.3" fill="#00e580" stroke="#fff" stroke-width="1.1"/>
-  </g>
+  <!-- Sombra y profundidad -->
+  <ellipse cx="170" cy="260" rx="40" ry="12" fill="#22223b" opacity="0.13"/>
 </svg>
 
 - Contenido educativo y entretenido pensado para inspirar y facilitar el aprendizaje.
