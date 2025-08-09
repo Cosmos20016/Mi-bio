@@ -14,105 +14,91 @@ draft: false
 ---
 
 <style>
-.center-svg {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  min-height: 30vh;
-}
-.svg-anim {
-  width: 380px;
-  height: 180px;
-  max-width: 98vw;
+.svg-chill {
   display: block;
+  margin: 0 auto;
+  width: 340px;
+  max-width: 95vw;
+  height: 170px;
+}
+@keyframes bookAnim {
+  0%, 100% { transform: scaleY(1);}
+  50% { transform: scaleY(1.06);}
 }
 .book-anim {
-  animation: bookOpen 2.5s infinite alternate;
-  transform-origin: 60px 90px;
+  transform-origin: 58px 110px;
+  animation: bookAnim 2.7s ease-in-out infinite;
 }
-@keyframes bookOpen {
-  0% { transform: scaleY(1);}
-  100% { transform: scaleY(1.07);}
+@keyframes toolAnim {
+  0%, 100% { transform: rotate(-5deg);}
+  50% { transform: rotate(7deg);}
 }
-.wrench-anim {
-  animation: wrenchMove 2.2s infinite alternate;
-  transform-origin: 110px 60px;
+.tool-anim {
+  transform-origin: 110px 85px;
+  animation: toolAnim 2.3s ease-in-out infinite;
 }
-@keyframes wrenchMove {
-  0% { transform: rotate(-8deg);}
-  100% { transform: rotate(8deg);}
+@keyframes screenAnim {
+  0%, 100% { filter: drop-shadow(0 0 0px #65e3ff);}
+  50% { filter: drop-shadow(0 0 12px #65e3ff);}
 }
 .screen-anim {
-  animation: screenPulse 1.8s infinite alternate;
-}
-@keyframes screenPulse {
-  0% { filter: drop-shadow(0 0 0px #65e3ff);}
-  100% { filter: drop-shadow(0 0 12px #65e3ff);}
-}
-.bubble-anim1 {
-  animation: bubbleFloat1 3.2s infinite alternate;
-}
-.bubble-anim2 {
-  animation: bubbleFloat2 3.5s infinite alternate;
-}
-.bubble-anim3 {
-  animation: bubbleFloat3 3.8s infinite alternate;
+  animation: screenAnim 2s infinite;
 }
 @keyframes bubbleFloat1 {
-  0% { transform: translateY(0);}
-  100% { transform: translateY(-7px);}
+  0%,100% { transform: translateY(0);}
+  50% { transform: translateY(-8px);}
 }
 @keyframes bubbleFloat2 {
-  0% { transform: translateY(0);}
-  100% { transform: translateY(-11px);}
+  0%,100% { transform: translateY(0);}
+  50% { transform: translateY(-15px);}
 }
 @keyframes bubbleFloat3 {
-  0% { transform: translateY(0);}
-  100% { transform: translateY(-5px);}
+  0%,100% { transform: translateY(0);}
+  50% { transform: translateY(-5px);}
 }
+.bubble-anim1 {animation: bubbleFloat1 3.2s infinite;}
+.bubble-anim2 {animation: bubbleFloat2 3.8s infinite;}
+.bubble-anim3 {animation: bubbleFloat3 3s infinite;}
 </style>
 
-<div class="center-svg">
-<svg class="svg-anim" viewBox="0 0 380 180" xmlns="http://www.w3.org/2000/svg" aria-label="Ilustración de secciones web">
-  <!-- Libro abierto, contenido educativo -->
+<svg class="svg-chill" viewBox="0 0 340 170" xmlns="http://www.w3.org/2000/svg" aria-label="Ilustración educativa, blog y comunidad">
+  <!-- Libro minimalista -->
   <g class="book-anim">
-    <rect x="40" y="80" width="40" height="28" rx="7" fill="#FFD700"/>
-    <rect x="80" y="80" width="40" height="28" rx="7" fill="#fff"/>
-    <line x1="60" y1="90" x2="80" y2="90" stroke="#7c5fff" stroke-width="2"/>
-    <line x1="100" y1="90" x2="120" y2="90" stroke="#7c5fff" stroke-width="2"/>
-    <line x1="60" y1="100" x2="80" y2="100" stroke="#00e580" stroke-width="2"/>
-    <line x1="100" y1="100" x2="120" y2="100" stroke="#00e580" stroke-width="2"/>
+    <rect x="35" y="95" width="36" height="24" rx="7" fill="#FFD700" opacity="0.85"/>
+    <rect x="71" y="95" width="36" height="24" rx="7" fill="#fff" opacity="0.92"/>
+    <line x1="53" y1="104" x2="71" y2="104" stroke="#7c5fff" stroke-width="2"/>
+    <line x1="89" y1="104" x2="107" y2="104" stroke="#7c5fff" stroke-width="2"/>
+    <line x1="53" y1="112" x2="71" y2="112" stroke="#00e580" stroke-width="2"/>
+    <line x1="89" y1="112" x2="107" y2="112" stroke="#00e580" stroke-width="2"/>
   </g>
-  <!-- Llave inglesa, herramientas prácticas -->
-  <g class="wrench-anim">
-    <rect x="110" y="55" width="32" height="10" rx="5" fill="#7c5fff"/>
-    <circle cx="142" cy="60" r="7" fill="#FFD700"/>
-    <rect x="110" y="60" width="28" height="7" rx="3.5" fill="#00e580"/>
-    <rect x="116" y="53" width="13" height="5" rx="2.5" fill="#fff"/>
+  <!-- Llave inglesa minimalista -->
+  <g class="tool-anim">
+    <rect x="110" y="80" width="26" height="9" rx="4.5" fill="#7c5fff" opacity="0.92"/>
+    <circle cx="136" cy="84.5" r="6" fill="#FFD700" opacity="0.88"/>
+    <rect x="110" y="87" width="20" height="6" rx="3" fill="#00e580" opacity="0.86"/>
+    <rect x="117" y="78" width="10" height="4" rx="2" fill="#fff"/>
   </g>
-  <!-- Pantalla blog interactivo -->
+  <!-- Pantalla blog minimalista -->
   <g class="screen-anim">
-    <rect x="180" y="50" width="60" height="40" rx="9" fill="#fff" stroke="#7c5fff" stroke-width="2"/>
-    <rect x="190" y="60" width="40" height="7" rx="3.5" fill="#FFD700"/>
-    <rect x="190" y="70" width="28" height="5" rx="2.5" fill="#00e580"/>
-    <rect x="190" y="78" width="14" height="4" rx="2" fill="#9d7bff"/>
+    <rect x="170" y="70" width="54" height="28" rx="8" fill="#fff" stroke="#7c5fff" stroke-width="2"/>
+    <rect x="180" y="80" width="32" height="6" rx="3" fill="#FFD700" opacity="0.9"/>
+    <rect x="180" y="89" width="22" height="4" rx="2" fill="#00e580" opacity="0.8"/>
+    <rect x="180" y="95" width="10" height="3" rx="1.5" fill="#9d7bff" opacity="0.7"/>
   </g>
-  <!-- Burbujas de diálogo, espacio para debatir -->
+  <!-- Burbujas de diálogo minimalistas -->
   <g>
-    <ellipse class="bubble-anim1" cx="295" cy="70" rx="16" ry="11" fill="#65e3ff" opacity="0.85"/>
-    <ellipse class="bubble-anim2" cx="325" cy="60" rx="14" ry="10" fill="#ff6ec7" opacity="0.8"/>
-    <ellipse class="bubble-anim3" cx="310" cy="95" rx="13" ry="9" fill="#9d7bff" opacity="0.7"/>
-    <circle cx="290" cy="80" r="2.7" fill="#fff"/>
-    <circle cx="320" cy="66" r="2.7" fill="#fff"/>
-    <circle cx="310" cy="105" r="2.7" fill="#fff"/>
+    <ellipse class="bubble-anim1" cx="260" cy="92" rx="14" ry="10" fill="#65e3ff" opacity="0.83"/>
+    <ellipse class="bubble-anim2" cx="284" cy="82" rx="12" ry="9" fill="#ff6ec7" opacity="0.77"/>
+    <ellipse class="bubble-anim3" cx="272" cy="111" rx="11" ry="8" fill="#9d7bff" opacity="0.7"/>
+    <circle cx="255" cy="100" r="2.3" fill="#fff"/>
+    <circle cx="281" cy="87" r="2.3" fill="#fff"/>
+    <circle cx="272" cy="117" r="2.3" fill="#fff"/>
   </g>
   <!-- Texto descriptivo -->
-  <text x="190" y="150" text-anchor="middle" fill="#22223b" font-size="18" font-family="monospace" font-weight="bold">
-    Aprende, comparte y participa
+  <text x="170" y="155" text-anchor="middle" fill="#22223b" font-size="17" font-family="monospace" font-weight="bold" opacity="0.82">
+    Inspira, aprende, comparte
   </text>
 </svg>
-</div>
 
 - Contenido educativo y entretenido pensado para inspirar y facilitar el aprendizaje.
 - Herramientas prácticas y guías útiles.
