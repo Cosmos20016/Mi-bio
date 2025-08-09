@@ -43,7 +43,6 @@
     Habito el arte de crear y compartir como quien explora mundos submarinos: sin prisa, con curiosidad infinita y una sonrisa en el caparazón.<br /><br />
     Los retos son mis islas flotantes; el desarrollo web mi océano, y la creatividad, mi corriente que nunca se detiene.<br /><br />
     Mi meta es simple pero subrealista: transformar lo cotidiano en inspiración, sembrar soluciones que vibren con la energía del ahora y contagiar buena onda a quien se cruce en mi viaje.<br /><br />
-    Si alguna vez soñaste con combinar tecnología y poesía, o hacer de la rutina un arte, este espacio es tu refugio y tu lanzadera.<br /><br />
     <b>Bienvenido/a: aquí, la lentitud es poder, el código es magia, y la buena vibra es ley universal.</b>
   </div>
 </div>
