@@ -4,7 +4,7 @@ published: 2025-07-26
 description: "Descubre quién soy, los objetivos de este sitio y lo que está por venir."
 image: "./cover.png"
 tags: ["Biografía"]
-category: Lanzamiento oficial
+category: Sobre mí
 draft: false
 ---
 
