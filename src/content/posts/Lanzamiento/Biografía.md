@@ -8,7 +8,8 @@ category: Sobre mí
 draft: false
 ---
 
-¡Hola! Soy Kevin Borja, y te doy la bienvenida a mi sitio web: Kevinborja.com. Este espacio surge de mi entusiasmo por la tecnología y el desarrollo web, acompañado de una curiosidad que nunca termina. Aquí encontrarás proyectos, experimentos, ideas y recursos que comparto con la intención de aportar y conectar con personas como tú.
+👋 ¡Bienvenido a Kevinborja.com!
+Soy Kevin Borja, y este espacio nace una pasión por la tecnología, el desarrollo web y una curiosidad que nunca se detiene. Aquí encontrarás proyectos, ideas, experimentos y recursos que comparto con el propósito de aportar, inspirar y conectar con personas como tú.
 
 ## ¿Qué encontrarás aquí?
 ---
@@ -87,12 +88,12 @@ draft: false
   <ellipse cx="170" cy="260" rx="40" ry="12" fill="#22223b" opacity="0.13"/>
 </svg>
 
-- Contenido educativo y entretenido pensado para inspirar y facilitar el aprendizaje.
+- Contenido educativo y entretenido.
 - Herramientas prácticas y guías útiles.
-- Un blog interactivo con tutoriales, reflexiones y experiencias, tecnología y temas afines.
-- Espacios abiertos para participar, compartir y debatir ideas.
+- Un blog interactivo con tutoriales, reflexiones, experiencias y temas relacionados con la tecnología.
+- Espacios abiertos de participación, donde compartir, debatir e intercambiar ideas con la comunidad.
 
-## Próximas novedades
+## 🚧 ¿Qué viene pronto?
 ---
 Actualmente estoy trabajando en nuevas funcionalidades que pronto estarán disponibles:
 
@@ -102,10 +103,10 @@ Actualmente estoy trabajando en nuevas funcionalidades que pronto estarán dispo
 - Recursos exclusivos para la comunidad.
 ```
 
-## Mi visión
+## 🌱 Mi visión
 ---
 
-> "Quiero que Kevinborja.com sea un espacio dinámico, en constante evolución. Lo que ves ahora es solo el inicio; mi objetivo es continuar creciendo, aportando valor y creando contenido relevante."
+> “Quiero que Kevinborja.com sea un espacio vivo y en constante evolución. Lo que ves hoy es solo el comienzo: mi meta es seguir creciendo, compartiendo valor y creando contenido que realmente importe.”
 
 <style>
 .center-svg {
