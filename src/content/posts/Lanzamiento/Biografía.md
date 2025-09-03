@@ -88,11 +88,10 @@ Soy Kevin Borja, y este espacio nace una pasión por la tecnología, el desarrol
   <ellipse cx="170" cy="260" rx="40" ry="12" fill="#22223b" opacity="0.13"/>
 </svg>
 
----
-- Contenido educativo y entretenido.
+- Un blog interactivo.
 - Herramientas prácticas y guías útiles.
-- Un blog interactivo con tutoriales, reflexiones, experiencias y temas relacionados con la tecnología.
-- Espacios abiertos de participación, donde compartir, debatir e intercambiar ideas con la comunidad.
+- Espacios abiertos de participación.
+- Contenido educativo y entretenido.
 
 ## 🚧 ¿Qué viene pronto?
 ---
