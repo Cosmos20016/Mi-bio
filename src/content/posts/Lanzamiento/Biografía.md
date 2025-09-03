@@ -11,7 +11,7 @@ draft: false
 👋 ¡Bienvenido a Kevinborja.com!
 Soy Kevin Borja, y este espacio nace una pasión por la tecnología, el desarrollo web y una curiosidad que nunca se detiene. Aquí encontrarás proyectos, ideas, experimentos y recursos que comparto con el propósito de aportar, inspirar y conectar con personas como tú.
 
-## ¿Qué encontrarás aquí?
+## 🧭 ¿Qué encontrarás aquí?
 ---
 
 <style>
