@@ -17,7 +17,7 @@ Platón, hace más de dos mil años, contó la historia de unos prisioneros que 
 Hoy, sin barrotes ni grilletes, vivimos una versión moderna de aquel mito. Solo que ahora, nuestra caverna tiene Wi-Fi.
 Y nuestras cadenas brillan con luz LED.
 
-Las sombras del siglo XXI 🕳️
+🕳️ Las sombras del siglo XXI
 
 Las llamamos redes sociales, pero a veces parecen redes que nos atrapan.
 Publicamos, deslizamos, miramos, reaccionamos. Y mientras lo hacemos, algo en nosotros se adormece.
@@ -85,5 +85,5 @@ Y que, incluso en la caverna digital, siempre existe la posibilidad de mirar hac
 
 ## La Caverna Digital: Cómo vivimos encadenados a nuestras pantallas
 
-<iframe width="100%" height="468" src="https://youtu.be/EeRfeveEtwA" title="La Caverna Digital: Cómo vivimos encadenados a nuestras pantallas" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+<iframe width="100%" height="468" src="[https://youtu.be/EeRfeveEtwA](https://www.youtube.com/watch?v=EeRfeveEtwA)" title="La Caverna Digital: Cómo vivimos encadenados a nuestras pantallas" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
