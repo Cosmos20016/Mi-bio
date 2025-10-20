@@ -6,7 +6,7 @@ tags: [Redes sociales,Adicción digital,Videos]
 category: Reflexión social
 draft: false
 ---
-# 🕳️ La Caverna Digital: Encadenados a Nuestras Pantallas
+# La Caverna Digital: Encadenados a Nuestras Pantallas
 Por Kevinborja.com
 
 Imagina esto: despiertas, y antes de sentir la textura de las sábanas, ya has tocado una pantalla.
@@ -17,7 +17,7 @@ Platón, hace más de dos mil años, contó la historia de unos prisioneros que 
 Hoy, sin barrotes ni grilletes, vivimos una versión moderna de aquel mito. Solo que ahora, nuestra caverna tiene Wi-Fi.
 Y nuestras cadenas brillan con luz LED.
 
-🔗 Las sombras del siglo XXI
+Las sombras del siglo XXI 🕳️
 
 Las llamamos redes sociales, pero a veces parecen redes que nos atrapan.
 Publicamos, deslizamos, miramos, reaccionamos. Y mientras lo hacemos, algo en nosotros se adormece.
