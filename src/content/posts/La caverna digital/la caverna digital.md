@@ -2,7 +2,7 @@
 title: La Caverna Digital
 published: 2025-10-20
 description: Una reinterpretación moderna del Mito de la Caverna de Platón, aplicada al mundo contemporáneo dominado por las redes sociales, la información superficial y la desconexión con la realidad interior.
-tags: [Redes sociales,Adicción digital,Videos]
+tags: [Redes sociales,Adicción digital]
 category: Reflexión social
 draft: false
 ---
