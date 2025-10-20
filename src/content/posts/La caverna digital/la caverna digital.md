@@ -6,13 +6,10 @@ tags: [Redes sociales,Adicción digital,Videos]
 category: Reflexión social
 draft: false
 ---
-
-```yaml
----
 # 🕳️ La Caverna Digital: Encadenados a Nuestras Pantallas
----
-Por Kevinborja.com
 
+Por Kevinborja.com
+---
 Imagina esto: despiertas, y antes de sentir la textura de las sábanas, ya has tocado una pantalla.
 Un destello azul te recibe. Notificaciones. Noticias. Opiniones. Caras sonrientes. El mundo parece comprimido en la palma de tu mano.
 Pero... ¿y si todo eso no fuera el mundo real?
