@@ -16,7 +16,7 @@ Pero... ¿y si todo eso no fuera el mundo real?
 Platón, hace más de dos mil años, contó la historia de unos prisioneros que vivían encadenados en una caverna. Solo podían ver sombras proyectadas en la pared y creían que eso era la realidad.
 Hoy, sin barrotes ni grilletes, vivimos una versión moderna de aquel mito. Solo que ahora, nuestra caverna tiene Wi-Fi.
 Y nuestras cadenas brillan con luz LED.
----
+
 🔗 Las sombras del siglo XXI
 
 Las llamamos redes sociales, pero a veces parecen redes que nos atrapan.
@@ -30,7 +30,7 @@ Nos volvemos dependientes de lo efímero, esclavos de un reflejo que nunca se sa
 Y lo más inquietante: muchos ya no distinguen entre la luz y la sombra.
 Entre lo que sentimos y lo que aparentamos sentir.
 Entre la voz interior y el algoritmo que decide qué vemos, qué creemos, y hasta quiénes somos.
----
+
 🧠 La ilusión del conocimiento
 
 Dicen que vivimos en la era de la información. Pero en realidad, nadamos en un océano de ruido.
@@ -43,7 +43,7 @@ Nos mantiene mirando la pared, entretenidos, indignados, conectados… pero quie
 Y como los prisioneros de Platón, muchos no quieren salir.
 Porque afuera —en la luz— no hay likes, ni validación inmediata. Solo silencio.
 Y el silencio, para quien ha vivido en la caverna digital, puede ser aterrador.
----
+
 🌅 La salida (que nadie te promete)
 
 Pero hay esperanza.
@@ -62,7 +62,7 @@ Porque una vez ves la realidad con tus propios ojos, ya no puedes volver a las s
 Y cuando sales, algo curioso sucede: comienzas a usar la tecnología sin que ella te use a ti.
 Empiezas a elegir lo que consumes, en lugar de ser consumido.
 A mirar de frente, no a través de una pantalla.
----
+
 🌍 El impacto de mirar la luz
 
 “La Caverna Digital” no es solo una metáfora, es un espejo.
@@ -83,7 +83,7 @@ Y que, incluso en la caverna digital, siempre existe la posibilidad de mirar hac
 
 🌐 Dale play al video en YouTube y sumérgete aún más en esta reflexión:
 
-## YouTube
+## La Caverna Digital: Cómo vivimos encadenados a nuestras pantallas
 
 <iframe width="100%" height="468" src="https://youtu.be/EeRfeveEtwA" title="La Caverna Digital: Cómo vivimos encadenados a nuestras pantallas" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
