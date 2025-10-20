@@ -85,5 +85,10 @@ Y que, incluso en la caverna digital, siempre existe la posibilidad de mirar hac
 
 ## La Caverna Digital: Cómo vivimos encadenados a nuestras pantallas
 
-<iframe width="100%" height="468" src="https://youtu.be/EeRfeveEtwA" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+<iframe width="100%" height="468" 
+src="https://www.youtube.com/embed/EeRfeveEtwA" 
+title="YouTube video player" frameborder="0" 
+allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+allowfullscreen>
+</iframe>
 
