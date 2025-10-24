@@ -121,8 +121,7 @@ Vivimos rodeados de pantallas que prometen mostrarnos el mundo, pero muchas vece
 Quizá el desafío más grande de nuestro tiempo no sea crear más tecnología, sino recordar que aún somos humanos.
 Y que, incluso en la caverna digital, siempre existe la posibilidad de mirar hacia la salida… y encontrar la luz.
 
-🌐 Dale play al video en YouTube y sumérgete aún más en esta reflexión:
-  <!-- Auriculares (emoji) superpuestos, animados -->
+🌐 Dale play al video en YouTube y sumérgete aún más en esta reflexión: <!-- Auriculares (emoji) superpuestos, animados -->
   <text x="358" y="200" font-size="56" class="headphone-emoji" style="pointer-events:none;">🎧▶</text>
 
   <!-- Ondas sonoras animadas (delicadas, con dos trazos para profundidad) -->
@@ -134,7 +133,7 @@ Y que, incluso en la caverna digital, siempre existe la posibilidad de mirar hac
   </g>
 
 </svg>
-
+ 
 ## La Caverna Digital: Cómo vivimos encadenados a nuestras pantallas
 
 <iframe width="100%" height="468" 
