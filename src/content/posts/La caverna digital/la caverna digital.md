@@ -101,3 +101,55 @@ title="YouTube video player" frameborder="0"
 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
 allowfullscreen>
 </iframe>
+
+<div style="line-height:0;margin:0;padding:0;display:block;">
+  <!-- Pega esto inline en tu post (modo HTML). Evita meterlo dentro de <p> -->
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600"
+       style="display:block;width:100%;max-width:420px;margin:0 auto;" role="img" aria-labelledby="title desc">
+    <title id="title">Ilusión del conocimiento — Kevinborja.com</title>
+    <desc id="desc">Auriculares animados y ondas sonoras, sin espacio en blanco.</desc>
+
+    <style>
+      /* animación de auriculares */
+      .headphone-emoji { animation: headphonesPulse 2.5s infinite alternate; transform-box: fill-box; transform-origin: center; }
+      @keyframes headphonesPulse {
+        0% { filter: drop-shadow(0 0 0px #FFD700); transform: translateY(0); }
+        50% { filter: drop-shadow(0 0 10px #FFD700); transform: translateY(-3px); }
+        100% { filter: drop-shadow(0 0 0px #FFD700); transform: translateY(0); }
+      }
+      /* animación onda (bajada/subida) */
+      .wave-anim { animation: waveBounce 4.47s infinite; transform-box: fill-box; transform-origin: center; }
+      @keyframes waveBounce {
+        0% { transform: translateY(0); }
+        18% { transform: translateY(-10px); }
+        40% { transform: translateY(7px); }
+        60% { transform: translateY(-4px); }
+        80% { transform: translateY(2px); }
+        100% { transform: translateY(0); }
+      }
+      /* asegura que SVG no provoque salto por la tipografía del contenedor */
+      svg { vertical-align: middle; }
+    </style>
+
+    <!-- Elemento central mínimo (opcional, puedes borrarlo si ya tienes otro) -->
+    <g transform="translate(450,220)">
+      <circle cx="0" cy="-6" r="8" fill="#fffdf7" stroke="#ffd485" stroke-width="1.2" opacity="0.98"/>
+    </g>
+
+    <!-- Auriculares (emoji) superpuestos, animados -->
+    <text x="358" y="200" font-size="56" class="headphone-emoji"
+          style="pointer-events:none;font-family:Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol, Noto Color Emoji,EmojiOne;">
+      🎧▶
+    </text>
+
+    <!-- Ondas sonoras animadas -->
+    <g transform="translate(0,380)">
+      <path d="M28 60 C140 20 260 110 380 60 C500 10 620 110 740 60"
+            fill="none" stroke="#9fe3ff" stroke-width="4.4" stroke-linecap="round"
+            class="wave-anim" opacity="0.95"/>
+      <path d="M8 82 C140 44 280 128 420 84 C560 40 700 136 792 86"
+            fill="none" stroke="#7bd2ff" stroke-width="2.4" stroke-linecap="round"
+            class="wave-anim" opacity="0.78" style="animation-duration:5.3s"/>
+    </g>
+  </svg>
+</div>
