@@ -87,6 +87,9 @@ Y que, incluso en la caverna digital, siempre existe la posibilidad de mirar hac
 
   <!-- Ondas sonoras animadas (delicadas, con dos trazos para profundidad) -->
   <g transform="translate(0,380)">
+      <!-- Punto focal central -->
+    <circle cx="0" cy="-6" r="8.4" fill="#fffdf7" stroke="#ffd485" stroke-width="1.2" opacity="0.98"/>
+  </g>
     <path d="M28 60 C140 20 260 110 380 60 C500 10 620 110 740 60"
           fill="none" stroke="#9fe3ff" stroke-width="4.4" stroke-linecap="round" class="wave-anim" opacity="0.95"/>
     <path d="M8 82 C140 44 280 128 420 84 C560 40 700 136 792 86"
