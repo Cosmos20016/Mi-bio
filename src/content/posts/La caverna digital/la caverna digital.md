@@ -41,41 +41,49 @@ Confundimos saber con acumular datos, y opinión con verdad.
 Las sombras se han vuelto más sofisticadas: ahora tienen filtros, inteligencia artificial y hashtags.
 
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" class="svg-responsive" role="img" aria-labelledby="title desc" width="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" width="100%" role="img" aria-labelledby="title desc">
   <title id="title">Ilusión del conocimiento — Kevinborja.com</title>
-  <desc id="desc">SVG sencillo: auriculares (emoji) superpuestos y ondas sonoras animadas.</desc>
+  <desc id="desc">SVG simple con auriculares (emoji con ▶) y dos ondas sonoras animadas (SMIL) para máxima compatibilidad cuando el CSS puede ser filtrado.</desc>
 
-  <style>
-    .svg-responsive { width: 100%; max-width: 900px; height: auto; display: block; }
-    .wave-anim { stroke-dasharray: 900; stroke-dashoffset: 0; animation: waveBounce 4.47s infinite; transform-origin: center; animation-timing-function: cubic-bezier(.6,.2,.2,.8); }
-    @keyframes waveBounce {
-      0%   { transform: translateY(0px); }
-      18%  { transform: translateY(-10px); }
-      40%  { transform: translateY(7px); }
-      60%  { transform: translateY(-4px); }
-      80%  { transform: translateY(2px); }
-      100% { transform: translateY(0px); }
-    }
-    .headphone-emoji { animation: headphonesPulse 2.5s infinite alternate; transform-box: fill-box; transform-origin: center; }
-    @keyframes headphonesPulse {
-      0% { filter: drop-shadow(0 0 0px #FFD700); transform: translateY(0); }
-      50% { filter: drop-shadow(0 0 10px #FFD700); transform: translateY(-3px); }
-      100% { filter: drop-shadow(0 0 0px #FFD700); transform: translateY(0); }
-    }
-    text { text-rendering: optimizeLegibility; }
-  </style>
+  <!-- Fondo para que se vea bien en páginas claras/oscuras -->
+  <rect width="100%" height="100%" fill="#061624"/>
 
-  <!-- Auriculares (emoji) superpuestos, animados -->
-  <text x="358" y="200" font-size="56" class="headphone-emoji" style="pointer-events:none;" aria-hidden="true">🎧▶</text>
+  <!-- Auriculares (emoji) superpuestos, animados con SMIL (sube/baja sutil) -->
+  <text x="358" y="200" font-size="56" style="pointer-events:none; font-family: Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol, Noto Color Emoji, EmojiOne, sans-serif;" aria-hidden="true">🎧▶
+    <animateTransform attributeName="transform"
+                      attributeType="XML"
+                      type="translate"
+                      values="0 0; 0 -6; 0 3; 0 0"
+                      keyTimes="0;0.18;0.6;1"
+                      dur="2.5s"
+                      repeatCount="indefinite"/>
+  </text>
 
-  <!-- Ondas sonoras animadas (delicadas, con dos trazos para profundidad) -->
-  <g transform="translate(0,380)">
+  <!-- Ondas sonoras animadas (delicadas, con dos trazos para profundidad).
+       Uso SMIL animateTransform para evitar depender de <style> bloqueado -->
+  <g transform="translate(0,380)" aria-hidden="true">
     <path d="M28 60 C140 20 260 110 380 60 C500 10 620 110 740 60"
-          fill="none" stroke="#9fe3ff" stroke-width="4.4" stroke-linecap="round" class="wave-anim" opacity="0.95"/>
-    <path d="M8 82 C140 44 280 128 420 84 C560 40 700 136 792 86"
-          fill="none" stroke="#7bd2ff" stroke-width="2.4" stroke-linecap="round" class="wave-anim" opacity="0.78" style="animation-duration:5.3s"/>
-  </g>
+          fill="none" stroke="#9fe3ff" stroke-width="4.4" stroke-linecap="round" opacity="0.95">
+      <animateTransform attributeName="transform"
+                        attributeType="XML"
+                        type="translate"
+                        values="0 0; 0 -10; 0 7; 0 -4; 0 2; 0 0"
+                        keyTimes="0;0.18;0.4;0.6;0.8;1"
+                        dur="4.47s"
+                        repeatCount="indefinite"/>
+    </path>
 
+    <path d="M8 82 C140 44 280 128 420 84 C560 40 700 136 792 86"
+          fill="none" stroke="#7bd2ff" stroke-width="2.4" stroke-linecap="round" opacity="0.78">
+      <animateTransform attributeName="transform"
+                        attributeType="XML"
+                        type="translate"
+                        values="0 0; 0 -8; 0 5; 0 -3; 0 0"
+                        keyTimes="0;0.18;0.5;0.8;1"
+                        dur="5.3s"
+                        repeatCount="indefinite"/>
+    </path>
+  </g>
 </svg>
 
 Mientras creemos que elegimos, un algoritmo invisible elige por nosotros.
