@@ -40,8 +40,15 @@ Todo está al alcance de un clic, y sin embargo, nos cuesta pensar por nosotros 
 Confundimos saber con acumular datos, y opinión con verdad.
 Las sombras se han vuelto más sofisticadas: ahora tienen filtros, inteligencia artificial y hashtags.
 
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" class="svg-responsive" role="img" aria-labelledby="title desc">
+<!--
+Pega TODO el contenido de este archivo directamente en tu post Markdown SIN encerrarlo en un bloque de código.
+Es decir: pega tal cual en el editor (modo HTML/Markdown que permita HTML inline) para que el SVG se renderice y las animaciones funcionen.
+Si tu plataforma sanitiza o bloquea SVG inline, sube el .svg como archivo y usa ![alt](ruta/al/archivo.svg) como alternativa.
+-->
+
+<div class="center-svg">
+<!-- SVG inline: copia desde aquí hasta el final del SVG -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" class="svg-responsive" role="img" aria-labelledby="title desc" width="100%">
   <style>
     .center-svg { display: flex; justify-content: center; align-items: center; min-height: 54vh; width: 100%; padding: 0 10px; box-sizing: border-box; }
     .svg-responsive { width: 100%; max-width: 400px; height: auto; display: block; max-width: 100vw; max-height: 98vh; }
@@ -51,19 +58,16 @@ Las sombras se han vuelto más sofisticadas: ahora tienen filtros, inteligencia 
     @keyframes headphonesPulse { 0% { filter: drop-shadow(0 0 0px #FFD700);} 80% { filter: drop-shadow(0 0 14px #FFD700);} 100% { filter: drop-shadow(0 0 0px #FFD700);} }
     .glow-anim-borders { animation: glowPulse 2.7s infinite; }
     @keyframes glowPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.83; } }
-    /* Animaciones auxiliares (mantengo por compatibilidad aunque no se usen todas) */
     .node { animation: nodePulse 3.6s infinite cubic-bezier(.6,.2,.2,.8); transform-box: fill-box; transform-origin: center; }
     @keyframes nodePulse { 0% { opacity: 0.9; transform: scale(1);} 50% { opacity: 1; transform: scale(1.14);} 100% { opacity: 0.9; transform: scale(1);} }
-    /* Rotación lenta para anillos si quieres activarla */
     .ring-rot { transform-box: fill-box; animation: slowRotate 18s linear infinite; transform-origin: center; }
     @keyframes slowRotate { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
-
     text { text-shadow: 0 1px 3px #fff4e0; }
     svg { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; overflow: visible; }
   </style>
 
   <title id="title">Ilusión del conocimiento — Kevinborja.com</title>
-  <desc id="desc">Elemento central que sugiere la ilusión del conocimiento: núcleo luminoso, anillos y nodos sutiles; auriculares y ondas sonoras animadas.</desc>
+  <desc id="desc">Núcleo luminoso que sugiere la ilusión del conocimiento, con auriculares emoji y ondas sonoras animadas.</desc>
 
   <defs>
     <radialGradient id="coreGrad" cx="50%" cy="42%" r="60%">
@@ -91,12 +95,9 @@ Las sombras se han vuelto más sofisticadas: ahora tienen filtros, inteligencia 
     </filter>
   </defs>
 
-  <!-- Único elemento central que representa la ilusión del conocimiento -->
+  <!-- Único elemento central -->
   <g id="ilusion" transform="translate(450,300)" filter="url(#softGlow)">
-    <!-- Halo difuso detrás -->
     <ellipse rx="230" ry="126" fill="url(#coreGrad)" opacity="0.14"/>
-
-    <!-- Anillos concéntricos (pueden rotar si quieres) -->
     <g class="ring-rot" style="animation-duration:20s;">
       <circle r="132" fill="none" stroke="url(#ringGradA)" stroke-width="3.2" opacity="0.55" />
     </g>
@@ -107,11 +108,9 @@ Las sombras se han vuelto más sofisticadas: ahora tienen filtros, inteligencia 
       <circle r="64" fill="none" stroke="#ffebc9" stroke-width="1.4" opacity="0.74" />
     </g>
 
-    <!-- Forma orgánica central (sugerencia de cerebro / núcleo) -->
     <path d="M-110,-6 C-96,-66 -12,-86 0,-54 C12,-86 96,-66 110,-6 C116,20 86,42 56,50 C26,58 6,64 0,62 C-6,64 -26,58 -56,50 C-86,42 -116,20 -110,-6 Z"
           fill="url(#coreGrad)" stroke="#ffd8a0" stroke-width="2.4" opacity="0.98" filter="url(#subtleShadow)"/>
 
-    <!-- Surcos internos y ramificaciones -->
     <g stroke="#ffcc86" stroke-linecap="round" stroke-width="1.6" opacity="0.95">
       <path d="M-68,-4 C-58,-28 -30,-36 -6,-30" fill="none"/>
       <path d="M-34,8 C-18,-2 4,-6 26,6" fill="none" stroke-width="1.4"/>
@@ -119,7 +118,6 @@ Las sombras se han vuelto más sofisticadas: ahora tienen filtros, inteligencia 
       <path d="M12,30 C24,26 36,22 52,14" fill="none" opacity="0.6"/>
     </g>
 
-    <!-- Nodos brillantes con pulso sutil -->
     <g>
       <circle class="node" cx="18" cy="-14" r="4.6" fill="#fff9ea" stroke="#ffd28a" stroke-width="0.9" />
       <circle class="node" cx="-34" cy="6" r="3.8" fill="#fff9ea" stroke="#ffcf7f" stroke-width="0.8" style="animation-delay:0.25s"/>
@@ -128,14 +126,12 @@ Las sombras se han vuelto más sofisticadas: ahora tienen filtros, inteligencia 
       <circle class="node" cx="2" cy="24" r="2.6" fill="#fff9ea" stroke="#ffd6a6" stroke-width="0.6" style="animation-delay:1.1s"/>
     </g>
 
-    <!-- Líneas finas que conectan nodos -->
     <g stroke="#fff6de" stroke-width="0.7" opacity="0.45" stroke-linecap="round">
       <path d="M18,-14 C6,-4 -4,8 2,24" fill="none"/>
       <path d="M-34,6 C-18,12 0,18 28,12" fill="none"/>
       <path d="M46,18 C28,10 8,6 -6,8" fill="none"/>
     </g>
 
-    <!-- Punto focal central -->
     <circle cx="0" cy="-6" r="8.4" fill="#fffdf7" stroke="#ffd485" stroke-width="1.2" opacity="0.98"/>
   </g>
 
@@ -151,6 +147,8 @@ Las sombras se han vuelto más sofisticadas: ahora tienen filtros, inteligencia 
   </g>
 
 </svg>
+<!-- hasta aquí -->
+</div>
 
 Mientras creemos que elegimos, un algoritmo invisible elige por nosotros.
 Nos mantiene mirando la pared, entretenidos, indignados, conectados… pero quietos.
@@ -196,7 +194,6 @@ Quizá el desafío más grande de nuestro tiempo no sea crear más tecnología, 
 Y que, incluso en la caverna digital, siempre existe la posibilidad de mirar hacia la salida… y encontrar la luz.
 
 🌐 Dale play al video en YouTube y sumérgete aún más en esta reflexión:
-
   <!-- Auriculares (emoji) superpuestos, animados -->
   <text x="358" y="200" font-size="56" class="headphone-emoji" style="pointer-events:none;">🎧▶</text>
 
@@ -209,7 +206,6 @@ Y que, incluso en la caverna digital, siempre existe la posibilidad de mirar hac
   </g>
 
 </svg>
-
 ## La Caverna Digital: Cómo vivimos encadenados a nuestras pantallas
 
 <iframe width="100%" height="468" 
