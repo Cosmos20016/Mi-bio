@@ -81,15 +81,6 @@ Conclusión:
 Vivimos rodeados de pantallas que prometen mostrarnos el mundo, pero muchas veces solo nos reflejan nuestras propias cadenas.
 Quizá el desafío más grande de nuestro tiempo no sea crear más tecnología, sino recordar que aún somos humanos.
 Y que, incluso en la caverna digital, siempre existe la posibilidad de mirar hacia la salida… y encontrar la luz.
-
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" class="svg-responsive" role="img" aria-labelledby="title desc">
-  <style>
-    .center-svg { display: flex; justify-content: center; align-items: center; min-height: 54vh; width: 100%; padding: 0 10px; box-sizing: border-box; }
-    .svg-responsive { width: 100%; max-width: 400px; height: auto; display: block; max-width: 100vw; max-height: 98vh; }
-    .wave-anim { stroke-dasharray: 900; stroke-dashoffset: 0; animation: waveBounce 4.47s infinite; transform-origin: center; animation-timing-function: cubic-bezier(.6,.2,.2,.8); }
-    @keyframes waveBounce { 0% { transform: translateY(0px);} 18% { transform: translateY(-10px);} 40% { transform: translateY(7px);} 60% { transform: translateY(-4px);} 80% { transform: translateY(2px);} 100% { transform: translateY(0px);} }
-    .headphone-emoji { animation: headphonesPulse 2.5s infinite alternate; }
-    @keyframes headphonesPulse { 0% { filter: drop-shadow(0 0 0px #FFD700);} 80% { filter: drop-shadow(0 0 14px #FFD700);} 100% { filter: drop-shadow(0 0 0px #FFD700);} }
     
 🌐 Dale play al video en YouTube y sumérgete aún más en esta reflexión: <!-- Auriculares (emoji) superpuestos, animados -->
   <text x="358" y="200" font-size="56" class="headphone-emoji" style="pointer-events:none;">🎧▶</text>
@@ -113,3 +104,7 @@ allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; pic
 allowfullscreen>
 </iframe>
 
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" class="svg-responsive" role="img" aria-labelledby="title desc">
+  <style>
+    .headphone-emoji { animation: headphonesPulse 2.5s infinite alternate; }
+    @keyframes headphonesPulse { 0% { filter: drop-shadow(0 0 0px #FFD700);} 80% { filter: drop-shadow(0 0 14px #FFD700);} 100% { filter: drop-shadow(0 0 0px #FFD700);} }
