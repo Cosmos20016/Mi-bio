@@ -4,6 +4,7 @@ published: 2025-10-20
 description: "Platón habló de hombres encadenados viendo sombras,
 Nosotros seguimos allí… solo que ahora, las sombras brillan,
 Una mirada diferente al mito de la caverna en tiempos de luz artificial."
+image: "./cover.png"
 tags: [Adicción digital]
 category: Reflexión social
 draft: false
