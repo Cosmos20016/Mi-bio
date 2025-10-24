@@ -198,6 +198,7 @@ Y que, incluso en la caverna digital, siempre existe la posibilidad de mirar hac
   </g>
 
 </svg>
+
 ## La Caverna Digital: Cómo vivimos encadenados a nuestras pantallas
 
 <iframe width="100%" height="468" 
