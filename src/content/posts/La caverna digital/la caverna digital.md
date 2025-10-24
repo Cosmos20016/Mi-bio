@@ -1,8 +1,10 @@
 ---
 title: La Caverna Digital
 published: 2025-10-20
-description: Una reinterpretación moderna del Mito de la Caverna de Platón, aplicada al mundo contemporáneo dominado por las redes sociales, la información superficial y la desconexión con la realidad interior.
-tags: [Redes sociales,Adicción digital]
+description: Platón habló de hombres encadenados viendo sombras,
+Nosotros seguimos allí… solo que ahora, las sombras brillan,
+Una mirada diferente al mito de la caverna en tiempos de luz artificial.
+tags: [Adicción digital]
 category: Reflexión social
 draft: false
 ---
