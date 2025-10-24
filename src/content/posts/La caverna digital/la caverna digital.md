@@ -33,6 +33,13 @@ Y lo más inquietante: muchos ya no distinguen entre la luz y la sombra.
 Entre lo que sentimos y lo que aparentamos sentir.
 Entre la voz interior y el algoritmo que decide qué vemos, qué creemos, y hasta quiénes somos.
 
+🧠 La ilusión del conocimiento
+
+Dicen que vivimos en la era de la información. Pero en realidad, nadamos en un océano de ruido.
+Todo está al alcance de un clic, y sin embargo, nos cuesta pensar por nosotros mismos.
+Confundimos saber con acumular datos, y opinión con verdad.
+Las sombras se han vuelto más sofisticadas: ahora tienen filtros, inteligencia artificial y hashtags.
+
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 560" class="svg-responsive" role="img" aria-labelledby="title desc">
   <style>
@@ -57,25 +64,22 @@ Entre la voz interior y el algoritmo que decide qué vemos, qué creemos, y hast
     /* Sombra extra en el título principal */
     text[font-size="26"] { text-shadow: 0 2px 8px #FFD70055; }
 
-    /* Reglas adicionales para compatibilidad SVG (no cambian la estructura solicitada) */
-    .wave-anim, .rocket-anim, .flame-anim, .glow-anim-borders, .headphone-emoji { transform-box: fill-box; }
+    /* Compatibilidad para transform-box en animaciones */
+    .wave-anim, .headphone-emoji, .glow-anim-borders { transform-box: fill-box; }
     svg { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; overflow: visible; }
-    .small-note { font-size: 11px; fill: #fff7e6; opacity: 0.9; }
   </style>
 
-  <title id="title">Kevinborja.com</title>
-  <desc id="desc">Ilustración SVG que representa la ilusión del conocimiento: mezcla de música, podcasts y aprendizaje visual.</desc>
+  <title id="title">Kevinborja.com — Ilusión del conocimiento</title>
+  <desc id="desc">SVG minimalista con elemento central que sugiere la ilusión del conocimiento, auriculares animados y ondas sonoras animadas.</desc>
 
-  <!-- Fondo y gradiente espacial que sugiere inmensidad del saber -->
   <defs>
     <linearGradient id="bgGrad" x1="0" x2="1" y1="0" y2="1">
-      <stop offset="0%" stop-color="#081229"/>
-      <stop offset="50%" stop-color="#0b2a44"/>
-      <stop offset="100%" stop-color="#06364d"/>
+      <stop offset="0%" stop-color="#061624"/>
+      <stop offset="100%" stop-color="#0a3342"/>
     </linearGradient>
 
-    <radialGradient id="brainGrad" cx="50%" cy="40%" r="60%">
-      <stop offset="0%" stop-color="#fff9e6" stop-opacity="1"/>
+    <radialGradient id="coreGrad" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#fff8e6" stop-opacity="1"/>
       <stop offset="45%" stop-color="#ffd27f" stop-opacity="0.95"/>
       <stop offset="100%" stop-color="#ffb86b" stop-opacity="0.8"/>
     </radialGradient>
@@ -89,91 +93,39 @@ Entre la voz interior y el algoritmo que decide qué vemos, qué creemos, y hast
     </filter>
   </defs>
 
-  <!-- fondo -->
+  <!-- Fondo oscuro para contraste -->
   <rect width="100%" height="100%" fill="url(#bgGrad)"/>
 
-  <!-- Estrellas sutiles -->
-  <g opacity="0.35">
-    <circle cx="70" cy="50" r="1.6" fill="#ffffff"/>
-    <circle cx="180" cy="120" r="1.2" fill="#fff"/>
-    <circle cx="320" cy="40" r="1.9" fill="#ffd"/>
-    <circle cx="560" cy="90" r="1.4" fill="#fff"/>
-    <circle cx="720" cy="40" r="1.1" fill="#fff"/>
-    <circle cx="640" cy="220" r="1.6" fill="#fff"/>
+  <!-- Grupo central: núcleo/ilusión del conocimiento -->
+  <g transform="translate(400,240)" filter="url(#softGlow)">
+    <!-- Halo radial -->
+    <ellipse rx="170" ry="98" fill="url(#coreGrad)" opacity="0.18"/>
+
+    <!-- Forma central estilizada (sugerencia de cerebro/luz) -->
+    <path d="M-110,-10 C-95,-72 -10,-96 0,-58 C10,-96 95,-72 110,-10 C118,24 86,46 56,54 C26,62 6,68 0,66 C-6,68 -26,62 -56,54 C-86,46 -118,24 -110,-10 Z"
+          fill="#fff6de" stroke="#ffda8a" stroke-width="2.2" class="glow-anim-borders"/>
+
+    <!-- Surcos internos que dan la sensación de complejidad -->
+    <path d="M-72,-6 C-60,-28 -28,-38 -6,-32" fill="none" stroke="#ffc88a" stroke-width="2" stroke-linecap="round" opacity="0.95"/>
+    <path d="M-36,8 C-20,-2 2,-4 26,6" fill="none" stroke="#ffc88a" stroke-width="1.7" stroke-linecap="round" opacity="0.9"/>
+    <path d="M68,12 C52,6 30,8 10,18" fill="none" stroke="#ffc88a" stroke-width="1.7" stroke-linecap="round" opacity="0.9"/>
+
+    <!-- Punto de luz central -->
+    <circle cx="0" cy="-6" r="8" fill="#fff9ea" stroke="#ffd47a" stroke-width="1.2" />
   </g>
 
-  <!-- Grupo central: "cerebro-luz" que simboliza la ilusión del conocimiento -->
-  <g transform="translate(400,200)">
-    <!-- Halo dorado -->
-    <ellipse rx="160" ry="100" fill="none" stroke="#FFD36B" stroke-width="2.2" class="glow-anim-borders" opacity="0.28" filter="url(#softGlow)"/>
-    <!-- Cerebro estilizado y simbólico (formas curvas) -->
-    <g filter="url(#softGlow)">
-      <path d="M-120,-10 C-115,-70 -10,-90 0,-50 C10,-90 115,-70 120,-10 C125,20 90,40 60,48 C35,54 10,62 0,60 C-10,62 -35,54 -60,48 C-90,40 -125,20 -120,-10 Z"
-            fill="url(#brainGrad)" stroke="#ffda8a" stroke-width="2" class="glow-anim-borders"/>
-      <!-- surcos que dan sensación de complejidad -->
-      <path d="M-80,-10 C-60,-30 -30,-36 -6,-30" fill="none" stroke="#ffb964" stroke-width="2" stroke-linecap="round" opacity="0.9"/>
-      <path d="M-40,6 C-20,-4 0,-2 24,6" fill="none" stroke="#ffb964" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
-      <path d="M70,8 C52,0 30,2 10,14" fill="none" stroke="#ffb964" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
-    </g>
+  <!-- Auriculares (emoji) superpuestos, animados -->
+  <text x="358" y="200" font-size="56" class="headphone-emoji" style="pointer-events:none;">🎧</text>
 
-    <!-- Auriculares como emoji superpuesto (música y podcasts) -->
-    <text x="-24" y="-12" font-size="48" class="headphone-emoji" style="pointer-events:none;">🎧</text>
-
-    <!-- Libro/robot simple a la izquierda: símbolo de aprendizaje y tecnología -->
-    <g transform="translate(-190,-60) scale(0.9)" class="glow-anim-robot" opacity="0.95">
-      <rect x="0" y="0" width="86" height="56" rx="6" fill="#dbeeff" stroke="#8fbce6" stroke-width="2"/>
-      <rect x="6" y="6" width="74" height="44" rx="4" fill="#ffffff" opacity="0.95"/>
-      <rect x="8" y="14" width="60" height="4" rx="2" fill="#f0f4ff"/>
-      <rect x="8" y="24" width="46" height="4" rx="2" fill="#eef6ff"/>
-      <rect x="8" y="34" width="36" height="4" rx="2" fill="#f5fbff"/>
-      <!-- ojo robot/nota -->
-      <circle cx="70" cy="44" r="3" fill="#2b6b9b"/>
-    </g>
+  <!-- Ondas sonoras animadas (delicadas, con dos trazos para profundidad) -->
+  <g transform="translate(0,380)">
+    <path d="M28 60 C140 20 260 110 380 60 C500 10 620 110 740 60"
+          fill="none" stroke="#9fe3ff" stroke-width="4.4" stroke-linecap="round" class="wave-anim" opacity="0.95"/>
+    <path d="M8 82 C140 44 280 128 420 84 C560 40 700 136 792 86"
+          fill="none" stroke="#7bd2ff" stroke-width="2.4" stroke-linecap="round" class="wave-anim" opacity="0.78" style="animation-duration:5.3s"/>
   </g>
 
-  <!-- Onda sonora / ola de curiosidad (animada) -->
-  <g transform="translate(0,360)">
-    <path d="M20 60 C120 30 220 100 320 60 C420 20 520 100 620 60 C700 28 780 74 780 74"
-          fill="none" stroke="#9fe3ff" stroke-width="4" stroke-linecap="round" class="wave-anim" opacity="0.95"/>
-    <path d="M0 80 C120 50 240 110 360 80 C480 50 600 120 720 80"
-          fill="none" stroke="#7bd2ff" stroke-width="2.2" stroke-linecap="round" class="wave-anim" opacity="0.7" style="animation-duration:5.2s"/>
-  </g>
-
-  <!-- Cohete (representa curiosidad que despega) -->
-  <g transform="translate(580,110)" class="rocket-anim" style="transform-box: fill-box;">
-    <g transform="translate(0,0)">
-      <!-- Cuerpo -->
-      <g>
-        <ellipse cx="0" cy="0" rx="18" ry="28" fill="#ffffff" opacity="0.98" stroke="#ffd27f" stroke-width="2"/>
-        <rect x="-8" y="4" width="16" height="30" rx="8" fill="#ff8b6b" stroke="#ffbf94" stroke-width="1.6"/>
-        <circle cx="0" cy="-2" r="6" fill="#06364d" stroke="#7bd2ff" stroke-width="1"/>
-      </g>
-      <!-- Aletas -->
-      <path d="M-8 18 L-22 26 L-10 30 Z" fill="#ffb86b" stroke="#ff8a5c" stroke-width="1"/>
-      <path d="M8 18 L22 26 L10 30 Z" fill="#ffb86b" stroke="#ff8a5c" stroke-width="1"/>
-      <!-- Llama -->
-      <g transform="translate(0,36)" class="flame-anim" opacity="0.95">
-        <path d="M0 0 C-8 12 -6 26 0 32 C6 26 8 12 0 0 Z" fill="#ffb54d" opacity="0.95"/>
-        <path d="M0 6 C-4 14 -2 22 0 26 C2 22 4 14 0 6 Z" fill="#ff6a00" opacity="0.95"/>
-      </g>
-    </g>
-  </g>
-
-  <!-- Texto principal y subtítulos (mensaje del usuario) -->
-  <g transform="translate(24,460)">
-    <text x="0" y="0" font-size="18" fill="#fff8e6" font-weight="700">Música, Videos y Podcasts</text>
-    <text x="0" y="22" font-size="14" fill="#fff4d6">Descubre, aprende y sonríe — Innovador &amp; chill 🎨 | 🎵 | 🤓 | 🎬</text>
-    <text x="0" y="44" font-size="12" fill="#f6e9d2">Relájate y disfruta contenido único</text>
-    <text x="0" y="66" font-size="11" fill="#fff0d9" class="small-note">Espero que disfrutes la experiencia y te sumes a esta aventura. ¡Gracias por tu visita y bienvenido/a!</text>
-  </g>
 </svg>
-
-🧠 La ilusión del conocimiento
-
-Dicen que vivimos en la era de la información. Pero en realidad, nadamos en un océano de ruido.
-Todo está al alcance de un clic, y sin embargo, nos cuesta pensar por nosotros mismos.
-Confundimos saber con acumular datos, y opinión con verdad.
-Las sombras se han vuelto más sofisticadas: ahora tienen filtros, inteligencia artificial y hashtags.
 
 Mientras creemos que elegimos, un algoritmo invisible elige por nosotros.
 Nos mantiene mirando la pared, entretenidos, indignados, conectados… pero quietos.
