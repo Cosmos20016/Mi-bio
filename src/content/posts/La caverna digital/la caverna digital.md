@@ -1,9 +1,9 @@
 ---
 title: La Caverna Digital
 published: 2025-10-20
-description: Platón habló de hombres encadenados viendo sombras,
+description: "Platón habló de hombres encadenados viendo sombras,
 Nosotros seguimos allí… solo que ahora, las sombras brillan,
-Una mirada diferente al mito de la caverna en tiempos de luz artificial.
+Una mirada diferente al mito de la caverna en tiempos de luz artificial."
 tags: [Adicción digital]
 category: Reflexión social
 draft: false
