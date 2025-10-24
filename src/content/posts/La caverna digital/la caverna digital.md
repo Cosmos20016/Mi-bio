@@ -101,7 +101,8 @@ title="YouTube video player" frameborder="0"
 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
 allowfullscreen>
 </iframe>
-                                                     <div style="line-height:1.7; margin-bottom:0.8rem;"> ¡Gracias por tu visita!. </div>
+
+<p align="center">¡Gracias por tu visita!</p>
 
 <style>
 </svg>
