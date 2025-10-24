@@ -9,7 +9,6 @@ tags: [Adicción digital]
 category: Reflexión social
 draft: false
 ---
-# La Caverna Digital: Cómo vivimos encadenados a nuestras pantallas
 
 Imagina esto: despiertas, y antes de sentir la textura de las sábanas, ya has tocado una pantalla.
 Un destello azul te recibe. Notificaciones. Noticias. Opiniones. Caras sonrientes. El mundo parece comprimido en la palma de tu mano.
