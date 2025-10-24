@@ -9,7 +9,7 @@ tags: [Adicción digital]
 category: Reflexión social
 draft: false
 ---
-# La Caverna Digital: Encadenados a Nuestras Pantallas
+# Prisioneros de la Luz
 
 Imagina esto: despiertas, y antes de sentir la textura de las sábanas, ya has tocado una pantalla.
 Un destello azul te recibe. Notificaciones. Noticias. Opiniones. Caras sonrientes. El mundo parece comprimido en la palma de tu mano.
@@ -18,6 +18,8 @@ Pero... ¿y si todo eso no fuera el mundo real?
 Platón, hace más de dos mil años, contó la historia de unos prisioneros que vivían encadenados en una caverna. Solo podían ver sombras proyectadas en la pared y creían que eso era la realidad.
 Hoy, sin barrotes ni grilletes, vivimos una versión moderna de aquel mito. Solo que ahora, nuestra caverna tiene Wi-Fi.
 Y nuestras cadenas brillan con luz LED.
+
+![Texto alternativo](ruta/de/la/imagen.jpg)
 
 🕳️ Las sombras del siglo XXI
 
