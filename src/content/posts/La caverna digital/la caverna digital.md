@@ -102,6 +102,9 @@ allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; pic
 allowfullscreen>
 </iframe>
 
+<div style="line-height:1.7; margin-bottom:0.8rem;"> Gracias por tu visita!. </div>
+
+<style>
 </svg>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" class="svg-responsive" role="img" aria-labelledby="title desc">
   <style>
