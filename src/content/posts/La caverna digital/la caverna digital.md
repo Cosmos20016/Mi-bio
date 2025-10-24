@@ -82,14 +82,20 @@ Vivimos rodeados de pantallas que prometen mostrarnos el mundo, pero muchas vece
 Quizá el desafío más grande de nuestro tiempo no sea crear más tecnología, sino recordar que aún somos humanos.
 Y que, incluso en la caverna digital, siempre existe la posibilidad de mirar hacia la salida… y encontrar la luz.
 
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" class="svg-responsive" role="img" aria-labelledby="title desc">
+  <style>
+    .center-svg { display: flex; justify-content: center; align-items: center; min-height: 54vh; width: 100%; padding: 0 10px; box-sizing: border-box; }
+    .svg-responsive { width: 100%; max-width: 400px; height: auto; display: block; max-width: 100vw; max-height: 98vh; }
+    .wave-anim { stroke-dasharray: 900; stroke-dashoffset: 0; animation: waveBounce 4.47s infinite; transform-origin: center; animation-timing-function: cubic-bezier(.6,.2,.2,.8); }
+    @keyframes waveBounce { 0% { transform: translateY(0px);} 18% { transform: translateY(-10px);} 40% { transform: translateY(7px);} 60% { transform: translateY(-4px);} 80% { transform: translateY(2px);} 100% { transform: translateY(0px);} }
+    .headphone-emoji { animation: headphonesPulse 2.5s infinite alternate; }
+    @keyframes headphonesPulse { 0% { filter: drop-shadow(0 0 0px #FFD700);} 80% { filter: drop-shadow(0 0 14px #FFD700);} 100% { filter: drop-shadow(0 0 0px #FFD700);} }
+    
 🌐 Dale play al video en YouTube y sumérgete aún más en esta reflexión: <!-- Auriculares (emoji) superpuestos, animados -->
   <text x="358" y="200" font-size="56" class="headphone-emoji" style="pointer-events:none;">🎧▶</text>
 
   <!-- Ondas sonoras animadas (delicadas, con dos trazos para profundidad) -->
   <g transform="translate(0,380)">
-      <!-- Punto focal central -->
-    <circle cx="0" cy="-6" r="8.4" fill="#fffdf7" stroke="#ffd485" stroke-width="1.2" opacity="0.98"/>
-  </g>
     <path d="M28 60 C140 20 260 110 380 60 C500 10 620 110 740 60"
           fill="none" stroke="#9fe3ff" stroke-width="4.4" stroke-linecap="round" class="wave-anim" opacity="0.95"/>
     <path d="M8 82 C140 44 280 128 420 84 C560 40 700 136 792 86"
