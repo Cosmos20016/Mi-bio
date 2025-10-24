@@ -86,8 +86,11 @@ Y que, incluso en la caverna digital, siempre existe la posibilidad de mirar hac
 
 🌐 Dale play al video en YouTube y sumérgete aún más en esta reflexión:
 
+<!-- Punto de luz central -->
+    <circle cx="0" cy="-6" r="8" fill="#fff9ea" stroke="#ffd47a" stroke-width="1.2" />
+  </g>
 <!-- Auriculares (emoji) superpuestos, animados -->
-  <text x="358" y="200" font-size="56" class="headphone-emoji" style="pointer-events:none;">🎧</text>
+  <text x="358" y="200" font-size="56" class="headphone-emoji" style="pointer-events:none;">🎧▶</text>
 
   <!-- Ondas sonoras animadas (delicadas, con dos trazos para profundidad) -->
   <g transform="translate(0,380)">
