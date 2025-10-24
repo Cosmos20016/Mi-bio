@@ -19,8 +19,6 @@ Platón, hace más de dos mil años, contó la historia de unos prisioneros que 
 Hoy, sin barrotes ni grilletes, vivimos una versión moderna de aquel mito. Solo que ahora, nuestra caverna tiene Wi-Fi.
 Y nuestras cadenas brillan con luz LED.
 
-![Las sombras del siglo XXI](./sombras.png)
-
 🕳️ Las sombras del siglo XXI
 
 Las llamamos redes sociales, pero a veces parecen redes que nos atrapan.
