@@ -92,7 +92,11 @@ Y que, incluso en la caverna digital, siempre existe la posibilidad de mirar hac
     <path d="M8 82 C140 44 280 128 420 84 C560 40 700 136 792 86"
           fill="none" stroke="#7bd2ff" stroke-width="2.4" stroke-linecap="round" class="wave-anim" opacity="0.78" style="animation-duration:5.3s"/>
   </g>
-
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" class="svg-responsive" role="img" aria-labelledby="title desc">
+  <style>
+    .headphone-emoji { animation: headphonesPulse 2.5s infinite alternate; }
+    @keyframes headphonesPulse { 0% { filter: drop-shadow(0 0 0px #FFD700);} 80% { filter: drop-shadow(0 0 14px #FFD700);} 100% { filter: drop-shadow(0 0 0px #FFD700);} }
+      
 </svg>
  
 ## La Caverna Digital: Cómo vivimos encadenados a nuestras pantallas
@@ -103,8 +107,3 @@ title="YouTube video player" frameborder="0"
 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
 allowfullscreen>
 </iframe>
-
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" class="svg-responsive" role="img" aria-labelledby="title desc">
-  <style>
-    .headphone-emoji { animation: headphonesPulse 2.5s infinite alternate; }
-    @keyframes headphonesPulse { 0% { filter: drop-shadow(0 0 0px #FFD700);} 80% { filter: drop-shadow(0 0 14px #FFD700);} 100% { filter: drop-shadow(0 0 0px #FFD700);} }
