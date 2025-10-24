@@ -293,5 +293,3 @@ text[font-size="26"] {
   </g>
 </svg>
 </div>
-
-Espero que disfrutes la experiencia y te sumes a esta aventura. ¡Gracias por tu visita y bienvenido/a!
