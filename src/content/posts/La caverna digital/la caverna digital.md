@@ -40,12 +40,6 @@ Todo está al alcance de un clic, y sin embargo, nos cuesta pensar por nosotros 
 Confundimos saber con acumular datos, y opinión con verdad.
 Las sombras se han vuelto más sofisticadas: ahora tienen filtros, inteligencia artificial y hashtags.
 
-<!--
-Pega TODO el contenido de este archivo directamente en tu post Markdown SIN encerrarlo en un bloque de código.
-Es decir: pega tal cual en el editor (modo HTML/Markdown que permita HTML inline) para que el SVG se renderice y las animaciones funcionen.
-Si tu plataforma sanitiza o bloquea SVG inline, sube el .svg como archivo y usa ![alt](ruta/al/archivo.svg) como alternativa.
--->
-
 <div class="center-svg">
 <!-- SVG inline: copia desde aquí hasta el final del SVG -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" class="svg-responsive" role="img" aria-labelledby="title desc" width="100%">
@@ -147,8 +141,6 @@ Si tu plataforma sanitiza o bloquea SVG inline, sube el .svg como archivo y usa 
   </g>
 
 </svg>
-<!-- hasta aquí -->
-</div>
 
 Mientras creemos que elegimos, un algoritmo invisible elige por nosotros.
 Nos mantiene mirando la pared, entretenidos, indignados, conectados… pero quietos.
