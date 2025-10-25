@@ -271,7 +271,7 @@ text[font-size="26"] {
     🎨  |  🎵  |  🤓  |  🎬  
   </text>
   <text x="200" y="190" text-anchor="middle" fill="#22223b" font-size="15" font-family="monospace">
-    Relájate y disfruta contenido único
+    Explora y disfruta contenido único
   </text>
   <!-- Onda animada -->
   <path class="wave-anim" d="M0,200 Q100,185 200,200 T400,200" fill="none" stroke="url(#wave)" stroke-width="7"/>
