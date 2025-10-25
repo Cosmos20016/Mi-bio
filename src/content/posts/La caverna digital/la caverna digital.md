@@ -102,7 +102,7 @@ allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; pic
 allowfullscreen>
 </iframe>
 
-<p align="center">¡Gracias por tu visita!</p>
+<p align="center">¡Gracias por pasarte por aquí! 🚀</p>
 
 <style>
 </svg>
@@ -267,7 +267,7 @@ text[font-size="26"] {
     Música, Videos y Podcasts
   </text>
   <text x="200" y="130" text-anchor="middle" fill="#FFD700" font-size="20" font-family="monospace" font-weight="bold">
-    Descubre, aprende y sonríe
+    Explora, aprende y sonríe
   </text>
   <text x="200" y="148" text-anchor="middle" fill="#00e580" font-size="17" font-family="monospace">
     Innovador & chill
@@ -276,7 +276,7 @@ text[font-size="26"] {
     🎨  |  🎵  |  🤓  |  🎬  
   </text>
   <text x="200" y="190" text-anchor="middle" fill="#22223b" font-size="15" font-family="monospace">
-    Relájate y disfruta contenido único
+    Descubre y disfruta contenido único
   </text>
   <!-- Onda animada -->
   <path class="wave-anim" d="M0,200 Q100,185 200,200 T400,200" fill="none" stroke="url(#wave)" stroke-width="7"/>
