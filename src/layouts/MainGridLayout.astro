@@ -15,6 +15,9 @@ import {
 } from "../constants/constants";
 import Layout from "./Layout.astro";
 
+import VideoBanner from "../components/misc/VideoBanner.svelte"; // nuevo componente
+import { url, pathsEqual } from "../utils/url-utils"; // para detectar home
+
 interface Props {
 	title?: string;
 	banner?: string;
@@ -32,6 +35,8 @@ const {
 	setOGTypeArticle,
 	headings = [],
 } = Astro.props;
+
+const isHomePage = pathsEqual(Astro.url.pathname, url("/")); // true solo en /
 const hasBannerCredit =
 	siteConfig.banner.enable && siteConfig.banner.credit.enable;
 const hasBannerLink = !!siteConfig.banner.credit.url;
@@ -57,6 +62,11 @@ const mainPanelTop = siteConfig.banner.enable
                   src={siteConfig.banner.src} position={siteConfig.banner.position}
     >
     </ImageWrapper>
+
+    { /* Overlay de video: sólo en la página principal. client:load para ejecutar onMount en Svelte. */ }
+    {isHomePage &&
+      <VideoBanner client:load videoUrl="/videos/intro.mp4" />
+    }
 </div>}
 
 <!-- Main content -->
