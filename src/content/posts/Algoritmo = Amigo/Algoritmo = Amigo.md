@@ -6,7 +6,7 @@ No tiene voz, pero define las conversaciones que llegan a nuestros oídos.
 No es humano, pero moldea nuestras relaciones como si lo fuera."
 image: "./cover.jpeg"
 tags: [Virtualidad]
-category: Reflexión social
+category: Investigación Digital
 draft: true
 ---
 
