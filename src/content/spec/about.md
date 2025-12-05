@@ -46,5 +46,3 @@
     <b>Bienvenido/a: aquí, la lentitud es poder, el código es magia, y la buena vibra es ley universal.</b>
   </div>
 </div>
-
-<img src="./midibujo.png" alt="Mi retrato" style="width:140px;height:140px;border-radius:50%;object-fit:cover;margin-bottom:1rem;" />
