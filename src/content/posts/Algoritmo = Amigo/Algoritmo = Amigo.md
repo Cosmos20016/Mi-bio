@@ -7,7 +7,7 @@ No es humano, pero moldea nuestras relaciones como si lo fuera."
 image: "./cover.jpeg"
 tags: [Virtualidad]
 category: Investigación Digital
-draft: true
+draft: false
 ---
 
 🌐 Algoritmo = Amigo
