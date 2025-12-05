@@ -7,7 +7,7 @@ Una mirada diferente al mito de la caverna en tiempos de luz artificial."
 image: "./cover.png"
 tags: [Adicción digital]
 category: Reflexión social
-draft: false
+draft: true
 ---
 
 Imagina esto: despiertas, y antes de sentir la textura de las sábanas, ya has tocado una pantalla.
