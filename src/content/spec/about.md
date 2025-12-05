@@ -1,4 +1,3 @@
-<img src="./midibujo.png" alt="Mi retrato" style="width:140px;height:140px;border-radius:50%;object-fit:cover;margin-bottom:1rem;" />
 # Sobre mí
 
 ---
