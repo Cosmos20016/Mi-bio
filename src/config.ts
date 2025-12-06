@@ -58,7 +58,7 @@ export const navBarConfig: NavBarConfig = {
 };
 
 export const profileConfig: ProfileConfig = {
-	avatar: "/assets/images/demo-avatar.mp4", // <- usar RUTA ABSOLUTA hacia public/
+	avatar: "assets/images/demo-avatar.gif", // Relative to the /src directory. Relative to the /public directory if it starts with '/'
 	name: "Kevin Borja",
 	bio: "Sencillo, creativo, yo",
 	links: [
