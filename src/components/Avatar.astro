@@ -1,15 +1,26 @@
 ---
 const { avatar, size = 140, alt = 'Avatar' } = Astro.props;
 const isVideo = /\.(mp4|webm)$/i.test(avatar);
-const style = `width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;display:block;`;
 const poster = avatar.replace(/\.(mp4|webm)$/i, '-poster.png');
 const imgFallback = avatar.replace(/\.(mp4|webm)$/i, '.png');
+// size se espera numérico (ej. 140)
 ---
 {isVideo ? (
-  <video autoplay muted loop playsinline poster={poster} style={style} aria-label={alt}>
+  <video
+    autoplay
+    muted
+    loop
+    playsinline
+    poster={poster}
+    width={size}
+    height={size}
+    style={`border-radius:50%;object-fit:cover;display:block;`}
+    aria-label={alt}
+  >
     <source src={avatar} type={avatar.endsWith('.webm') ? 'video/webm' : 'video/mp4'} />
-    <img src={imgFallback} alt={alt} width={size} height={size} style="border-radius:50%;object-fit:cover;" />
+    <!-- Fallback: imagen estática con dimensiones explícitas -->
+    <img src={imgFallback} alt={alt} width={size} height={size} style="border-radius:50%;object-fit:cover;display:block;" />
   </video>
 ) : (
-  <img src={avatar} alt={alt} width={size} height={size} style={style} />
+  <img src={avatar} alt={alt} width={size} height={size} style="border-radius:50%;object-fit:cover;display:block;" />
 )}
