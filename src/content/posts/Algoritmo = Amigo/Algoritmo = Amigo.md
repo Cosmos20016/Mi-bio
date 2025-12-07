@@ -53,7 +53,7 @@ Dale play al video en YouTube y sumérgete aún más en esta reflexión: <!-- Au
 ## Algoritmo = Amigo
 
 <iframe width="100%" height="468" 
-src="https://www.youtube.com/watch?v=Nq1rKFg03h" 
+src="https://www.youtube.com/embed/Nq1rKFg03hE" 
 title="YouTube video player" frameborder="0" 
 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
 allowfullscreen>
