@@ -4,7 +4,7 @@ published: 2025-12-07
 description: "No tiene rostro, pero influye en los rostros que vemos.
 No tiene voz, pero define las conversaciones que llegan a nuestros oídos.
 No es humano, pero moldea nuestras relaciones como si lo fuera."
-image: "./cover.git"
+image: "./cover.jpeg"
 tags: [Virtualidad]
 category: Investigación Digital
 draft: false
