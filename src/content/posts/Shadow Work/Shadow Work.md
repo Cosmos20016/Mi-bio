@@ -12,7 +12,7 @@ draft: false
 
 Cómo el Shadow Work pasó de ser una idea psicológica profunda a convertirse en el espejo incómodo de una generación.
 
-INTRODUCCIÓN — La oscuridad viral
+## INTRODUCCIÓN — La oscuridad viral
 
 Si te digo “shadow work”, probablemente pienses en algo místico, raro, oscuro… o simplemente en el hashtag que te salió anoche en TikTok, entre un video motivacional y alguien llorando frente a la cámara.
 
@@ -30,7 +30,7 @@ Para responder eso, primero hay que entender qué demonios es realmente la “so
 
 ---
 
-🌘 I. ¿Qué es el Shadow Work… realmente?
+## 🌘 I. ¿Qué es el Shadow Work… realmente?
 
 La sombra no es solo tu "lado malvado". Es el sótano de tu psique donde guardaste todo lo que no encajaba con el personaje que te obligaron a ser. No es solo trauma, ni depresión, ni “mis pensamientos negativos”. Es más sencillo y más incómodo: todo aquello que relegaste para sostener una versión pública más aceptable.
 
@@ -50,7 +50,7 @@ Carl Jung lo definió así: “La sombra es aquello que la persona no desea ser.
 
 ---
 
-📱 II. La explosión digital: cuando el dolor encontró su escenario
+## 📱 II. La explosión digital: cuando el dolor encontró su escenario
 
 Antes, la sombra se trabajaba en silencio. Hoy, paradójicamente, se volvió pública. No siempre porque la gente busque atención, sino porque algo cruje por dentro y ya no cabe en espacios privados.
 
@@ -62,7 +62,7 @@ Un video de baile no te toca. Un testimonio donde alguien dice “Nunca superé 
 
 ---
 
-💸 III. El boom comercial: cuando sanar se convirtió en negocio
+## 💸 III. El boom comercial: cuando sanar se convirtió en negocio
 
 El sufrimiento genera vistas; las vistas generan ventas; las ventas generan tendencias. Aparecieron diarios de “Shadow Work” bonitos y minimalistas, marketing perfecto, creadores contando transformaciones en 15 segundos.
 
@@ -72,7 +72,7 @@ Esto no es solo emprendimiento: es mercantilización del trauma, capitalismo emo
 
 ---
 
-🎭 IV. La estética de la introspección: el dolor convertido en identidad
+## 🎭 IV. La estética de la introspección: el dolor convertido en identidad
 
 Las redes no solo viralizaron el Shadow Work; lo volvieron bello: velas, cuadernos minimalistas, música triste, habitaciones cuidadosamente iluminadas. Esa escena es perfecta para “mirar tu oscuridad”.
 
@@ -80,7 +80,7 @@ Y aquí está el peligro: si romantizas tu oscuridad, dejas de buscar salir de e
 
 ---
 
-✍️ V. Los prompts virales y el cuerpo: por qué te hacen sentir tan fuerte
+## ✍️ V. Los prompts virales y el cuerpo: por qué te hacen sentir tan fuerte
 
 Los prompts no son magia; están diseñados para atravesar tus defensas:
 
@@ -94,7 +94,7 @@ El inconsciente no es un manual: es un tejido corporal-emocional. Abrirlo sin he
 
 ---
 
-🧠 VI. Qué dice la psicología real (sin tecnicismos)
+## 🧠 VI. Qué dice la psicología real (sin tecnicismos)
 
 Terapias serias —IFS, Jung, Terapia de Esquemas— trabajan con partes heridas, pero siempre con un profesional que sostiene el proceso. ¿Por qué? Porque al tocar la sombra tocas memorias, creencias y emociones intensas que pueden necesitar contención y regulación.
 
@@ -102,7 +102,7 @@ El problema no es hacer Shadow Work; el problema es hacerlo sin guía, sin prepa
 
 ---
 
-⚠️ VII. Riesgos reales: lo que nadie quiere admitir
+## ⚠️ VII. Riesgos reales: lo que nadie quiere admitir
 
 Shadow Work no es malo, pero puede ser demasiado si no sabes cómo sostenerlo. Riesgos reales:
 
@@ -120,7 +120,7 @@ Lo más peligroso: creer que “ver tu sombra” es lo mismo que sanarla. Mirarl
 
 ---
 
-🔮 VIII. La nueva sombra digital: el futuro que ya está pasando
+## 🔮 VIII. La nueva sombra digital: el futuro que ya está pasando
 
 Si en la explosión digital hablamos del espejo que devuelve la IA, aquí miramos hacia delante: la sombra colectiva se está modulando por sistemas que no sienten pero distribuyen impacto. Dos puntos a considerar:
 
@@ -131,7 +131,7 @@ El resultado: nuevas formas de sufrimiento que están mediadas por interfaces, m
 
 ---
 
-🔚 IX. Conclusión: lo que nadie dice (pero todos sienten)
+## 🔚 IX. Conclusión: lo que nadie dice (pero todos sienten)
 
 El Shadow Work explotó porque la gente ya no puede con todo lo que carga. La sombra no es un enemigo; es una parte de ti que pide ser vista. Pero merece respeto: no es un challenge, ni un filtro, ni un negocio.
 
@@ -139,7 +139,7 @@ El encuentro con la sombra, bien hecho, es un encuentro transformador: tú conti
 
 ---
 
-✔️ Recomendaciones claras para practicar Shadow Work sin dañarte
+## ✔️ Recomendaciones claras para practicar Shadow Work sin dañarte
 
 - No entres en temas profundos cuando estés emocionalmente frágil.  
 - No hagas prompts invasivos si estás solo o sin soporte.  
