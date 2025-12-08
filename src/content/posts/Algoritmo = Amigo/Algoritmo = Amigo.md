@@ -10,7 +10,7 @@ category: Investigación Digital
 draft: false
 ---
 
-🌐 Algoritmo = Amigo
+## 🌐 Algoritmo = Amigo
 
 El documental que revela al “mejor amigo” que nunca escogimos.
 
@@ -50,7 +50,7 @@ Dale play al video en YouTube y sumérgete aún más en esta reflexión: <!-- Au
         fill="none" stroke="#7bd2ff" stroke-width="2.4" stroke-linecap="round" class="wave-anim" opacity="0.78" style="animation-duration:5.3s"/>
 </g>
  
-## Algoritmo = Amigo
+## Algoritmo = Amigo (video)
 
 <iframe width="100%" height="468" 
 src="https://www.youtube.com/embed/Nq1rKFg03hE" 
