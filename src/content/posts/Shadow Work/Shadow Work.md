@@ -150,7 +150,6 @@ El encuentro con la sombra, bien hecho, es un encuentro transformador: tú conti
 
 El objetivo no es revivir el dolor, sino integrarlo.
 
----
 
 <p align="center">¡Gracias por pasarte por aquí! 🚀</p>
 
