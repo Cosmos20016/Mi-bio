@@ -7,7 +7,6 @@ tags: [shadow work, "Carl Jung", psicología, "Cultura de Internet"]
 category: Investigación Digital
 draft: false
 ---
-
 ## INTRODUCCIÓN — La oscuridad viral
 
 Si te digo “shadow work”, probablemente pienses en algo místico, raro, oscuro… o simplemente en el hashtag que te salió anoche en TikTok, entre un video motivacional y alguien llorando frente a la cámara.
