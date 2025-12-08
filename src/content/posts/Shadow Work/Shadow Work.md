@@ -1,6 +1,6 @@
 ---
 title: Lo Que Nadie Te Contó del Shadow Work (y Por Qué Te Está Pasando a Ti También)
-published: 2025-12-07
+published: 2025-12-08
 description: "Millones están haciendo Shadow Work sin saberlo… y tú probablemente también. Este artículo revela por qué tu mente está despertando ahora, por qué duele tanto mirar lo que cargas y cómo la era digital convirtió la sombra en un espejo imposible de ignorar. Léelo bajo tu propio riesgo: no podrás seguir viéndote igual."
 image: "./cover.jpeg"
 tags: [shadow work, "Carl Jung", psicología, "Cultura de Internet"]
