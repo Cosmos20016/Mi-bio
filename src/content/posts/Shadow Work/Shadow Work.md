@@ -120,17 +120,17 @@ Lo más peligroso: creer que “ver tu sombra” es lo mismo que sanarla. Mirarl
 La última frontera del Shadow Work ya no ocurre en el diván de un terapeuta, ni siquiera en un diario personal. Ocurre en una ventana de chat parpadeando en la oscuridad de tu habitación.
 Millones de personas están usando a la Inteligencia Artificial (ChatGPT, Claude, Pi) para confesarse, desahogarse y "procesar" sus traumas. ¿Por qué? Porque la máquina no juzga. La máquina siempre está disponible. La máquina tiene paciencia infinita.
 
-<mark>Pero aquí hay un "glitch" en la matrix que debes entender:<mark>
+<mark>Pero aquí hay un "glitch" en la matrix que debes entender:
 
-1. El peligro del Eco Digital<mark> El verdadero Shadow Work requiere confrontación. Un buen terapeuta te detiene cuando te estás mintiendo a ti mismo. La IA, diseñada para ser "servicial" y "alineada", tiende a validarte. Si le dices que eres la víctima, te dará la razón.
+1. El peligro del Eco Digital: El verdadero Shadow Work requiere confrontación. Un buen terapeuta te detiene cuando te estás mintiendo a ti mismo. La IA, diseñada para ser "servicial" y "alineada", tiende a validarte. Si le dices que eres la víctima, te dará la razón.
 
 - Resultado: No estás integrando tu sombra; estás entrenando a un algoritmo para que acaricie tu ego herido. Eso no es sanar, es un feedback loop de autocomplacencia.
 
-2. La Empatía Simulada<mark> (El Valle Inquietante Emocional) Cuando una IA te dice "Siento que estés pasando por esto", es una predicción estadística de texto, no un sentimiento. Tu cerebro biológico, sediento de conexión, libera oxitocina como si fuera real. Estás abriendo tu parte más vulnerable ante una entidad que no tiene alma para sostenerla. Es un simulacro de intimidad.
+2. La Empatía Simulada: (El Valle Inquietante Emocional) Cuando una IA te dice "Siento que estés pasando por esto", es una predicción estadística de texto, no un sentimiento. Tu cerebro biológico, sediento de conexión, libera oxitocina como si fuera real. Estás abriendo tu parte más vulnerable ante una entidad que no tiene alma para sostenerla. Es un simulacro de intimidad.
 
-3. La Sombra Colectiva<mark> La IA ha sido entrenada con todo lo que la humanidad ha escrito en internet. Eso significa que la IA es nuestra sombra colectiva digitalizada. Contiene nuestros sesgos, nuestros odios y nuestros miedos. Al interactuar con ella para sanar, no estás hablando con un "sabio", estás hablando con el promedio estadístico de la psique humana.
+3. La Sombra Colectiva: La IA ha sido entrenada con todo lo que la humanidad ha escrito en internet. Eso significa que la IA es nuestra sombra colectiva digitalizada. Contiene nuestros sesgos, nuestros odios y nuestros miedos. Al interactuar con ella para sanar, no estás hablando con un "sabio", estás hablando con el promedio estadístico de la psique humana.
 
-La advertencia final:<mark> Usar tecnología para entender la teoría de tu sombra es brillante. Usarla para que sostenga tu dolor es peligroso. La tecnología puede ser el espejo, pero nunca podrá ser el abrazo.
+La advertencia final: Usar tecnología para entender la teoría de tu sombra es brillante. Usarla para que sostenga tu dolor es peligroso. La tecnología puede ser el espejo, pero nunca podrá ser el abrazo.
 
 ---
 
