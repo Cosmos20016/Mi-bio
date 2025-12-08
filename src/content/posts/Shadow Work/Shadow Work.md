@@ -152,7 +152,8 @@ El encuentro con la sombra, bien hecho, es un encuentro transformador: tú conti
 - Protege tu privacidad: lo que compartes con modelos entrenados en datos públicos puede quedar replicado por terceros. 
 
 El objetivo no es revivir el dolor, sino integrarlo.
----
+-
+
 
 <p align="center">¡Gracias por pasarte por aquí! 🚀</p>
 
