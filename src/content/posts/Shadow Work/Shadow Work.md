@@ -8,10 +8,6 @@ category: Investigación Digital
 draft: false
 ---
 
-🌑 Sombras en la era del algoritmo
-
-Cómo el Shadow Work pasó de ser una idea psicológica profunda a convertirse en el espejo incómodo de una generación.
-
 ## INTRODUCCIÓN — La oscuridad viral
 
 Si te digo “shadow work”, probablemente pienses en algo místico, raro, oscuro… o simplemente en el hashtag que te salió anoche en TikTok, entre un video motivacional y alguien llorando frente a la cámara.
