@@ -145,7 +145,7 @@
 			const raw = localStorage.getItem(storageKey);
 			if (!raw) return;
 			const data = JSON.parse(raw) as Partial<{
-				text: string;
+				ext: string;
 				speed: number;
 				fontSize: number;
 				lineHeight: number;
@@ -156,7 +156,7 @@
 				focusMode: boolean;
 				dimOutside: boolean;
 				ultraClean: boolean;
-			};
+			}>;
 			if (data.text) text = data.text;
 			if (data.speed) speed = data.speed;
 			if (data.fontSize) fontSize = data.fontSize;
@@ -378,7 +378,7 @@
 					<button class="btn-plain" on:click={toggleFullscreen}>Pantalla completa</button>
 				</div>
 			</div>
-		{/if}
+			{/if}
 	</div>
 
 	<div
