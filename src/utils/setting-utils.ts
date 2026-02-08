@@ -59,3 +59,16 @@ export function setTheme(theme: LIGHT_DARK_MODE): void {
 export function getStoredTheme(): LIGHT_DARK_MODE {
 	return (localStorage.getItem("theme") as LIGHT_DARK_MODE) || DEFAULT_THEME;
 }
+
+export function applyStoredThemeToDocument(): void {
+	applyThemeToDocument(getStoredTheme());
+}
+
+export function watchSystemThemeChanges(theme: LIGHT_DARK_MODE): () => void {
+	const media = window.matchMedia("(prefers-color-scheme: dark)");
+	const handler = () => applyThemeToDocument(theme);
+	media.addEventListener("change", handler);
+	return () => {
+		media.removeEventListener("change", handler);
+	};
+}
