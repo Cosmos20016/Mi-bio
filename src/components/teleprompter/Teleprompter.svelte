@@ -7,6 +7,8 @@
 	} from "@utils/setting-utils.ts";
 
 	const storageKey = "teleprompter:state:v2";
+	const fullscreenThemes = ["auto", "light", "dark"] as const;
+	type FullscreenTheme = (typeof fullscreenThemes)[number];
 
 	let text = `Pega aquí tu guion...
 
@@ -30,6 +32,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	let showMobileNotice = false;
 	let isReady = false;
 	let ultraClean = false;
+	let fullscreenTheme: FullscreenTheme = "auto";
 
 	let scrollContainer: HTMLDivElement;
 	let content: HTMLDivElement;
@@ -143,7 +146,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		try {
 			const raw = localStorage.getItem(storageKey);
 			if (!raw) return;
-			const data = JSON.parse(raw) as Partial<{ text: string; speed: number; fontSize: number; lineHeight: number; isMirror: boolean; autoCenter: boolean; smooth: boolean; glow: boolean; focusMode: boolean; dimOutside: boolean; ultraClean: boolean; }>; 
+			const data = JSON.parse(raw) as Partial<{ text: string; speed: number; fontSize: number; lineHeight: number; isMirror: boolean; autoCenter: boolean; smooth: boolean; glow: boolean; focusMode: boolean; dimOutside: boolean; ultraClean: boolean; fullscreenTheme: FullscreenTheme; }>;
 			if (data.text) text = data.text;
 			if (data.speed) speed = data.speed;
 			if (data.fontSize) fontSize = data.fontSize;
@@ -155,6 +158,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			if (typeof data.focusMode === "boolean") focusMode = data.focusMode;
 			if (typeof data.dimOutside === "boolean") dimOutside = data.dimOutside;
 			if (typeof data.ultraClean === "boolean") ultraClean = data.ultraClean;
+			if (data.fullscreenTheme) fullscreenTheme = data.fullscreenTheme;
 		} catch {
 			// ignore invalid storage
 		}
@@ -176,6 +180,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 				focusMode,
 				dimOutside,
 				ultraClean,
+				fullscreenTheme,
 			};
 			localStorage.setItem(storageKey, JSON.stringify(payload));
 		}, 300);
@@ -224,7 +229,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			case "KeyL":
 				ultraClean = !ultraClean;
 				break;
-		}
+			}
 	};
 
 	$: scheduleSave();
@@ -327,6 +332,14 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 					<span>{lineHeight.toFixed(2)}</span>
 				</div>
 				<div class="control-group">
+					<label>Fondo pantalla completa</label>
+					<select bind:value={fullscreenTheme}>
+						<option value="auto">Automático (tema)</option>
+						<option value="light">Claro</option>
+						<option value="dark">Oscuro</option>
+					</select>
+				</div>
+				<div class="control-group">
 					<label>Progreso</label>
 					<input
 						type="range"
@@ -366,6 +379,8 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		class:mirror={isMirror}
 		class:focus={focusMode}
 		class:glow={glow}
+		class:fullscreen-light={fullscreenTheme === "light"}
+		class:fullscreen-dark={fullscreenTheme === "dark"}
 		bind:this={fullscreenTarget}
 	>
 		<div class="teleprompter-progress">
@@ -489,6 +504,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		border-radius: 1.25rem;
 		padding: 1.5rem;
 		box-shadow: 0 18px 60px rgba(15, 23, 42, 0.15);
+		color: inherit;
 	}
 	.teleprompter-input {
 		width: 100%;
@@ -515,6 +531,18 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		margin-top: 1.5rem;
 		display: grid;
 		gap: 1rem;
+	}
+	.teleprompter-controls select {
+		border-radius: 0.75rem;
+		padding: 0.5rem 0.75rem;
+		background: rgba(255,255,255,0.7);
+		border: 1px solid rgba(15, 23, 42, 0.1);
+		color: var(--deep-text, #0f172a);
+	}
+	:global(.dark) .teleprompter-controls select {
+		background: rgba(15,23,42,0.5);
+		border-color: rgba(255,255,255,0.1);
+		color: var(--deep-text, #e2e8f0);
 	}
 	.control-group {
 		display: grid;
@@ -567,7 +595,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	.teleprompter-screen {
 		position: relative;
 		border-radius: 1.5rem;
-		overflow: hidden;
+	to overflow: hidden;
 		background: radial-gradient(circle at top, rgba(255,255,255,0.9), rgba(255,255,255,0.6));
 		border: 1px solid rgba(15, 23, 42, 0.08);
 		box-shadow: 0 20px 80px rgba(15, 23, 42, 0.18);
@@ -585,7 +613,16 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		width: 100vw;
 		height: 100vh;
 		border-radius: 0;
-		background: #050816;
+		background: var(--page-bg);
+		color: inherit;
+	}
+	:global(.teleprompter-screen.fullscreen-light:fullscreen) {
+		background: oklch(0.95 0.01 var(--hue));
+		color: #0f172a;
+	}
+	:global(.teleprompter-screen.fullscreen-dark:fullscreen) {
+		background: oklch(0.16 0.014 var(--hue));
+		color: #e2e8f0;
 	}
 	:global(.teleprompter-screen:fullscreen) .teleprompter-frame {
 		height: 100vh;
