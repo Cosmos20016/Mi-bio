@@ -81,6 +81,9 @@ Y no todo lo valioso se puede enseñar en una foto.
 
 Si hoy sientes que vas tarde, quizá no estés fuera de tiempo.
 Quizá, por primera vez, estás en tu propio ritmo.
+
+Y eso —aunque dé vértigo— suele ser una muy buena señal.
+
 -
 
 
@@ -280,5 +283,3 @@ text[font-size="26"] {
   </g>
 </svg>
 
-
-Y eso —aunque dé vértigo— suele ser una muy buena señal.
