@@ -47,7 +47,7 @@
 	};
 
 	const tick = (time: number) => {
-		if (!isPlaying) return;
+		if (!isPlaying || !scrollContainer || !content) return;
 		if (!lastTime) lastTime = time;
 		const delta = (time - lastTime) / 1000;
 		lastTime = time;
@@ -65,7 +65,7 @@
 	};
 
 	const start = () => {
-		if (!isPlaying) {
+		if (!isPlaying && scrollContainer) {
 			isPlaying = true;
 			lastTime = 0;
 			raf = requestAnimationFrame(tick);
@@ -75,6 +75,7 @@
 	const pause = () => {
 		isPlaying = false;
 		if (raf) cancelAnimationFrame(raf);
+		raf = null;
 	};
 
 	const toggle = () => {
@@ -87,7 +88,19 @@
 
 	const reset = () => {
 		pause();
-		scrollContainer.scrollTop = 0;
+		if (scrollContainer) {
+			scrollContainer.scrollTop = 0;
+		}
+		updateProgress();
+	};
+
+	const clearText = () => {
+		pause();
+		text = "";
+		templateName = "";
+		if (scrollContainer) {
+			scrollContainer.scrollTop = 0;
+		}
 		updateProgress();
 	};
 
@@ -143,7 +156,7 @@
 				focusMode: boolean;
 				dimOutside: boolean;
 				ultraClean: boolean;
-			}>;
+			};
 			if (data.text) text = data.text;
 			if (data.speed) speed = data.speed;
 			if (data.fontSize) fontSize = data.fontSize;
@@ -224,7 +237,7 @@
 			case "KeyL":
 				ultraClean = !ultraClean;
 				break;
-		}
+			}
 	};
 
 	$: scheduleSave();
@@ -238,6 +251,7 @@
 
 		loadState();
 		updateProgress();
+		observer?.disconnect();
 		observer = new IntersectionObserver(() => updateProgress());
 		observer.observe(scrollContainer);
 
@@ -358,13 +372,14 @@
 				<div class="control-actions">
 					<button class="btn-regular" on:click={toggle}>{isPlaying ? "Pausar" : "Reproducir"}</button>
 					<button class="btn-plain" on:click={reset}>Reiniciar (R)</button>
+					<button class="btn-plain" on:click={clearText}>Vaciar</button>
 					<button class="btn-plain" on:click={() => jump(-240)}>↑</button>
 					<button class="btn-plain" on:click={() => jump(240)}>↓</button>
 					<button class="btn-plain" on:click={toggleFullscreen}>Pantalla completa</button>
 				</div>
 			</div>
-			{/if}
-		</div>
+		{/if}
+	</div>
 
 	<div
 		class="teleprompter-screen"
@@ -392,22 +407,22 @@
 					<p>{line}</p>
 				{/each}
 			</div>
-			</div>
-			{#if focusMode}
-				<div class="teleprompter-focus"></div>
-				{#if dimOutside}
-					<div class="teleprompter-dim"></div>
-				{/if}
-			{/if}
-			<div class="teleprompter-float">
-				<button class="btn-float" on:click={toggle}>{isPlaying ? "⏸" : "▶"}</button>
-				<button class="btn-float" on:click={() => jump(-120)}>↑</button>
-				<button class="btn-float" on:click={() => jump(120)}>↓</button>
-				<button class="btn-float" on:click={() => (isMirror = !isMirror)}>M</button>
-				<button class="btn-float" on:click={toggleFullscreen}>⛶</button>
-				<button class="btn-float" on:click={() => (ultraClean = !ultraClean)}>🧼</button>
-			</div>
 		</div>
+		{#if focusMode}
+			<div class="teleprompter-focus"></div>
+			{#if dimOutside}
+				<div class="teleprompter-dim"></div>
+			{/if}
+		{/if}
+		<div class="teleprompter-float">
+			<button class="btn-float" on:click={toggle}>{isPlaying ? "⏸" : "▶"}</button>
+			<button class="btn-float" on:click={() => jump(-120)}>↑</button>
+			<button class="btn-float" on:click={() => jump(120)}>↓</button>
+			<button class="btn-float" on:click={() => (isMirror = !isMirror)}>M</button>
+			<button class="btn-float" on:click={toggleFullscreen}>⛶</button>
+			<button class="btn-float" on:click={() => (ultraClean = !ultraClean)}>🧼</button>
+		</div>
+	</div>
 
 	<div class="teleprompter-footer">
 		<div class="shortcut">Espacio/Enter = Play · ↑/↓/Page = Saltos · M = Espejo · F = Focus · L = Ultra limpio · R = Reset · X = Fullscreen · Rueda = velocidad</div>
@@ -420,6 +435,10 @@
 		flex-direction: column;
 		gap: 1.5rem;
 		position: relative;
+		color: var(--deep-text, #0f172a);
+	}
+	:global(.dark) .teleprompter-wrapper {
+		color: var(--deep-text, #e2e8f0);
 	}
 	.teleprompter-wrapper.clean .teleprompter-header,
 	.teleprompter-wrapper.clean .teleprompter-panel,
@@ -477,6 +496,7 @@
 	.teleprompter-title {
 		font-size: 2rem;
 		font-weight: 700;
+		color: inherit;
 	}
 	.teleprompter-subtitle {
 		color: rgba(0,0,0,0.6);
