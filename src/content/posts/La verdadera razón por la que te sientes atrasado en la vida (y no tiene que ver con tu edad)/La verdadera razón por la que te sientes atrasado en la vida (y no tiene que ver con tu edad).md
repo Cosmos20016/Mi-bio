@@ -55,13 +55,13 @@ No estás atrasado, estás en transición (aunque no tenga glamour)
 Nadie nos enseña a transitar. Solo a llegar.
 Pero la vida está llena de zonas intermedias: cuando ya no eres quien eras, pero todavía no eres quien serás. Esas etapas se sienten incómodas, poco claras y, sí, atrasadas.
 
-La pregunta no es “¿por qué voy tan lento?”, sino:
+## La pregunta no es “¿por qué voy tan lento?”, sino:
 “¿Qué estoy dejando atrás ahora mismo?”
 “¿Qué estoy aprendiendo aunque no lo pueda explicar todavía?”
 
 Si te haces esas preguntas con honestidad, muchas cosas encajan.
 
-## Entonces… ¿qué haces con esta sensación?
+Entonces… ¿qué haces con esta sensación?
 
 No te voy a decir “confía en el proceso” como frase de taza. Odio eso.
 Pero sí te diré algo más práctico:
