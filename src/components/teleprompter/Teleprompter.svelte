@@ -3,7 +3,9 @@
 
 	const storageKey = "teleprompter:state:v2";
 
-	let text = `Pega aquí tu guion...\n\nTip: Usa párrafos cortos para una lectura más cómoda.`;
+	let text = `Pega aquí tu guion...
+
+Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	let speed = 48; // px/seg
 	let fontSize = 34;
 	let lineHeight = 1.6;
@@ -162,7 +164,7 @@
 				lineHeight,
 				isMirror,
 				autoCenter,
-				 smooth,
+				smooth,
 				glow,
 				focusMode,
 				dimOutside,
@@ -215,7 +217,7 @@
 			case "KeyL":
 				ultraClean = !ultraClean;
 				break;
-			}
+		}
 	};
 
 	$: scheduleSave();
@@ -533,8 +535,8 @@
 		font-weight: 600;
 	}
 	.toggle-grid button.active {
-		background: rgba(99, 102, 241, 0.2);
-		border-color: rgba(99, 102, 241, 0.6);
+		background: rgba(99,102,241, 0.2);
+		border-color: rgba(99,102,241, 0.6);
 	}
 	.toggle-grid button:hover {
 		transform: translateY(-1px);
@@ -553,7 +555,7 @@
 	.teleprompter-screen {
 		position: relative;
 		border-radius: 1.5rem;
-	to	overflow: hidden;
+		overflow: hidden;
 		background: radial-gradient(circle at top, rgba(255,255,255,0.9), rgba(255,255,255,0.6));
 		border: 1px solid rgba(15, 23, 42, 0.08);
 		box-shadow: 0 20px 80px rgba(15, 23, 42, 0.18);
