@@ -418,7 +418,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		color: var(--deep-text, #0f172a);
 	}
 	:global(.dark) .teleprompter-wrapper {
-		color: var(--deep-text, #e2e8f0);
+		color: #e2e8f0;
 	}
 	.teleprompter-wrapper.clean .teleprompter-header,
 	.teleprompter-wrapper.clean .teleprompter-panel,
@@ -575,7 +575,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	:global(.dark) .teleprompter-screen {
 		background: radial-gradient(circle at top, rgba(15,23,42,0.8), rgba(2,6,23,0.85));
 		border-color: rgba(255,255,255,0.1);
-		color: var(--deep-text, #e2e8f0);
+		color: #e2e8f0;
 	}
 	.teleprompter-screen.glow {
 		box-shadow: 0 20px 120px rgba(99,102,241,0.25);
@@ -682,5 +682,12 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			right: 1rem;
 			bottom: 1rem;
 		}
+	}
+
+	:global(.dark) .teleprompter-wrapper {
+		color: #e2e8f0;
+	}
+	:global(.dark) .teleprompter-screen {
+		color: #e2e8f0;
 	}
 </style>
