@@ -1,7 +1,13 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
 
-	const storageKey = "teleprompter:state:v1";
+	const storageKey = "teleprompter:state:v2";
+	const templates = {
+		"Presentación rápida": `Hola, soy Kevin Borja.\n\nHoy quiero compartirte una idea simple: cuando explicas con claridad, conectas mejor.\n\nEn este video vas a ver:\n- Un punto clave\n- Un ejemplo real\n- Un cierre claro\n\nSi te sirve, quédate hasta el final.`,
+	} as const;
+
+	type TemplateName = keyof typeof templates | "";
+
 	let text = `Pega aquí tu guion...\n\nTip: Usa párrafos cortos para una lectura más cómoda.`;
 	let speed = 48; // px/seg
 	let fontSize = 34;
@@ -20,6 +26,8 @@
 	let allowMobile = false;
 	let showMobileNotice = false;
 	let isReady = false;
+	let ultraClean = false;
+	let templateName: TemplateName = "";
 
 	let scrollContainer: HTMLDivElement;
 	let content: HTMLDivElement;
@@ -104,12 +112,27 @@
 		}
 	};
 
+	const applyTemplate = () => {
+		if (!templateName) return;
+		text = templates[templateName];
+		start();
+	};
+
+	const handleWheel = (event: WheelEvent) => {
+		if (isPlaying) {
+			event.preventDefault();
+			speed = clamp(speed + (event.deltaY > 0 ? 2 : -2), 18, 120);
+		} else {
+			jump(event.deltaY);
+		}
+	};
+
 	const loadState = () => {
 		try {
 			const raw = localStorage.getItem(storageKey);
 			if (!raw) return;
 			const data = JSON.parse(raw) as Partial<{
-				ext: string;
+				text: string;
 				speed: number;
 				fontSize: number;
 				lineHeight: number;
@@ -119,7 +142,8 @@
 				glow: boolean;
 				focusMode: boolean;
 				dimOutside: boolean;
-			};
+				ultraClean: boolean;
+			}>;
 			if (data.text) text = data.text;
 			if (data.speed) speed = data.speed;
 			if (data.fontSize) fontSize = data.fontSize;
@@ -130,6 +154,7 @@
 			if (typeof data.glow === "boolean") glow = data.glow;
 			if (typeof data.focusMode === "boolean") focusMode = data.focusMode;
 			if (typeof data.dimOutside === "boolean") dimOutside = data.dimOutside;
+			if (typeof data.ultraClean === "boolean") ultraClean = data.ultraClean;
 		} catch {
 			// ignore invalid storage
 		}
@@ -150,6 +175,7 @@
 				glow,
 				focusMode,
 				dimOutside,
+				ultraClean,
 			};
 			localStorage.setItem(storageKey, JSON.stringify(payload));
 		}, 300);
@@ -162,6 +188,11 @@
 				event.preventDefault();
 				toggle();
 				break;
+			case "Enter":
+				case "NumpadEnter":
+				event.preventDefault();
+				toggle();
+				break;
 			case "ArrowUp":
 				event.preventDefault();
 				jump(-120);
@@ -169,6 +200,14 @@
 			case "ArrowDown":
 				event.preventDefault();
 				jump(120);
+				break;
+			case "PageUp":
+				event.preventDefault();
+				jump(-320);
+				break;
+			case "PageDown":
+				event.preventDefault();
+				jump(320);
 				break;
 			case "KeyM":
 				isMirror = !isMirror;
@@ -182,7 +221,10 @@
 			case "KeyX":
 				toggleFullscreen();
 				break;
-		}
+			case "KeyL":
+				ultraClean = !ultraClean;
+				break;
+			}
 	};
 
 	$: scheduleSave();
@@ -218,7 +260,7 @@
 	});
 </script>
 
-<div class="teleprompter-wrapper">
+<div class="teleprompter-wrapper" class:clean={ultraClean}>
 	{#if showMobileNotice && !allowMobile}
 		<div class="teleprompter-mobile-overlay">
 			<div class="teleprompter-mobile-card">
@@ -246,6 +288,9 @@
 			</button>
 			<button class="btn-plain" on:click={toggleFullscreen}>
 				{isFullscreen ? "Salir pantalla completa" : "Pantalla completa (X)"}
+			</button>
+			<button class="btn-plain" on:click={() => (ultraClean = !ultraClean)}>
+				{ultraClean ? "Salir modo limpio" : "Modo limpio (L)"}
 			</button>
 		</div>
 	</div>
@@ -276,6 +321,18 @@
 					<span>{lineHeight.toFixed(2)}</span>
 				</div>
 				<div class="control-group">
+					<label>Plantilla</label>
+					<div class="template-row">
+						<select bind:value={templateName}>
+							<option value="">Seleccionar</option>
+							{#each Object.keys(templates) as template}
+								<option value={template}>{template}</option>
+							{/each}
+						</select>
+						<button class="btn-plain" on:click={applyTemplate} disabled={!templateName}>Aplicar</button>
+					</div>
+				</div>
+				<div class="control-group">
 					<label>Progreso</label>
 					<input
 						type="range"
@@ -295,6 +352,7 @@
 						<button class:active={glow} on:click={() => (glow = !glow)}>Glow</button>
 						<button class:active={focusMode} on:click={() => (focusMode = !focusMode)}>Focus (F)</button>
 						<button class:active={dimOutside} on:click={() => (dimOutside = !dimOutside)}>Oscurecer bordes</button>
+						<button class:active={ultraClean} on:click={() => (ultraClean = !ultraClean)}>Ultra limpio (L)</button>
 					</div>
 				</div>
 				<div class="control-actions">
@@ -305,7 +363,7 @@
 					<button class="btn-plain" on:click={toggleFullscreen}>Pantalla completa</button>
 				</div>
 			</div>
-		{/if}
+			{/if}
 	</div>
 
 	<div
@@ -322,6 +380,7 @@
 			class="teleprompter-frame"
 			bind:this={scrollContainer}
 			on:scroll={updateProgress}
+			on:wheel={handleWheel}
 			style={`padding: ${autoCenter ? "35vh 2rem" : "2.5rem 2rem"};`}
 		>
 			<div
@@ -333,24 +392,25 @@
 					<p>{line}</p>
 				{/each}
 			</div>
-			</div>
-			{#if focusMode}
-				<div class="teleprompter-focus"></div>
-				{#if dimOutside}
-					<div class="teleprompter-dim"></div>
-				{/if}
-			{/if}
-			<div class="teleprompter-float">
-				<button class="btn-float" on:click={toggle}>{isPlaying ? "⏸" : "▶"}</button>
-				<button class="btn-float" on:click={() => jump(-120)}>↑</button>
-				<button class="btn-float" on:click={() => jump(120)}>↓</button>
-				<button class="btn-float" on:click={() => (isMirror = !isMirror)}>M</button>
-				<button class="btn-float" on:click={toggleFullscreen}>⛶</button>
-			</div>
 		</div>
+		{#if focusMode}
+			<div class="teleprompter-focus"></div>
+			{#if dimOutside}
+				<div class="teleprompter-dim"></div>
+			{/if}
+		{/if}
+		<div class="teleprompter-float">
+			<button class="btn-float" on:click={toggle}>{isPlaying ? "⏸" : "▶"}</button>
+			<button class="btn-float" on:click={() => jump(-120)}>↑</button>
+			<button class="btn-float" on:click={() => jump(120)}>↓</button>
+			<button class="btn-float" on:click={() => (isMirror = !isMirror)}>M</button>
+			<button class="btn-float" on:click={toggleFullscreen}>⛶</button>
+			<button class="btn-float" on:click={() => (ultraClean = !ultraClean)}>🧼</button>
+		</div>
+	</div>
 
 	<div class="teleprompter-footer">
-		<div class="shortcut">Espacio = Play/Pausa · ↑/↓ = Saltos · M = Espejo · F = Focus · R = Reset · X = Fullscreen</div>
+		<div class="shortcut">Espacio/Enter = Play · ↑/↓/Page = Saltos · M = Espejo · F = Focus · L = Ultra limpio · R = Reset · X = Fullscreen · Rueda = velocidad</div>
 	</div>
 </div>
 
@@ -360,6 +420,14 @@
 		flex-direction: column;
 		gap: 1.5rem;
 		position: relative;
+	}
+	.teleprompter-wrapper.clean .teleprompter-header,
+	.teleprompter-wrapper.clean .teleprompter-panel,
+	.teleprompter-wrapper.clean .teleprompter-footer {
+		display: none;
+	}
+	.teleprompter-wrapper.clean .teleprompter-screen {
+		height: 70vh;
 	}
 	.teleprompter-mobile-overlay {
 		position: absolute;
@@ -379,13 +447,15 @@
 		padding: 1.5rem;
 		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 		border: 1px solid rgba(255, 255, 255, 0.1);
+		color: var(--deep-text, #e2e8f0);
 	}
 	.teleprompter-mobile-card h2 {
 		font-size: 1.2rem;
 		margin-bottom: 0.5rem;
 	}
 	.teleprompter-mobile-card p {
-		color: rgba(255, 255, 255, 0.7);
+		color: inherit;
+		opacity: 0.8;
 		margin-bottom: 1rem;
 	}
 	.teleprompter-mobile-actions {
@@ -428,11 +498,12 @@
 		border: 1px solid rgba(15, 23, 42, 0.1);
 		min-height: 140px;
 		font-size: 1rem;
+		color: var(--deep-text, #0f172a);
 	}
 	:global(.dark) .teleprompter-input {
 		background: rgba(15,23,42,0.5);
 		border-color: rgba(255,255,255,0.1);
-		color: white;
+		color: var(--deep-text, #e2e8f0);
 	}
 	.teleprompter-controls {
 		margin-top: 1.5rem;
@@ -455,6 +526,25 @@
 	}
 	.control-group input[type="range"] {
 		width: 100%;
+	}
+	.template-row {
+		display: flex;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+	}
+	.template-row select {
+		flex: 1;
+		min-width: 180px;
+		border-radius: 0.75rem;
+		padding: 0.5rem 0.75rem;
+		background: rgba(255,255,255,0.7);
+		border: 1px solid rgba(15, 23, 42, 0.1);
+		color: var(--deep-text, #0f172a);
+	}
+	:global(.dark) .template-row select {
+		background: rgba(15,23,42,0.5);
+		border-color: rgba(255,255,255,0.1);
+		color: var(--deep-text, #e2e8f0);
 	}
 	.toggle-grid {
 		display: grid;
@@ -490,14 +580,16 @@
 	.teleprompter-screen {
 		position: relative;
 		border-radius: 1.5rem;
-		overflow: hidden;
+	to	overflow: hidden;
 		background: radial-gradient(circle at top, rgba(255,255,255,0.9), rgba(255,255,255,0.6));
 		border: 1px solid rgba(15, 23, 42, 0.08);
 		box-shadow: 0 20px 80px rgba(15, 23, 42, 0.18);
+		color: var(--deep-text, #0f172a);
 	}
 	:global(.dark) .teleprompter-screen {
 		background: radial-gradient(circle at top, rgba(15,23,42,0.8), rgba(2,6,23,0.85));
 		border-color: rgba(255,255,255,0.1);
+		color: var(--deep-text, #e2e8f0);
 	}
 	.teleprompter-screen.glow {
 		box-shadow: 0 20px 120px rgba(99,102,241,0.25);
