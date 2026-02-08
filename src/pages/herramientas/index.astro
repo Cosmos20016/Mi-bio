@@ -1,17 +1,39 @@
 ---
 import MainGridLayout from "@layouts/MainGridLayout.astro";
-import Teleprompter from "@components/teleprompter/Teleprompter.svelte";
+import { url } from "@utils/url-utils";
 ---
 
 <MainGridLayout title="Herramientas" description="Herramientas premium para creadores">
   <section class="space-y-6">
-    <div class="space-y-2">
-      <h1 class="text-3xl font-bold">🎤 Teleprompter premium</h1>
+    <header class="space-y-2">
+      <h1 class="text-3xl font-bold">Herramientas</h1>
       <p class="text-black/70 dark:text-white/70">
-        Control total para leer guiones con fluidez: velocidad, tamaño, modo espejo,
-        modo focus y atajos rápidos.
+        Selecciona una herramienta para empezar.
       </p>
+    </header>
+
+    <div class="grid gap-6 md:grid-cols-2">
+      <a
+        class="card-base p-6 rounded-[var(--radius-large)] border border-black/5 dark:border-white/10 hover:scale-[1.01] transition"
+        href={url("/herramientas/teleprompter/")}
+      >
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">🎤</span>
+          <div>
+            <h2 class="text-xl font-semibold">Teleprompter premium</h2>
+            <p class="text-black/60 dark:text-white/60">
+              Lectura fluida con modo espejo, focus, atajos y controles avanzados.
+            </p>
+          </div>
+        </div>
+      </a>
+
+      <div class="card-base p-6 rounded-[var(--radius-large)] border border-dashed border-black/10 dark:border-white/15 opacity-70">
+        <h2 class="text-xl font-semibold">Próximamente</h2>
+        <p class="text-black/60 dark:text-white/60">
+          Más herramientas creativas estarán disponibles pronto.
+        </p>
+      </div>
     </div>
-    <Teleprompter client:only="svelte" />
   </section>
 </MainGridLayout>
