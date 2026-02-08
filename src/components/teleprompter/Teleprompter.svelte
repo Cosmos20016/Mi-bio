@@ -2,11 +2,6 @@
 	import { onDestroy, onMount } from "svelte";
 
 	const storageKey = "teleprompter:state:v2";
-	const templates = {
-		"Presentación rápida": `Hola, soy Kevin Borja.\n\nHoy quiero compartirte una idea simple: cuando explicas con claridad, conectas mejor.\n\nEn este video vas a ver:\n- Un punto clave\n- Un ejemplo real\n- Un cierre claro\n\nSi te sirve, quédate hasta el final.`,
-	} as const;
-
-	type TemplateName = keyof typeof templates | "";
 
 	let text = `Pega aquí tu guion...\n\nTip: Usa párrafos cortos para una lectura más cómoda.`;
 	let speed = 48; // px/seg
@@ -27,7 +22,6 @@
 	let showMobileNotice = false;
 	let isReady = false;
 	let ultraClean = false;
-	let templateName: TemplateName = "";
 
 	let scrollContainer: HTMLDivElement;
 	let content: HTMLDivElement;
@@ -49,14 +43,17 @@
 	const tick = (time: number) => {
 		if (!isPlaying || !scrollContainer || !content) return;
 		if (!lastTime) lastTime = time;
-		const delta = (time - lastTime) / 1000;
+		const delta = Math.min((time - lastTime) / 1000, 0.05);
 		lastTime = time;
 
 		const factor = smooth ? 1 : 1.35;
-		scrollContainer.scrollTop += speed * delta * factor;
+		const maxScroll = Math.max(content.scrollHeight - scrollContainer.clientHeight, 0);
+		scrollContainer.scrollTop = Math.min(
+			scrollContainer.scrollTop + speed * delta * factor,
+			maxScroll,
+		);
 		updateProgress();
 
-		const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
 		if (scrollContainer.scrollTop >= maxScroll) {
 			isPlaying = false;
 			return;
@@ -97,7 +94,6 @@
 	const clearText = () => {
 		pause();
 		text = "";
-		templateName = "";
 		if (scrollContainer) {
 			scrollContainer.scrollTop = 0;
 		}
@@ -125,12 +121,6 @@
 		}
 	};
 
-	const applyTemplate = () => {
-		if (!templateName) return;
-		text = templates[templateName];
-		start();
-	};
-
 	const handleWheel = (event: WheelEvent) => {
 		if (isPlaying) {
 			event.preventDefault();
@@ -144,19 +134,7 @@
 		try {
 			const raw = localStorage.getItem(storageKey);
 			if (!raw) return;
-			const data = JSON.parse(raw) as Partial<{
-				ext: string;
-				speed: number;
-				fontSize: number;
-				lineHeight: number;
-				isMirror: boolean;
-				autoCenter: boolean;
-				smooth: boolean;
-				glow: boolean;
-				focusMode: boolean;
-				dimOutside: boolean;
-				ultraClean: boolean;
-			}>;
+			const data = JSON.parse(raw) as Partial<{ text: string; speed: number; fontSize: number; lineHeight: number; isMirror: boolean; autoCenter: boolean; smooth: boolean; glow: boolean; focusMode: boolean; dimOutside: boolean; ultraClean: boolean; }>; 
 			if (data.text) text = data.text;
 			if (data.speed) speed = data.speed;
 			if (data.fontSize) fontSize = data.fontSize;
@@ -184,7 +162,7 @@
 				lineHeight,
 				isMirror,
 				autoCenter,
-				smooth,
+				 smooth,
 				glow,
 				focusMode,
 				dimOutside,
@@ -246,8 +224,8 @@
 		window.addEventListener("keydown", onKey);
 		const mql = window.matchMedia("(max-width: 768px)");
 		isMobile = mql.matches;
-		showMobileNotice = isMobile;
-		allowMobile = !isMobile;
+		showMobileNotice = false;
+		allowMobile = true;
 
 		loadState();
 		updateProgress();
@@ -335,18 +313,6 @@
 					<span>{lineHeight.toFixed(2)}</span>
 				</div>
 				<div class="control-group">
-					<label>Plantilla</label>
-					<div class="template-row">
-						<select bind:value={templateName}>
-							<option value="">Seleccionar</option>
-							{#each Object.keys(templates) as template}
-								<option value={template}>{template}</option>
-							{/each}
-						</select>
-						<button class="btn-plain" on:click={applyTemplate} disabled={!templateName}>Aplicar</button>
-					</div>
-				</div>
-				<div class="control-group">
 					<label>Progreso</label>
 					<input
 						type="range"
@@ -378,7 +344,7 @@
 					<button class="btn-plain" on:click={toggleFullscreen}>Pantalla completa</button>
 				</div>
 			</div>
-			{/if}
+		{/if}
 	</div>
 
 	<div
@@ -520,10 +486,16 @@
 		font-size: 1rem;
 		color: var(--deep-text, #0f172a);
 	}
+	.teleprompter-input::placeholder {
+		color: rgba(0, 0, 0, 0.5);
+	}
 	:global(.dark) .teleprompter-input {
 		background: rgba(15,23,42,0.5);
 		border-color: rgba(255,255,255,0.1);
 		color: var(--deep-text, #e2e8f0);
+	}
+	:global(.dark) .teleprompter-input::placeholder {
+		color: rgba(255, 255, 255, 0.6);
 	}
 	.teleprompter-controls {
 		margin-top: 1.5rem;
@@ -546,25 +518,6 @@
 	}
 	.control-group input[type="range"] {
 		width: 100%;
-	}
-	.template-row {
-		display: flex;
-		gap: 0.75rem;
-		flex-wrap: wrap;
-	}
-	.template-row select {
-		flex: 1;
-		min-width: 180px;
-		border-radius: 0.75rem;
-		padding: 0.5rem 0.75rem;
-		background: rgba(255,255,255,0.7);
-		border: 1px solid rgba(15, 23, 42, 0.1);
-		color: var(--deep-text, #0f172a);
-	}
-	:global(.dark) .template-row select {
-		background: rgba(15,23,42,0.5);
-		border-color: rgba(255,255,255,0.1);
-		color: var(--deep-text, #e2e8f0);
 	}
 	.toggle-grid {
 		display: grid;
@@ -600,7 +553,7 @@
 	.teleprompter-screen {
 		position: relative;
 		border-radius: 1.5rem;
-		overflow: hidden;
+	to	overflow: hidden;
 		background: radial-gradient(circle at top, rgba(255,255,255,0.9), rgba(255,255,255,0.6));
 		border: 1px solid rgba(15, 23, 42, 0.08);
 		box-shadow: 0 20px 80px rgba(15, 23, 42, 0.18);
@@ -636,6 +589,11 @@
 	.teleprompter-frame {
 		height: 420px;
 		overflow-y: auto;
+		color: inherit;
+	}
+	.teleprompter-content,
+	.teleprompter-content p {
+		color: inherit;
 	}
 	.teleprompter-content p {
 		margin-bottom: 1.5rem;
