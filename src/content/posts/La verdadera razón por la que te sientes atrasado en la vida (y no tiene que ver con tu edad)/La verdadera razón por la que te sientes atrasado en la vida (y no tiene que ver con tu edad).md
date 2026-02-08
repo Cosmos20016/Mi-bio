@@ -36,7 +36,7 @@ Antes comparábamos nuestra vida con la de cinco personas cercanas. Hoy la compa
 
 Y no con su realidad completa, claro. Con su escaparate.
 
-Compararte con versiones editadas de otras vidas es una receta perfecta para sentir que siempre te falta algo. Más éxito. Más claridad. Más velocidad.
+<mark>Compararte con versiones editadas de otras vidas es una receta perfecta para sentir que siempre te falta algo. Más éxito. Más claridad. Más velocidad.
 
 Aquí va una verdad incómoda:
 la mayoría de la gente que parece “adelantada” también se siente perdida en algo. Solo que no lo publica.
