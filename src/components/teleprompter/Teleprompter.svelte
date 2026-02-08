@@ -181,8 +181,9 @@
 					<button class="btn-plain" on:click={() => jump(-240)}>↑</button>
 					<button class="btn-plain" on:click={() => jump(240)}>↓</button>
 				</div>
-			{/if}
-		</div>
+			</div>
+		{/if}
+	</div>
 
 	<div class="teleprompter-screen" class:mirror={isMirror} class:focus={focusMode} class:glow={glow}>
 		<div class="teleprompter-progress">
