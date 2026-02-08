@@ -1,9 +1,15 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
+	import {
+		applyStoredThemeToDocument,
+		getStoredTheme,
+		watchSystemThemeChanges,
+	} from "@utils/setting-utils.ts";
 
 	const storageKey = "teleprompter:state:v2";
 
 	let text = `Pega aquí tu guion...
+
 
 Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	let speed = 48; // px/seg
@@ -32,6 +38,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	let lastTime = 0;
 	let observer: IntersectionObserver | null = null;
 	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+	let stopThemeWatch: (() => void) | null = null;
 
 	const clamp = (value: number, min: number, max: number) =>
 		Math.min(Math.max(value, min), max);
@@ -229,6 +236,9 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		showMobileNotice = false;
 		allowMobile = true;
 
+		applyStoredThemeToDocument();
+		stopThemeWatch = watchSystemThemeChanges(getStoredTheme());
+
 		loadState();
 		updateProgress();
 		observer?.disconnect();
@@ -251,6 +261,8 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		pause();
 		observer?.disconnect();
 		if (saveTimeout) clearTimeout(saveTimeout);
+		stopThemeWatch?.();
+		stopThemeWatch = null;
 	});
 </script>
 
