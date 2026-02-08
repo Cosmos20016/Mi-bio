@@ -224,7 +224,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			case "KeyL":
 				ultraClean = !ultraClean;
 				break;
-			}
+		}
 	};
 
 	$: scheduleSave();
@@ -521,6 +521,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	}
 	.control-group label {
 		font-weight: 600;
+		color: inherit;
 	}
 	.control-group span {
 		font-size: 0.85rem;
@@ -542,6 +543,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		background: rgba(255,255,255,0.7);
 		transition: transform 0.2s ease, box-shadow 0.2s ease;
 		font-weight: 600;
+		color: inherit;
 	}
 	.toggle-grid button.active {
 		background: rgba(99,102,241, 0.2);
