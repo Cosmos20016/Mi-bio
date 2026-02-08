@@ -1,7 +1,8 @@
 ---
 title: La verdadera razón por la que te sientes atrasado en la vida (y no tiene que ver con tu edad)
 published: 2026-02-07
-description: "No estás atrasad@. Estás viviendo con un reloj que no es tuyo. Si alguna vez te has preguntado "¿qué estoy haciendo mal?", este texto puede cambiar por completo la forma en que miras tu camino."
+description: "No estás atrasad@. Estás viviendo con un reloj que no es tuyo. Si alguna vez te has preguntado ¿qué estoy haciendo mal?, 
+este texto puede cambiar por completo la forma en que miras tu camino."
 image: "./cover.jpeg"
 tags: [Crisis de los 30 (y 20)]
 category: Desarrollo personal
