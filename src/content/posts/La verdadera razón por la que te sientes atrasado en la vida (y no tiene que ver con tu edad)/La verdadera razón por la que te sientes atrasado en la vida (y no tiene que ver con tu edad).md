@@ -83,7 +83,6 @@ Si hoy sientes que vas tarde, quizá no estés fuera de tiempo.
 Quizá, por primera vez, estás en tu propio ritmo.
 
 Y eso —aunque dé vértigo— suele ser una muy buena señal.
-
 -
 
 
