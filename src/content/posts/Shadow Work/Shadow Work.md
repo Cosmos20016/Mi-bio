@@ -5,7 +5,7 @@ description: "Millones están haciendo Shadow Work sin saberlo… y tú probable
 image: "./cover.jpeg"
 tags: [shadow work, "Carl Jung", psicología, "Cultura de Internet"]
 category: Investigación Digital
-draft: false
+draft: true
 ---
 ## INTRODUCCIÓN — La oscuridad viral
 
