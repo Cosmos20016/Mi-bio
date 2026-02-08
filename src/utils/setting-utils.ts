@@ -65,10 +65,28 @@ export function applyStoredThemeToDocument(): void {
 }
 
 export function watchSystemThemeChanges(theme: LIGHT_DARK_MODE): () => void {
+	if (typeof window === "undefined") {
+		return () => {};
+	}
+
+	if (theme !== AUTO_MODE) {
+		return () => {};
+	}
+
 	const media = window.matchMedia("(prefers-color-scheme: dark)");
-	const handler = () => applyThemeToDocument(theme);
-	media.addEventListener("change", handler);
+	const handler = () => applyThemeToDocument(AUTO_MODE);
+
+	handler();
+
+	if ("addEventListener" in media) {
+		media.addEventListener("change", handler);
+		return () => {
+			media.removeEventListener("change", handler);
+		};
+	}
+
+	media.addListener(handler);
 	return () => {
-		media.removeEventListener("change", handler);
+		media.removeListener(handler);
 	};
 }
