@@ -9,7 +9,7 @@ category: Desarrollo personal
 draft: false
 ---
 
-La razón real por la que te sientes atrasado en la vida (no es tu edad)
+## La razón real por la que te sientes atrasado en la vida (no es tu edad)
 
 Déjame adivinar.
 Abres Instagram, LinkedIn o cualquier red social y, sin querer, te comparas. Alguien más joven que tú ya “la rompió”. Otro de tu edad parece tener todo resuelto. Y tú… bueno, tú estás aquí, leyendo esto, con la sensación incómoda de ir tarde. 
@@ -20,7 +20,7 @@ Spoiler: no tiene que ver con tu edad. Ni siquiera con lo que has logrado. Va po
 
 <mark>El problema no es el tiempo, es el mapa que te dieron
 
-Durante años creemos que la vida tiene un orden lógico: estudias, trabajas, progresas, encuentras algo parecido a la felicidad y listo. Una especie de manual no escrito que todos deberíamos seguir más o menos igual.
+## Durante años creemos que la vida tiene un orden lógico: estudias, trabajas, progresas, encuentras algo parecido a la felicidad y listo. Una especie de manual no escrito que todos deberíamos seguir más o menos igual.
 
 El problema es que ese mapa no lo hiciste tú.
 Lo heredaste.
@@ -61,7 +61,7 @@ La pregunta no es “¿por qué voy tan lento?”, sino:
 
 Si te haces esas preguntas con honestidad, muchas cosas encajan.
 
-Entonces… ¿qué haces con esta sensación?
+## Entonces… ¿qué haces con esta sensación?
 
 No te voy a decir “confía en el proceso” como frase de taza. Odio eso.
 Pero sí te diré algo más práctico:
