@@ -143,7 +143,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		try {
 			const raw = localStorage.getItem(storageKey);
 			if (!raw) return;
-			const data = JSON.parse(raw) as Partial<{ text: string; speed: number; fontSize: number; lineHeight: number; isMirror: boolean; autoCenter: boolean; smooth: boolean; glow: boolean; focusMode: boolean; dimOutside: boolean; ultraClean: boolean; }>;
+			const data = JSON.parse(raw) as Partial<{ text: string; speed: number; fontSize: number; lineHeight: number; isMirror: boolean; autoCenter: boolean; smooth: boolean; glow: boolean; focusMode: boolean; dimOutside: boolean; ultraClean: boolean; }>; 
 			if (data.text) text = data.text;
 			if (data.speed) speed = data.speed;
 			if (data.fontSize) fontSize = data.fontSize;
@@ -446,7 +446,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		padding: 1.5rem;
 		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 		border: 1px solid rgba(255, 255, 255, 0.1);
-		color: var(--deep-text, #e2e8f0);
+		color: inherit;
 	}
 	.teleprompter-mobile-card h2 {
 		font-size: 1.2rem;
@@ -479,10 +479,8 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		color: inherit;
 	}
 	.teleprompter-subtitle {
-		color: rgba(0,0,0,0.6);
-	}
-	:global(.dark) .teleprompter-subtitle {
-		color: rgba(255,255,255,0.6);
+		color: inherit;
+		opacity: 0.7;
 	}
 	.teleprompter-panel {
 		background: var(--card-bg);
@@ -526,10 +524,8 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	}
 	.control-group span {
 		font-size: 0.85rem;
-		color: rgba(0,0,0,0.6);
-	}
-	:global(.dark) .control-group span {
-		color: rgba(255,255,255,0.6);
+		color: inherit;
+		opacity: 0.7;
 	}
 	.control-group input[type="range"] {
 		width: 100%;
@@ -662,10 +658,8 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		display: flex;
 		justify-content: space-between;
 		font-size: 0.85rem;
-		color: rgba(0,0,0,0.6);
-	}
-	:global(.dark) .teleprompter-footer {
-		color: rgba(255,255,255,0.6);
+		color: inherit;
+		opacity: 0.7;
 	}
 	.shortcut {
 		font-weight: 500;
@@ -679,7 +673,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			width: 100%;
 		}
 		.teleprompter-frame {
-		height: 320px;
+			height: 320px;
 			padding: 2rem 1.25rem;
 		}
 		.teleprompter-float {
