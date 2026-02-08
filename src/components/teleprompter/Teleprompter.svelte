@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
 
+	const storageKey = "teleprompter:state:v1";
 	let text = `Pega aquí tu guion...\n\nTip: Usa párrafos cortos para una lectura más cómoda.`;
 	let speed = 48; // px/seg
 	let fontSize = 34;
@@ -14,12 +15,19 @@
 	let glow = true;
 	let focusMode = false;
 	let dimOutside = true;
+	let isFullscreen = false;
+	let isMobile = false;
+	let allowMobile = false;
+	let showMobileNotice = false;
+	let isReady = false;
 
 	let scrollContainer: HTMLDivElement;
 	let content: HTMLDivElement;
+	let fullscreenTarget: HTMLDivElement;
 	let raf: number | null = null;
 	let lastTime = 0;
 	let observer: IntersectionObserver | null = null;
+	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
 	const clamp = (value: number, min: number, max: number) =>
 		Math.min(Math.max(value, min), max);
@@ -87,6 +95,66 @@
 		updateProgress();
 	};
 
+	const toggleFullscreen = async () => {
+		if (!fullscreenTarget) return;
+		if (!document.fullscreenElement) {
+			await fullscreenTarget.requestFullscreen();
+		} else {
+			await document.exitFullscreen();
+		}
+	};
+
+	const loadState = () => {
+		try {
+			const raw = localStorage.getItem(storageKey);
+			if (!raw) return;
+			const data = JSON.parse(raw) as Partial<{
+				ext: string;
+				speed: number;
+				fontSize: number;
+				lineHeight: number;
+				isMirror: boolean;
+				autoCenter: boolean;
+				smooth: boolean;
+				glow: boolean;
+				focusMode: boolean;
+				dimOutside: boolean;
+			};
+			if (data.text) text = data.text;
+			if (data.speed) speed = data.speed;
+			if (data.fontSize) fontSize = data.fontSize;
+			if (data.lineHeight) lineHeight = data.lineHeight;
+			if (typeof data.isMirror === "boolean") isMirror = data.isMirror;
+			if (typeof data.autoCenter === "boolean") autoCenter = data.autoCenter;
+			if (typeof data.smooth === "boolean") smooth = data.smooth;
+			if (typeof data.glow === "boolean") glow = data.glow;
+			if (typeof data.focusMode === "boolean") focusMode = data.focusMode;
+			if (typeof data.dimOutside === "boolean") dimOutside = data.dimOutside;
+		} catch {
+			// ignore invalid storage
+		}
+	};
+
+	const scheduleSave = () => {
+		if (!isReady) return;
+		if (saveTimeout) clearTimeout(saveTimeout);
+		saveTimeout = setTimeout(() => {
+			const payload = {
+				text,
+				speed,
+				fontSize,
+				lineHeight,
+				isMirror,
+				autoCenter,
+				smooth,
+				glow,
+				focusMode,
+				dimOutside,
+			};
+			localStorage.setItem(storageKey, JSON.stringify(payload));
+		}, 300);
+	};
+
 	const onKey = (event: KeyboardEvent) => {
 		if (event.target && (event.target as HTMLElement).tagName === "TEXTAREA") return;
 		switch (event.code) {
@@ -111,32 +179,75 @@
 			case "KeyR":
 				reset();
 				break;
+			case "KeyX":
+				toggleFullscreen();
+				break;
 		}
 	};
 
+	$: scheduleSave();
+
 	onMount(() => {
 		window.addEventListener("keydown", onKey);
+		const mql = window.matchMedia("(max-width: 768px)");
+		isMobile = mql.matches;
+		showMobileNotice = isMobile;
+		allowMobile = !isMobile;
+
+		loadState();
 		updateProgress();
 		observer = new IntersectionObserver(() => updateProgress());
 		observer.observe(scrollContainer);
+
+		const onFullscreenChange = () => {
+			isFullscreen = Boolean(document.fullscreenElement);
+		};
+		document.addEventListener("fullscreenchange", onFullscreenChange);
+		isReady = true;
+
+		return () => {
+			document.removeEventListener("fullscreenchange", onFullscreenChange);
+		};
 	});
 
 	onDestroy(() => {
 		window.removeEventListener("keydown", onKey);
 		pause();
 		observer?.disconnect();
+		if (saveTimeout) clearTimeout(saveTimeout);
 	});
 </script>
 
 <div class="teleprompter-wrapper">
+	{#if showMobileNotice && !allowMobile}
+		<div class="teleprompter-mobile-overlay">
+			<div class="teleprompter-mobile-card">
+				<h2>Teleprompter recomendado para PC</h2>
+				<p>
+					Esta herramienta está optimizada para pantallas grandes. Puedes continuar en
+					 móvil, pero la experiencia será limitada.
+				</p>
+				<div class="teleprompter-mobile-actions">
+					<button class="btn-regular" on:click={() => (allowMobile = true)}>Continuar</button>
+					<a class="btn-plain" href="/herramientas/">Volver</a>
+				</div>
+			</div>
+		</div>
+	{/if}
+
 	<div class="teleprompter-header">
 		<div>
 			<h1 class="teleprompter-title">Teleprompter</h1>
 			<p class="teleprompter-subtitle">Lectura fluida y profesional para tus guiones.</p>
 		</div>
-		<button class="btn-plain teleprompter-toggle" on:click={() => (showControls = !showControls)}>
-			{showControls ? "Ocultar controles" : "Mostrar controles"}
-		</button>
+		<div class="teleprompter-header-actions">
+			<button class="btn-plain teleprompter-toggle" on:click={() => (showControls = !showControls)}>
+				{showControls ? "Ocultar controles" : "Mostrar controles"}
+			</button>
+			<button class="btn-plain" on:click={toggleFullscreen}>
+				{isFullscreen ? "Salir pantalla completa" : "Pantalla completa (X)"}
+			</button>
+		</div>
 	</div>
 
 	<div class="teleprompter-panel">
@@ -164,6 +275,17 @@
 					<input type="range" min="1.2" max="2.2" step="0.05" bind:value={lineHeight} />
 					<span>{lineHeight.toFixed(2)}</span>
 				</div>
+				<div class="control-group">
+					<label>Progreso</label>
+					<input
+						type="range"
+						min="0"
+						max="100"
+						value={Math.round(progress * 100)}
+						on:input={(event) => scrollToProgress(Number((event.target as HTMLInputElement).value) / 100)}
+					/>
+					<span>{Math.round(progress * 100)}%</span>
+				</div>
 				<div class="control-group toggles">
 					<label>Opciones</label>
 					<div class="toggle-grid">
@@ -180,16 +302,28 @@
 					<button class="btn-plain" on:click={reset}>Reiniciar (R)</button>
 					<button class="btn-plain" on:click={() => jump(-240)}>↑</button>
 					<button class="btn-plain" on:click={() => jump(240)}>↓</button>
+					<button class="btn-plain" on:click={toggleFullscreen}>Pantalla completa</button>
 				</div>
 			</div>
 		{/if}
 	</div>
 
-	<div class="teleprompter-screen" class:mirror={isMirror} class:focus={focusMode} class:glow={glow}>
+	<div
+		class="teleprompter-screen"
+		class:mirror={isMirror}
+		class:focus={focusMode}
+		class:glow={glow}
+		bind:this={fullscreenTarget}
+	>
 		<div class="teleprompter-progress">
 			<div class="bar" style={`width: ${progress * 100}%`}></div>
 		</div>
-		<div class="teleprompter-frame" bind:this={scrollContainer} on:scroll={updateProgress}>
+		<div
+			class="teleprompter-frame"
+			bind:this={scrollContainer}
+			on:scroll={updateProgress}
+			style={`padding: ${autoCenter ? "35vh 2rem" : "2.5rem 2rem"};`}
+		>
 			<div
 				class="teleprompter-content"
 				style={`font-size:${fontSize}px; line-height:${lineHeight};`}
@@ -199,23 +333,24 @@
 					<p>{line}</p>
 				{/each}
 			</div>
-		</div>
-		{#if focusMode}
-			<div class="teleprompter-focus"></div>
-			{#if dimOutside}
-				<div class="teleprompter-dim"></div>
+			</div>
+			{#if focusMode}
+				<div class="teleprompter-focus"></div>
+				{#if dimOutside}
+					<div class="teleprompter-dim"></div>
+				{/if}
 			{/if}
-		{/if}
-		<div class="teleprompter-float">
-			<button class="btn-float" on:click={toggle}>{isPlaying ? "⏸" : "▶"}</button>
-			<button class="btn-float" on:click={() => jump(-120)}>↑</button>
-			<button class="btn-float" on:click={() => jump(120)}>↓</button>
-			<button class="btn-float" on:click={() => (isMirror = !isMirror)}>M</button>
+			<div class="teleprompter-float">
+				<button class="btn-float" on:click={toggle}>{isPlaying ? "⏸" : "▶"}</button>
+				<button class="btn-float" on:click={() => jump(-120)}>↑</button>
+				<button class="btn-float" on:click={() => jump(120)}>↓</button>
+				<button class="btn-float" on:click={() => (isMirror = !isMirror)}>M</button>
+				<button class="btn-float" on:click={toggleFullscreen}>⛶</button>
+			</div>
 		</div>
-	</div>
 
 	<div class="teleprompter-footer">
-		<div class="shortcut">Espacio = Play/Pausa · ↑/↓ = Saltos · M = Espejo · F = Focus · R = Reset</div>
+		<div class="shortcut">Espacio = Play/Pausa · ↑/↓ = Saltos · M = Espejo · F = Focus · R = Reset · X = Fullscreen</div>
 	</div>
 </div>
 
@@ -224,12 +359,50 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1.5rem;
+		position: relative;
+	}
+	.teleprompter-mobile-overlay {
+		position: absolute;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.6);
+		backdrop-filter: blur(6px);
+		z-index: 20;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 1.5rem;
+	}
+	.teleprompter-mobile-card {
+		max-width: 420px;
+		background: var(--card-bg);
+		border-radius: 1.25rem;
+		padding: 1.5rem;
+		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+	}
+	.teleprompter-mobile-card h2 {
+		font-size: 1.2rem;
+		margin-bottom: 0.5rem;
+	}
+	.teleprompter-mobile-card p {
+		color: rgba(255, 255, 255, 0.7);
+		margin-bottom: 1rem;
+	}
+	.teleprompter-mobile-actions {
+		display: flex;
+		gap: 0.75rem;
+		flex-wrap: wrap;
 	}
 	.teleprompter-header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: 1rem;
+	}
+	.teleprompter-header-actions {
+		display: flex;
+		gap: 0.75rem;
+		flex-wrap: wrap;
 	}
 	.teleprompter-title {
 		font-size: 2rem;
@@ -329,9 +502,19 @@
 	.teleprompter-screen.glow {
 		box-shadow: 0 20px 120px rgba(99,102,241,0.25);
 	}
+	:global(.teleprompter-screen:fullscreen) {
+		width: 100vw;
+		height: 100vh;
+		border-radius: 0;
+		background: #050816;
+	}
+	:global(.teleprompter-screen:fullscreen) .teleprompter-frame {
+		height: 100vh;
+		padding: 30vh 8vw;
+	}
 	.teleprompter-progress {
 		height: 4px;
-		background: rgba(99, 102, 241, 0.1);
+		background: rgba(99, 102,241, 0.1);
 	}
 	.teleprompter-progress .bar {
 		height: 100%;
@@ -341,7 +524,6 @@
 	.teleprompter-frame {
 		height: 420px;
 		overflow-y: auto;
-		padding: 2.5rem 2rem;
 	}
 	.teleprompter-content p {
 		margin-bottom: 1.5rem;
@@ -407,9 +589,12 @@
 			flex-direction: column;
 			align-items: flex-start;
 		}
+		.teleprompter-header-actions {
+			width: 100%;
+		}
 		.teleprompter-frame {
 			height: 320px;
-			padding: 1.5rem;
+			padding: 2rem 1.25rem;
 		}
 		.teleprompter-float {
 			right: 1rem;
