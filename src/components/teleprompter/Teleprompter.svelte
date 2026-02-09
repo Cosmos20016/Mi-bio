@@ -156,7 +156,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		try {
 			const raw = localStorage.getItem(storageKey);
 			if (!raw) return;
-			const data = JSON.parse(raw) as Partial<{ text: string; speed: number; fontSize: number; lineHeight: number; isMirror: boolean; autoCenter: boolean; smooth: boolean; glow: boolean; focusMode: boolean; dimOutside: boolean; ultraClean: boolean; }>; 
+			const data = JSON.parse(raw) as Partial<{ text: string; speed: number; fontSize: number; lineHeight: number; isMirror: boolean; autoCenter: boolean; smooth: boolean; glow: boolean; focusMode: boolean; dimOutside: boolean; ultraClean: boolean; }>;
 			if (data.text) text = data.text;
 			if (data.speed) speed = data.speed;
 			if (data.fontSize) fontSize = data.fontSize;
@@ -238,11 +238,10 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			case "KeyL":
 				ultraClean = !ultraClean;
 				break;
-			}
+		}
 	};
 
-	$:
-		_scheduleSave();
+	$: scheduleSave();
 
 	onMount(() => {
 		window.addEventListener("keydown", onKey);
