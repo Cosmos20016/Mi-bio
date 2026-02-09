@@ -224,7 +224,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			case "KeyL":
 				ultraClean = !ultraClean;
 				break;
-		}
+			}
 	};
 
 	$: scheduleSave();
@@ -393,14 +393,15 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 					<div class="teleprompter-dim"></div>
 				{/if}
 			{/if}
-			<div class="teleprompter-float">
-				<button class="btn-float" on:click={toggle}>{isPlaying ? "⏸" : "▶"}</button>
-				<button class="btn-float" on:click={() => jump(-120)}>↑</button>
-				<button class="btn-float" on:click={() => jump(120)}>↓</button>
-				<button class="btn-float" on:click={() => (isMirror = !isMirror)}>M</button>
-				<button class="btn-float" on:click={toggleFullscreen}>⛶</button>
-				<button class="btn-float" on:click={() => (ultraClean = !ultraClean)}>🧼</button>
-			</div>
+		</div>
+
+		<div class="teleprompter-float">
+			<button class="btn-float" on:click={toggle}>{isPlaying ? "⏸" : "▶"}</button>
+			<button class="btn-float" on:click={() => jump(-120)}>↑</button>
+			<button class="btn-float" on:click={() => jump(120)}>↓</button>
+			<button class="btn-float" on:click={() => (isMirror = !isMirror)}>M</button>
+			<button class="btn-float" on:click={toggleFullscreen}>⛶</button>
+			<button class="btn-float" on:click={() => (ultraClean = !ultraClean)}>🧼</button>
 		</div>
 
 		<div class="teleprompter-footer">
@@ -640,6 +641,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		bottom: 1.5rem;
 		display: grid;
 		gap: 0.5rem;
+		z-index: 5;
 	}
 	.btn-float {
 		width: 44px;
