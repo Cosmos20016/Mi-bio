@@ -60,7 +60,16 @@
 	const easeOutCubic = (value: number) => 1 - Math.pow(1 - value, 3);
 
 	$: lines = text.split("\n");
-	$: lineElements = lines.map(() => null);
+	// Only adjust lineElements length when the number of lines changes, preserving existing refs
+	$: {
+		if (lineElements.length !== lines.length) {
+			const newElements = new Array(lines.length).fill(null);
+			for (let i = 0; i < Math.min(lineElements.length, lines.length); i++) {
+				newElements[i] = lineElements[i];
+			}
+			lineElements = newElements;
+		}
+	}
 
 	const updateProgress = () => {
 		if (!scrollContainer || !content) return;
@@ -96,6 +105,8 @@
 	const tick = (time: number) => {
 		if (!isPlaying || !scrollContainer || !content) {
 			raf = null;
+			lastTime = 0;
+			startTime = 0;
 			return;
 		}
 		if (!lastTime) lastTime = time;
@@ -114,15 +125,19 @@
 		currentSpeed += (targetSpeed - currentSpeed) * smoothingFactor;
 		const step = currentSpeed * speedFactor * rampFactor * delta;
 
-		scrollContainer.scrollTop = Math.min(
+		const newScrollTop = Math.min(
 			scrollContainer.scrollTop + step,
 			maxScroll,
 		);
+		scrollContainer.scrollTop = newScrollTop;
 		updateProgress();
 
-		if (scrollContainer.scrollTop >= maxScroll) {
+		// Clean stop at the end
+		if (newScrollTop >= maxScroll && maxScroll > 0) {
 			isPlaying = false;
 			raf = null;
+			lastTime = 0;
+			startTime = 0;
 			return;
 		}
 		raf = requestAnimationFrame(tick);
@@ -219,7 +234,8 @@
 
 	const jump = (amount: number) => {
 		const next = scrollContainer.scrollTop + amount;
-		scrollContainer.scrollTop = clamp(next, 0, content.scrollHeight);
+		const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
+		scrollContainer.scrollTop = clamp(next, 0, maxScroll);
 		updateProgress();
 	};
 
@@ -240,6 +256,17 @@
 
 	const handleWheel = (event: WheelEvent) => {
 		event.preventDefault();
+		
+		if (isPlaying) {
+			// When playing, adjust speed: scroll down = faster, scroll up = slower
+			const speedChange = event.deltaY > 0 ? 4 : -4;
+			adjustSpeed(speedChange);
+		} else {
+			// When paused, allow manual scroll
+			const scrollAmount = event.deltaY;
+			scrollContainer.scrollTop += scrollAmount;
+			updateProgress();
+		}
 	};
 
 	const adjustSpeed = (amount: number) => {
@@ -274,6 +301,8 @@
 
 	const scheduleSave = () => {
 		if (!isReady) return;
+		// Don't save during countdown or active playback
+		if (isCountingDown || isPlaying) return;
 		if (saveTimeout) clearTimeout(saveTimeout);
 		saveTimeout = setTimeout(() => {
 			const payload = {
@@ -301,7 +330,7 @@
 				toggle();
 				break;
 			case "Enter":
-				case "NumpadEnter":
+			case "NumpadEnter":
 				event.preventDefault();
 				toggle();
 				break;
@@ -337,24 +366,28 @@
 				ultraClean = !ultraClean;
 				break;
 			case "Equal":
-				case "NumpadAdd":
+			case "NumpadAdd":
 				adjustSpeed(4);
 				break;
 			case "Minus":
-				case "NumpadSubtract":
+			case "NumpadSubtract":
 				adjustSpeed(-4);
 				break;
 		}
 	};
 
-	$: scheduleSave();
+	// Only save when specific state variables change
+	$: text, speed, fontSize, lineHeight, isMirror, autoCenter, smooth, glow, focusMode, dimOutside, ultraClean, scheduleSave();
 
 	onMount(() => {
 		window.addEventListener("keydown", onKey);
 		const mql = window.matchMedia("(max-width: 768px)");
 		isMobile = mql.matches;
-		showMobileNotice = false;
-		allowMobile = true;
+		// Show mobile notice on mobile devices
+		if (isMobile) {
+			showMobileNotice = true;
+			allowMobile = false;
+		}
 
 		applyStoredThemeToDocument();
 		stopThemeWatch = watchSystemThemeChanges(getStoredTheme());
@@ -487,6 +520,7 @@
 		class:mirror={isMirror}
 		class:focus={focusMode}
 		class:glow={glow}
+		class:fullscreen={isFullscreen}
 		bind:this={fullscreenTarget}
 	>
 		<div class="teleprompter-progress">
@@ -745,18 +779,18 @@
 		.teleprompter-screen.glow {
 			box-shadow: 0 20px 120px rgba(99,102,241,0.25);
 		}
-		:global(.teleprompter-screen:fullscreen) {
+		:global(.teleprompter-screen.fullscreen) {
 			width: 100vw;
 			height: 100vh;
 			border-radius: 0;
 			background: #f8fafc;
 			color: #0f172a;
 		}
-		:global(.dark) .teleprompter-screen:fullscreen {
+		:global(.dark .teleprompter-screen.fullscreen) {
 			background: #050816;
 			color: #e2e8f0;
 		}
-		:global(.teleprompter-screen:fullscreen) .teleprompter-frame {
+		:global(.teleprompter-screen.fullscreen .teleprompter-frame) {
 			height: 100vh;
 			padding: 30vh 8vw;
 		}
@@ -779,7 +813,7 @@
 			scrollbar-width: thin;
 			scrollbar-color: rgba(99, 102, 241, 0.6) rgba(148, 163, 184, 0.18);
 			scrollbar-gutter: stable;
-			overScrollBehavior: contain;
+			overscroll-behavior: contain;
 			z-index: 1;
 		}
 		.teleprompter-frame::-webkit-scrollbar {
@@ -837,10 +871,17 @@
 			top: 50%;
 			transform: translateY(-50%);
 			height: 110px;
-			border-top: 1px solid rgba(99,102,241,0.4);
-			border-bottom: 1px solid rgba(99,102,241,0.4);
+			border-top: 2px solid rgba(99,102,241,0.5);
+			border-bottom: 2px solid rgba(99,102,241,0.5);
+			background: rgba(99,102,241,0.08);
 			pointer-events: none;
 			z-index: 3;
+			transition: opacity 0.3s ease, border-color 0.3s ease;
+		}
+		:global(.dark) .teleprompter-focus {
+			border-top-color: rgba(99,102,241,0.6);
+			border-bottom-color: rgba(99,102,241,0.6);
+			background: rgba(99,102,241,0.12);
 		}
 		.teleprompter-dim {
 			position: absolute;
@@ -915,13 +956,6 @@
 				right: 1rem;
 				bottom: 1rem;
 			}
-		}
-
-		:global(.dark) .teleprompter-wrapper {
-			color: #e2e8f0;
-		}
-		:global(.dark) .teleprompter-screen {
-			color: #e2e8f0;
 		}
 	</style>
 </div>
