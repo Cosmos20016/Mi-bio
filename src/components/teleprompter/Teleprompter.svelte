@@ -59,6 +59,9 @@ const speedMin = 10;
 const speedMax = 400;
 let targetSpeed = speed;
 let currentSpeed = 0;
+let cachedMaxScroll = 0;
+let progressCounter = 0;
+let isMounted = false;
 
 const clamp = (value: number, min: number, max: number) =>
 	Math.min(Math.max(value, min), max);
@@ -100,9 +103,9 @@ const updateActiveLine = () => {
 	activeLineIndex = closestIndex;
 };
 
-// Professional scroll engine - WORKING
+// Lag-free scroll engine using time-based movement
 const tick = (timestamp: number) => {
-	if (!isPlaying || !scrollContainer || !content) {
+	if (!isPlaying || !scrollContainer || !content || !isMounted) {
 		raf = null;
 		lastTime = null;
 		return;
@@ -110,7 +113,6 @@ const tick = (timestamp: number) => {
 
 	if (lastTime === null) {
 		lastTime = timestamp;
-		currentSpeed = targetSpeed; // Start at full speed IMMEDIATELY
 		raf = requestAnimationFrame(tick);
 		return;
 	}
@@ -124,50 +126,45 @@ const tick = (timestamp: number) => {
 	const delta = Math.min(elapsed / 1000, 0.1);
 	lastTime = timestamp;
 
-	// Smooth speed: fast if smooth is OFF, gradual if it is ON
+	// Speed interpolation: smooth ON = gradual, smooth OFF = instant
 	if (smooth) {
-		const smoothFactor = 0.25; // 25% per frame = fast but smooth response
-		currentSpeed += (targetSpeed - currentSpeed) * smoothFactor;
+		currentSpeed += (targetSpeed - currentSpeed) * 0.3;
 	} else {
-		currentSpeed = targetSpeed; // Direct speed without smoothing
+		currentSpeed = targetSpeed;
 	}
 
-	// Subtle organic micro-variation (±1%)
-	const variation = 1 + Math.sin(timestamp * 0.0007) * 0.01;
+	// Check remaining distance
+	const remaining = cachedMaxScroll - scrollContainer.scrollTop;
 
-	// Calculate maxScroll
-	const maxScroll = Math.max(
-		content.scrollHeight - scrollContainer.clientHeight,
-		0,
-	);
-	if (maxScroll <= 0) {
-		isPlaying = false;
-		raf = null;
-		lastTime = null;
-		return;
-	}
-
-	// Smooth fade-out in last 200px
-	const remaining = maxScroll - scrollContainer.scrollTop;
-	const fadeFactor = remaining < 200 ? Math.max(remaining / 200, 0.02) : 1;
-
-	// Calculate step: speed * time * factors
-	const step = Math.max(currentSpeed * variation * fadeFactor * delta, 0);
-
-	// Apply scroll
-	const newScrollTop = Math.min(scrollContainer.scrollTop + step, maxScroll);
-	scrollContainer.scrollTop = newScrollTop;
-
-	// Update progress
-	updateProgress();
-
-	// Check if reached the end
-	if (newScrollTop >= maxScroll - 1) {
+	// Force finish if very close to end
+	if (remaining < 2) {
+		scrollContainer.scrollTop = cachedMaxScroll;
 		isPlaying = false;
 		raf = null;
 		lastTime = null;
 		progress = 1;
+		updateActiveLine();
 		return;
+	}
+
+	// Gentle fade-out in last 150px (floor at 15% speed)
+	const fadeFactor = remaining < 150 ? Math.max(remaining / 150, 0.15) : 1;
+
+	// Calculate step: speed × time × fade
+	const step = currentSpeed * fadeFactor * delta;
+
+	// Apply scroll (single DOM write, no reads after)
+	scrollContainer.scrollTop = Math.min(
+		scrollContainer.scrollTop + step,
+		cachedMaxScroll,
+	);
+
+	// Throttled progress update: every 8 frames instead of every frame
+	// This eliminates layout thrashing (the #1 cause of lag)
+	progressCounter++;
+	if (progressCounter >= 8) {
+		progressCounter = 0;
+		updateProgress();
 	}
 
 	raf = requestAnimationFrame(tick);
@@ -176,11 +173,22 @@ const tick = (timestamp: number) => {
 const startPlayback = () => {
 	if (!scrollContainer || !content) return;
 	if (raf) cancelAnimationFrame(raf);
+
 	speed = clamp(speed, speedMin, speedMax);
 	targetSpeed = speed;
-	currentSpeed = targetSpeed; // ← KEY: start at REAL speed, not at 10%
+	currentSpeed = targetSpeed; // Start at full speed immediately
+
+	// Cache maxScroll once - it doesn't change during playback
+	cachedMaxScroll = Math.max(
+		content.scrollHeight - scrollContainer.clientHeight,
+		0,
+	);
+
+	if (cachedMaxScroll <= 0) return; // Nothing to scroll
+
 	isPlaying = true;
 	lastTime = null;
+	progressCounter = 0;
 	raf = requestAnimationFrame(tick);
 };
 
@@ -223,6 +231,7 @@ const pause = () => {
 	}
 	lastTime = null;
 	currentSpeed = 0;
+	updateProgress(); // Final progress update on pause
 };
 
 const toggle = () => {
@@ -290,7 +299,15 @@ const handleWheel = (event: WheelEvent) => {
 const adjustSpeed = (amount: number) => {
 	speed = clamp(speed + amount, speedMin, speedMax);
 	targetSpeed = speed;
-	// If playing, adjust currentSpeed faster
+	// If playing, push currentSpeed closer for responsive feel
+	if (isPlaying) {
+		currentSpeed = Math.max(currentSpeed, targetSpeed * 0.6);
+	}
+};
+
+const onSpeedInput = () => {
+	speed = clamp(speed, speedMin, speedMax);
+	targetSpeed = speed;
 	if (isPlaying) {
 		currentSpeed = Math.max(currentSpeed, targetSpeed * 0.5);
 	}
@@ -620,6 +637,7 @@ onMount(() => {
 	};
 	document.addEventListener("fullscreenchange", onFullscreenChange);
 	isReady = true;
+	isMounted = true;
 
 	return () => {
 		document.removeEventListener("fullscreenchange", onFullscreenChange);
@@ -627,6 +645,7 @@ onMount(() => {
 });
 
 onDestroy(() => {
+	isMounted = false;
 	window.removeEventListener("keydown", onKey);
 	pause();
 	observer?.disconnect();
@@ -780,6 +799,7 @@ class="custom-range"
 min={speedMin}
 max={speedMax}
 bind:value={speed}
+on:input={onSpeedInput}
 />
 <div class="control-value-row">
 <span class="control-value">{speed} px/seg</span>
