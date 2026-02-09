@@ -185,7 +185,7 @@ const startPlayback = () => {
 	if (!scrollContainer || !content) return;
 	if (raf) cancelAnimationFrame(raf);
 
-	speed = clamp(speed, speedMin, speedMax);
+	speed = Math.round(clamp(speed, speedMin, speedMax));
 	targetSpeed = speed;
 	currentSpeed = targetSpeed;
 
@@ -318,13 +318,13 @@ const handleWheel = (event: WheelEvent) => {
 };
 
 const adjustSpeed = (amount: number) => {
-	speed = clamp(speed + amount, speedMin, speedMax);
+	speed = Math.round(clamp(speed + amount, speedMin, speedMax));
 	targetSpeed = speed;
 	// currentSpeed se actualiza instantáneamente en el próximo frame del tick
 };
 
 const onSpeedInput = () => {
-	speed = clamp(speed, speedMin, speedMax);
+	speed = Math.round(clamp(speed, speedMin, speedMax));
 	targetSpeed = speed;
 	// currentSpeed se actualiza instantáneamente en el próximo frame del tick
 };
@@ -360,7 +360,7 @@ const loadState = () => {
 		if (typeof data.ultraClean === "boolean") ultraClean = data.ultraClean;
 		if (typeof data.countdownDuration === "number")
 			countdownDuration = data.countdownDuration;
-		speed = clamp(speed, speedMin, speedMax);
+		speed = Math.round(clamp(speed, speedMin, speedMax));
 		targetSpeed = speed;
 		currentSpeed = 0;
 	} catch {
@@ -813,6 +813,7 @@ type="range"
 class="custom-range"
 min={speedMin}
 max={speedMax}
+step="1"
 bind:value={speed}
 on:input={onSpeedInput}
 />
@@ -948,7 +949,7 @@ bind:this={fullscreenTarget}
 class="teleprompter-frame"
 bind:this={scrollContainer}
 on:wheel={handleWheel}
-style={`padding: ${autoCenter ? "35vh 2rem" : "2.5rem 2rem"};`}
+style={`padding: ${autoCenter ? "35vh 2rem 50vh" : "2.5rem 2rem"};`}
 >
 <div
 class="teleprompter-content"
@@ -984,6 +985,7 @@ type="range"
 class="mini-range"
 min={speedMin}
 max={speedMax}
+step="1"
 bind:value={speed}
 />
 <span class="mini-speed">{speed}</span>
