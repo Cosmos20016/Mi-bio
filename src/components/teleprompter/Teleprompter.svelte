@@ -32,6 +32,9 @@
 	let ultraClean = false;
 	let countdown = 0;
 	let isCountingDown = false;
+	let showOnboarding = false;
+	let showHelp = false;
+	let currentScript: string | null = null;
 
 	let scrollContainer: HTMLDivElement;
 	let content: HTMLDivElement;
@@ -46,9 +49,9 @@
 	let activeLineIndex = 0;
 	let lines: string[] = [];
 
-	const speedMin = 12;
-	const speedMax = 140;
-	const accelerationDuration = 0.18;
+	const speedMin = 20;
+	const speedMax = 300;
+	const accelerationDuration = 0.8;
 	const countdownSeconds = 3;
 	let targetSpeed = speed;
 	let currentSpeed = speed;
@@ -57,10 +60,13 @@
 	const clamp = (value: number, min: number, max: number) =>
 		Math.min(Math.max(value, min), max);
 
-	const easeOutCubic = (value: number) => 1 - Math.pow(1 - value, 3);
+	const easeInOutSine = (value: number) => -(Math.cos(Math.PI * value) - 1) / 2;
 
 	$: lines = text.split("\n");
-	$: lineElements = lines.map(() => null);
+	// Don't destroy refs - keep existing elements
+	$: if (lineElements.length !== lines.length) {
+		lineElements = lines.map((_, i) => lineElements[i] || null);
+	}
 
 	const updateProgress = () => {
 		if (!scrollContainer || !content) return;
@@ -108,11 +114,19 @@
 			((time - startTime) / 1000) / accelerationDuration,
 			1,
 		);
-		const rampFactor = easeOutCubic(accelerationProgress);
+		const rampFactor = easeInOutSine(accelerationProgress);
 		const smoothingFactor = smooth ? 0.18 : 0.28;
 		const speedFactor = smooth ? 1 : 1.25;
+		
+		// Micro-variation for natural scroll
+		const microVariation = 1 + (Math.sin(time / 1000) * 0.02);
+		
+		// Fade-out in last 200px
+		const distanceFromEnd = maxScroll - scrollContainer.scrollTop;
+		const fadeOutFactor = distanceFromEnd < 200 ? distanceFromEnd / 200 : 1;
+		
 		currentSpeed += (targetSpeed - currentSpeed) * smoothingFactor;
-		const step = currentSpeed * speedFactor * rampFactor * delta;
+		const step = currentSpeed * speedFactor * rampFactor * microVariation * fadeOutFactor * delta;
 
 		scrollContainer.scrollTop = Math.min(
 			scrollContainer.scrollTop + step,
@@ -182,10 +196,26 @@
 	};
 
 	const pause = () => {
+		// Gradual deceleration
+		const decelerate = () => {
+			if (currentSpeed > 5) {
+				currentSpeed *= 0.85;
+				scrollContainer.scrollTop += (currentSpeed * 0.016);
+				requestAnimationFrame(decelerate);
+			} else {
+				currentSpeed = 0;
+			}
+		};
+		
 		isPlaying = false;
 		cancelCountdown();
 		if (raf) cancelAnimationFrame(raf);
 		raf = null;
+		
+		if (currentSpeed > 10) {
+			decelerate();
+		}
+		
 		lastTime = 0;
 		startTime = 0;
 	};
@@ -218,8 +248,9 @@
 	};
 
 	const jump = (amount: number) => {
+		const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
 		const next = scrollContainer.scrollTop + amount;
-		scrollContainer.scrollTop = clamp(next, 0, content.scrollHeight);
+		scrollContainer.scrollTop = clamp(next, 0, maxScroll);
 		updateProgress();
 	};
 
@@ -239,7 +270,14 @@
 	};
 
 	const handleWheel = (event: WheelEvent) => {
+		if (!isPlaying) {
+			// Allow manual scroll when paused
+			return;
+		}
 		event.preventDefault();
+		// Adjust speed with wheel when playing
+		const delta = event.deltaY > 0 ? -4 : 4;
+		adjustSpeed(delta);
 	};
 
 	const adjustSpeed = (amount: number) => {
@@ -290,7 +328,105 @@
 				ultraClean,
 			};
 			localStorage.setItem(storageKey, JSON.stringify(payload));
+			
+			// Auto-save current script
+			if (currentScript && text.trim()) {
+				saveCurrentScript();
+			}
 		}, 300);
+	};
+
+	// Script history functions
+	interface SavedScript {
+		id: string;
+		name: string;
+		text: string;
+		createdAt: string;
+		updatedAt: string;
+	}
+
+	const getScripts = (): SavedScript[] => {
+		try {
+			const raw = localStorage.getItem("teleprompter:scripts");
+			return raw ? JSON.parse(raw) : [];
+		} catch {
+			return [];
+		}
+	};
+
+	const saveScripts = (scripts: SavedScript[]) => {
+		localStorage.setItem("teleprompter:scripts", JSON.stringify(scripts));
+	};
+
+	const saveCurrentScript = () => {
+		if (!text.trim()) return;
+		const scripts = getScripts();
+		const now = new Date().toISOString();
+		
+		if (currentScript) {
+			const index = scripts.findIndex(s => s.id === currentScript);
+			if (index >= 0) {
+				scripts[index].text = text;
+				scripts[index].updatedAt = now;
+			}
+		} else {
+			const newScript: SavedScript = {
+				id: Date.now().toString(),
+				name: `Guion ${scripts.length + 1}`,
+				text,
+				createdAt: now,
+				updatedAt: now,
+			};
+			scripts.unshift(newScript);
+			currentScript = newScript.id;
+			
+			// Keep max 20 scripts
+			if (scripts.length > 20) {
+				scripts.splice(20);
+			}
+		}
+		
+		saveScripts(scripts);
+		localStorage.setItem("teleprompter:lastScript", currentScript!);
+	};
+
+	const loadScript = (id: string) => {
+		const scripts = getScripts();
+		const script = scripts.find(s => s.id === id);
+		if (script) {
+			text = script.text;
+			currentScript = id;
+			localStorage.setItem("teleprompter:lastScript", id);
+		}
+	};
+
+	const deleteScript = (id: string) => {
+		const scripts = getScripts().filter(s => s.id !== id);
+		saveScripts(scripts);
+		if (currentScript === id) {
+			currentScript = null;
+			text = "";
+		}
+	};
+
+	const newScript = () => {
+		currentScript = null;
+		text = "";
+	};
+
+	const getSpeedLabel = (spd: number): string => {
+		if (spd < 60) return "Lento";
+		if (spd < 120) return "Normal";
+		if (spd < 200) return "Rápido";
+		return "Muy rápido";
+	};
+
+	const getStatus = (): string => {
+		if (isPlaying) return "Reproduciendo...";
+		if (isCountingDown) return "Iniciando...";
+		if (progress >= 0.99) return "Finalizado";
+		if (progress > 0) return "Pausado";
+		return "Listo";
 	};
 
 	const onKey = (event: KeyboardEvent) => {
@@ -347,19 +483,36 @@
 		}
 	};
 
-	$: scheduleSave();
+	$: if (isReady && (text || speed || fontSize || lineHeight || isMirror || autoCenter || smooth || glow || focusMode || dimOutside || ultraClean)) {
+		scheduleSave();
+	}
 
 	onMount(() => {
 		window.addEventListener("keydown", onKey);
 		const mql = window.matchMedia("(max-width: 768px)");
 		isMobile = mql.matches;
-		showMobileNotice = false;
-		allowMobile = true;
+		// Only show mobile notice on mobile devices if user hasn't dismissed it
+		const dismissedMobile = localStorage.getItem("teleprompter:mobile:dismissed");
+		showMobileNotice = isMobile && !dismissedMobile;
+		allowMobile = !showMobileNotice;
 
 		applyStoredThemeToDocument();
 		stopThemeWatch = watchSystemThemeChanges(getStoredTheme());
 
 		loadState();
+		
+		// Load last used script
+		const lastScriptId = localStorage.getItem("teleprompter:lastScript");
+		if (lastScriptId) {
+			loadScript(lastScriptId);
+		}
+		
+		// Check for onboarding
+		const onboardingDone = localStorage.getItem("teleprompter:onboarding:done");
+		if (!onboardingDone) {
+			showOnboarding = true;
+		}
+		
 		updateProgress();
 		observer?.disconnect();
 		observer = new IntersectionObserver(() => updateProgress());
@@ -397,9 +550,38 @@
 					 móvil, pero la experiencia será limitada.
 				</p>
 				<div class="teleprompter-mobile-actions">
-					<button class="btn-regular" on:click={() => (allowMobile = true)}>Continuar</button>
+					<button class="btn-regular" on:click={() => {
+						allowMobile = true;
+						localStorage.setItem("teleprompter:mobile:dismissed", "true");
+					}}>Continuar</button>
 					<a class="btn-plain" href="/herramientas/">Volver</a>
 				</div>
+			</div>
+		</div>
+	{/if}
+
+	{#if showOnboarding}
+		<div class="teleprompter-onboarding-overlay">
+			<div class="teleprompter-onboarding-card">
+				<div class="onboarding-step">
+					<div class="step-icon">📝</div>
+					<h3>Pega tu guion</h3>
+					<p>Escribe o pega el texto que deseas leer en el área de texto</p>
+				</div>
+				<div class="onboarding-step">
+					<div class="step-icon">⚙️</div>
+					<h3>Ajusta a tu ritmo</h3>
+					<p>Personaliza velocidad, tamaño y otras opciones según tu preferencia</p>
+				</div>
+				<div class="onboarding-step">
+					<div class="step-icon">▶️</div>
+					<h3>Empieza a grabar</h3>
+					<p>Presiona Play o Espacio para comenzar la lectura profesional</p>
+				</div>
+				<button class="btn-onboarding" on:click={() => {
+					showOnboarding = false;
+					localStorage.setItem("teleprompter:onboarding:done", "true");
+				}}>Entendido</button>
 			</div>
 		</div>
 	{/if}
@@ -407,9 +589,13 @@
 	<div class="teleprompter-header">
 		<div>
 			<h1 class="teleprompter-title">Teleprompter</h1>
-			<p class="teleprompter-subtitle">Lectura fluida y profesional para tus guiones.</p>
+			<p class="teleprompter-subtitle">Tu estudio de lectura profesional</p>
+			<p class="teleprompter-status">{getStatus()}</p>
 		</div>
 		<div class="teleprompter-header-actions">
+			<button class="btn-plain" on:click={() => (showOnboarding = true)} title="Ver tutorial">
+				?
+			</button>
 			<button class="btn-plain teleprompter-toggle" on:click={() => (showControls = !showControls)}>
 				{showControls ? "Ocultar controles" : "Mostrar controles"}
 			</button>
@@ -423,6 +609,26 @@
 	</div>
 
 	<div class="teleprompter-panel">
+		<div class="script-manager">
+			<label for="script-selector">Guion guardado:</label>
+			<div class="script-controls">
+				<select id="script-selector" bind:value={currentScript} on:change={(e) => {
+					const id = (e.target as HTMLSelectElement).value;
+					if (id) loadScript(id);
+				}}>
+					<option value="">-- Nuevo guion --</option>
+					{#each getScripts() as script}
+						<option value={script.id}>{script.name}</option>
+					{/each}
+				</select>
+				<button class="btn-icon" on:click={saveCurrentScript} title="Guardar guion actual">💾</button>
+				<button class="btn-icon" on:click={newScript} title="Nuevo guion">➕</button>
+				{#if currentScript}
+					<button class="btn-icon" on:click={() => deleteScript(currentScript!)} title="Eliminar guion">🗑️</button>
+				{/if}
+			</div>
+		</div>
+		
 		<textarea
 			class="teleprompter-input"
 			bind:value={text}
@@ -433,7 +639,7 @@
 		{#if showControls}
 			<div class="teleprompter-controls">
 				<div class="control-group">
-					<label>Velocidad</label>
+					<label title="Velocidad ideal: 40-80 px/seg para lectura natural">Velocidad <span class="speed-label">({getSpeedLabel(speed)})</span></label>
 					<input type="range" min={speedMin} max={speedMax} bind:value={speed} on:input={refreshPlayback} />
 					<span>{speed} px/seg</span>
 				</div>
@@ -461,17 +667,17 @@
 				<div class="control-group toggles">
 					<label>Opciones</label>
 					<div class="toggle-grid">
-						<button class:active={isMirror} on:click={() => (isMirror = !isMirror)}>Espejo (M)</button>
-						<button class:active={autoCenter} on:click={() => (autoCenter = !autoCenter)}>Auto-centrar</button>
-						<button class:active={smooth} on:click={() => (smooth = !smooth)}>Suave</button>
-						<button class:active={glow} on:click={() => (glow = !glow)}>Glow</button>
-						<button class:active={focusMode} on:click={() => (focusMode = !focusMode)}>Focus (F)</button>
+						<button class:active={isMirror} on:click={() => (isMirror = !isMirror)} title="Activa para cámaras frontales que invierten la imagen">Espejo (M)</button>
+						<button class:active={autoCenter} on:click={() => (autoCenter = !autoCenter)} title="Mantiene el texto centrado en la pantalla">Auto-centrar</button>
+						<button class:active={smooth} on:click={() => (smooth = !smooth)} title="Transición suave entre velocidades">Suave</button>
+						<button class:active={glow} on:click={() => (glow = !glow)} title="Efecto de brillo en la pantalla">Glow</button>
+						<button class:active={focusMode} on:click={() => (focusMode = !focusMode)} title="Resalta la línea actual y oscurece el resto">Focus (F)</button>
 						<button class:active={dimOutside} on:click={() => (dimOutside = !dimOutside)}>Oscurecer bordes</button>
-						<button class:active={ultraClean} on:click={() => (ultraClean = !ultraClean)}>Ultra limpio (L)</button>
+						<button class:active={ultraClean} on:click={() => (ultraClean = !ultraClean)} title="Oculta todos los controles para máxima concentración">Ultra limpio (L)</button>
 					</div>
 				</div>
 				<div class="control-actions">
-					<button class="btn-regular" on:click={toggle}>{isPlaying ? "Pausar" : isCountingDown ? "Cancelar" : "Reproducir"}</button>
+					<button class="btn-play" on:click={toggle}>{isPlaying ? "⏸ Pausar" : isCountingDown ? "⏹ Cancelar" : "▶ Reproducir"}</button>
 					<button class="btn-plain" on:click={reset}>Reiniciar (R)</button>
 					<button class="btn-plain" on:click={clearText}>Vaciar</button>
 					<button class="btn-plain" on:click={() => jump(-240)}>↑</button>
@@ -487,6 +693,7 @@
 		class:mirror={isMirror}
 		class:focus={focusMode}
 		class:glow={glow}
+		class:is-fullscreen={isFullscreen}
 		bind:this={fullscreenTarget}
 	>
 		<div class="teleprompter-progress">
@@ -495,7 +702,7 @@
 		<div
 			class="teleprompter-frame"
 			bind:this={scrollContainer}
-			on:wheel|preventDefault={handleWheel}
+			on:wheel={handleWheel}
 			style={`padding: ${autoCenter ? "35vh 2rem" : "2.5rem 2rem"};`}
 		>
 			<div
@@ -554,6 +761,70 @@
 		.teleprompter-wrapper.clean .teleprompter-screen {
 			height: 70vh;
 		}
+		
+		/* Onboarding overlay */
+		.teleprompter-onboarding-overlay {
+			position: fixed;
+			inset: 0;
+			background: rgba(0, 0, 0, 0.7);
+			backdrop-filter: blur(8px);
+			z-index: 50;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 1.5rem;
+		}
+		.teleprompter-onboarding-card {
+			max-width: 640px;
+			background: rgba(255, 255, 255, 0.95);
+			border-radius: 1.5rem;
+			padding: 2.5rem;
+			box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
+			border: 1px solid rgba(255, 255, 255, 0.2);
+			display: grid;
+			gap: 1.5rem;
+		}
+		:global(.dark) .teleprompter-onboarding-card {
+			background: rgba(15, 23, 42, 0.95);
+			border-color: rgba(148, 163, 184, 0.2);
+		}
+		.onboarding-step {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			text-align: center;
+			gap: 0.5rem;
+		}
+		.step-icon {
+			font-size: 2.5rem;
+			margin-bottom: 0.5rem;
+		}
+		.onboarding-step h3 {
+			font-size: 1.25rem;
+			font-weight: 700;
+			color: inherit;
+		}
+		.onboarding-step p {
+			color: inherit;
+			opacity: 0.8;
+		}
+		.btn-onboarding {
+			background: linear-gradient(135deg, #6366f1, #0ea5e9);
+			color: white;
+			border: none;
+			border-radius: 0.75rem;
+			padding: 0.85rem 2rem;
+			font-weight: 700;
+			font-size: 1.05rem;
+			cursor: pointer;
+			transition: transform 0.2s ease, box-shadow 0.2s ease;
+			box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
+		}
+		.btn-onboarding:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 12px 28px rgba(99, 102, 241, 0.45);
+		}
+		
 		.teleprompter-mobile-overlay {
 			position: absolute;
 			inset: 0;
@@ -577,6 +848,7 @@
 		.teleprompter-mobile-card h2 {
 			font-size: 1.2rem;
 			margin-bottom: 0.5rem;
+			color: inherit;
 		}
 		.teleprompter-mobile-card p {
 			color: inherit;
@@ -602,11 +874,26 @@
 		.teleprompter-title {
 			font-size: 2rem;
 			font-weight: 700;
-			color: inherit;
+			background: linear-gradient(135deg, #6366f1, #0ea5e9);
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			background-clip: text;
 		}
 		.teleprompter-subtitle {
 			color: inherit;
 			opacity: 0.7;
+			font-size: 1rem;
+		}
+		.teleprompter-status {
+			color: inherit;
+			opacity: 0.6;
+			font-size: 0.9rem;
+			font-weight: 600;
+			margin-top: 0.25rem;
+		}
+		.speed-label {
+			font-weight: 400;
+			opacity: 0.8;
 		}
 		.teleprompter-panel {
 			background: var(--card-bg);
@@ -614,6 +901,53 @@
 			padding: 1.5rem;
 			box-shadow: 0 18px 60px rgba(15, 23, 42, 0.15);
 			color: inherit;
+		}
+		.script-manager {
+			display: grid;
+			gap: 0.5rem;
+			margin-bottom: 1rem;
+		}
+		.script-manager label {
+			font-weight: 600;
+			color: inherit;
+		}
+		.script-controls {
+			display: flex;
+			gap: 0.5rem;
+			align-items: center;
+		}
+		.script-controls select {
+			flex: 1;
+			padding: 0.5rem;
+			border-radius: 0.5rem;
+			border: 1px solid rgba(15, 23, 42, 0.15);
+			background: rgba(255, 255, 255, 0.7);
+			color: inherit;
+			font-size: 0.95rem;
+		}
+		:global(.dark) .script-controls select {
+			background: rgba(15, 23, 42, 0.5);
+			border-color: rgba(255, 255, 255, 0.1);
+			color: white;
+		}
+		.btn-icon {
+			border: none;
+			background: rgba(99, 102, 241, 0.15);
+			border-radius: 0.5rem;
+			padding: 0.5rem 0.75rem;
+			cursor: pointer;
+			transition: all 0.2s ease;
+			font-size: 1rem;
+		}
+		.btn-icon:hover {
+			background: rgba(99, 102, 241, 0.25);
+			transform: translateY(-1px);
+		}
+		:global(.dark) .btn-icon {
+			background: rgba(99, 102, 241, 0.25);
+		}
+		:global(.dark) .btn-icon:hover {
+			background: rgba(99, 102, 241, 0.35);
 		}
 		.teleprompter-input {
 			width: 100%;
@@ -650,7 +984,7 @@
 		:global(.dark) .teleprompter-input {
 			background: rgba(15,23,42,0.5);
 			border-color: rgba(255,255,255,0.1);
-			color: inherit;
+			color: #e2e8f0;
 			scrollbar-color: rgba(99, 102, 241, 0.6) rgba(15, 23, 42, 0.6);
 		}
 		:global(.dark) .teleprompter-input::-webkit-scrollbar-track {
@@ -672,10 +1006,16 @@
 			font-weight: 600;
 			color: inherit;
 		}
+		:global(.dark) .control-group label {
+			color: #e2e8f0;
+		}
 		.control-group span {
 			font-size: 0.85rem;
 			color: inherit;
 			opacity: 0.7;
+		}
+		:global(.dark) .control-group span {
+			color: #e2e8f0;
 		}
 		.control-group input[type="range"] {
 			width: 100%;
@@ -692,7 +1032,7 @@
 			background: rgba(255,255,255,0.7);
 			transition: transform 0.2s ease, box-shadow 0.2s ease;
 			font-weight: 600;
-			color: inherit;
+			color: #0f172a;
 		}
 		.toggle-grid button.active {
 			background: rgba(99,102,241, 0.2);
@@ -705,12 +1045,31 @@
 		:global(.dark) .toggle-grid button {
 			background: rgba(15,23,42,0.5);
 			border-color: rgba(255,255,255,0.1);
-			color: white;
+			color: #e2e8f0;
+		}
+		:global(.dark) .toggle-grid button.active {
+			background: rgba(99,102,241, 0.3);
+			border-color: rgba(99,102,241, 0.7);
 		}
 		.control-actions {
 			display: flex;
 			flex-wrap: wrap;
 			gap: 0.5rem;
+		}
+		.btn-play {
+			background: linear-gradient(135deg, #6366f1, #0ea5e9);
+			color: white;
+			border: none;
+			border-radius: 0.75rem;
+			padding: 0.75rem 1.5rem;
+			font-weight: 700;
+			cursor: pointer;
+			transition: transform 0.2s ease, box-shadow 0.2s ease;
+			box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3);
+		}
+		.btn-play:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 10px 24px rgba(99, 102, 241, 0.4);
 		}
 		.teleprompter-screen {
 			position: relative;
@@ -735,7 +1094,7 @@
 			background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.98));
 			border-color: rgba(148, 163, 184, 0.18);
 			box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(148, 163, 184, 0.12) inset;
-			color: inherit;
+			color: #e2e8f0;
 		}
 		:global(.dark) .teleprompter-screen::before {
 			background: radial-gradient(circle at top, rgba(99, 102, 241, 0.18), transparent 55%),
@@ -745,18 +1104,18 @@
 		.teleprompter-screen.glow {
 			box-shadow: 0 20px 120px rgba(99,102,241,0.25);
 		}
-		:global(.teleprompter-screen:fullscreen) {
+		.teleprompter-screen.is-fullscreen {
 			width: 100vw;
 			height: 100vh;
 			border-radius: 0;
 			background: #f8fafc;
 			color: #0f172a;
 		}
-		:global(.dark) .teleprompter-screen:fullscreen {
+		:global(.dark) .teleprompter-screen.is-fullscreen {
 			background: #050816;
 			color: #e2e8f0;
 		}
-		:global(.teleprompter-screen:fullscreen) .teleprompter-frame {
+		.teleprompter-screen.is-fullscreen .teleprompter-frame {
 			height: 100vh;
 			padding: 30vh 8vw;
 		}
@@ -779,7 +1138,7 @@
 			scrollbar-width: thin;
 			scrollbar-color: rgba(99, 102, 241, 0.6) rgba(148, 163, 184, 0.18);
 			scrollbar-gutter: stable;
-			overScrollBehavior: contain;
+			overscroll-behavior: contain;
 			z-index: 1;
 		}
 		.teleprompter-frame::-webkit-scrollbar {
@@ -881,6 +1240,9 @@
 			opacity: 0.7;
 			z-index: 1;
 		}
+		:global(.dark) .teleprompter-footer {
+			color: #e2e8f0;
+		}
 		.shortcut {
 			font-weight: 500;
 		}
@@ -915,13 +1277,6 @@
 				right: 1rem;
 				bottom: 1rem;
 			}
-		}
-
-		:global(.dark) .teleprompter-wrapper {
-			color: #e2e8f0;
-		}
-		:global(.dark) .teleprompter-screen {
-			color: #e2e8f0;
 		}
 	</style>
 </div>
