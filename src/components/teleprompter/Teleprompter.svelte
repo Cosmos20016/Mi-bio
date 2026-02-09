@@ -100,7 +100,7 @@ const updateActiveLine = () => {
 	activeLineIndex = closestIndex;
 };
 
-// Motor de scroll profesional - FUNCIONAL
+// Professional scroll engine - WORKING
 const tick = (timestamp: number) => {
 	if (!isPlaying || !scrollContainer || !content) {
 		raf = null;
@@ -110,7 +110,7 @@ const tick = (timestamp: number) => {
 
 	if (lastTime === null) {
 		lastTime = timestamp;
-		currentSpeed = targetSpeed; // Empezar a velocidad real INMEDIATA
+		currentSpeed = targetSpeed; // Start at full speed IMMEDIATELY
 		raf = requestAnimationFrame(tick);
 		return;
 	}
@@ -124,18 +124,18 @@ const tick = (timestamp: number) => {
 	const delta = Math.min(elapsed / 1000, 0.1);
 	lastTime = timestamp;
 
-	// Suavizar velocidad: rápido si smooth está OFF, gradual si está ON
+	// Smooth speed: fast if smooth is OFF, gradual if it is ON
 	if (smooth) {
-		const smoothFactor = 0.25; // 25% por frame = respuesta rápida pero suave
+		const smoothFactor = 0.25; // 25% per frame = fast but smooth response
 		currentSpeed += (targetSpeed - currentSpeed) * smoothFactor;
 	} else {
-		currentSpeed = targetSpeed; // Velocidad directa sin suavizado
+		currentSpeed = targetSpeed; // Direct speed without smoothing
 	}
 
-	// Micro-variación orgánica sutil (±1%)
+	// Subtle organic micro-variation (±1%)
 	const variation = 1 + Math.sin(timestamp * 0.0007) * 0.01;
 
-	// Calcular maxScroll
+	// Calculate maxScroll
 	const maxScroll = Math.max(
 		content.scrollHeight - scrollContainer.clientHeight,
 		0,
@@ -147,21 +147,21 @@ const tick = (timestamp: number) => {
 		return;
 	}
 
-	// Fade-out suave en últimos 200px
+	// Smooth fade-out in last 200px
 	const remaining = maxScroll - scrollContainer.scrollTop;
 	const fadeFactor = remaining < 200 ? Math.max(remaining / 200, 0.02) : 1;
 
-	// Calcular paso: velocidad * tiempo * factores
+	// Calculate step: speed * time * factors
 	const step = Math.max(currentSpeed * variation * fadeFactor * delta, 0);
 
-	// Aplicar scroll
+	// Apply scroll
 	const newScrollTop = Math.min(scrollContainer.scrollTop + step, maxScroll);
 	scrollContainer.scrollTop = newScrollTop;
 
-	// Actualizar progreso
+	// Update progress
 	updateProgress();
 
-	// Verificar si llegó al final
+	// Check if reached the end
 	if (newScrollTop >= maxScroll - 1) {
 		isPlaying = false;
 		raf = null;
@@ -178,7 +178,7 @@ const startPlayback = () => {
 	if (raf) cancelAnimationFrame(raf);
 	speed = clamp(speed, speedMin, speedMax);
 	targetSpeed = speed;
-	currentSpeed = targetSpeed; // ← CLAVE: empezar a velocidad REAL, no al 10%
+	currentSpeed = targetSpeed; // ← KEY: start at REAL speed, not at 10%
 	isPlaying = true;
 	lastTime = null;
 	raf = requestAnimationFrame(tick);
@@ -290,7 +290,7 @@ const handleWheel = (event: WheelEvent) => {
 const adjustSpeed = (amount: number) => {
 	speed = clamp(speed + amount, speedMin, speedMax);
 	targetSpeed = speed;
-	// Si está reproduciendo, ajustar currentSpeed más rápido
+	// If playing, adjust currentSpeed faster
 	if (isPlaying) {
 		currentSpeed = Math.max(currentSpeed, targetSpeed * 0.5);
 	}
