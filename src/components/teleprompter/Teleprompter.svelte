@@ -125,8 +125,15 @@ const tick = (timestamp: number) => {
 	const delta = Math.min(elapsed / 1000, 0.1); // seconds, capped to prevent jumps
 	lastTime = timestamp;
 
-	// Instant speed change - no smoothing delay
-	currentSpeed = targetSpeed;
+	// Interpolación suave: se acerca al target progresivamente
+	// Factor 0.08 = transición rápida pero perceptible (~120ms para llegar al 90%)
+	const lerpFactor = 1 - 0.08 ** delta;
+	currentSpeed += (targetSpeed - currentSpeed) * lerpFactor;
+
+	// Snap si la diferencia es muy pequeña (evita "flotar" indefinidamente)
+	if (Math.abs(currentSpeed - targetSpeed) < 0.5) {
+		currentSpeed = targetSpeed;
+	}
 
 	// Simple step calculation - just speed * time
 	const step = currentSpeed * delta;
@@ -293,7 +300,8 @@ const handleWheel = (event: WheelEvent) => {
 		return;
 	}
 	event.preventDefault();
-	const delta = event.deltaY > 0 ? 8 : -8; // Bigger increments for faster response
+	const baseIncrement = Math.max(8, speed * 0.1);
+	const delta = event.deltaY > 0 ? baseIncrement : -baseIncrement;
 	adjustSpeed(delta);
 };
 
@@ -1882,7 +1890,7 @@ box-shadow: 0 0 30px oklch(0.70 0.14 var(--hue) / 0.6);
 height: 100%;
 overflow-y: auto;
 overflow-x: hidden;
-scroll-behavior: smooth;
+scroll-behavior: auto;
 scrollbar-width: thin;
 scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
 }
