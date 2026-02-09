@@ -251,6 +251,8 @@ const toggleFullscreen = async () => {
 	}
 };
 
+// Mouse wheel handler: Controls teleprompter speed during playback
+// Scroll down (deltaY > 0) = decrease speed, Scroll up (deltaY < 0) = increase speed
 const handleWheel = (event: WheelEvent) => {
 	event.preventDefault();
 	if (!scrollContainer || !content) return;
