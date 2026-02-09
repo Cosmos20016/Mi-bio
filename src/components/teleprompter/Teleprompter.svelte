@@ -60,6 +60,12 @@ const speedMax = 400;
 let targetSpeed = speed;
 let currentSpeed = 0;
 
+// Cache variables for scroll engine optimization
+let cachedMaxScroll = 0;
+let progressCounter = 0;
+const PROGRESS_UPDATE_INTERVAL = 8; // Update progress every 8 frames
+const AUTO_FINISH_THRESHOLD = 2; // Pixels from end to force completion
+
 const clamp = (value: number, min: number, max: number) =>
 	Math.min(Math.max(value, min), max);
 
@@ -110,7 +116,7 @@ const tick = (timestamp: number) => {
 
 	if (lastTime === null) {
 		lastTime = timestamp;
-		currentSpeed = targetSpeed; // Start at full speed IMMEDIATELY
+		currentSpeed = targetSpeed;
 		raf = requestAnimationFrame(tick);
 		return;
 	}
@@ -124,50 +130,50 @@ const tick = (timestamp: number) => {
 	const delta = Math.min(elapsed / 1000, 0.1);
 	lastTime = timestamp;
 
-	// Smooth speed: fast if smooth is OFF, gradual if it is ON
+	// Smooth speed transition
 	if (smooth) {
-		const smoothFactor = 0.25; // 25% per frame = fast but smooth response
-		currentSpeed += (targetSpeed - currentSpeed) * smoothFactor;
+		currentSpeed += (targetSpeed - currentSpeed) * 0.25;
 	} else {
-		currentSpeed = targetSpeed; // Direct speed without smoothing
+		currentSpeed = targetSpeed;
 	}
 
-	// Subtle organic micro-variation (±1%)
-	const variation = 1 + Math.sin(timestamp * 0.0007) * 0.01;
-
-	// Calculate maxScroll
-	const maxScroll = Math.max(
-		content.scrollHeight - scrollContainer.clientHeight,
-		0,
-	);
-	if (maxScroll <= 0) {
+	// Use cached maxScroll (no DOM reads per frame)
+	if (cachedMaxScroll <= 0) {
 		isPlaying = false;
 		raf = null;
 		lastTime = null;
 		return;
 	}
 
-	// Smooth fade-out in last 200px
-	const remaining = maxScroll - scrollContainer.scrollTop;
-	const fadeFactor = remaining < 200 ? Math.max(remaining / 200, 0.02) : 1;
+	const remaining = cachedMaxScroll - scrollContainer.scrollTop;
 
-	// Calculate step: speed * time * factors
-	const step = Math.max(currentSpeed * variation * fadeFactor * delta, 0);
-
-	// Apply scroll
-	const newScrollTop = Math.min(scrollContainer.scrollTop + step, maxScroll);
-	scrollContainer.scrollTop = newScrollTop;
-
-	// Update progress
-	updateProgress();
-
-	// Check if reached the end
-	if (newScrollTop >= maxScroll - 1) {
+	// Auto-finish when very close to end
+	if (remaining < AUTO_FINISH_THRESHOLD) {
+		scrollContainer.scrollTop = cachedMaxScroll;
 		isPlaying = false;
 		raf = null;
 		lastTime = null;
 		progress = 1;
 		return;
+	}
+
+	// Fade-out in last 200px with higher minimum
+	const fadeFactor = remaining < 200 ? Math.max(remaining / 200, 0.15) : 1;
+
+	// Calculate step (no variation at low speeds)
+	const step = Math.max(currentSpeed * fadeFactor * delta, 0);
+
+	// Apply scroll (single DOM write, no reads)
+	scrollContainer.scrollTop = Math.min(
+		scrollContainer.scrollTop + step,
+		cachedMaxScroll,
+	);
+
+	// Update progress only every N frames to avoid layout thrashing
+	progressCounter++;
+	if (progressCounter >= PROGRESS_UPDATE_INTERVAL) {
+		progressCounter = 0;
+		updateProgress();
 	}
 
 	raf = requestAnimationFrame(tick);
@@ -178,9 +184,16 @@ const startPlayback = () => {
 	if (raf) cancelAnimationFrame(raf);
 	speed = clamp(speed, speedMin, speedMax);
 	targetSpeed = speed;
-	currentSpeed = targetSpeed; // ← KEY: start at REAL speed, not at 10%
+	currentSpeed = targetSpeed;
+	// Cache maxScroll ONCE at start (avoid reading DOM every frame)
+	cachedMaxScroll = Math.max(
+		content.scrollHeight - scrollContainer.clientHeight,
+		0,
+	);
+	if (cachedMaxScroll <= 0) return; // Nothing to scroll
 	isPlaying = true;
 	lastTime = null;
+	progressCounter = 0;
 	raf = requestAnimationFrame(tick);
 };
 
@@ -223,6 +236,7 @@ const pause = () => {
 	}
 	lastTime = null;
 	currentSpeed = 0;
+	updateProgress(); // One final progress update
 };
 
 const toggle = () => {
@@ -290,10 +304,6 @@ const handleWheel = (event: WheelEvent) => {
 const adjustSpeed = (amount: number) => {
 	speed = clamp(speed + amount, speedMin, speedMax);
 	targetSpeed = speed;
-	// If playing, adjust currentSpeed faster
-	if (isPlaying) {
-		currentSpeed = Math.max(currentSpeed, targetSpeed * 0.5);
-	}
 };
 
 const loadState = () => {
