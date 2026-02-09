@@ -497,7 +497,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		border: 1px solid rgba(15, 23, 42, 0.1);
 		min-height: 140px;
 		font-size: 1rem;
-		color: var(--deep-text, #0f172a);
+		color: inherit;
 	}
 	.teleprompter-input::placeholder {
 		color: rgba(0, 0, 0, 0.5);
@@ -505,7 +505,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	:global(.dark) .teleprompter-input {
 		background: rgba(15,23,42,0.5);
 		border-color: rgba(255,255,255,0.1);
-		color: var(--deep-text, #e2e8f0);
+		color: inherit;
 	}
 	:global(.dark) .teleprompter-input::placeholder {
 		color: rgba(255, 255, 255, 0.6);
@@ -570,12 +570,12 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		background: radial-gradient(circle at top, rgba(255,255,255,0.9), rgba(255,255,255,0.6));
 		border: 1px solid rgba(15, 23, 42, 0.08);
 		box-shadow: 0 20px 80px rgba(15, 23, 42, 0.18);
-		color: var(--deep-text, #0f172a);
+		color: inherit;
 	}
 	:global(.dark) .teleprompter-screen {
 		background: radial-gradient(circle at top, rgba(15,23,42,0.8), rgba(2,6,23,0.85));
 		border-color: rgba(255,255,255,0.1);
-		color: #e2e8f0;
+		color: inherit;
 	}
 	.teleprompter-screen.glow {
 		box-shadow: 0 20px 120px rgba(99,102,241,0.25);
