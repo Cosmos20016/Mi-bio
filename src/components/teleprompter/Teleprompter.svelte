@@ -1,10 +1,10 @@
 <script lang="ts">
-import { onDestroy, onMount } from "svelte";
 import {
-applyStoredThemeToDocument,
-getStoredTheme,
-watchSystemThemeChanges,
+	applyStoredThemeToDocument,
+	getStoredTheme,
+	watchSystemThemeChanges,
 } from "@utils/setting-utils.ts";
+import { onDestroy, onMount } from "svelte";
 
 const storageKey = "teleprompter:state:v3";
 
@@ -61,560 +61,580 @@ let targetSpeed = speed;
 let currentSpeed = 0;
 
 const clamp = (value: number, min: number, max: number) =>
-Math.min(Math.max(value, min), max);
+	Math.min(Math.max(value, min), max);
 
 $: lines = text.split("\n");
 $: if (lineElements.length !== lines.length) {
-lineElements = lines.map((_, i) => lineElements[i] || null);
+	lineElements = lines.map((_, i) => lineElements[i] || null);
 }
 
 const updateProgress = () => {
-if (!scrollContainer || !content) return;
-const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
-progress = maxScroll <= 0 ? 0 : clamp(scrollContainer.scrollTop / maxScroll, 0, 1);
-updateActiveLine();
+	if (!scrollContainer || !content) return;
+	const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
+	progress =
+		maxScroll <= 0 ? 0 : clamp(scrollContainer.scrollTop / maxScroll, 0, 1);
+	updateActiveLine();
 };
 
 const getFocusCenter = () => {
-if (!scrollContainer) return 0;
-const viewport = scrollContainer.clientHeight;
-const focusOffset = focusMode ? viewport * 0.45 + 50 : viewport / 2;
-return scrollContainer.scrollTop + focusOffset;
+	if (!scrollContainer) return 0;
+	const viewport = scrollContainer.clientHeight;
+	const focusOffset = focusMode ? viewport * 0.45 + 50 : viewport / 2;
+	return scrollContainer.scrollTop + focusOffset;
 };
 
 const updateActiveLine = () => {
-if (!scrollContainer || !lineElements.length) return;
-const focusCenter = getFocusCenter();
-let closestIndex = 0;
-let closestDistance = Number.POSITIVE_INFINITY;
-lineElements.forEach((line, index) => {
-if (!line) return;
-const lineCenter = line.offsetTop + line.offsetHeight / 2;
-const distance = Math.abs(lineCenter - focusCenter);
-if (distance < closestDistance) {
-closestDistance = distance;
-closestIndex = index;
-}
-});
-activeLineIndex = closestIndex;
+	if (!scrollContainer || !lineElements.length) return;
+	const focusCenter = getFocusCenter();
+	let closestIndex = 0;
+	let closestDistance = Number.POSITIVE_INFINITY;
+	lineElements.forEach((line, index) => {
+		if (!line) return;
+		const lineCenter = line.offsetTop + line.offsetHeight / 2;
+		const distance = Math.abs(lineCenter - focusCenter);
+		if (distance < closestDistance) {
+			closestDistance = distance;
+			closestIndex = index;
+		}
+	});
+	activeLineIndex = closestIndex;
 };
 
-// Professional time-based scroll engine
+// Motor de scroll profesional - FUNCIONAL
 const tick = (timestamp: number) => {
-if (!isPlaying || !scrollContainer || !content) {
-raf = null;
-lastTime = null;
-return;
-}
+	if (!isPlaying || !scrollContainer || !content) {
+		raf = null;
+		lastTime = null;
+		return;
+	}
 
-if (!lastTime) {
-lastTime = timestamp;
-raf = requestAnimationFrame(tick);
-return;
-}
+	if (lastTime === null) {
+		lastTime = timestamp;
+		currentSpeed = targetSpeed; // Empezar a velocidad real INMEDIATA
+		raf = requestAnimationFrame(tick);
+		return;
+	}
 
-const delta = Math.min((timestamp - lastTime) / 1000, 0.1); // seconds, cap at 100ms
-lastTime = timestamp;
+	const elapsed = timestamp - lastTime;
+	if (elapsed <= 0) {
+		raf = requestAnimationFrame(tick);
+		return;
+	}
 
-// Smooth exponential interpolation towards target speed
-const lerpFactor = 1 - Math.pow(0.001, delta);
-currentSpeed = currentSpeed + (targetSpeed - currentSpeed) * lerpFactor;
+	const delta = Math.min(elapsed / 1000, 0.1);
+	lastTime = timestamp;
 
-// Micro-variation for organic feel (±1.5%)
-const variation = 1 + Math.sin(timestamp * 0.001) * 0.015;
+	// Suavizar velocidad: rápido si smooth está OFF, gradual si está ON
+	if (smooth) {
+		const smoothFactor = 0.25; // 25% por frame = respuesta rápida pero suave
+		currentSpeed += (targetSpeed - currentSpeed) * smoothFactor;
+	} else {
+		currentSpeed = targetSpeed; // Velocidad directa sin suavizado
+	}
 
-// Fade-out in last 300px
-const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
-const remaining = maxScroll - scrollContainer.scrollTop;
-const fadeFactor = remaining < 300 ? Math.max(remaining / 300, 0.05) : 1;
+	// Micro-variación orgánica sutil (±1%)
+	const variation = 1 + Math.sin(timestamp * 0.0007) * 0.01;
 
-// Calculate real step
-const step = currentSpeed * variation * fadeFactor * delta;
+	// Calcular maxScroll
+	const maxScroll = Math.max(
+		content.scrollHeight - scrollContainer.clientHeight,
+		0,
+	);
+	if (maxScroll <= 0) {
+		isPlaying = false;
+		raf = null;
+		lastTime = null;
+		return;
+	}
 
-scrollContainer.scrollTop = Math.min(scrollContainer.scrollTop + step, maxScroll);
-updateProgress();
+	// Fade-out suave en últimos 200px
+	const remaining = maxScroll - scrollContainer.scrollTop;
+	const fadeFactor = remaining < 200 ? Math.max(remaining / 200, 0.02) : 1;
 
-if (scrollContainer.scrollTop >= maxScroll) {
-isPlaying = false;
-raf = null;
-lastTime = null;
-return;
-}
+	// Calcular paso: velocidad * tiempo * factores
+	const step = Math.max(currentSpeed * variation * fadeFactor * delta, 0);
 
-raf = requestAnimationFrame(tick);
+	// Aplicar scroll
+	const newScrollTop = Math.min(scrollContainer.scrollTop + step, maxScroll);
+	scrollContainer.scrollTop = newScrollTop;
+
+	// Actualizar progreso
+	updateProgress();
+
+	// Verificar si llegó al final
+	if (newScrollTop >= maxScroll - 1) {
+		isPlaying = false;
+		raf = null;
+		lastTime = null;
+		progress = 1;
+		return;
+	}
+
+	raf = requestAnimationFrame(tick);
 };
 
 const startPlayback = () => {
-if (!scrollContainer || !content) return;
-if (raf) cancelAnimationFrame(raf);
-speed = clamp(speed, speedMin, speedMax);
-targetSpeed = speed;
-currentSpeed = speed * 0.1; // Start from 10% of target for smooth start
-isPlaying = true;
-lastTime = null;
-raf = requestAnimationFrame(tick);
+	if (!scrollContainer || !content) return;
+	if (raf) cancelAnimationFrame(raf);
+	speed = clamp(speed, speedMin, speedMax);
+	targetSpeed = speed;
+	currentSpeed = targetSpeed; // ← CLAVE: empezar a velocidad REAL, no al 10%
+	isPlaying = true;
+	lastTime = null;
+	raf = requestAnimationFrame(tick);
 };
 
 const cancelCountdown = () => {
-if (countdownTimer) clearInterval(countdownTimer);
-countdownTimer = null;
-countdown = 0;
-isCountingDown = false;
+	if (countdownTimer) clearInterval(countdownTimer);
+	countdownTimer = null;
+	countdown = 0;
+	isCountingDown = false;
 };
 
 const beginCountdown = () => {
-if (isCountingDown) return;
-if (countdownDuration <= 0) {
-startPlayback();
-return;
-}
-cancelCountdown();
-countdown = countdownDuration;
-isCountingDown = true;
-countdownTimer = setInterval(() => {
-countdown -= 1;
-if (countdown <= 0) {
-cancelCountdown();
-startPlayback();
-}
-}, 1000);
+	if (isCountingDown) return;
+	if (countdownDuration <= 0) {
+		startPlayback();
+		return;
+	}
+	cancelCountdown();
+	countdown = countdownDuration;
+	isCountingDown = true;
+	countdownTimer = setInterval(() => {
+		countdown -= 1;
+		if (countdown <= 0) {
+			cancelCountdown();
+			startPlayback();
+		}
+	}, 1000);
 };
 
 const start = () => {
-if (isPlaying || isCountingDown) return;
-beginCountdown();
+	if (isPlaying || isCountingDown) return;
+	beginCountdown();
 };
 
 const pause = () => {
-isPlaying = false;
-cancelCountdown();
-if (raf) {
-cancelAnimationFrame(raf);
-raf = null;
-}
-lastTime = null;
-// Smooth deceleration
-if (currentSpeed > 5 && scrollContainer) {
-const decelerate = () => {
-if (currentSpeed > 5) {
-currentSpeed *= 0.85;
-scrollContainer.scrollTop += currentSpeed * 0.016;
-requestAnimationFrame(decelerate);
-} else {
-currentSpeed = 0;
-}
-};
-decelerate();
-} else {
-currentSpeed = 0;
-}
+	isPlaying = false;
+	cancelCountdown();
+	if (raf) {
+		cancelAnimationFrame(raf);
+		raf = null;
+	}
+	lastTime = null;
+	currentSpeed = 0;
 };
 
 const toggle = () => {
-if (isPlaying) {
-pause();
-} else if (isCountingDown) {
-cancelCountdown();
-} else {
-start();
-}
+	if (isPlaying) {
+		pause();
+	} else if (isCountingDown) {
+		cancelCountdown();
+	} else {
+		start();
+	}
 };
 
 const reset = () => {
-pause();
-if (scrollContainer) {
-scrollContainer.scrollTop = 0;
-}
-updateProgress();
+	pause();
+	if (scrollContainer) {
+		scrollContainer.scrollTop = 0;
+	}
+	updateProgress();
 };
 
 const clearText = () => {
-pause();
-text = "";
-if (scrollContainer) {
-scrollContainer.scrollTop = 0;
-}
-updateProgress();
+	pause();
+	text = "";
+	if (scrollContainer) {
+		scrollContainer.scrollTop = 0;
+	}
+	updateProgress();
 };
 
 const jump = (amount: number) => {
-if (!scrollContainer || !content) return;
-const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
-const next = scrollContainer.scrollTop + amount;
-scrollContainer.scrollTop = clamp(next, 0, maxScroll);
-updateProgress();
+	if (!scrollContainer || !content) return;
+	const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
+	const next = scrollContainer.scrollTop + amount;
+	scrollContainer.scrollTop = clamp(next, 0, maxScroll);
+	updateProgress();
 };
 
 const scrollToProgress = (value: number) => {
-if (!scrollContainer || !content) return;
-const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
-scrollContainer.scrollTop = clamp(value, 0, 1) * Math.max(maxScroll, 0);
-updateProgress();
+	if (!scrollContainer || !content) return;
+	const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
+	scrollContainer.scrollTop = clamp(value, 0, 1) * Math.max(maxScroll, 0);
+	updateProgress();
 };
 
 const toggleFullscreen = async () => {
-if (!fullscreenTarget) return;
-if (!document.fullscreenElement) {
-await fullscreenTarget.requestFullscreen();
-} else {
-await document.exitFullscreen();
-}
+	if (!fullscreenTarget) return;
+	if (!document.fullscreenElement) {
+		await fullscreenTarget.requestFullscreen();
+	} else {
+		await document.exitFullscreen();
+	}
 };
 
 const handleWheel = (event: WheelEvent) => {
-if (!isPlaying) {
-// Allow manual scroll when paused
-return;
-}
-event.preventDefault();
-// Fixed: scroll down (deltaY > 0) should increase speed
-const delta = event.deltaY > 0 ? 4 : -4;
-adjustSpeed(delta);
+	if (!isPlaying) {
+		// Allow manual scroll when paused
+		return;
+	}
+	event.preventDefault();
+	// Fixed: scroll down (deltaY > 0) should increase speed
+	const delta = event.deltaY > 0 ? 4 : -4;
+	adjustSpeed(delta);
 };
 
 const adjustSpeed = (amount: number) => {
-speed = clamp(speed + amount, speedMin, speedMax);
-targetSpeed = speed;
-// Update currentSpeed smoothly through the tick loop
+	speed = clamp(speed + amount, speedMin, speedMax);
+	targetSpeed = speed;
+	// Si está reproduciendo, ajustar currentSpeed más rápido
+	if (isPlaying) {
+		currentSpeed = Math.max(currentSpeed, targetSpeed * 0.5);
+	}
 };
 
 const loadState = () => {
-try {
-const raw = localStorage.getItem(storageKey);
-if (!raw) return;
-const data = JSON.parse(raw) as Partial<{
-text: string;
-speed: number;
-fontSize: number;
-lineHeight: number;
-isMirror: boolean;
-autoCenter: boolean;
-smooth: boolean;
-glow: boolean;
-focusMode: boolean;
-dimOutside: boolean;
-ultraClean: boolean;
-countdownDuration: number;
-}>;
-if (data.text) text = data.text;
-if (data.speed) speed = data.speed;
-if (data.fontSize) fontSize = data.fontSize;
-if (data.lineHeight) lineHeight = data.lineHeight;
-if (typeof data.isMirror === "boolean") isMirror = data.isMirror;
-if (typeof data.autoCenter === "boolean") autoCenter = data.autoCenter;
-if (typeof data.smooth === "boolean") smooth = data.smooth;
-if (typeof data.glow === "boolean") glow = data.glow;
-if (typeof data.focusMode === "boolean") focusMode = data.focusMode;
-if (typeof data.dimOutside === "boolean") dimOutside = data.dimOutside;
-if (typeof data.ultraClean === "boolean") ultraClean = data.ultraClean;
-if (typeof data.countdownDuration === "number") countdownDuration = data.countdownDuration;
-speed = clamp(speed, speedMin, speedMax);
-targetSpeed = speed;
-currentSpeed = 0;
-} catch {
-// ignore invalid storage
-}
+	try {
+		const raw = localStorage.getItem(storageKey);
+		if (!raw) return;
+		const data = JSON.parse(raw) as Partial<{
+			text: string;
+			speed: number;
+			fontSize: number;
+			lineHeight: number;
+			isMirror: boolean;
+			autoCenter: boolean;
+			smooth: boolean;
+			glow: boolean;
+			focusMode: boolean;
+			dimOutside: boolean;
+			ultraClean: boolean;
+			countdownDuration: number;
+		}>;
+		if (data.text) text = data.text;
+		if (data.speed) speed = data.speed;
+		if (data.fontSize) fontSize = data.fontSize;
+		if (data.lineHeight) lineHeight = data.lineHeight;
+		if (typeof data.isMirror === "boolean") isMirror = data.isMirror;
+		if (typeof data.autoCenter === "boolean") autoCenter = data.autoCenter;
+		if (typeof data.smooth === "boolean") smooth = data.smooth;
+		if (typeof data.glow === "boolean") glow = data.glow;
+		if (typeof data.focusMode === "boolean") focusMode = data.focusMode;
+		if (typeof data.dimOutside === "boolean") dimOutside = data.dimOutside;
+		if (typeof data.ultraClean === "boolean") ultraClean = data.ultraClean;
+		if (typeof data.countdownDuration === "number")
+			countdownDuration = data.countdownDuration;
+		speed = clamp(speed, speedMin, speedMax);
+		targetSpeed = speed;
+		currentSpeed = 0;
+	} catch {
+		// ignore invalid storage
+	}
 };
 
 const scheduleSave = () => {
-if (!isReady) return;
-if (saveTimeout) clearTimeout(saveTimeout);
-saveTimeout = setTimeout(() => {
-const payload = {
-text,
-speed,
-fontSize,
-lineHeight,
-isMirror,
-autoCenter,
-smooth,
-glow,
-focusMode,
-dimOutside,
-ultraClean,
-countdownDuration,
-};
-localStorage.setItem(storageKey, JSON.stringify(payload));
+	if (!isReady) return;
+	if (saveTimeout) clearTimeout(saveTimeout);
+	saveTimeout = setTimeout(() => {
+		const payload = {
+			text,
+			speed,
+			fontSize,
+			lineHeight,
+			isMirror,
+			autoCenter,
+			smooth,
+			glow,
+			focusMode,
+			dimOutside,
+			ultraClean,
+			countdownDuration,
+		};
+		localStorage.setItem(storageKey, JSON.stringify(payload));
 
-// Auto-save current script
-if (currentScript && text.trim()) {
-saveCurrentScript();
-}
-}, 300);
+		// Auto-save current script
+		if (currentScript && text.trim()) {
+			saveCurrentScript();
+		}
+	}, 300);
 };
 
 // Script history functions
 interface SavedScript {
-id: string;
-name: string;
-text: string;
-createdAt: string;
-updatedAt: string;
+	id: string;
+	name: string;
+	text: string;
+	createdAt: string;
+	updatedAt: string;
 }
 
 let scripts: SavedScript[] = [];
 
 const loadScripts = () => {
-try {
-const raw = localStorage.getItem("teleprompter:scripts");
-scripts = raw ? JSON.parse(raw) : [];
-} catch {
-scripts = [];
-}
+	try {
+		const raw = localStorage.getItem("teleprompter:scripts");
+		scripts = raw ? JSON.parse(raw) : [];
+	} catch {
+		scripts = [];
+	}
 };
 
 const saveScripts = (scriptsToSave: SavedScript[]) => {
-localStorage.setItem("teleprompter:scripts", JSON.stringify(scriptsToSave));
-scripts = scriptsToSave;
+	localStorage.setItem("teleprompter:scripts", JSON.stringify(scriptsToSave));
+	scripts = scriptsToSave;
 };
 
 const saveCurrentScript = () => {
-if (!text.trim()) return;
-const now = new Date().toISOString();
+	if (!text.trim()) return;
+	const now = new Date().toISOString();
 
-if (currentScript) {
-const index = scripts.findIndex((s) => s.id === currentScript);
-if (index >= 0) {
-scripts[index].text = text;
-scripts[index].updatedAt = now;
-saveScripts(scripts);
-}
-} else {
-const newScript: SavedScript = {
-id: Date.now().toString(),
-name: `Guion ${scripts.length + 1}`,
-text,
-createdAt: now,
-updatedAt: now,
-};
-const updated = [newScript, ...scripts];
+	if (currentScript) {
+		const index = scripts.findIndex((s) => s.id === currentScript);
+		if (index >= 0) {
+			scripts[index].text = text;
+			scripts[index].updatedAt = now;
+			saveScripts(scripts);
+		}
+	} else {
+		const newScript: SavedScript = {
+			id: Date.now().toString(),
+			name: `Guion ${scripts.length + 1}`,
+			text,
+			createdAt: now,
+			updatedAt: now,
+		};
+		const updated = [newScript, ...scripts];
 
-// Keep max 20 scripts
-if (updated.length > 20) {
-updated.splice(20);
-}
+		// Keep max 20 scripts
+		if (updated.length > 20) {
+			updated.splice(20);
+		}
 
-saveScripts(updated);
-currentScript = newScript.id;
-localStorage.setItem("teleprompter:lastScript", currentScript);
-}
+		saveScripts(updated);
+		currentScript = newScript.id;
+		localStorage.setItem("teleprompter:lastScript", currentScript);
+	}
 };
 
 const loadScript = (id: string) => {
-const script = scripts.find((s) => s.id === id);
-if (script) {
-text = script.text;
-currentScript = id;
-localStorage.setItem("teleprompter:lastScript", id);
-}
+	const script = scripts.find((s) => s.id === id);
+	if (script) {
+		text = script.text;
+		currentScript = id;
+		localStorage.setItem("teleprompter:lastScript", id);
+	}
 };
 
 const deleteScript = (id: string) => {
-const updated = scripts.filter((s) => s.id !== id);
-saveScripts(updated);
-if (currentScript === id) {
-currentScript = null;
-text = "";
-}
+	const updated = scripts.filter((s) => s.id !== id);
+	saveScripts(updated);
+	if (currentScript === id) {
+		currentScript = null;
+		text = "";
+	}
 };
 
 const newScript = () => {
-currentScript = null;
-text = "";
+	currentScript = null;
+	text = "";
 };
 
 const getSpeedLabel = (spd: number): string => {
-if (spd < 40) return "Muy lento";
-if (spd < 80) return "Lento";
-if (spd < 150) return "Normal";
-if (spd < 250) return "Rápido";
-return "Muy rápido";
+	if (spd < 40) return "Muy lento";
+	if (spd < 80) return "Lento";
+	if (spd < 150) return "Normal";
+	if (spd < 250) return "Rápido";
+	return "Muy rápido";
 };
 
 const getStatus = (): string => {
-if (isPlaying) return "Reproduciendo...";
-if (isCountingDown) return "Iniciando...";
-if (progress >= 0.99) return "Finalizado";
-if (progress > 0) return "Pausado";
-return "Listo";
+	if (isPlaying) return "Reproduciendo...";
+	if (isCountingDown) return "Iniciando...";
+	if (progress >= 0.99) return "Finalizado";
+	if (progress > 0) return "Pausado";
+	return "Listo";
 };
 
 const getStatusColor = (): string => {
-if (isPlaying) return "oklch(0.60 0.15 220)"; // blue
-if (isCountingDown) return "oklch(0.65 0.15 60)"; // yellow
-if (progress >= 0.99) return "oklch(0.50 0.05 var(--hue))"; // gray
-return "oklch(0.60 0.15 150)"; // green
+	if (isPlaying) return "oklch(0.60 0.15 220)"; // blue
+	if (isCountingDown) return "oklch(0.65 0.15 60)"; // yellow
+	if (progress >= 0.99) return "oklch(0.50 0.05 var(--hue))"; // gray
+	return "oklch(0.60 0.15 150)"; // green
 };
 
 const getSpeedColor = (): string => {
-const ratio = (speed - speedMin) / (speedMax - speedMin);
-if (ratio < 0.33) return "oklch(0.65 0.15 150)"; // green
-if (ratio < 0.66) return "oklch(0.70 0.15 60)"; // yellow
-return "oklch(0.65 0.18 25)"; // red
+	const ratio = (speed - speedMin) / (speedMax - speedMin);
+	if (ratio < 0.33) return "oklch(0.65 0.15 150)"; // green
+	if (ratio < 0.66) return "oklch(0.70 0.15 60)"; // yellow
+	return "oklch(0.65 0.18 25)"; // red
 };
 
 const formatRelativeTime = (isoDate: string): string => {
-const date = new Date(isoDate);
-const now = new Date();
-const diffMs = now.getTime() - date.getTime();
-const diffMins = Math.floor(diffMs / 60000);
-const diffHours = Math.floor(diffMs / 3600000);
-const diffDays = Math.floor(diffMs / 86400000);
+	const date = new Date(isoDate);
+	const now = new Date();
+	const diffMs = now.getTime() - date.getTime();
+	const diffMins = Math.floor(diffMs / 60000);
+	const diffHours = Math.floor(diffMs / 3600000);
+	const diffDays = Math.floor(diffMs / 86400000);
 
-if (diffMins < 1) return "Ahora";
-if (diffMins < 60) return `Hace ${diffMins} min`;
-if (diffHours < 24) return `Hace ${diffHours} h`;
-if (diffDays === 1) return "Ayer";
-if (diffDays < 7) return `Hace ${diffDays} días`;
-return date.toLocaleDateString("es-ES", { month: "short", day: "numeric" });
+	if (diffMins < 1) return "Ahora";
+	if (diffMins < 60) return `Hace ${diffMins} min`;
+	if (diffHours < 24) return `Hace ${diffHours} h`;
+	if (diffDays === 1) return "Ayer";
+	if (diffDays < 7) return `Hace ${diffDays} días`;
+	return date.toLocaleDateString("es-ES", { month: "short", day: "numeric" });
 };
 
 const getEstimatedTimeRemaining = (): string => {
-if (!scrollContainer || !content || speed === 0) return "";
-const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
-const remaining = maxScroll - scrollContainer.scrollTop;
-if (remaining <= 0) return "0s";
-const seconds = Math.ceil(remaining / speed);
-if (seconds < 60) return `${seconds}s`;
-const minutes = Math.floor(seconds / 60);
-const secs = seconds % 60;
-return `${minutes}:${secs.toString().padStart(2, "0")}`;
+	if (!scrollContainer || !content || speed === 0) return "";
+	const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
+	const remaining = maxScroll - scrollContainer.scrollTop;
+	if (remaining <= 0) return "0s";
+	const seconds = Math.ceil(remaining / speed);
+	if (seconds < 60) return `${seconds}s`;
+	const minutes = Math.floor(seconds / 60);
+	const secs = seconds % 60;
+	return `${minutes}:${secs.toString().padStart(2, "0")}`;
 };
 
 const onKey = (event: KeyboardEvent) => {
-if (event.target && (event.target as HTMLElement).tagName === "TEXTAREA") return;
-switch (event.code) {
-case "Space":
-case "Enter":
-case "NumpadEnter":
-event.preventDefault();
-toggle();
-break;
-case "ArrowUp":
-event.preventDefault();
-jump(-120);
-break;
-case "ArrowDown":
-event.preventDefault();
-jump(120);
-break;
-case "PageUp":
-event.preventDefault();
-jump(-320);
-break;
-case "PageDown":
-event.preventDefault();
-jump(320);
-break;
-case "KeyM":
-isMirror = !isMirror;
-break;
-case "KeyF":
-focusMode = !focusMode;
-break;
-case "KeyR":
-reset();
-break;
-case "KeyX":
-toggleFullscreen();
-break;
-case "KeyL":
-ultraClean = !ultraClean;
-break;
-case "Equal":
-case "NumpadAdd":
-adjustSpeed(4);
-break;
-case "Minus":
-case "NumpadSubtract":
-adjustSpeed(-4);
-break;
-}
+	if (event.target && (event.target as HTMLElement).tagName === "TEXTAREA")
+		return;
+	switch (event.code) {
+		case "Space":
+		case "Enter":
+		case "NumpadEnter":
+			event.preventDefault();
+			toggle();
+			break;
+		case "ArrowUp":
+			event.preventDefault();
+			jump(-120);
+			break;
+		case "ArrowDown":
+			event.preventDefault();
+			jump(120);
+			break;
+		case "PageUp":
+			event.preventDefault();
+			jump(-320);
+			break;
+		case "PageDown":
+			event.preventDefault();
+			jump(320);
+			break;
+		case "KeyM":
+			isMirror = !isMirror;
+			break;
+		case "KeyF":
+			focusMode = !focusMode;
+			break;
+		case "KeyR":
+			reset();
+			break;
+		case "KeyX":
+			toggleFullscreen();
+			break;
+		case "KeyL":
+			ultraClean = !ultraClean;
+			break;
+		case "Equal":
+		case "NumpadAdd":
+			adjustSpeed(4);
+			break;
+		case "Minus":
+		case "NumpadSubtract":
+			adjustSpeed(-4);
+			break;
+	}
 };
 
 $: if (
-isReady &&
-(text ||
-speed ||
-fontSize ||
-lineHeight ||
-isMirror ||
-autoCenter ||
-smooth ||
-glow ||
-focusMode ||
-dimOutside ||
-ultraClean ||
-countdownDuration)
+	isReady &&
+	(text ||
+		speed ||
+		fontSize ||
+		lineHeight ||
+		isMirror ||
+		autoCenter ||
+		smooth ||
+		glow ||
+		focusMode ||
+		dimOutside ||
+		ultraClean ||
+		countdownDuration)
 ) {
-scheduleSave();
+	scheduleSave();
 }
 
 onMount(() => {
-// Dark mode detection with MutationObserver
-isDark = document.documentElement.classList.contains("dark");
-darkModeObserver = new MutationObserver((mutations) => {
-for (const mutation of mutations) {
-if (mutation.attributeName === "class") {
-isDark = document.documentElement.classList.contains("dark");
-}
-}
-});
-darkModeObserver.observe(document.documentElement, {
-attributes: true,
-attributeFilter: ["class"],
-});
+	// Dark mode detection with MutationObserver
+	isDark = document.documentElement.classList.contains("dark");
+	darkModeObserver = new MutationObserver((mutations) => {
+		for (const mutation of mutations) {
+			if (mutation.attributeName === "class") {
+				isDark = document.documentElement.classList.contains("dark");
+			}
+		}
+	});
+	darkModeObserver.observe(document.documentElement, {
+		attributes: true,
+		attributeFilter: ["class"],
+	});
 
-window.addEventListener("keydown", onKey);
-const mql = window.matchMedia("(max-width: 768px)");
-isMobile = mql.matches;
-const dismissedMobile = localStorage.getItem("teleprompter:mobile:dismissed");
-showMobileNotice = isMobile && !dismissedMobile;
-allowMobile = !showMobileNotice;
+	window.addEventListener("keydown", onKey);
+	const mql = window.matchMedia("(max-width: 768px)");
+	isMobile = mql.matches;
+	const dismissedMobile = localStorage.getItem("teleprompter:mobile:dismissed");
+	showMobileNotice = isMobile && !dismissedMobile;
+	allowMobile = !showMobileNotice;
 
-applyStoredThemeToDocument();
-stopThemeWatch = watchSystemThemeChanges(getStoredTheme());
+	applyStoredThemeToDocument();
+	stopThemeWatch = watchSystemThemeChanges(getStoredTheme());
 
-loadState();
-loadScripts();
+	loadState();
+	loadScripts();
 
-// Load last used script
-const lastScriptId = localStorage.getItem("teleprompter:lastScript");
-if (lastScriptId) {
-loadScript(lastScriptId);
-}
+	// Load last used script
+	const lastScriptId = localStorage.getItem("teleprompter:lastScript");
+	if (lastScriptId) {
+		loadScript(lastScriptId);
+	}
 
-// Check for onboarding
-const onboardingDone = localStorage.getItem("teleprompter:onboarding:done");
-if (!onboardingDone) {
-showOnboarding = true;
-}
+	// Check for onboarding
+	const onboardingDone = localStorage.getItem("teleprompter:onboarding:done");
+	if (!onboardingDone) {
+		showOnboarding = true;
+	}
 
-updateProgress();
-observer?.disconnect();
-observer = new IntersectionObserver(() => updateProgress());
-observer.observe(scrollContainer);
+	updateProgress();
+	observer?.disconnect();
+	observer = new IntersectionObserver(() => updateProgress());
+	observer.observe(scrollContainer);
 
-const onFullscreenChange = () => {
-isFullscreen = Boolean(document.fullscreenElement);
-};
-document.addEventListener("fullscreenchange", onFullscreenChange);
-isReady = true;
+	const onFullscreenChange = () => {
+		isFullscreen = Boolean(document.fullscreenElement);
+	};
+	document.addEventListener("fullscreenchange", onFullscreenChange);
+	isReady = true;
 
-return () => {
-document.removeEventListener("fullscreenchange", onFullscreenChange);
-};
+	return () => {
+		document.removeEventListener("fullscreenchange", onFullscreenChange);
+	};
 });
 
 onDestroy(() => {
-window.removeEventListener("keydown", onKey);
-pause();
-observer?.disconnect();
-darkModeObserver?.disconnect();
-if (saveTimeout) clearTimeout(saveTimeout);
-stopThemeWatch?.();
-stopThemeWatch = null;
-if (countdownTimer) clearInterval(countdownTimer);
+	window.removeEventListener("keydown", onKey);
+	pause();
+	observer?.disconnect();
+	darkModeObserver?.disconnect();
+	if (saveTimeout) clearTimeout(saveTimeout);
+	stopThemeWatch?.();
+	stopThemeWatch = null;
+	if (countdownTimer) clearInterval(countdownTimer);
 });
 </script>
 
