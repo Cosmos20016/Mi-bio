@@ -68,6 +68,12 @@
 	const speedMax = 300;
 	const accelerationDuration = 0.8;
 	const countdownSeconds = 3;
+	const maxSavedScripts = 20;
+	const autoSaveDelayMs = 5000;
+	const decelerationDurationMs = 300;
+	const variationFrequency = 0.003;
+	const variationAmplitude = 0.02;
+	const fadeOutZone = 200;
 	let targetSpeed = speed;
 	let currentSpeed = speed;
 	let startTime = 0;
@@ -101,6 +107,18 @@
 			case "paused": return "⏸️";
 			case "finished": return "✅";
 			default: return "🎬";
+		}
+	};
+	
+	const formatDate = (dateString: string): string => {
+		try {
+			return new Date(dateString).toLocaleDateString('es-ES', { 
+				day: '2-digit', 
+				month: 'short', 
+				year: 'numeric' 
+			});
+		} catch {
+			return new Date(dateString).toLocaleDateString();
 		}
 	};
 	
@@ -184,8 +202,8 @@
 			}
 		} else {
 			// Create new script
-			if (savedScripts.length >= 20) {
-				alert("Máximo 20 guiones guardados. Elimina uno para continuar.");
+			if (savedScripts.length >= maxSavedScripts) {
+				alert(`Máximo ${maxSavedScripts} guiones guardados. Elimina uno para continuar.`);
 				return;
 			}
 			const newScript: SavedScript = {
@@ -264,7 +282,7 @@
 				saveScripts();
 				lastSavedText = text;
 			}
-		}, 5000);
+		}, autoSaveDelayMs);
 	};
 	
 	$: if (isReady && text !== lastSavedText) scheduleAutoSave();
@@ -326,11 +344,10 @@
 		currentSpeed += (targetSpeed - currentSpeed) * smoothingFactor;
 		
 		// Add micro-variation for natural feel (±2%)
-		const variation = 1 + (Math.sin(time * 0.003) * 0.02);
+		const variation = 1 + (Math.sin(time * variationFrequency) * variationAmplitude);
 		
 		// Distance to end for fade-out
 		const distanceToEnd = maxScroll - scrollContainer.scrollTop;
-		const fadeOutZone = 200;
 		const fadeOutFactor = distanceToEnd < fadeOutZone ? Math.max(distanceToEnd / fadeOutZone, 0.1) : 1;
 		
 		const step = currentSpeed * speedFactor * rampFactor * fadeOutFactor * variation * delta;
@@ -418,7 +435,7 @@
 				lastTime = 0;
 				startTime = 0;
 				targetSpeed = speed; // Restore target speed
-			}, 300);
+			}, decelerationDurationMs);
 		} else {
 			isPlaying = false;
 			status = "paused";
@@ -738,7 +755,7 @@
 							<button class="script-load-btn" on:click={() => loadScript(script.id)}>
 								<div class="script-info">
 									<span class="script-name">{script.name}</span>
-									<span class="script-date">{new Date(script.updatedAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+									<span class="script-date">{formatDate(script.updatedAt)}</span>
 								</div>
 							</button>
 							<button class="script-delete-btn" on:click={() => deleteScript(script.id)} title="Eliminar">🗑️</button>
