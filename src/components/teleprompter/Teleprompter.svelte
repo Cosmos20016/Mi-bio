@@ -40,6 +40,9 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 	let stopThemeWatch: (() => void) | null = null;
 
+	const speedMin = 18;
+	const speedMax = 96;
+
 	const clamp = (value: number, min: number, max: number) =>
 		Math.min(Math.max(value, min), max);
 
@@ -84,6 +87,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	const start = () => {
 		if (!scrollContainer || !content) return;
 		if (raf) cancelAnimationFrame(raf);
+		speed = clamp(speed, speedMin, speedMax);
 		isPlaying = true;
 		lastTime = 0;
 		raf = requestAnimationFrame(tick);
@@ -143,13 +147,9 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	};
 
 	const handleWheel = (event: WheelEvent) => {
-		if (isPlaying) {
-			event.preventDefault();
-			speed = clamp(speed + (event.deltaY > 0 ? 2 : -2), 18, 120);
-			refreshPlayback();
-		} else {
-			jump(event.deltaY);
-		}
+		if (isPlaying) return;
+		event.preventDefault();
+		jump(event.deltaY);
 	};
 
 	const loadState = () => {
@@ -168,6 +168,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			if (typeof data.focusMode === "boolean") focusMode = data.focusMode;
 			if (typeof data.dimOutside === "boolean") dimOutside = data.dimOutside;
 			if (typeof data.ultraClean === "boolean") ultraClean = data.ultraClean;
+			speed = clamp(speed, speedMin, speedMax);
 		} catch {
 			// ignore invalid storage
 		}
@@ -237,10 +238,11 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			case "KeyL":
 				ultraClean = !ultraClean;
 				break;
-		}
+			}
 	};
 
-	$: scheduleSave();
+	$:
+		_scheduleSave();
 
 	onMount(() => {
 		window.addEventListener("keydown", onKey);
@@ -326,7 +328,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			<div class="teleprompter-controls">
 				<div class="control-group">
 					<label>Velocidad</label>
-					<input type="range" min="18" max="120" bind:value={speed} on:input={refreshPlayback} />
+					<input type="range" min={speedMin} max={speedMax} bind:value={speed} on:input={refreshPlayback} />
 					<span>{speed} px/seg</span>
 				</div>
 				<div class="control-group">
@@ -512,6 +514,24 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		min-height: 140px;
 		font-size: 1rem;
 		color: inherit;
+		scrollbar-width: thin;
+		scrollbar-color: rgba(99, 102, 241, 0.6) rgba(148, 163, 184, 0.2);
+	}
+	.teleprompter-input::-webkit-scrollbar {
+		width: 8px;
+	}
+	.teleprompter-input::-webkit-scrollbar-track {
+		background: rgba(148, 163, 184, 0.2);
+		border-radius: 999px;
+	}
+	.teleprompter-input::-webkit-scrollbar-thumb {
+		background: linear-gradient(180deg, rgba(99, 102, 241, 0.75), rgba(14, 165, 233, 0.75));
+		border-radius: 999px;
+		border: 2px solid transparent;
+		background-clip: padding-box;
+	}
+	.teleprompter-input::-webkit-scrollbar-thumb:hover {
+		background: linear-gradient(180deg, rgba(99, 102, 241, 0.95), rgba(14, 165, 233, 0.95));
 	}
 	.teleprompter-input::placeholder {
 		color: rgba(0, 0, 0, 0.5);
@@ -520,6 +540,10 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		background: rgba(15,23,42,0.5);
 		border-color: rgba(255,255,255,0.1);
 		color: inherit;
+		scrollbar-color: rgba(99, 102, 241, 0.6) rgba(15, 23, 42, 0.6);
+	}
+	:global(.dark) .teleprompter-input::-webkit-scrollbar-track {
+		background: rgba(15, 23, 42, 0.6);
 	}
 	:global(.dark) .teleprompter-input::placeholder {
 		color: rgba(255, 255, 255, 0.6);
@@ -581,9 +605,9 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		position: relative;
 		border-radius: 1.5rem;
 		overflow: hidden;
-		background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.9));
-		border: 1px solid rgba(148, 163, 184, 0.25);
-		box-shadow: 0 30px 90px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+		background: linear-gradient(180deg, #ffffff, #f8fafc);
+		border: 1px solid rgba(148, 163, 184, 0.2);
+		box-shadow: 0 24px 70px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(15, 23, 42, 0.06);
 		color: inherit;
 	}
 	.teleprompter-screen::before {
@@ -592,7 +616,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		inset: 0;
 		background: radial-gradient(circle at top, rgba(99, 102, 241, 0.12), transparent 55%),
 			radial-gradient(circle at bottom, rgba(14, 165, 233, 0.08), transparent 60%);
-		opacity: 0.85;
+		opacity: 0.35;
 		pointer-events: none;
 		z-index: 0;
 	}
@@ -605,6 +629,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	:global(.dark) .teleprompter-screen::before {
 		background: radial-gradient(circle at top, rgba(99, 102, 241, 0.18), transparent 55%),
 			radial-gradient(circle at bottom, rgba(14, 165, 233, 0.12), transparent 60%);
+		opacity: 0.6;
 	}
 	.teleprompter-screen.glow {
 		box-shadow: 0 20px 120px rgba(99,102,241,0.25);
@@ -628,7 +653,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	}
 	.teleprompter-progress .bar {
 		height: 100%;
-		background: linear-gradient(90deg, rgba(99, 102, 241, 0.8), rgba(14, 165, 233, 0.9));
+		background: linear-gradient(90deg, rgba(99, 102,241, 0.8), rgba(14, 165, 233, 0.9));
 		transition: width 0.2s ease;
 	}
 	.teleprompter-frame {
