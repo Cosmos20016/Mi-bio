@@ -9,9 +9,9 @@
 	const storageKey = "teleprompter:state:v2";
 
 	let text = `Pega aquí tu guion...
+	
 
-
-Tip: Usa párrafos cortos para una lectura más cómoda.`;
+	Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	let speed = 48; // px/seg
 	let fontSize = 34;
 	let lineHeight = 1.6;
@@ -347,7 +347,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			case "NumpadSubtract":
 				adjustSpeed(-4);
 				break;
-		}
+			}
 	};
 
 	$: scheduleSave();
@@ -507,7 +507,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 				bind:this={content}
 			>
 				{#each lines as line, index}
-					<p class:active={index === activeLineIndex} bind:this={(el) => (lineElements[index] = el)}>{line}</p>
+					<p class:active={index === activeLineIndex} bind:this={lineElements[index]}>{line}</p>
 				{/each}
 			</div>
 			<div class="teleprompter-float">
@@ -728,7 +728,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			position: absolute;
 			inset: 0;
 			background: radial-gradient(circle at top, rgba(99, 102, 241, 0.12), transparent 55%),
-				radial-gradient(circle at bottom, rgba(14, 165, 233, 0.08), transparent 60%);
+				 radial-gradient(circle at bottom, rgba(14, 165, 233, 0.08), transparent 60%);
 			opacity: 0.35;
 			pointer-events: none;
 			z-index: 0;
@@ -741,7 +741,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		}
 		:global(.dark) .teleprompter-screen::before {
 			background: radial-gradient(circle at top, rgba(99, 102, 241, 0.18), transparent 55%),
-				radial-gradient(circle at bottom, rgba(14, 165, 233, 0.12), transparent 60%);
+				 radial-gradient(circle at bottom, rgba(14, 165, 233, 0.12), transparent 60%);
 			opacity: 0.6;
 		}
 		.teleprompter-screen.glow {
