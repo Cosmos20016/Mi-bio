@@ -42,8 +42,10 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 	const speedMin = 18;
 	const speedMax = 96;
-	const rampDuration = 0.6;
-	let rampStart = 0;
+	const accelerationDuration = 0.25;
+	let targetSpeed = speed;
+	let currentSpeed = speed;
+	let startTime = 0;
 
 	const clamp = (value: number, min: number, max: number) =>
 		Math.min(Math.max(value, min), max);
@@ -62,15 +64,19 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			return;
 		}
 		if (!lastTime) lastTime = time;
-		if (!rampStart) rampStart = time;
+		if (!startTime) startTime = time;
 		const delta = Math.min((time - lastTime) / 1000, 0.05);
 		lastTime = time;
 
-		const factor = smooth ? 1 : 1.35;
 		const maxScroll = Math.max(content.scrollHeight - scrollContainer.clientHeight, 0);
-		const rampProgress = Math.min((time - rampStart) / 1000 / rampDuration, 1);
-		const rampFactor = 0.2 + 0.8 * easeOutCubic(rampProgress);
-		const step = speed * rampFactor * delta * factor;
+		const accelerationProgress = Math.min(
+			((time - startTime) / 1000) / accelerationDuration,
+			1,
+		);
+		const rampFactor = easeOutCubic(accelerationProgress);
+		const smoothingFactor = smooth ? 0.12 : 0.2;
+		currentSpeed += (targetSpeed - currentSpeed) * smoothingFactor;
+		const step = currentSpeed * rampFactor * delta;
 
 		scrollContainer.scrollTop = Math.min(
 			scrollContainer.scrollTop + step,
@@ -88,6 +94,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 	const refreshPlayback = () => {
 		speed = clamp(speed, speedMin, speedMax);
+		targetSpeed = speed;
 		if (!isPlaying) return;
 		if (!raf) {
 			lastTime = 0;
@@ -99,9 +106,11 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		if (!scrollContainer || !content) return;
 		if (raf) cancelAnimationFrame(raf);
 		speed = clamp(speed, speedMin, speedMax);
+		targetSpeed = speed;
+		currentSpeed = 0;
 		isPlaying = true;
 		lastTime = 0;
-		rampStart = 0;
+		startTime = 0;
 		raf = requestAnimationFrame(tick);
 	};
 
@@ -110,7 +119,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		if (raf) cancelAnimationFrame(raf);
 		raf = null;
 		lastTime = 0;
-		rampStart = 0;
+		startTime = 0;
 	};
 
 	const toggle = () => {
@@ -159,12 +168,18 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		}
 	};
 
-	const handleWheel = (_event: WheelEvent) => {
-		if (isPlaying) return;
+	const handleWheel = (event: WheelEvent) => {
+		if (isPlaying) {
+			event.preventDefault();
+			const direction = event.deltaY > 0 ? 1 : -1;
+			speed = clamp(speed + direction * 2, speedMin, speedMax);
+			targetSpeed = speed;
+		}
 	};
 
 	const adjustSpeed = (amount: number) => {
 		speed = clamp(speed + amount, speedMin, speedMax);
+		targetSpeed = speed;
 		refreshPlayback();
 	};
 
@@ -172,7 +187,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		try {
 			const raw = localStorage.getItem(storageKey);
 			if (!raw) return;
-			const data = JSON.parse(raw) as Partial<{ text: string; speed: number; fontSize: number; lineHeight: number; isMirror: boolean; autoCenter: boolean; smooth: boolean; glow: boolean; focusMode: boolean; dimOutside: boolean; ultraClean: boolean; }>; 
+			const data = JSON.parse(raw) as Partial<{ text: string; speed: number; fontSize: number; lineHeight: number; isMirror: boolean; autoCenter: boolean; smooth: boolean; glow: boolean; focusMode: boolean; dimOutside: boolean; ultraClean: boolean; }>
 			if (data.text) text = data.text;
 			if (data.speed) speed = data.speed;
 			if (data.fontSize) fontSize = data.fontSize;
@@ -185,6 +200,8 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			if (typeof data.dimOutside === "boolean") dimOutside = data.dimOutside;
 			if (typeof data.ultraClean === "boolean") ultraClean = data.ultraClean;
 			speed = clamp(speed, speedMin, speedMax);
+			targetSpeed = speed;
+			currentSpeed = speed;
 		} catch {
 			// ignore invalid storage
 		}
@@ -195,7 +212,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		if (saveTimeout) clearTimeout(saveTimeout);
 		saveTimeout = setTimeout(() => {
 			const payload = {
-				t,text,
+				text,
 				speed,
 				fontSize,
 				lineHeight,
@@ -255,11 +272,11 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 				ultraClean = !ultraClean;
 				break;
 			case "Equal":
-			case "NumpadAdd":
+				case "NumpadAdd":
 				adjustSpeed(2);
 				break;
 			case "Minus":
-			case "NumpadSubtract":
+				case "NumpadSubtract":
 				adjustSpeed(-2);
 				break;
 		}
@@ -412,6 +429,8 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		<div
 			class="teleprompter-frame"
 			bind:this={scrollContainer}
+			on:scroll={updateProgress}
+			on:wheel={handleWheel}
 			style={`padding: ${autoCenter ? "35vh 2rem" : "2.5rem 2rem"};`}
 		>
 			<div
@@ -440,7 +459,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			</div>
 
 			<div class="teleprompter-footer">
-				<div class="shortcut">Espacio/Enter = Play · ↑/↓/Page = Saltos · M = Espejo · F = Focus · L = Ultra limpio · R = Reset · X = Fullscreen · +/- = Velocidad</div>
+				<div class="shortcut">Espacio/Enter = Play · ↑/↓/Page = Saltos · M = Espejo · F = Focus · L = Ultra limpio · R = Reset · X = Fullscreen · Rueda = velocidad (play) / scroll (pausa) · +/- = Velocidad</div>
 			</div>
 		</div>
 	</div>
@@ -636,7 +655,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		position: absolute;
 		inset: 0;
 		background: radial-gradient(circle at top, rgba(99, 102, 241, 0.12), transparent 55%),
-			radial-gradient(circle at bottom, rgba(14, 165, 233, 0.08), transparent 60%);
+						radial-gradient(circle at bottom, rgba(14, 165, 233, 0.08), transparent 60%);
 		opacity: 0.35;
 		pointer-events: none;
 		z-index: 0;
@@ -649,7 +668,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	}
 	:global(.dark) .teleprompter-screen::before {
 		background: radial-gradient(circle at top, rgba(99, 102, 241, 0.18), transparent 55%),
-			radial-gradient(circle at bottom, rgba(14, 165, 233, 0.12), transparent 60%);
+						radial-gradient(circle at bottom, rgba(14, 165, 233, 0.12), transparent 60%);
 		opacity: 0.6;
 	}
 	.teleprompter-screen.glow {
