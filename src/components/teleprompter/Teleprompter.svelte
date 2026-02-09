@@ -45,10 +45,28 @@
 	let lineElements: Array<HTMLParagraphElement | null> = [];
 	let activeLineIndex = 0;
 	let lines: string[] = [];
+	
+	let status: "ready" | "playing" | "paused" | "finished" = "ready";
+	let showOnboarding = false;
+	let onboardingStep = 0;
+	
+	// Script history
+	type SavedScript = {
+		id: string;
+		name: string;
+		text: string;
+		createdAt: string;
+		updatedAt: string;
+	};
+	let savedScripts: SavedScript[] = [];
+	let currentScriptId: string | null = null;
+	let showScriptSelector = false;
+	let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
+	let lastSavedText = text;
 
-	const speedMin = 12;
-	const speedMax = 140;
-	const accelerationDuration = 0.18;
+	const speedMin = 20;
+	const speedMax = 300;
+	const accelerationDuration = 0.8;
 	const countdownSeconds = 3;
 	let targetSpeed = speed;
 	let currentSpeed = speed;
@@ -58,6 +76,198 @@
 		Math.min(Math.max(value, min), max);
 
 	const easeOutCubic = (value: number) => 1 - Math.pow(1 - value, 3);
+	const easeInOutSine = (value: number) => -(Math.cos(Math.PI * value) - 1) / 2;
+	
+	const getSpeedLabel = (speed: number): string => {
+		if (speed < 50) return "Muy lento";
+		if (speed < 90) return "Lento";
+		if (speed < 140) return "Normal";
+		if (speed < 200) return "Rápido";
+		return "Muy rápido";
+	};
+	
+	const getStatusLabel = (): string => {
+		switch (status) {
+			case "playing": return "Reproduciendo...";
+			case "paused": return "Pausado";
+			case "finished": return "Finalizado";
+			default: return "Listo";
+		}
+	};
+	
+	const getStatusEmoji = (): string => {
+		switch (status) {
+			case "playing": return "▶️";
+			case "paused": return "⏸️";
+			case "finished": return "✅";
+			default: return "🎬";
+		}
+	};
+	
+	const checkOnboarding = () => {
+		try {
+			const seen = localStorage.getItem("teleprompter:onboarding:done");
+			if (!seen) {
+				showOnboarding = true;
+				onboardingStep = 0;
+			}
+		} catch {
+			// ignore storage errors
+		}
+	};
+	
+	const closeOnboarding = () => {
+		showOnboarding = false;
+		try {
+			localStorage.setItem("teleprompter:onboarding:done", "true");
+		} catch {
+			// ignore storage errors
+		}
+	};
+	
+	const nextOnboardingStep = () => {
+		if (onboardingStep < 2) {
+			onboardingStep += 1;
+		} else {
+			closeOnboarding();
+		}
+	};
+	
+	const showOnboardingAgain = () => {
+		showOnboarding = true;
+		onboardingStep = 0;
+	};
+	
+	const loadScripts = () => {
+		try {
+			const raw = localStorage.getItem("teleprompter:scripts");
+			if (raw) {
+				savedScripts = JSON.parse(raw) as SavedScript[];
+			}
+			const lastId = localStorage.getItem("teleprompter:last-script");
+			if (lastId) {
+				currentScriptId = lastId;
+			}
+		} catch {
+			// ignore storage errors
+		}
+	};
+	
+	const saveScripts = () => {
+		try {
+			localStorage.setItem("teleprompter:scripts", JSON.stringify(savedScripts));
+		} catch {
+			// ignore storage errors
+		}
+	};
+	
+	const generateId = (): string => {
+		return Date.now().toString(36) + Math.random().toString(36).substring(2);
+	};
+	
+	const saveCurrentScript = () => {
+		const scriptName = prompt("Nombre del guion:", currentScriptId ? savedScripts.find(s => s.id === currentScriptId)?.name || "Mi guion" : "Mi guion");
+		if (!scriptName) return;
+		
+		const now = new Date().toISOString();
+		
+		if (currentScriptId) {
+			// Update existing script
+			const index = savedScripts.findIndex(s => s.id === currentScriptId);
+			if (index !== -1) {
+				savedScripts[index] = {
+					...savedScripts[index],
+					name: scriptName,
+					text,
+					updatedAt: now,
+				};
+			}
+		} else {
+			// Create new script
+			if (savedScripts.length >= 20) {
+				alert("Máximo 20 guiones guardados. Elimina uno para continuar.");
+				return;
+			}
+			const newScript: SavedScript = {
+				id: generateId(),
+				name: scriptName,
+				text,
+				createdAt: now,
+				updatedAt: now,
+			};
+			savedScripts = [newScript, ...savedScripts];
+			currentScriptId = newScript.id;
+		}
+		
+		saveScripts();
+		lastSavedText = text;
+		try {
+			localStorage.setItem("teleprompter:last-script", currentScriptId || "");
+		} catch {
+			// ignore
+		}
+	};
+	
+	const loadScript = (scriptId: string) => {
+		const script = savedScripts.find(s => s.id === scriptId);
+		if (script) {
+			text = script.text;
+			currentScriptId = scriptId;
+			lastSavedText = text;
+			showScriptSelector = false;
+			try {
+				localStorage.setItem("teleprompter:last-script", scriptId);
+			} catch {
+				// ignore
+			}
+		}
+	};
+	
+	const deleteScript = (scriptId: string) => {
+		if (!confirm("¿Eliminar este guion?")) return;
+		savedScripts = savedScripts.filter(s => s.id !== scriptId);
+		saveScripts();
+		if (currentScriptId === scriptId) {
+			currentScriptId = null;
+			try {
+				localStorage.removeItem("teleprompter:last-script");
+			} catch {
+				// ignore
+			}
+		}
+	};
+	
+	const createNewScript = () => {
+		text = "";
+		currentScriptId = null;
+		lastSavedText = "";
+		showScriptSelector = false;
+		try {
+			localStorage.removeItem("teleprompter:last-script");
+		} catch {
+			// ignore
+		}
+	};
+	
+	const scheduleAutoSave = () => {
+		if (autoSaveTimer) clearTimeout(autoSaveTimer);
+		if (!currentScriptId || text === lastSavedText) return;
+		
+		autoSaveTimer = setTimeout(() => {
+			const index = savedScripts.findIndex(s => s.id === currentScriptId);
+			if (index !== -1) {
+				savedScripts[index] = {
+					...savedScripts[index],
+					text,
+					updatedAt: new Date().toISOString(),
+				};
+				saveScripts();
+				lastSavedText = text;
+			}
+		}, 5000);
+	};
+	
+	$: if (isReady && text !== lastSavedText) scheduleAutoSave();
 
 	$: lines = text.split("\n");
 	$: lineElements = lines.map(() => null);
@@ -108,11 +318,22 @@
 			((time - startTime) / 1000) / accelerationDuration,
 			1,
 		);
-		const rampFactor = easeOutCubic(accelerationProgress);
-		const smoothingFactor = smooth ? 0.18 : 0.28;
+		const rampFactor = easeInOutSine(accelerationProgress);
+		
+		// Adaptive smoothing: less smoothing at low speeds for immediate response
+		const smoothingFactor = smooth ? (targetSpeed < 50 ? 0.08 : 0.18) : 0.28;
 		const speedFactor = smooth ? 1 : 1.25;
 		currentSpeed += (targetSpeed - currentSpeed) * smoothingFactor;
-		const step = currentSpeed * speedFactor * rampFactor * delta;
+		
+		// Add micro-variation for natural feel (±2%)
+		const variation = 1 + (Math.sin(time * 0.003) * 0.02);
+		
+		// Distance to end for fade-out
+		const distanceToEnd = maxScroll - scrollContainer.scrollTop;
+		const fadeOutZone = 200;
+		const fadeOutFactor = distanceToEnd < fadeOutZone ? Math.max(distanceToEnd / fadeOutZone, 0.1) : 1;
+		
+		const step = currentSpeed * speedFactor * rampFactor * fadeOutFactor * variation * delta;
 
 		scrollContainer.scrollTop = Math.min(
 			scrollContainer.scrollTop + step,
@@ -122,9 +343,11 @@
 
 		if (scrollContainer.scrollTop >= maxScroll) {
 			isPlaying = false;
+			status = "finished";
 			raf = null;
 			return;
 		}
+		status = "playing";
 		raf = requestAnimationFrame(tick);
 	};
 
@@ -132,7 +355,8 @@
 		speed = clamp(speed, speedMin, speedMax);
 		targetSpeed = speed;
 		if (!isPlaying) return;
-		currentSpeed = Math.max(currentSpeed, targetSpeed * 0.4);
+		// Allow low speeds to work properly
+		currentSpeed = Math.max(currentSpeed, targetSpeed * 0.3);
 		if (!raf) {
 			lastTime = 0;
 			raf = requestAnimationFrame(tick);
@@ -144,7 +368,8 @@
 		if (raf) cancelAnimationFrame(raf);
 		speed = clamp(speed, speedMin, speedMax);
 		targetSpeed = speed;
-		currentSpeed = Math.max(targetSpeed * 0.4, speedMin * 0.5);
+		// Better starting speed for low velocities
+		currentSpeed = Math.max(targetSpeed * 0.3, speedMin * 0.3);
 		isPlaying = true;
 		lastTime = 0;
 		startTime = 0;
@@ -182,12 +407,27 @@
 	};
 
 	const pause = () => {
-		isPlaying = false;
+		// Gradual deceleration
+		if (isPlaying) {
+			targetSpeed = 0;
+			status = "paused";
+			setTimeout(() => {
+				isPlaying = false;
+				if (raf) cancelAnimationFrame(raf);
+				raf = null;
+				lastTime = 0;
+				startTime = 0;
+				targetSpeed = speed; // Restore target speed
+			}, 300);
+		} else {
+			isPlaying = false;
+			status = "paused";
+			if (raf) cancelAnimationFrame(raf);
+			raf = null;
+			lastTime = 0;
+			startTime = 0;
+		}
 		cancelCountdown();
-		if (raf) cancelAnimationFrame(raf);
-		raf = null;
-		lastTime = 0;
-		startTime = 0;
 	};
 
 	const toggle = () => {
@@ -205,6 +445,7 @@
 		if (scrollContainer) {
 			scrollContainer.scrollTop = 0;
 		}
+		status = "ready";
 		updateProgress();
 	};
 
@@ -360,10 +601,23 @@
 		stopThemeWatch = watchSystemThemeChanges(getStoredTheme());
 
 		loadState();
+		loadScripts();
+		
+		// Load last used script if available
+		if (currentScriptId) {
+			const script = savedScripts.find(s => s.id === currentScriptId);
+			if (script) {
+				text = script.text;
+				lastSavedText = text;
+			}
+		}
+		
 		updateProgress();
 		observer?.disconnect();
 		observer = new IntersectionObserver(() => updateProgress());
 		observer.observe(scrollContainer);
+		
+		checkOnboarding();
 
 		const onFullscreenChange = () => {
 			isFullscreen = Boolean(document.fullscreenElement);
@@ -381,6 +635,7 @@
 		pause();
 		observer?.disconnect();
 		if (saveTimeout) clearTimeout(saveTimeout);
+		if (autoSaveTimer) clearTimeout(autoSaveTimer);
 		stopThemeWatch?.();
 		stopThemeWatch = null;
 		if (countdownTimer) clearInterval(countdownTimer);
@@ -403,13 +658,54 @@
 			</div>
 		</div>
 	{/if}
+	
+	{#if showOnboarding}
+		<div class="teleprompter-onboarding-overlay">
+			<div class="onboarding-card">
+				{#if onboardingStep === 0}
+					<div class="onboarding-step">
+						<div class="onboarding-emoji">📝</div>
+						<h3 class="onboarding-title">Pega tu guion</h3>
+						<p class="onboarding-text">Escribe o pega el texto que quieres leer</p>
+					</div>
+				{:else if onboardingStep === 1}
+					<div class="onboarding-step">
+						<div class="onboarding-emoji">⚙️</div>
+						<h3 class="onboarding-title">Ajusta a tu ritmo</h3>
+						<p class="onboarding-text">Configura velocidad y tamaño de letra</p>
+					</div>
+				{:else}
+					<div class="onboarding-step">
+						<div class="onboarding-emoji">▶️</div>
+						<h3 class="onboarding-title">Empieza a grabar</h3>
+						<p class="onboarding-text">Presiona Play o Espacio para comenzar</p>
+					</div>
+				{/if}
+				<div class="onboarding-actions">
+					<div class="onboarding-dots">
+						<span class="dot" class:active={onboardingStep === 0}></span>
+						<span class="dot" class:active={onboardingStep === 1}></span>
+						<span class="dot" class:active={onboardingStep === 2}></span>
+					</div>
+					<button class="btn-onboarding" on:click={nextOnboardingStep}>
+						{onboardingStep === 2 ? "Entendido" : "Siguiente"}
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
 
 	<div class="teleprompter-header">
 		<div>
 			<h1 class="teleprompter-title">Teleprompter</h1>
-			<p class="teleprompter-subtitle">Lectura fluida y profesional para tus guiones.</p>
+			<p class="teleprompter-subtitle">Tu estudio de lectura profesional</p>
+			<div class="teleprompter-status">
+				<span class="status-emoji">{getStatusEmoji()}</span>
+				<span class="status-label">{getStatusLabel()}</span>
+			</div>
 		</div>
 		<div class="teleprompter-header-actions">
+			<button class="btn-help" on:click={showOnboardingAgain} title="Ver guía de uso">?</button>
 			<button class="btn-plain teleprompter-toggle" on:click={() => (showControls = !showControls)}>
 				{showControls ? "Ocultar controles" : "Mostrar controles"}
 			</button>
@@ -423,6 +719,35 @@
 	</div>
 
 	<div class="teleprompter-panel">
+		<div class="script-manager">
+			<div class="script-selector-header">
+				<button class="btn-script-dropdown" on:click={() => (showScriptSelector = !showScriptSelector)}>
+					{currentScriptId ? savedScripts.find(s => s.id === currentScriptId)?.name || "Seleccionar guion" : "Seleccionar guion"}
+					<span class="dropdown-arrow">{showScriptSelector ? "▲" : "▼"}</span>
+				</button>
+				<div class="script-actions">
+					<button class="btn-script-action" on:click={saveCurrentScript} title="Guardar guion actual">💾</button>
+					<button class="btn-script-action" on:click={createNewScript} title="Nuevo guion">➕</button>
+				</div>
+			</div>
+			
+			{#if showScriptSelector && savedScripts.length > 0}
+				<div class="script-dropdown">
+					{#each savedScripts as script}
+						<div class="script-item" class:active={currentScriptId === script.id}>
+							<button class="script-load-btn" on:click={() => loadScript(script.id)}>
+								<div class="script-info">
+									<span class="script-name">{script.name}</span>
+									<span class="script-date">{new Date(script.updatedAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+								</div>
+							</button>
+							<button class="script-delete-btn" on:click={() => deleteScript(script.id)} title="Eliminar">🗑️</button>
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</div>
+		
 		<textarea
 			class="teleprompter-input"
 			bind:value={text}
@@ -432,10 +757,11 @@
 
 		{#if showControls}
 			<div class="teleprompter-controls">
+				<h3 class="controls-section-title">⚙️ Ajustes de reproducción</h3>
 				<div class="control-group">
 					<label>Velocidad</label>
 					<input type="range" min={speedMin} max={speedMax} bind:value={speed} on:input={refreshPlayback} />
-					<span>{speed} px/seg</span>
+					<span>{speed} px/seg · {getSpeedLabel(speed)}</span>
 				</div>
 				<div class="control-group">
 					<label>Tamaño</label>
@@ -458,25 +784,28 @@
 					/>
 					<span>{Math.round(progress * 100)}%</span>
 				</div>
+				
+				<h3 class="controls-section-title">🎨 Opciones visuales</h3>
 				<div class="control-group toggles">
-					<label>Opciones</label>
 					<div class="toggle-grid">
-						<button class:active={isMirror} on:click={() => (isMirror = !isMirror)}>Espejo (M)</button>
-						<button class:active={autoCenter} on:click={() => (autoCenter = !autoCenter)}>Auto-centrar</button>
+						<button class:active={isMirror} on:click={() => (isMirror = !isMirror)} title="Activa para cámaras frontales que invierten la imagen">Espejo (M)</button>
+						<button class:active={autoCenter} on:click={() => (autoCenter = !autoCenter)} title="Mantiene el texto centrado en la pantalla">Auto-centrar</button>
 						<button class:active={smooth} on:click={() => (smooth = !smooth)}>Suave</button>
-						<button class:active={glow} on:click={() => (glow = !glow)}>Glow</button>
-						<button class:active={focusMode} on:click={() => (focusMode = !focusMode)}>Focus (F)</button>
+						<button class:active={glow} on:click={() => (glow = !glow)} title="Efecto de brillo en la pantalla">Glow</button>
+						<button class:active={focusMode} on:click={() => (focusMode = !focusMode)} title="Resalta la línea actual y oscurece el resto">Focus (F)</button>
 						<button class:active={dimOutside} on:click={() => (dimOutside = !dimOutside)}>Oscurecer bordes</button>
-						<button class:active={ultraClean} on:click={() => (ultraClean = !ultraClean)}>Ultra limpio (L)</button>
+						<button class:active={ultraClean} on:click={() => (ultraClean = !ultraClean)} title="Oculta todos los controles para máxima concentración">Ultra limpio (L)</button>
 					</div>
 				</div>
+				
+				<h3 class="controls-section-title">🎬 Controles de reproducción</h3>
 				<div class="control-actions">
-					<button class="btn-regular" on:click={toggle}>{isPlaying ? "Pausar" : isCountingDown ? "Cancelar" : "Reproducir"}</button>
+					<button class="btn-primary-large" on:click={toggle}>{isPlaying ? "⏸ Pausar" : isCountingDown ? "⏹ Cancelar" : "▶ Reproducir"}</button>
 					<button class="btn-plain" on:click={reset}>Reiniciar (R)</button>
 					<button class="btn-plain" on:click={clearText}>Vaciar</button>
 					<button class="btn-plain" on:click={() => jump(-240)}>↑</button>
 					<button class="btn-plain" on:click={() => jump(240)}>↓</button>
-					<button class="btn-plain" on:click={toggleFullscreen}>Pantalla completa</button>
+					<button class="btn-plain" on:click={toggleFullscreen} title="Usa toda la pantalla para leer">Pantalla completa</button>
 				</div>
 			</div>
 		{/if}
@@ -598,15 +927,68 @@
 			display: flex;
 			gap: 0.75rem;
 			flex-wrap: wrap;
+			align-items: center;
+		}
+		.teleprompter-header-actions button {
+			color: inherit;
+		}
+		:global(.dark) .teleprompter-header-actions button {
+			color: #e2e8f0;
+		}
+		.btn-help {
+			width: 32px;
+			height: 32px;
+			border-radius: 50%;
+			background: linear-gradient(135deg, #6366f1, #4f46e5);
+			color: white;
+			border: none;
+			font-size: 1.2rem;
+			font-weight: 700;
+			cursor: pointer;
+			transition: transform 0.2s ease, box-shadow 0.2s ease;
+			box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+		}
+		.btn-help:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
 		}
 		.teleprompter-title {
 			font-size: 2rem;
 			font-weight: 700;
-			color: inherit;
+			background: linear-gradient(135deg, #6366f1, #06b6d4);
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			background-clip: text;
+			margin-bottom: 0.25rem;
 		}
 		.teleprompter-subtitle {
 			color: inherit;
-			opacity: 0.7;
+			opacity: 0.8;
+			font-size: 1.1rem;
+			margin-bottom: 0.5rem;
+		}
+		.teleprompter-status {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			font-size: 0.9rem;
+			font-weight: 600;
+			margin-top: 0.5rem;
+		}
+		.status-emoji {
+			font-size: 1.2rem;
+		}
+		.status-label {
+			color: #6366f1;
+			padding: 0.25rem 0.75rem;
+			background: rgba(99, 102, 241, 0.1);
+			border-radius: 0.5rem;
+			border: 1px solid rgba(99, 102, 241, 0.2);
+		}
+		:global(.dark) .status-label {
+			color: #a5b4fc;
+			background: rgba(99, 102, 241, 0.15);
+			border-color: rgba(99, 102, 241, 0.3);
 		}
 		.teleprompter-panel {
 			background: var(--card-bg);
@@ -614,6 +996,147 @@
 			padding: 1.5rem;
 			box-shadow: 0 18px 60px rgba(15, 23, 42, 0.15);
 			color: inherit;
+		}
+		.script-manager {
+			margin-bottom: 1rem;
+			position: relative;
+		}
+		.script-selector-header {
+			display: flex;
+			gap: 0.5rem;
+			align-items: center;
+		}
+		.btn-script-dropdown {
+			flex: 1;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 0.75rem 1rem;
+			background: rgba(99, 102, 241, 0.1);
+			border: 1px solid rgba(99, 102, 241, 0.2);
+			border-radius: 0.75rem;
+			color: inherit;
+			font-weight: 600;
+			cursor: pointer;
+			transition: all 0.2s ease;
+		}
+		.btn-script-dropdown:hover {
+			background: rgba(99, 102, 241, 0.15);
+			border-color: rgba(99, 102, 241, 0.3);
+		}
+		:global(.dark) .btn-script-dropdown {
+			background: rgba(99, 102, 241, 0.15);
+			border-color: rgba(99, 102, 241, 0.3);
+			color: #f1f5f9;
+		}
+		.dropdown-arrow {
+			font-size: 0.8rem;
+			opacity: 0.7;
+		}
+		.script-actions {
+			display: flex;
+			gap: 0.5rem;
+		}
+		.btn-script-action {
+			width: 40px;
+			height: 40px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: rgba(99, 102, 241, 0.1);
+			border: 1px solid rgba(99, 102, 241, 0.2);
+			border-radius: 0.75rem;
+			cursor: pointer;
+			transition: all 0.2s ease;
+			font-size: 1.2rem;
+		}
+		.btn-script-action:hover {
+			background: rgba(99, 102, 241, 0.2);
+			transform: translateY(-2px);
+		}
+		:global(.dark) .btn-script-action {
+			background: rgba(99, 102, 241, 0.15);
+			border-color: rgba(99, 102, 241, 0.3);
+		}
+		.script-dropdown {
+			position: absolute;
+			top: calc(100% + 0.5rem);
+			left: 0;
+			right: 0;
+			max-height: 300px;
+			overflow-y: auto;
+			background: var(--card-bg);
+			border: 1px solid rgba(99, 102, 241, 0.2);
+			border-radius: 0.75rem;
+			box-shadow: 0 12px 32px rgba(15, 23, 42, 0.2);
+			z-index: 10;
+			padding: 0.5rem;
+		}
+		:global(.dark) .script-dropdown {
+			background: rgba(15, 23, 42, 0.95);
+			border-color: rgba(99, 102, 241, 0.3);
+			box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+		}
+		.script-item {
+			display: flex;
+			gap: 0.5rem;
+			padding: 0.25rem;
+			border-radius: 0.5rem;
+			transition: background 0.2s ease;
+		}
+		.script-item:hover {
+			background: rgba(99, 102, 241, 0.05);
+		}
+		.script-item.active {
+			background: rgba(99, 102, 241, 0.1);
+		}
+		:global(.dark) .script-item:hover {
+			background: rgba(99, 102, 241, 0.1);
+		}
+		:global(.dark) .script-item.active {
+			background: rgba(99, 102, 241, 0.15);
+		}
+		.script-load-btn {
+			flex: 1;
+			padding: 0.75rem;
+			background: none;
+			border: none;
+			text-align: left;
+			cursor: pointer;
+			border-radius: 0.5rem;
+			color: inherit;
+		}
+		.script-info {
+			display: flex;
+			flex-direction: column;
+			gap: 0.25rem;
+		}
+		.script-name {
+			font-weight: 600;
+			color: inherit;
+		}
+		.script-date {
+			font-size: 0.85rem;
+			opacity: 0.7;
+			color: inherit;
+		}
+		.script-delete-btn {
+			width: 36px;
+			height: 36px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: none;
+			border: none;
+			border-radius: 0.5rem;
+			cursor: pointer;
+			font-size: 1.1rem;
+			opacity: 0.6;
+			transition: all 0.2s ease;
+		}
+		.script-delete-btn:hover {
+			opacity: 1;
+			background: rgba(239, 68, 68, 0.15);
 		}
 		.teleprompter-input {
 			width: 100%;
@@ -664,6 +1187,19 @@
 			display: grid;
 			gap: 1rem;
 		}
+		.controls-section-title {
+			font-size: 1.1rem;
+			font-weight: 700;
+			color: inherit;
+			margin-top: 1rem;
+			margin-bottom: 0.5rem;
+			padding-bottom: 0.5rem;
+			border-bottom: 2px solid rgba(99, 102, 241, 0.2);
+		}
+		:global(.dark) .controls-section-title {
+			color: #f1f5f9;
+			border-bottom-color: rgba(99, 102, 241, 0.3);
+		}
 		.control-group {
 			display: grid;
 			gap: 0.5rem;
@@ -711,6 +1247,31 @@
 			display: flex;
 			flex-wrap: wrap;
 			gap: 0.5rem;
+		}
+		.control-actions button {
+			color: inherit;
+		}
+		:global(.dark) .control-actions button:not(.btn-primary-large) {
+			color: #e2e8f0;
+		}
+		.btn-primary-large {
+			padding: 0.85rem 1.75rem;
+			font-size: 1.1rem;
+			font-weight: 700;
+			border-radius: 0.85rem;
+			background: linear-gradient(135deg, #6366f1, #4f46e5);
+			color: white;
+			border: none;
+			box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
+			transition: transform 0.2s ease, box-shadow 0.2s ease;
+			cursor: pointer;
+		}
+		.btn-primary-large:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 12px 32px rgba(99, 102, 241, 0.45);
+		}
+		:global(.dark) .btn-primary-large {
+			background: linear-gradient(135deg, #818cf8, #6366f1);
 		}
 		.teleprompter-screen {
 			position: relative;
@@ -899,6 +1460,91 @@
 			text-shadow: 0 18px 40px rgba(15, 23, 42, 0.6);
 			pointer-events: none;
 		}
+		
+		.teleprompter-onboarding-overlay {
+			position: fixed;
+			inset: 0;
+			background: rgba(0, 0, 0, 0.7);
+			backdrop-filter: blur(8px);
+			z-index: 100;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 1.5rem;
+		}
+		.onboarding-card {
+			max-width: 480px;
+			background: rgba(255, 255, 255, 0.95);
+			backdrop-filter: blur(20px);
+			border-radius: 1.5rem;
+			padding: 2.5rem;
+			box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+			border: 1px solid rgba(255, 255, 255, 0.3);
+			color: #0f172a;
+		}
+		:global(.dark) .onboarding-card {
+			background: rgba(15, 23, 42, 0.95);
+			border-color: rgba(99, 102, 241, 0.3);
+			color: #f1f5f9;
+		}
+		.onboarding-step {
+			text-align: center;
+			margin-bottom: 2rem;
+		}
+		.onboarding-emoji {
+			font-size: 4rem;
+			margin-bottom: 1rem;
+		}
+		.onboarding-title {
+			font-size: 1.75rem;
+			font-weight: 700;
+			margin-bottom: 0.75rem;
+			color: inherit;
+		}
+		.onboarding-text {
+			font-size: 1.1rem;
+			color: inherit;
+			opacity: 0.8;
+		}
+		.onboarding-actions {
+			display: flex;
+			flex-direction: column;
+			gap: 1.5rem;
+			align-items: center;
+		}
+		.onboarding-dots {
+			display: flex;
+			gap: 0.5rem;
+		}
+		.dot {
+			width: 10px;
+			height: 10px;
+			border-radius: 50%;
+			background: rgba(99, 102, 241, 0.3);
+			transition: all 0.3s ease;
+		}
+		.dot.active {
+			width: 24px;
+			border-radius: 5px;
+			background: #6366f1;
+		}
+		.btn-onboarding {
+			padding: 0.85rem 2.5rem;
+			font-size: 1.1rem;
+			font-weight: 700;
+			border-radius: 0.85rem;
+			background: linear-gradient(135deg, #6366f1, #4f46e5);
+			color: white;
+			border: none;
+			box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
+			transition: transform 0.2s ease, box-shadow 0.2s ease;
+			cursor: pointer;
+		}
+		.btn-onboarding:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 12px 32px rgba(99, 102, 241, 0.45);
+		}
+		
 		@media (max-width: 768px) {
 			.teleprompter-header {
 				flex-direction: column;
