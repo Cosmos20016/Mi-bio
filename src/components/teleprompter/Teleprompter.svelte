@@ -61,11 +61,14 @@
 
 	$: lines = text.split("\n");
 	// Only adjust lineElements length when the number of lines changes, preserving existing refs
+	// This avoids destroying and recreating refs unnecessarily
 	$: {
 		if (lineElements.length !== lines.length) {
-			const newElements = new Array(lines.length).fill(null);
-			for (let i = 0; i < Math.min(lineElements.length, lines.length); i++) {
-				newElements[i] = lineElements[i];
+			const oldElements = lineElements;
+			const newLength = lines.length;
+			const newElements = new Array(newLength).fill(null);
+			for (let i = 0; i < Math.min(oldElements.length, newLength); i++) {
+				newElements[i] = oldElements[i];
 			}
 			lineElements = newElements;
 		}
@@ -376,7 +379,8 @@
 		}
 	};
 
-	// Only save when specific state variables change
+	// Auto-save to localStorage when any of these settings change
+	// Excludes isPlaying and isCountingDown to avoid saving during active use
 	$: text, speed, fontSize, lineHeight, isMirror, autoCenter, smooth, glow, focusMode, dimOutside, ultraClean, scheduleSave();
 
 	onMount(() => {
@@ -786,11 +790,11 @@
 			background: #f8fafc;
 			color: #0f172a;
 		}
-		:global(.dark .teleprompter-screen.fullscreen) {
+		:global(.dark) .teleprompter-screen.fullscreen {
 			background: #050816;
 			color: #e2e8f0;
 		}
-		:global(.teleprompter-screen.fullscreen .teleprompter-frame) {
+		:global(.teleprompter-screen.fullscreen) .teleprompter-frame {
 			height: 100vh;
 			padding: 30vh 8vw;
 		}
