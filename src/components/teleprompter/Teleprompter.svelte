@@ -60,8 +60,7 @@ const speedMax = 400;
 let targetSpeed = speed;
 let currentSpeed = 0;
 let cachedMaxScroll = 0;
-let progressCounter = 0;
-let isMounted = false;
+let progressUpdateTimer: ReturnType<typeof setInterval> | null = null;
 
 const clamp = (value: number, min: number, max: number) =>
 	Math.min(Math.max(value, min), max);
@@ -105,7 +104,7 @@ const updateActiveLine = () => {
 
 // Lag-free scroll engine using time-based movement
 const tick = (timestamp: number) => {
-	if (!isPlaying || !scrollContainer || !content || !isMounted) {
+	if (!isPlaying || !scrollContainer) {
 		raf = null;
 		lastTime = null;
 		return;
@@ -123,51 +122,50 @@ const tick = (timestamp: number) => {
 		return;
 	}
 
-	const delta = Math.min(elapsed / 1000, 0.1);
+	const delta = elapsed / 1000; // seconds
 	lastTime = timestamp;
 
-	// Speed interpolation: smooth ON = gradual, smooth OFF = instant
-	if (smooth) {
-		currentSpeed += (targetSpeed - currentSpeed) * 0.3;
-	} else {
-		currentSpeed = targetSpeed;
-	}
+	// Instant speed change - no smoothing delay
+	currentSpeed = targetSpeed;
 
-	// Check remaining distance
-	const remaining = cachedMaxScroll - scrollContainer.scrollTop;
+	// Simple step calculation - just speed * time
+	const step = currentSpeed * delta;
 
-	// Force finish if very close to end
-	if (remaining < 2) {
+	// Apply scroll (single DOM write, ZERO DOM reads)
+	const newPos = scrollContainer.scrollTop + step;
+
+	if (newPos >= cachedMaxScroll) {
+		// Reached the end - finish cleanly
 		scrollContainer.scrollTop = cachedMaxScroll;
 		isPlaying = false;
 		raf = null;
 		lastTime = null;
 		progress = 1;
-		updateActiveLine();
 		return;
 	}
 
-	// Gentle fade-out in last 150px (floor at 15% speed)
-	const fadeFactor = remaining < 150 ? Math.max(remaining / 150, 0.15) : 1;
-
-	// Calculate step: speed × time × fade
-	const step = currentSpeed * fadeFactor * delta;
-
-	// Apply scroll (single DOM write, no reads after)
-	scrollContainer.scrollTop = Math.min(
-		scrollContainer.scrollTop + step,
-		cachedMaxScroll,
-	);
-
-	// Throttled progress update: every 8 frames instead of every frame
-	// This eliminates layout thrashing (the #1 cause of lag)
-	progressCounter++;
-	if (progressCounter >= 8) {
-		progressCounter = 0;
-		updateProgress();
-	}
-
+	scrollContainer.scrollTop = newPos;
 	raf = requestAnimationFrame(tick);
+};
+
+const startProgressTimer = () => {
+	stopProgressTimer();
+	progressUpdateTimer = setInterval(() => {
+		if (!scrollContainer || !content) return;
+		// Use cached maxScroll for progress calculation
+		progress =
+			cachedMaxScroll <= 0
+				? 0
+				: clamp(scrollContainer.scrollTop / cachedMaxScroll, 0, 1);
+		updateActiveLine();
+	}, 150); // ~6.6 updates per second - smooth enough for visual, no lag
+};
+
+const stopProgressTimer = () => {
+	if (progressUpdateTimer) {
+		clearInterval(progressUpdateTimer);
+		progressUpdateTimer = null;
+	}
 };
 
 const startPlayback = () => {
@@ -176,19 +174,22 @@ const startPlayback = () => {
 
 	speed = clamp(speed, speedMin, speedMax);
 	targetSpeed = speed;
-	currentSpeed = targetSpeed; // Start at full speed immediately
+	currentSpeed = targetSpeed;
 
-	// Cache maxScroll once - it doesn't change during playback
+	// Cache maxScroll ONCE
 	cachedMaxScroll = Math.max(
 		content.scrollHeight - scrollContainer.clientHeight,
 		0,
 	);
 
-	if (cachedMaxScroll <= 0) return; // Nothing to scroll
+	if (cachedMaxScroll <= 0) return;
 
 	isPlaying = true;
 	lastTime = null;
-	progressCounter = 0;
+
+	// Start progress updates on a separate timer (not in the animation loop)
+	startProgressTimer();
+
 	raf = requestAnimationFrame(tick);
 };
 
@@ -231,7 +232,8 @@ const pause = () => {
 	}
 	lastTime = null;
 	currentSpeed = 0;
-	updateProgress(); // Final progress update on pause
+	stopProgressTimer();
+	updateProgress(); // One final update
 };
 
 const toggle = () => {
@@ -291,26 +293,20 @@ const handleWheel = (event: WheelEvent) => {
 		return;
 	}
 	event.preventDefault();
-	// Fixed: scroll down (deltaY > 0) should increase speed
-	const delta = event.deltaY > 0 ? 4 : -4;
+	const delta = event.deltaY > 0 ? 8 : -8; // Bigger increments for faster response
 	adjustSpeed(delta);
 };
 
 const adjustSpeed = (amount: number) => {
 	speed = clamp(speed + amount, speedMin, speedMax);
 	targetSpeed = speed;
-	// If playing, push currentSpeed closer for responsive feel
-	if (isPlaying) {
-		currentSpeed = Math.max(currentSpeed, targetSpeed * 0.6);
-	}
+	// currentSpeed se actualiza instantáneamente en el próximo frame del tick
 };
 
 const onSpeedInput = () => {
 	speed = clamp(speed, speedMin, speedMax);
 	targetSpeed = speed;
-	if (isPlaying) {
-		currentSpeed = Math.max(currentSpeed, targetSpeed * 0.5);
-	}
+	// currentSpeed se actualiza instantáneamente en el próximo frame del tick
 };
 
 const loadState = () => {
@@ -637,7 +633,6 @@ onMount(() => {
 	};
 	document.addEventListener("fullscreenchange", onFullscreenChange);
 	isReady = true;
-	isMounted = true;
 
 	return () => {
 		document.removeEventListener("fullscreenchange", onFullscreenChange);
@@ -645,9 +640,9 @@ onMount(() => {
 });
 
 onDestroy(() => {
-	isMounted = false;
 	window.removeEventListener("keydown", onKey);
 	pause();
+	stopProgressTimer();
 	observer?.disconnect();
 	darkModeObserver?.disconnect();
 	if (saveTimeout) clearTimeout(saveTimeout);
