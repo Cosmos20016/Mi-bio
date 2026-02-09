@@ -49,6 +49,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	const speedMin = 12;
 	const speedMax = 140;
 	const accelerationDuration = 0.18;
+	const countdownSeconds = 0;
 	let targetSpeed = speed;
 	let currentSpeed = speed;
 	let startTime = 0;
@@ -131,6 +132,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		speed = clamp(speed, speedMin, speedMax);
 		targetSpeed = speed;
 		if (!isPlaying) return;
+		currentSpeed = Math.max(currentSpeed, targetSpeed * 0.4);
 		if (!raf) {
 			lastTime = 0;
 			raf = requestAnimationFrame(tick);
@@ -142,7 +144,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		if (raf) cancelAnimationFrame(raf);
 		speed = clamp(speed, speedMin, speedMax);
 		targetSpeed = speed;
-		currentSpeed = 0;
+		currentSpeed = Math.max(targetSpeed * 0.4, speedMin * 0.5);
 		isPlaying = true;
 		lastTime = 0;
 		startTime = 0;
@@ -158,8 +160,12 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 	const beginCountdown = () => {
 		if (isCountingDown) return;
+		if (countdownSeconds <= 0) {
+			startPlayback();
+			return;
+		}
 		cancelCountdown();
-		countdown = 3;
+		countdown = countdownSeconds;
 		isCountingDown = true;
 		countdownTimer = setInterval(() => {
 			countdown -= 1;
@@ -233,7 +239,10 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	};
 
 	const handleWheel = (event: WheelEvent) => {
+		if (!isPlaying) return;
 		event.preventDefault();
+		const direction = event.deltaY > 0 ? 1 : -1;
+		adjustSpeed(direction * 2);
 	};
 
 	const adjustSpeed = (amount: number) => {
@@ -489,6 +498,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		<div
 			class="teleprompter-frame"
 			bind:this={scrollContainer}
+			on:wheel={handleWheel}
 			style={`padding: ${autoCenter ? "35vh 2rem" : "2.5rem 2rem"};`}
 		>
 			<div
@@ -500,13 +510,6 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 					<p class:active={index === activeLineIndex} bind:this={(el) => (lineElements[index] = el)}>{line}</p>
 				{/each}
 			</div>
-			{#if focusMode}
-				<div class="teleprompter-focus"></div>
-				{#if dimOutside}
-					<div class="teleprompter-dim"></div>
-				{/if}
-			{/if}
-
 			<div class="teleprompter-float">
 				<button class="btn-float" on:click={toggle}>{isPlaying ? "⏸" : isCountingDown ? "⏹" : "▶"}</button>
 				<button class="btn-float" on:click={() => jump(-120)}>↑</button>
@@ -517,7 +520,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			</div>
 
 			<div class="teleprompter-footer">
-				<div class="shortcut">Espacio/Enter = Play · ↑/↓/Page = Saltos · M = Espejo · F = Focus · L = Ultra limpio · R = Reset · X = Fullscreen · Rueda = desactivada · +/- = Velocidad</div>
+				<div class="shortcut">Espacio/Enter = Play · ↑/↓/Page = Saltos · M = Espejo · F = Focus · L = Ultra limpio · R = Reset · X = Fullscreen · Rueda = velocidad · +/- = Velocidad</div>
 			</div>
 
 			{#if isCountingDown}
@@ -526,6 +529,12 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 				</div>
 			{/if}
 		</div>
+		{#if focusMode}
+			<div class="teleprompter-focus"></div>
+			{#if dimOutside}
+				<div class="teleprompter-dim"></div>
+			{/if}
+		{/if}
 	</div>
 
 	<style>
@@ -632,6 +641,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			border-radius: 999px;
 			border: 2px solid transparent;
 			background-clip: padding-box;
+			box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
 		}
 		.teleprompter-input::-webkit-scrollbar-thumb:hover {
 			background: linear-gradient(180deg, rgba(99, 102, 241, 0.95), rgba(14, 165, 233, 0.95));
@@ -770,11 +780,12 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			color: inherit;
 			scrollbar-width: thin;
 			scrollbar-color: rgba(99, 102, 241, 0.6) rgba(148, 163, 184, 0.18);
+			scrollbar-gutter: stable;
 			overscroll-behavior: contain;
 			z-index: 1;
 		}
 		.teleprompter-frame::-webkit-scrollbar {
-			width: 8px;
+			width: 10px;
 		}
 		.teleprompter-frame::-webkit-scrollbar-track {
 			background: rgba(148, 163, 184, 0.18);
@@ -785,6 +796,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			border-radius: 999px;
 			border: 2px solid transparent;
 			background-clip: padding-box;
+			box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
 		}
 		.teleprompter-frame::-webkit-scrollbar-thumb:hover {
 			background: linear-gradient(180deg, rgba(99, 102, 241, 0.9), rgba(14, 165, 233, 0.9));
@@ -824,16 +836,17 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			position: absolute;
 			left: 0;
 			right: 0;
-			top: 45%;
+			top: 50%;
+			transform: translateY(-50%);
 			height: 110px;
 			border-top: 1px solid rgba(99,102,241,0.4);
 			border-bottom: 1px solid rgba(99,102,241,0.4);
 			pointer-events: none;
-			z-index: 2;
+			z-index: 3;
 		}
 		.teleprompter-dim {
 			position: absolute;
-			inset: 0;
+			inset: 4px 0 0 0;
 			background: linear-gradient(to bottom, rgba(0,0,0,0.45), rgba(0,0,0,0) 40%, rgba(0,0,0,0) 60%, rgba(0,0,0,0.45));
 			pointer-events: none;
 			z-index: 2;
@@ -844,7 +857,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			bottom: 1.5rem;
 			display: grid;
 			gap: 0.5rem;
-			z-index: 3;
+			z-index: 4;
 		}
 		.btn-float {
 			width: 44px;
@@ -913,3 +926,4 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			color: #e2e8f0;
 		}
 	</style>
+</div>
