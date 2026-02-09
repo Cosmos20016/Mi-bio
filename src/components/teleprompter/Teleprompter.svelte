@@ -122,7 +122,7 @@ const tick = (timestamp: number) => {
 		return;
 	}
 
-	const delta = elapsed / 1000; // seconds
+	const delta = Math.min(elapsed / 1000, 0.1); // seconds, capped to prevent jumps
 	lastTime = timestamp;
 
 	// Instant speed change - no smoothing delay
