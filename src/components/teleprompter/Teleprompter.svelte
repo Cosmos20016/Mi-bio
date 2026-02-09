@@ -49,7 +49,7 @@
 	const speedMin = 12;
 	const speedMax = 140;
 	const accelerationDuration = 0.18;
-	const countdownSeconds = 0;
+	const countdownSeconds = 3;
 	let targetSpeed = speed;
 	let currentSpeed = speed;
 	let startTime = 0;
@@ -239,10 +239,7 @@
 	};
 
 	const handleWheel = (event: WheelEvent) => {
-		if (!isPlaying) return;
 		event.preventDefault();
-		const direction = event.deltaY > 0 ? 1 : -1;
-		adjustSpeed(direction * 2);
 	};
 
 	const adjustSpeed = (amount: number) => {
@@ -304,7 +301,7 @@
 				toggle();
 				break;
 			case "Enter":
-			case "NumpadEnter":
+				case "NumpadEnter":
 				event.preventDefault();
 				toggle();
 				break;
@@ -340,14 +337,14 @@
 				ultraClean = !ultraClean;
 				break;
 			case "Equal":
-			case "NumpadAdd":
+				case "NumpadAdd":
 				adjustSpeed(4);
 				break;
 			case "Minus":
-			case "NumpadSubtract":
+				case "NumpadSubtract":
 				adjustSpeed(-4);
 				break;
-			}
+		}
 	};
 
 	$: scheduleSave();
@@ -498,7 +495,7 @@
 		<div
 			class="teleprompter-frame"
 			bind:this={scrollContainer}
-			on:wheel={handleWheel}
+			on:wheel|preventDefault={handleWheel}
 			style={`padding: ${autoCenter ? "35vh 2rem" : "2.5rem 2rem"};`}
 		>
 			<div
@@ -510,30 +507,31 @@
 					<p class:active={index === activeLineIndex} bind:this={lineElements[index]}>{line}</p>
 				{/each}
 			</div>
-			<div class="teleprompter-float">
-				<button class="btn-float" on:click={toggle}>{isPlaying ? "⏸" : isCountingDown ? "⏹" : "▶"}</button>
-				<button class="btn-float" on:click={() => jump(-120)}>↑</button>
-				<button class="btn-float" on:click={() => jump(120)}>↓</button>
-				<button class="btn-float" on:click={() => (isMirror = !isMirror)}>M</button>
-				<button class="btn-float" on:click={toggleFullscreen}>⛶</button>
-				<button class="btn-float" on:click={() => (ultraClean = !ultraClean)}>🧼</button>
-			</div>
-
-			<div class="teleprompter-footer">
-				<div class="shortcut">Espacio/Enter = Play · ↑/↓/Page = Saltos · M = Espejo · F = Focus · L = Ultra limpio · R = Reset · X = Fullscreen · Rueda = velocidad · +/- = Velocidad</div>
-			</div>
-
-			{#if isCountingDown}
-				<div class="teleprompter-countdown">
-					<span>{countdown}</span>
-				</div>
-			{/if}
 		</div>
 		{#if focusMode}
 			<div class="teleprompter-focus"></div>
 			{#if dimOutside}
 				<div class="teleprompter-dim"></div>
 			{/if}
+		{/if}
+
+		<div class="teleprompter-float">
+			<button class="btn-float" on:click={toggle}>{isPlaying ? "⏸" : isCountingDown ? "⏹" : "▶"}</button>
+			<button class="btn-float" on:click={() => jump(-120)}>↑</button>
+			<button class="btn-float" on:click={() => jump(120)}>↓</button>
+			<button class="btn-float" on:click={() => (isMirror = !isMirror)}>M</button>
+			<button class="btn-float" on:click={toggleFullscreen}>⛶</button>
+			<button class="btn-float" on:click={() => (ultraClean = !ultraClean)}>🧼</button>
+		</div>
+
+		<div class="teleprompter-footer">
+			<div class="shortcut">Espacio/Enter = Play · ↑/↓/Page = Saltos · M = Espejo · F = Focus · L = Ultra limpio · R = Reset · X = Fullscreen · Rueda = velocidad · +/- = Velocidad</div>
+		</div>
+
+		{#if isCountingDown}
+			<div class="teleprompter-countdown">
+				<span>{countdown}</span>
+			</div>
 		{/if}
 	</div>
 
@@ -728,7 +726,7 @@
 			position: absolute;
 			inset: 0;
 			background: radial-gradient(circle at top, rgba(99, 102, 241, 0.12), transparent 55%),
-				 radial-gradient(circle at bottom, rgba(14, 165, 233, 0.08), transparent 60%);
+				radial-gradient(circle at bottom, rgba(14, 165, 233, 0.08), transparent 60%);
 			opacity: 0.35;
 			pointer-events: none;
 			z-index: 0;
@@ -741,7 +739,7 @@
 		}
 		:global(.dark) .teleprompter-screen::before {
 			background: radial-gradient(circle at top, rgba(99, 102, 241, 0.18), transparent 55%),
-				 radial-gradient(circle at bottom, rgba(14, 165, 233, 0.12), transparent 60%);
+				radial-gradient(circle at bottom, rgba(14, 165, 233, 0.12), transparent 60%);
 			opacity: 0.6;
 		}
 		.teleprompter-screen.glow {
@@ -781,7 +779,7 @@
 			scrollbar-width: thin;
 			scrollbar-color: rgba(99, 102, 241, 0.6) rgba(148, 163, 184, 0.18);
 			scrollbar-gutter: stable;
-			overscroll-behavior: contain;
+			overScrollBehavior: contain;
 			z-index: 1;
 		}
 		.teleprompter-frame::-webkit-scrollbar {
