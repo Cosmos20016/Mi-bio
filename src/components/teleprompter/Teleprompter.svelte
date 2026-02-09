@@ -1,390 +1,437 @@
 <script lang="ts">
-	import { onDestroy, onMount } from "svelte";
-	import {
-		applyStoredThemeToDocument,
-		getStoredTheme,
-		watchSystemThemeChanges,
-	} from "@utils/setting-utils.ts";
+import {
+	applyStoredThemeToDocument,
+	getStoredTheme,
+	watchSystemThemeChanges,
+} from "@utils/setting-utils.ts";
+import { onDestroy, onMount } from "svelte";
 
-	const storageKey = "teleprompter:state:v2";
+const storageKey = "teleprompter:state:v2";
 
-	let text = `Pega aquí tu guion...
+let text = `Pega aquí tu guion...
 	
 
 	Tip: Usa párrafos cortos para una lectura más cómoda.`;
-	let speed = 48; // px/seg
-	let fontSize = 34;
-	let lineHeight = 1.6;
-	let isPlaying = false;
-	let isMirror = false;
-	let autoCenter = true;
-	let smooth = true;
-	let showControls = true;
-	let progress = 0;
-	let glow = true;
-	let focusMode = false;
-	let dimOutside = true;
-	let isFullscreen = false;
-	let isMobile = false;
-	let allowMobile = false;
-	let showMobileNotice = false;
-	let isReady = false;
-	let ultraClean = false;
-	let countdown = 0;
-	let isCountingDown = false;
+let speed = 48; // px/seg
+let fontSize = 34;
+let lineHeight = 1.6;
+let isPlaying = false;
+let isMirror = false;
+let autoCenter = true;
+let smooth = true;
+let showControls = true;
+let progress = 0;
+let glow = true;
+let focusMode = false;
+let dimOutside = true;
+let isFullscreen = false;
+let isMobile = false;
+let allowMobile = false;
+let showMobileNotice = false;
+let isReady = false;
+let ultraClean = false;
+let countdown = 0;
+let isCountingDown = false;
 
-	let scrollContainer: HTMLDivElement;
-	let content: HTMLDivElement;
-	let fullscreenTarget: HTMLDivElement;
-	let raf: number | null = null;
-	let lastTime = 0;
-	let observer: IntersectionObserver | null = null;
-	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
-	let stopThemeWatch: (() => void) | null = null;
-	let countdownTimer: ReturnType<typeof setInterval> | null = null;
-	let lineElements: Array<HTMLParagraphElement | null> = [];
-	let activeLineIndex = 0;
-	let lines: string[] = [];
+let scrollContainer: HTMLDivElement;
+let content: HTMLDivElement;
+let fullscreenTarget: HTMLDivElement;
+let raf: number | null = null;
+let lastTime = 0;
+let observer: IntersectionObserver | null = null;
+let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+let stopThemeWatch: (() => void) | null = null;
+let countdownTimer: ReturnType<typeof setInterval> | null = null;
+let lineElements: Array<HTMLParagraphElement | null> = [];
+let activeLineIndex = 0;
+let lines: string[] = [];
 
-	const speedMin = 12;
-	const speedMax = 140;
-	const accelerationDuration = 0.18;
-	const countdownSeconds = 3;
-	let targetSpeed = speed;
-	let currentSpeed = speed;
-	let startTime = 0;
+const speedMin = 12;
+const speedMax = 140;
+const accelerationDuration = 0.18;
+const countdownSeconds = 3;
+let targetSpeed = speed;
+let currentSpeed = speed;
+let startTime = 0;
 
-	const clamp = (value: number, min: number, max: number) =>
-		Math.min(Math.max(value, min), max);
+const clamp = (value: number, min: number, max: number) =>
+	Math.min(Math.max(value, min), max);
 
-	const easeOutCubic = (value: number) => 1 - Math.pow(1 - value, 3);
+const easeOutCubic = (value: number) => 1 - (1 - value) ** 3;
 
-	$: lines = text.split("\n");
-	$: lineElements = lines.map(() => null);
+$: lines = text.split("\n");
+$: lineElements = lines.map(() => null);
 
-	const updateProgress = () => {
-		if (!scrollContainer || !content) return;
-		const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
-		progress = maxScroll <= 0 ? 0 : clamp(scrollContainer.scrollTop / maxScroll, 0, 1);
-		updateActiveLine();
-	};
+const updateProgress = () => {
+	if (!scrollContainer || !content) return;
+	const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
+	progress =
+		maxScroll <= 0 ? 0 : clamp(scrollContainer.scrollTop / maxScroll, 0, 1);
+	updateActiveLine();
+};
 
-	const getFocusCenter = () => {
-		if (!scrollContainer) return 0;
-		const viewport = scrollContainer.clientHeight;
-		const focusOffset = focusMode ? viewport * 0.45 + 50 : viewport / 2;
-		return scrollContainer.scrollTop + focusOffset;
-	};
+const getFocusCenter = () => {
+	if (!scrollContainer) return 0;
+	const viewport = scrollContainer.clientHeight;
+	const focusOffset = focusMode ? viewport * 0.45 + 50 : viewport / 2;
+	return scrollContainer.scrollTop + focusOffset;
+};
 
-	const updateActiveLine = () => {
-		if (!scrollContainer || !lineElements.length) return;
-		const focusCenter = getFocusCenter();
-		let closestIndex = 0;
-		let closestDistance = Number.POSITIVE_INFINITY;
-		lineElements.forEach((line, index) => {
-			if (!line) return;
-			const lineCenter = line.offsetTop + line.offsetHeight / 2;
-			const distance = Math.abs(lineCenter - focusCenter);
-			if (distance < closestDistance) {
-				closestDistance = distance;
-				closestIndex = index;
-			}
-		});
-		activeLineIndex = closestIndex;
-	};
-
-	const tick = (time: number) => {
-		if (!isPlaying || !scrollContainer || !content) {
-			raf = null;
-			return;
+const updateActiveLine = () => {
+	if (!scrollContainer || !lineElements.length) return;
+	const focusCenter = getFocusCenter();
+	let closestIndex = 0;
+	let closestDistance = Number.POSITIVE_INFINITY;
+	for (let i = 0; i < lineElements.length; i++) {
+		const line = lineElements[i];
+		if (!line) continue;
+		const lineCenter = line.offsetTop + line.offsetHeight / 2;
+		const distance = Math.abs(lineCenter - focusCenter);
+		if (distance < closestDistance) {
+			closestDistance = distance;
+			closestIndex = i;
+		} else if (distance > closestDistance) {
+			break; // Las líneas están ordenadas, si la distancia empieza a crecer ya encontramos la más cercana
 		}
-		if (!lastTime) lastTime = time;
-		if (!startTime) startTime = time;
-		const delta = Math.min((time - lastTime) / 1000, 0.05);
-		lastTime = time;
+	}
+	activeLineIndex = closestIndex;
+};
 
-		const maxScroll = Math.max(content.scrollHeight - scrollContainer.clientHeight, 0);
-		const accelerationProgress = Math.min(
-			((time - startTime) / 1000) / accelerationDuration,
-			1,
-		);
-		const rampFactor = easeOutCubic(accelerationProgress);
-		const smoothingFactor = smooth ? 0.18 : 0.28;
-		const speedFactor = smooth ? 1 : 1.25;
-		currentSpeed += (targetSpeed - currentSpeed) * smoothingFactor;
-		const step = currentSpeed * speedFactor * rampFactor * delta;
-
-		scrollContainer.scrollTop = Math.min(
-			scrollContainer.scrollTop + step,
-			maxScroll,
-		);
-		updateProgress();
-
-		if (scrollContainer.scrollTop >= maxScroll) {
-			isPlaying = false;
-			raf = null;
-			return;
-		}
-		raf = requestAnimationFrame(tick);
-	};
-
-	const refreshPlayback = () => {
-		speed = clamp(speed, speedMin, speedMax);
-		targetSpeed = speed;
-		if (!isPlaying) return;
-		currentSpeed = Math.max(currentSpeed, targetSpeed * 0.4);
-		if (!raf) {
-			lastTime = 0;
-			raf = requestAnimationFrame(tick);
-		}
-	};
-
-	const startPlayback = () => {
-		if (!scrollContainer || !content) return;
-		if (raf) cancelAnimationFrame(raf);
-		speed = clamp(speed, speedMin, speedMax);
-		targetSpeed = speed;
-		currentSpeed = Math.max(targetSpeed * 0.4, speedMin * 0.5);
-		isPlaying = true;
-		lastTime = 0;
-		startTime = 0;
-		raf = requestAnimationFrame(tick);
-	};
-
-	const cancelCountdown = () => {
-		if (countdownTimer) clearInterval(countdownTimer);
-		countdownTimer = null;
-		countdown = 0;
-		isCountingDown = false;
-	};
-
-	const beginCountdown = () => {
-		if (isCountingDown) return;
-		if (countdownSeconds <= 0) {
-			startPlayback();
-			return;
-		}
-		cancelCountdown();
-		countdown = countdownSeconds;
-		isCountingDown = true;
-		countdownTimer = setInterval(() => {
-			countdown -= 1;
-			if (countdown <= 0) {
-				cancelCountdown();
-				startPlayback();
-			}
-		}, 1000);
-	};
-
-	const start = () => {
-		if (isPlaying || isCountingDown) return;
-		beginCountdown();
-	};
-
-	const pause = () => {
-		isPlaying = false;
-		cancelCountdown();
-		if (raf) cancelAnimationFrame(raf);
+const tick = (time: number) => {
+	if (!isPlaying || !scrollContainer || !content) {
 		raf = null;
+		return;
+	}
+	if (!lastTime) lastTime = time;
+	if (!startTime) startTime = time;
+	const delta = Math.min((time - lastTime) / 1000, 0.05);
+	lastTime = time;
+
+	const maxScroll = Math.max(
+		content.scrollHeight - scrollContainer.clientHeight,
+		0,
+	);
+	const accelerationProgress = Math.min(
+		(time - startTime) / 1000 / accelerationDuration,
+		1,
+	);
+	const rampFactor = easeOutCubic(accelerationProgress);
+	const smoothingFactor = smooth ? 0.18 : 0.28;
+	const speedFactor = smooth ? 1 : 1.25;
+	currentSpeed += (targetSpeed - currentSpeed) * smoothingFactor;
+	const step = currentSpeed * speedFactor * rampFactor * delta;
+
+	scrollContainer.scrollTop = Math.min(
+		scrollContainer.scrollTop + step,
+		maxScroll,
+	);
+	updateProgress();
+
+	if (scrollContainer.scrollTop >= maxScroll) {
+		isPlaying = false;
+		raf = null;
+		return;
+	}
+	raf = requestAnimationFrame(tick);
+};
+
+const refreshPlayback = () => {
+	speed = clamp(speed, speedMin, speedMax);
+	targetSpeed = speed;
+	if (!isPlaying) return;
+	currentSpeed = Math.max(currentSpeed, targetSpeed * 0.4);
+	if (!raf) {
 		lastTime = 0;
-		startTime = 0;
-	};
+		raf = requestAnimationFrame(tick);
+	}
+};
 
-	const toggle = () => {
-		if (isPlaying) {
-			pause();
-		} else if (isCountingDown) {
+const startPlayback = () => {
+	if (!scrollContainer || !content) return;
+	if (raf) cancelAnimationFrame(raf);
+	speed = clamp(speed, speedMin, speedMax);
+	targetSpeed = speed;
+	currentSpeed = Math.max(targetSpeed * 0.4, speedMin * 0.5);
+	isPlaying = true;
+	lastTime = 0;
+	startTime = 0;
+	raf = requestAnimationFrame(tick);
+};
+
+const cancelCountdown = () => {
+	if (countdownTimer) clearInterval(countdownTimer);
+	countdownTimer = null;
+	countdown = 0;
+	isCountingDown = false;
+};
+
+const beginCountdown = () => {
+	if (isCountingDown) return;
+	if (countdownSeconds <= 0) {
+		startPlayback();
+		return;
+	}
+	cancelCountdown();
+	countdown = countdownSeconds;
+	isCountingDown = true;
+	countdownTimer = setInterval(() => {
+		countdown -= 1;
+		if (countdown <= 0) {
 			cancelCountdown();
-		} else {
-			start();
+			startPlayback();
 		}
-	};
+	}, 1000);
+};
 
-	const reset = () => {
+const start = () => {
+	if (isPlaying || isCountingDown) return;
+	beginCountdown();
+};
+
+const pause = () => {
+	isPlaying = false;
+	cancelCountdown();
+	if (raf) cancelAnimationFrame(raf);
+	raf = null;
+	lastTime = 0;
+	startTime = 0;
+};
+
+const toggle = () => {
+	if (isPlaying) {
 		pause();
-		if (scrollContainer) {
-			scrollContainer.scrollTop = 0;
-		}
-		updateProgress();
-	};
+	} else if (isCountingDown) {
+		cancelCountdown();
+	} else {
+		start();
+	}
+};
 
-	const clearText = () => {
-		pause();
-		text = "";
-		if (scrollContainer) {
-			scrollContainer.scrollTop = 0;
-		}
-		updateProgress();
-	};
+const reset = () => {
+	pause();
+	if (scrollContainer) {
+		scrollContainer.scrollTop = 0;
+	}
+	updateProgress();
+};
 
-	const jump = (amount: number) => {
-		const next = scrollContainer.scrollTop + amount;
-		scrollContainer.scrollTop = clamp(next, 0, content.scrollHeight);
-		updateProgress();
-	};
+const clearText = () => {
+	pause();
+	text = "";
+	if (scrollContainer) {
+		scrollContainer.scrollTop = 0;
+	}
+	updateProgress();
+};
 
-	const scrollToProgress = (value: number) => {
-		const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
-		scrollContainer.scrollTop = clamp(value, 0, 1) * Math.max(maxScroll, 0);
-		updateProgress();
-	};
+const jump = (amount: number) => {
+	if (!scrollContainer || !content) return;
+	const next = scrollContainer.scrollTop + amount;
+	scrollContainer.scrollTop = clamp(next, 0, content.scrollHeight);
+	updateProgress();
+};
 
-	const toggleFullscreen = async () => {
-		if (!fullscreenTarget) return;
+const scrollToProgress = (value: number) => {
+	if (!scrollContainer || !content) return;
+	const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
+	scrollContainer.scrollTop = clamp(value, 0, 1) * Math.max(maxScroll, 0);
+	updateProgress();
+};
+
+const toggleFullscreen = async () => {
+	if (!fullscreenTarget) return;
+	try {
 		if (!document.fullscreenElement) {
 			await fullscreenTarget.requestFullscreen();
 		} else {
 			await document.exitFullscreen();
 		}
-	};
+	} catch {
+		// Fullscreen not supported or blocked
+	}
+};
 
-	const handleWheel = (event: WheelEvent) => {
-		event.preventDefault();
-	};
+// Mouse wheel handler: Controls teleprompter speed during playback
+// Scroll down (deltaY > 0) = decrease speed, Scroll up (deltaY < 0) = increase speed
+const handleWheel = (event: WheelEvent) => {
+	event.preventDefault();
+	if (!scrollContainer || !content) return;
+	const delta = event.deltaY > 0 ? 2 : -2;
+	adjustSpeed(delta);
+};
 
-	const adjustSpeed = (amount: number) => {
-		speed = clamp(speed + amount, speedMin, speedMax);
+const adjustSpeed = (amount: number) => {
+	speed = clamp(speed + amount, speedMin, speedMax);
+	targetSpeed = speed;
+	refreshPlayback();
+};
+
+const loadState = () => {
+	try {
+		const raw = localStorage.getItem(storageKey);
+		if (!raw) return;
+		const data = JSON.parse(raw) as Partial<{
+			text: string;
+			speed: number;
+			fontSize: number;
+			lineHeight: number;
+			isMirror: boolean;
+			autoCenter: boolean;
+			smooth: boolean;
+			glow: boolean;
+			focusMode: boolean;
+			dimOutside: boolean;
+			ultraClean: boolean;
+		}>;
+		if (data.text) text = data.text;
+		if (data.speed) speed = data.speed;
+		if (data.fontSize) fontSize = data.fontSize;
+		if (data.lineHeight) lineHeight = data.lineHeight;
+		if (typeof data.isMirror === "boolean") isMirror = data.isMirror;
+		if (typeof data.autoCenter === "boolean") autoCenter = data.autoCenter;
+		if (typeof data.smooth === "boolean") smooth = data.smooth;
+		if (typeof data.glow === "boolean") glow = data.glow;
+		if (typeof data.focusMode === "boolean") focusMode = data.focusMode;
+		if (typeof data.dimOutside === "boolean") dimOutside = data.dimOutside;
+		if (typeof data.ultraClean === "boolean") ultraClean = data.ultraClean;
+		speed = clamp(speed, speedMin, speedMax);
 		targetSpeed = speed;
-		refreshPlayback();
-	};
+		currentSpeed = speed;
+	} catch {
+		// ignore invalid storage
+	}
+};
 
-	const loadState = () => {
-		try {
-			const raw = localStorage.getItem(storageKey);
-			if (!raw) return;
-			const data = JSON.parse(raw) as Partial<{ text: string; speed: number; fontSize: number; lineHeight: number; isMirror: boolean; autoCenter: boolean; smooth: boolean; glow: boolean; focusMode: boolean; dimOutside: boolean; ultraClean: boolean; }>; 
-			if (data.text) text = data.text;
-			if (data.speed) speed = data.speed;
-			if (data.fontSize) fontSize = data.fontSize;
-			if (data.lineHeight) lineHeight = data.lineHeight;
-			if (typeof data.isMirror === "boolean") isMirror = data.isMirror;
-			if (typeof data.autoCenter === "boolean") autoCenter = data.autoCenter;
-			if (typeof data.smooth === "boolean") smooth = data.smooth;
-			if (typeof data.glow === "boolean") glow = data.glow;
-			if (typeof data.focusMode === "boolean") focusMode = data.focusMode;
-			if (typeof data.dimOutside === "boolean") dimOutside = data.dimOutside;
-			if (typeof data.ultraClean === "boolean") ultraClean = data.ultraClean;
-			speed = clamp(speed, speedMin, speedMax);
-			targetSpeed = speed;
-			currentSpeed = speed;
-		} catch {
-			// ignore invalid storage
-		}
-	};
+const scheduleSave = () => {
+	if (!isReady) return;
+	if (saveTimeout) clearTimeout(saveTimeout);
+	saveTimeout = setTimeout(() => {
+		const payload = {
+			text,
+			speed,
+			fontSize,
+			lineHeight,
+			isMirror,
+			autoCenter,
+			smooth,
+			glow,
+			focusMode,
+			dimOutside,
+			ultraClean,
+		};
+		localStorage.setItem(storageKey, JSON.stringify(payload));
+	}, 300);
+};
 
-	const scheduleSave = () => {
-		if (!isReady) return;
-		if (saveTimeout) clearTimeout(saveTimeout);
-		saveTimeout = setTimeout(() => {
-			const payload = {
-				text,
-				speed,
-				fontSize,
-				lineHeight,
-				isMirror,
-				autoCenter,
-				smooth,
-				glow,
-				focusMode,
-				dimOutside,
-				ultraClean,
-			};
-			localStorage.setItem(storageKey, JSON.stringify(payload));
-		}, 300);
-	};
+const onKey = (event: KeyboardEvent) => {
+	if (event.target && (event.target as HTMLElement).tagName === "TEXTAREA")
+		return;
+	switch (event.code) {
+		case "Space":
+			event.preventDefault();
+			toggle();
+			break;
+		case "Enter":
+		case "NumpadEnter":
+			event.preventDefault();
+			toggle();
+			break;
+		case "ArrowUp":
+			event.preventDefault();
+			jump(-120);
+			break;
+		case "ArrowDown":
+			event.preventDefault();
+			jump(120);
+			break;
+		case "PageUp":
+			event.preventDefault();
+			jump(-320);
+			break;
+		case "PageDown":
+			event.preventDefault();
+			jump(320);
+			break;
+		case "KeyM":
+			isMirror = !isMirror;
+			break;
+		case "KeyF":
+			focusMode = !focusMode;
+			break;
+		case "KeyR":
+			reset();
+			break;
+		case "KeyX":
+			toggleFullscreen();
+			break;
+		case "KeyL":
+			ultraClean = !ultraClean;
+			break;
+		case "Equal":
+		case "NumpadAdd":
+			adjustSpeed(4);
+			break;
+		case "Minus":
+		case "NumpadSubtract":
+			adjustSpeed(-4);
+			break;
+	}
+};
 
-	const onKey = (event: KeyboardEvent) => {
-		if (event.target && (event.target as HTMLElement).tagName === "TEXTAREA") return;
-		switch (event.code) {
-			case "Space":
-				event.preventDefault();
-				toggle();
-				break;
-			case "Enter":
-				case "NumpadEnter":
-				event.preventDefault();
-				toggle();
-				break;
-			case "ArrowUp":
-				event.preventDefault();
-				jump(-120);
-				break;
-			case "ArrowDown":
-				event.preventDefault();
-				jump(120);
-				break;
-			case "PageUp":
-				event.preventDefault();
-				jump(-320);
-				break;
-			case "PageDown":
-				event.preventDefault();
-				jump(320);
-				break;
-			case "KeyM":
-				isMirror = !isMirror;
-				break;
-			case "KeyF":
-				focusMode = !focusMode;
-				break;
-			case "KeyR":
-				reset();
-				break;
-			case "KeyX":
-				toggleFullscreen();
-				break;
-			case "KeyL":
-				ultraClean = !ultraClean;
-				break;
-			case "Equal":
-				case "NumpadAdd":
-				adjustSpeed(4);
-				break;
-			case "Minus":
-				case "NumpadSubtract":
-				adjustSpeed(-4);
-				break;
-		}
-	};
+$: {
+	// Trigger save when any of these properties change
+	text;
+	speed;
+	fontSize;
+	lineHeight;
+	isMirror;
+	autoCenter;
+	smooth;
+	glow;
+	focusMode;
+	dimOutside;
+	ultraClean;
+	scheduleSave();
+}
 
-	$: scheduleSave();
+onMount(() => {
+	window.addEventListener("keydown", onKey);
+	const mql = window.matchMedia("(max-width: 768px)");
+	isMobile = mql.matches;
+	showMobileNotice = false;
+	allowMobile = true;
 
-	onMount(() => {
-		window.addEventListener("keydown", onKey);
-		const mql = window.matchMedia("(max-width: 768px)");
-		isMobile = mql.matches;
-		showMobileNotice = false;
-		allowMobile = true;
+	applyStoredThemeToDocument();
+	stopThemeWatch = watchSystemThemeChanges(getStoredTheme());
 
-		applyStoredThemeToDocument();
-		stopThemeWatch = watchSystemThemeChanges(getStoredTheme());
-
-		loadState();
-		updateProgress();
-		observer?.disconnect();
-		observer = new IntersectionObserver(() => updateProgress());
+	loadState();
+	updateProgress();
+	observer?.disconnect();
+	observer = new IntersectionObserver(() => updateProgress());
+	if (scrollContainer) {
 		observer.observe(scrollContainer);
+	}
 
-		const onFullscreenChange = () => {
-			isFullscreen = Boolean(document.fullscreenElement);
-		};
-		document.addEventListener("fullscreenchange", onFullscreenChange);
-		isReady = true;
+	const onFullscreenChange = () => {
+		isFullscreen = Boolean(document.fullscreenElement);
+	};
+	document.addEventListener("fullscreenchange", onFullscreenChange);
+	isReady = true;
 
-		return () => {
-			document.removeEventListener("fullscreenchange", onFullscreenChange);
-		};
-	});
+	return () => {
+		document.removeEventListener("fullscreenchange", onFullscreenChange);
+	};
+});
 
-	onDestroy(() => {
-		window.removeEventListener("keydown", onKey);
-		pause();
-		observer?.disconnect();
-		if (saveTimeout) clearTimeout(saveTimeout);
-		stopThemeWatch?.();
-		stopThemeWatch = null;
-		if (countdownTimer) clearInterval(countdownTimer);
-	});
+onDestroy(() => {
+	window.removeEventListener("keydown", onKey);
+	pause();
+	observer?.disconnect();
+	if (saveTimeout) clearTimeout(saveTimeout);
+	stopThemeWatch?.();
+	stopThemeWatch = null;
+	if (countdownTimer) clearInterval(countdownTimer);
+});
 </script>
 
 <div class="teleprompter-wrapper" class:clean={ultraClean}>
@@ -542,6 +589,7 @@
 			gap: 1.5rem;
 			position: relative;
 			color: var(--deep-text, #0f172a);
+			font-family: inherit;
 		}
 		:global(.dark) .teleprompter-wrapper {
 			color: #e2e8f0;
@@ -573,6 +621,7 @@
 			box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 			border: 1px solid rgba(255, 255, 255, 0.1);
 			color: inherit;
+			font-family: inherit;
 		}
 		.teleprompter-mobile-card h2 {
 			font-size: 1.2rem;
@@ -587,6 +636,11 @@
 			display: flex;
 			gap: 0.75rem;
 			flex-wrap: wrap;
+		}
+		:global(.dark) .teleprompter-mobile-card {
+			background: var(--card-bg);
+			border-color: rgba(255, 255, 255, 0.12);
+			box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 		}
 		.teleprompter-header {
 			display: flex;
@@ -615,6 +669,11 @@
 			box-shadow: 0 18px 60px rgba(15, 23, 42, 0.15);
 			color: inherit;
 		}
+		:global(.dark) .teleprompter-panel {
+			background: var(--card-bg);
+			box-shadow: 0 18px 60px rgba(0, 0, 0, 0.4);
+			border: 1px solid rgba(255, 255, 255, 0.08);
+		}
 		.teleprompter-input {
 			width: 100%;
 			border-radius: 1rem;
@@ -626,6 +685,7 @@
 			color: inherit;
 			scrollbar-width: thin;
 			scrollbar-color: rgba(99, 102, 241, 0.6) rgba(148, 163, 184, 0.2);
+			font-family: inherit;
 		}
 		.teleprompter-input::-webkit-scrollbar {
 			width: 8px;
@@ -671,14 +731,19 @@
 		.control-group label {
 			font-weight: 600;
 			color: inherit;
+			font-family: inherit;
 		}
 		.control-group span {
 			font-size: 0.85rem;
 			color: inherit;
 			opacity: 0.7;
+			font-family: inherit;
 		}
 		.control-group input[type="range"] {
 			width: 100%;
+		}
+		:global(.dark) .control-group input[type="range"] {
+			accent-color: rgba(99, 102, 241, 0.8);
 		}
 		.toggle-grid {
 			display: grid;
@@ -693,6 +758,7 @@
 			transition: transform 0.2s ease, box-shadow 0.2s ease;
 			font-weight: 600;
 			color: inherit;
+			font-family: inherit;
 		}
 		.toggle-grid button.active {
 			background: rgba(99,102,241, 0.2);
@@ -706,6 +772,11 @@
 			background: rgba(15,23,42,0.5);
 			border-color: rgba(255,255,255,0.1);
 			color: white;
+		}
+		:global(.dark) .toggle-grid button.active {
+			background: rgba(99, 102, 241, 0.3);
+			border-color: rgba(99, 102, 241, 0.7);
+			color: #e2e8f0;
 		}
 		.control-actions {
 			display: flex;
@@ -779,7 +850,7 @@
 			scrollbar-width: thin;
 			scrollbar-color: rgba(99, 102, 241, 0.6) rgba(148, 163, 184, 0.18);
 			scrollbar-gutter: stable;
-			overScrollBehavior: contain;
+			overscroll-behavior: contain;
 			z-index: 1;
 		}
 		.teleprompter-frame::-webkit-scrollbar {
@@ -808,6 +879,7 @@
 		.teleprompter-content,
 		.teleprompter-content p {
 			color: inherit;
+			font-family: inherit;
 		}
 		.teleprompter-content p {
 			margin-bottom: 1.5rem;
@@ -868,9 +940,14 @@
 			box-shadow: 0 12px 30px rgba(99,102,241,0.3);
 			cursor: pointer;
 			transition: transform 0.2s ease;
+			font-family: inherit;
 		}
 		.btn-float:hover {
 			transform: translateY(-2px);
+		}
+		:global(.dark) .btn-float {
+			background: rgba(99, 102, 241, 0.85);
+			box-shadow: 0 12px 30px rgba(99, 102, 241, 0.4);
 		}
 		.teleprompter-footer {
 			position: relative;
@@ -883,6 +960,10 @@
 		}
 		.shortcut {
 			font-weight: 500;
+			font-family: inherit;
+		}
+		:global(.dark) .teleprompter-footer {
+			color: #cbd5e1;
 		}
 		.teleprompter-countdown {
 			position: absolute;
@@ -898,6 +979,13 @@
 			color: #f8fafc;
 			text-shadow: 0 18px 40px rgba(15, 23, 42, 0.6);
 			pointer-events: none;
+		}
+		.teleprompter-countdown span {
+			font-family: inherit;
+		}
+		:global(.dark) .teleprompter-countdown {
+			background: rgba(2, 6, 23, 0.6);
+			color: #f1f5f9;
 		}
 		@media (max-width: 768px) {
 			.teleprompter-header {
@@ -915,13 +1003,6 @@
 				right: 1rem;
 				bottom: 1rem;
 			}
-		}
-
-		:global(.dark) .teleprompter-wrapper {
-			color: #e2e8f0;
-		}
-		:global(.dark) .teleprompter-screen {
-			color: #e2e8f0;
 		}
 	</style>
 </div>
