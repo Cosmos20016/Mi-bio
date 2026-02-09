@@ -61,6 +61,7 @@ let targetSpeed = speed;
 let currentSpeed = 0;
 let cachedMaxScroll = 0;
 let progressUpdateTimer: ReturnType<typeof setInterval> | null = null;
+let scrollAccumulator = 0;
 
 const clamp = (value: number, min: number, max: number) =>
 	Math.min(Math.max(value, min), max);
@@ -112,6 +113,8 @@ const tick = (timestamp: number) => {
 
 	if (lastTime === null) {
 		lastTime = timestamp;
+		// Initialize accumulator to current scroll position
+		scrollAccumulator = scrollContainer.scrollTop;
 		raf = requestAnimationFrame(tick);
 		return;
 	}
@@ -122,28 +125,26 @@ const tick = (timestamp: number) => {
 		return;
 	}
 
-	const delta = Math.min(elapsed / 1000, 0.1); // seconds, capped to prevent jumps
+	const delta = Math.min(elapsed / 1000, 0.1);
 	lastTime = timestamp;
 
-	// Interpolación suave: se acerca al target progresivamente
-	// Factor 0.08 = transición rápida pero perceptible (~120ms para llegar al 90%)
-	const lerpFactor = 1 - 0.08 ** delta;
-	currentSpeed += (targetSpeed - currentSpeed) * lerpFactor;
+	// Smooth speed interpolation (frame-rate independent)
+	// Using a time constant of ~100ms for responsive but smooth transitions
+	const smoothing = 1 - Math.exp(-delta * 10);
+	currentSpeed += (targetSpeed - currentSpeed) * smoothing;
 
-	// Snap si la diferencia es muy pequeña (evita "flotar" indefinidamente)
+	// Snap when close enough
 	if (Math.abs(currentSpeed - targetSpeed) < 0.5) {
 		currentSpeed = targetSpeed;
 	}
 
-	// Simple step calculation - just speed * time
-	const step = currentSpeed * delta;
+	// Accumulate sub-pixel movement
+	scrollAccumulator += currentSpeed * delta;
 
-	// Apply scroll (single DOM write, ZERO DOM reads)
-	const newPos = scrollContainer.scrollTop + step;
-
-	if (newPos >= cachedMaxScroll) {
-		// Reached the end - finish cleanly
+	// Clamp to valid range
+	if (scrollAccumulator >= cachedMaxScroll) {
 		scrollContainer.scrollTop = cachedMaxScroll;
+		scrollAccumulator = cachedMaxScroll;
 		isPlaying = false;
 		raf = null;
 		lastTime = null;
@@ -151,7 +152,12 @@ const tick = (timestamp: number) => {
 		return;
 	}
 
-	scrollContainer.scrollTop = newPos;
+	// Only update DOM when accumulated position changes by at least 1px
+	const targetScroll = Math.round(scrollAccumulator);
+	if (targetScroll !== scrollContainer.scrollTop) {
+		scrollContainer.scrollTop = targetScroll;
+	}
+
 	raf = requestAnimationFrame(tick);
 };
 
@@ -165,7 +171,7 @@ const startProgressTimer = () => {
 				? 0
 				: clamp(scrollContainer.scrollTop / cachedMaxScroll, 0, 1);
 		updateActiveLine();
-	}, 150); // ~6.6 updates per second - smooth enough for visual, no lag
+	}, 250); // ~4 updates per second - reduces layout thrashing
 };
 
 const stopProgressTimer = () => {
@@ -190,6 +196,8 @@ const startPlayback = () => {
 	);
 
 	if (cachedMaxScroll <= 0) return;
+
+	scrollAccumulator = scrollContainer.scrollTop;
 
 	isPlaying = true;
 	lastTime = null;
@@ -239,6 +247,7 @@ const pause = () => {
 	}
 	lastTime = null;
 	currentSpeed = 0;
+	scrollAccumulator = 0;
 	stopProgressTimer();
 	updateProgress(); // One final update
 };
@@ -257,6 +266,7 @@ const reset = () => {
 	pause();
 	if (scrollContainer) {
 		scrollContainer.scrollTop = 0;
+		scrollAccumulator = 0;
 	}
 	updateProgress();
 };
@@ -275,6 +285,7 @@ const jump = (amount: number) => {
 	const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
 	const next = scrollContainer.scrollTop + amount;
 	scrollContainer.scrollTop = clamp(next, 0, maxScroll);
+	scrollAccumulator = scrollContainer.scrollTop;
 	updateProgress();
 };
 
@@ -282,6 +293,7 @@ const scrollToProgress = (value: number) => {
 	if (!scrollContainer || !content) return;
 	const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
 	scrollContainer.scrollTop = clamp(value, 0, 1) * Math.max(maxScroll, 0);
+	scrollAccumulator = scrollContainer.scrollTop;
 	updateProgress();
 };
 
@@ -1893,6 +1905,7 @@ overflow-x: hidden;
 scroll-behavior: auto;
 scrollbar-width: thin;
 scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+will-change: scroll-position;
 }
 
 :global(.dark) .teleprompter-frame,
@@ -1942,7 +1955,7 @@ color: #f1f5f9;
 .teleprompter-content p {
 margin: 0.75rem 0;
 padding: 0.5rem 1rem;
-transition: all 0.3s ease;
+transition: opacity 0.3s ease, background 0.2s ease, border-left 0.15s ease, box-shadow 0.2s ease, padding-left 0.15s ease;
 border-radius: 0.5rem;
 line-height: inherit;
 }
