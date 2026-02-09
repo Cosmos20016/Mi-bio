@@ -64,6 +64,7 @@ let currentSpeed = 0;
 let cachedMaxScroll = 0;
 let progressCounter = 0;
 const PROGRESS_UPDATE_INTERVAL = 8; // Update progress every 8 frames
+const AUTO_FINISH_THRESHOLD = 2; // Pixels from end to force completion
 
 const clamp = (value: number, min: number, max: number) =>
 	Math.min(Math.max(value, min), max);
@@ -147,7 +148,7 @@ const tick = (timestamp: number) => {
 	const remaining = cachedMaxScroll - scrollContainer.scrollTop;
 
 	// Auto-finish when very close to end
-	if (remaining < 2) {
+	if (remaining < AUTO_FINISH_THRESHOLD) {
 		scrollContainer.scrollTop = cachedMaxScroll;
 		isPlaying = false;
 		raf = null;
@@ -160,7 +161,7 @@ const tick = (timestamp: number) => {
 	const fadeFactor = remaining < 200 ? Math.max(remaining / 200, 0.15) : 1;
 
 	// Calculate step (no variation at low speeds)
-	const step = currentSpeed * fadeFactor * delta;
+	const step = Math.max(currentSpeed * fadeFactor * delta, 0);
 
 	// Apply scroll (single DOM write, no reads)
 	scrollContainer.scrollTop = Math.min(
