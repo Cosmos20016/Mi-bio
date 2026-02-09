@@ -105,7 +105,7 @@ const updateActiveLine = () => {
 
 // Lag-free scroll engine using time-based movement
 const tick = (timestamp: number) => {
-	if (!isPlaying || !scrollContainer || !isMounted) {
+	if (!isPlaying || !scrollContainer || !content || !isMounted) {
 		raf = null;
 		lastTime = null;
 		return;
