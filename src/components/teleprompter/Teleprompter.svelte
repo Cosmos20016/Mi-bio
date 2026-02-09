@@ -50,7 +50,10 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	};
 
 	const tick = (time: number) => {
-		if (!isPlaying || !scrollContainer || !content) return;
+		if (!isPlaying || !scrollContainer || !content) {
+			raf = null;
+			return;
+		}
 		if (!lastTime) lastTime = time;
 		const delta = Math.min((time - lastTime) / 1000, 0.05);
 		lastTime = time;
@@ -65,23 +68,32 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 		if (scrollContainer.scrollTop >= maxScroll) {
 			isPlaying = false;
+			raf = null;
 			return;
 		}
 		raf = requestAnimationFrame(tick);
 	};
 
+	const refreshPlayback = () => {
+		if (!isPlaying) return;
+		if (raf) cancelAnimationFrame(raf);
+		lastTime = 0;
+		raf = requestAnimationFrame(tick);
+	};
+
 	const start = () => {
-		if (!isPlaying && scrollContainer) {
-			isPlaying = true;
-			lastTime = 0;
-			raf = requestAnimationFrame(tick);
-		}
+		if (!scrollContainer || !content) return;
+		if (raf) cancelAnimationFrame(raf);
+		isPlaying = true;
+		lastTime = 0;
+		raf = requestAnimationFrame(tick);
 	};
 
 	const pause = () => {
 		isPlaying = false;
 		if (raf) cancelAnimationFrame(raf);
 		raf = null;
+		lastTime = 0;
 	};
 
 	const toggle = () => {
@@ -134,6 +146,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		if (isPlaying) {
 			event.preventDefault();
 			speed = clamp(speed + (event.deltaY > 0 ? 2 : -2), 18, 120);
+			refreshPlayback();
 		} else {
 			jump(event.deltaY);
 		}
@@ -224,7 +237,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			case "KeyL":
 				ultraClean = !ultraClean;
 				break;
-			}
+		}
 	};
 
 	$: scheduleSave();
@@ -313,7 +326,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			<div class="teleprompter-controls">
 				<div class="control-group">
 					<label>Velocidad</label>
-					<input type="range" min="18" max="120" bind:value={speed} />
+					<input type="range" min="18" max="120" bind:value={speed} on:input={refreshPlayback} />
 					<span>{speed} px/seg</span>
 				</div>
 				<div class="control-group">
@@ -387,13 +400,13 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 					<p>{line}</p>
 				{/each}
 			</div>
-			{#if focusMode}
-				<div class="teleprompter-focus"></div>
-				{#if dimOutside}
-					<div class="teleprompter-dim"></div>
-				{/if}
-			{/if}
 		</div>
+		{#if focusMode}
+			<div class="teleprompter-focus"></div>
+			{#if dimOutside}
+				<div class="teleprompter-dim"></div>
+			{/if}
+		{/if}
 
 		<div class="teleprompter-float">
 			<button class="btn-float" on:click={toggle}>{isPlaying ? "⏸" : "▶"}</button>
@@ -568,15 +581,30 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		position: relative;
 		border-radius: 1.5rem;
 		overflow: hidden;
-		background: radial-gradient(circle at top, rgba(255,255,255,0.9), rgba(255,255,255,0.6));
-		border: 1px solid rgba(15, 23, 42, 0.08);
-		box-shadow: 0 20px 80px rgba(15, 23, 42, 0.18);
+		background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.9));
+		border: 1px solid rgba(148, 163, 184, 0.25);
+		box-shadow: 0 30px 90px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.6) inset;
 		color: inherit;
 	}
+	.teleprompter-screen::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background: radial-gradient(circle at top, rgba(99, 102, 241, 0.12), transparent 55%),
+			radial-gradient(circle at bottom, rgba(14, 165, 233, 0.08), transparent 60%);
+		opacity: 0.85;
+		pointer-events: none;
+		z-index: 0;
+	}
 	:global(.dark) .teleprompter-screen {
-		background: radial-gradient(circle at top, rgba(15,23,42,0.8), rgba(2,6,23,0.85));
-		border-color: rgba(255,255,255,0.1);
+		background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.98));
+		border-color: rgba(148, 163, 184, 0.18);
+		box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(148, 163, 184, 0.12) inset;
 		color: inherit;
+	}
+	:global(.dark) .teleprompter-screen::before {
+		background: radial-gradient(circle at top, rgba(99, 102, 241, 0.18), transparent 55%),
+			radial-gradient(circle at bottom, rgba(14, 165, 233, 0.12), transparent 60%);
 	}
 	.teleprompter-screen.glow {
 		box-shadow: 0 20px 120px rgba(99,102,241,0.25);
@@ -593,8 +621,10 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		padding: 30vh 8vw;
 	}
 	.teleprompter-progress {
+		position: relative;
 		height: 4px;
 		background: rgba(99, 102,241, 0.1);
+		z-index: 1;
 	}
 	.teleprompter-progress .bar {
 		height: 100%;
@@ -602,9 +632,35 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		transition: width 0.2s ease;
 	}
 	.teleprompter-frame {
+		position: relative;
 		height: 420px;
 		overflow-y: auto;
 		color: inherit;
+		scrollbar-width: thin;
+		scrollbar-color: rgba(99, 102, 241, 0.6) rgba(148, 163, 184, 0.18);
+		z-index: 1;
+	}
+	.teleprompter-frame::-webkit-scrollbar {
+		width: 8px;
+	}
+	.teleprompter-frame::-webkit-scrollbar-track {
+		background: rgba(148, 163, 184, 0.18);
+		border-radius: 999px;
+	}
+	.teleprompter-frame::-webkit-scrollbar-thumb {
+		background: linear-gradient(180deg, rgba(99, 102, 241, 0.7), rgba(14, 165, 233, 0.7));
+		border-radius: 999px;
+		border: 2px solid transparent;
+		background-clip: padding-box;
+	}
+	.teleprompter-frame::-webkit-scrollbar-thumb:hover {
+		background: linear-gradient(180deg, rgba(99, 102, 241, 0.9), rgba(14, 165, 233, 0.9));
+	}
+	:global(.dark) .teleprompter-frame {
+		scrollbar-color: rgba(99, 102, 241, 0.6) rgba(15, 23, 42, 0.5);
+	}
+	:global(.dark) .teleprompter-frame::-webkit-scrollbar-track {
+		background: rgba(15, 23, 42, 0.5);
 	}
 	.teleprompter-content,
 	.teleprompter-content p {
@@ -628,12 +684,14 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		border-top: 1px solid rgba(99,102,241,0.4);
 		border-bottom: 1px solid rgba(99,102,241,0.4);
 		pointer-events: none;
+		z-index: 2;
 	}
 	.teleprompter-dim {
 		position: absolute;
 		inset: 0;
 		background: linear-gradient(to bottom, rgba(0,0,0,0.45), rgba(0,0,0,0) 40%, rgba(0,0,0,0) 60%, rgba(0,0,0,0.45));
 		pointer-events: none;
+		z-index: 2;
 	}
 	.teleprompter-float {
 		position: absolute;
@@ -641,7 +699,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		bottom: 1.5rem;
 		display: grid;
 		gap: 0.5rem;
-		z-index: 5;
+		z-index: 2;
 	}
 	.btn-float {
 		width: 44px;
@@ -659,11 +717,13 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		transform: translateY(-2px);
 	}
 	.teleprompter-footer {
+		position: relative;
 		display: flex;
 		justify-content: space-between;
 		font-size: 0.85rem;
 		color: inherit;
 		opacity: 0.7;
+		z-index: 1;
 	}
 	.shortcut {
 		font-weight: 500;
