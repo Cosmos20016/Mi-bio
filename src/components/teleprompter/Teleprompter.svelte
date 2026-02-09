@@ -171,7 +171,7 @@ const startProgressTimer = () => {
 				? 0
 				: clamp(scrollContainer.scrollTop / cachedMaxScroll, 0, 1);
 		updateActiveLine();
-	}, 250); // ~4 updates per second - reduces layout thrashing
+	}, 250); // 4 updates per second - reduces layout thrashing
 };
 
 const stopProgressTimer = () => {
@@ -1905,7 +1905,7 @@ overflow-x: hidden;
 scroll-behavior: auto;
 scrollbar-width: thin;
 scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
-will-change: scroll-position;
+will-change: transform;
 }
 
 :global(.dark) .teleprompter-frame,
@@ -1955,7 +1955,7 @@ color: #f1f5f9;
 .teleprompter-content p {
 margin: 0.75rem 0;
 padding: 0.5rem 1rem;
-transition: opacity 0.3s ease, background 0.2s ease, border-left 0.15s ease, box-shadow 0.2s ease, padding-left 0.15s ease;
+transition: opacity 0.3s ease, background 0.2s ease;
 border-radius: 0.5rem;
 line-height: inherit;
 }
