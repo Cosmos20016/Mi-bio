@@ -42,9 +42,13 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 	const speedMin = 18;
 	const speedMax = 96;
+	const rampDuration = 0.6;
+	let rampStart = 0;
 
 	const clamp = (value: number, min: number, max: number) =>
 		Math.min(Math.max(value, min), max);
+
+	const easeOutCubic = (value: number) => 1 - Math.pow(1 - value, 3);
 
 	const updateProgress = () => {
 		if (!scrollContainer || !content) return;
@@ -58,13 +62,18 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			return;
 		}
 		if (!lastTime) lastTime = time;
+		if (!rampStart) rampStart = time;
 		const delta = Math.min((time - lastTime) / 1000, 0.05);
 		lastTime = time;
 
 		const factor = smooth ? 1 : 1.35;
 		const maxScroll = Math.max(content.scrollHeight - scrollContainer.clientHeight, 0);
+		const rampProgress = Math.min((time - rampStart) / 1000 / rampDuration, 1);
+		const rampFactor = 0.2 + 0.8 * easeOutCubic(rampProgress);
+		const step = speed * rampFactor * delta * factor;
+
 		scrollContainer.scrollTop = Math.min(
-			scrollContainer.scrollTop + speed * delta * factor,
+			scrollContainer.scrollTop + step,
 			maxScroll,
 		);
 		updateProgress();
@@ -78,10 +87,12 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	};
 
 	const refreshPlayback = () => {
+		speed = clamp(speed, speedMin, speedMax);
 		if (!isPlaying) return;
-		if (raf) cancelAnimationFrame(raf);
-		lastTime = 0;
-		raf = requestAnimationFrame(tick);
+		if (!raf) {
+			lastTime = 0;
+			raf = requestAnimationFrame(tick);
+		}
 	};
 
 	const start = () => {
@@ -90,6 +101,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		speed = clamp(speed, speedMin, speedMax);
 		isPlaying = true;
 		lastTime = 0;
+		rampStart = 0;
 		raf = requestAnimationFrame(tick);
 	};
 
@@ -98,6 +110,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		if (raf) cancelAnimationFrame(raf);
 		raf = null;
 		lastTime = 0;
+		rampStart = 0;
 	};
 
 	const toggle = () => {
@@ -146,17 +159,20 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		}
 	};
 
-	const handleWheel = (event: WheelEvent) => {
+	const handleWheel = (_event: WheelEvent) => {
 		if (isPlaying) return;
-		event.preventDefault();
-		jump(event.deltaY);
+	};
+
+	const adjustSpeed = (amount: number) => {
+		speed = clamp(speed + amount, speedMin, speedMax);
+		refreshPlayback();
 	};
 
 	const loadState = () => {
 		try {
 			const raw = localStorage.getItem(storageKey);
 			if (!raw) return;
-			const data = JSON.parse(raw) as Partial<{ text: string; speed: number; fontSize: number; lineHeight: number; isMirror: boolean; autoCenter: boolean; smooth: boolean; glow: boolean; focusMode: boolean; dimOutside: boolean; ultraClean: boolean; }>;
+			const data = JSON.parse(raw) as Partial<{ text: string; speed: number; fontSize: number; lineHeight: number; isMirror: boolean; autoCenter: boolean; smooth: boolean; glow: boolean; focusMode: boolean; dimOutside: boolean; ultraClean: boolean; }>; 
 			if (data.text) text = data.text;
 			if (data.speed) speed = data.speed;
 			if (data.fontSize) fontSize = data.fontSize;
@@ -179,7 +195,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		if (saveTimeout) clearTimeout(saveTimeout);
 		saveTimeout = setTimeout(() => {
 			const payload = {
-				text,
+				t,text,
 				speed,
 				fontSize,
 				lineHeight,
@@ -203,7 +219,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 				toggle();
 				break;
 			case "Enter":
-				case "NumpadEnter":
+			case "NumpadEnter":
 				event.preventDefault();
 				toggle();
 				break;
@@ -237,6 +253,14 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 				break;
 			case "KeyL":
 				ultraClean = !ultraClean;
+				break;
+			case "Equal":
+			case "NumpadAdd":
+				adjustSpeed(2);
+				break;
+			case "Minus":
+			case "NumpadSubtract":
+				adjustSpeed(-2);
 				break;
 		}
 	};
@@ -388,8 +412,6 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		<div
 			class="teleprompter-frame"
 			bind:this={scrollContainer}
-			on:scroll={updateProgress}
-			on:wheel={handleWheel}
 			style={`padding: ${autoCenter ? "35vh 2rem" : "2.5rem 2rem"};`}
 		>
 			<div
@@ -401,25 +423,25 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 					<p>{line}</p>
 				{/each}
 			</div>
-		</div>
-		{#if focusMode}
-			<div class="teleprompter-focus"></div>
-			{#if dimOutside}
-				<div class="teleprompter-dim"></div>
+			{#if focusMode}
+				<div class="teleprompter-focus"></div>
+				{#if dimOutside}
+					<div class="teleprompter-dim"></div>
+				{/if}
 			{/if}
-		{/if}
 
-		<div class="teleprompter-float">
-			<button class="btn-float" on:click={toggle}>{isPlaying ? "⏸" : "▶"}</button>
-			<button class="btn-float" on:click={() => jump(-120)}>↑</button>
-			<button class="btn-float" on:click={() => jump(120)}>↓</button>
-			<button class="btn-float" on:click={() => (isMirror = !isMirror)}>M</button>
-			<button class="btn-float" on:click={toggleFullscreen}>⛶</button>
-			<button class="btn-float" on:click={() => (ultraClean = !ultraClean)}>🧼</button>
-		</div>
+			<div class="teleprompter-float">
+				<button class="btn-float" on:click={toggle}>{isPlaying ? "⏸" : "▶"}</button>
+				<button class="btn-float" on:click={() => jump(-120)}>↑</button>
+				<button class="btn-float" on:click={() => jump(120)}>↓</button>
+				<button class="btn-float" on:click={() => (isMirror = !isMirror)}>M</button>
+				<button class="btn-float" on:click={toggleFullscreen}>⛶</button>
+				<button class="btn-float" on:click={() => (ultraClean = !ultraClean)}>🧼</button>
+			</div>
 
-		<div class="teleprompter-footer">
-			<div class="shortcut">Espacio/Enter = Play · ↑/↓/Page = Saltos · M = Espejo · F = Focus · L = Ultra limpio · R = Reset · X = Fullscreen · Rueda = velocidad</div>
+			<div class="teleprompter-footer">
+				<div class="shortcut">Espacio/Enter = Play · ↑/↓/Page = Saltos · M = Espejo · F = Focus · L = Ultra limpio · R = Reset · X = Fullscreen · +/- = Velocidad</div>
+			</div>
 		</div>
 	</div>
 </div>
@@ -637,8 +659,12 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		width: 100vw;
 		height: 100vh;
 		border-radius: 0;
+		background: #f8fafc;
+		color: #0f172a;
+	}
+	:global(.dark) .teleprompter-screen:fullscreen {
 		background: #050816;
-		color: inherit;
+		color: #e2e8f0;
 	}
 	:global(.teleprompter-screen:fullscreen) .teleprompter-frame {
 		height: 100vh;
