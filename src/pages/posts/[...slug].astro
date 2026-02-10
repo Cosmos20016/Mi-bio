@@ -177,16 +177,16 @@ const jsonLd = {
         // Lazy load with IntersectionObserver
         const container = document.getElementById('giscus-container');
         if (container) {
-          const observer = new IntersectionObserver(
+          const intersectionObserver = new IntersectionObserver(
             (entries) => {
               if (entries[0].isIntersecting) {
                 loadGiscus();
-                observer.disconnect();
+                intersectionObserver.disconnect();
               }
             },
             { rootMargin: '200px' }
           );
-          observer.observe(container);
+          intersectionObserver.observe(container);
         }
 
         // Watch for theme changes
