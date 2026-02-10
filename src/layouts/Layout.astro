@@ -105,6 +105,9 @@ const bannerOffset =
 		<meta name="generator" content={Astro.generator} />
 		<meta name="theme-color" content={`hsl(${configHue}, 50%, 50%)`}>
 
+		<!-- Preload critical fonts -->
+		<link rel="preload" href="/_astro/roboto-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+
 		<!-- DNS prefetch y preconnect para recursos externos -->
 		<link rel="dns-prefetch" href="https://api.qrserver.com" />
 		<link rel="preconnect" href="https://api.qrserver.com" crossorigin />
@@ -619,48 +622,28 @@ if (window.swup) {
 }
 </script>
 <script>
-  // Protección inteligente: solo protege contenido del blog, no herramientas
-  const isToolPage = () => {
-    return window.location.pathname.includes('/herramientas/');
-  };
-
-  // Verifica si el elemento es interactivo (permite copiar/pegar)
-  const isInteractiveElement = (target) => {
-    return target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' || 
-           target.closest('pre') || target.closest('code') ||
-           target.closest('.teleprompter-wrapper') || target.closest('.url-shortener-wrapper');
-  };
-
-  // Bloquea menú contextual solo en páginas de contenido
+  // Bloquea menú contextual solo en imágenes
   document.addEventListener('contextmenu', function(e) {
-    if (isToolPage()) return; // Permite en herramientas
-    if (isInteractiveElement(e.target)) return; // Permite en elementos interactivos
-    e.preventDefault();
+    if (e.target && e.target.tagName === 'IMG') {
+      e.preventDefault();
+    }
   });
 
-  // Bloquea arrastre de imágenes (esto sí puede ser global, no afecta herramientas)
+  // Bloquea el arrastre de imágenes
   document.addEventListener('dragstart', function(e) {
     if (e.target.tagName === 'IMG') {
       e.preventDefault();
     }
   });
 
-  // Bloquea solo teclas de ver código fuente, NO bloquea Ctrl+C
+  // Bloquea teclas para código fuente/DevTools (NO bloquea copiar)
   document.addEventListener('keydown', function(e) {
     if (
-      (e.ctrlKey && e.key.toLowerCase() === 'u') || // Ver código fuente
-      (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'i') || // DevTools
-      (e.key === 'F12') // DevTools
+      (e.ctrlKey && e.key.toLowerCase() === 'u') ||
+      (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'i') ||
+      (e.key === 'F12')
     ) {
       e.preventDefault();
     }
-    // NOTA: NO bloquear Ctrl+C — rompe la funcionalidad de copiar en herramientas y code blocks
-  });
-
-  // Desactiva selección de texto SOLO en contenido del blog, no en herramientas
-  document.addEventListener('selectstart', function(e) {
-    if (isToolPage()) return;
-    if (isInteractiveElement(e.target)) return; // Permite en elementos interactivos
-    e.preventDefault();
   });
 </script>
