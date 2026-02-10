@@ -124,7 +124,7 @@ const addUrl = () => {
 	}
 
 	const newUrl: ShortenedUrl = {
-		id: Date.now().toString(),
+		id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
 		originalUrl: normalized,
 		alias,
 		createdAt: new Date().toISOString(),
