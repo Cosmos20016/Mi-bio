@@ -141,12 +141,12 @@ const jsonLd = {
         }
 
         function loadGiscus() {
-          var container = document.getElementById('giscus-container');
+          const container = document.getElementById('giscus-container');
           if (!container) return;
           // Avoid duplicate loads
           if (container.querySelector('script[src*="giscus"]')) return;
           
-          var script = document.createElement('script');
+          const script = document.createElement('script');
           script.src = 'https://giscus-personal-woft.vercel.app/es/client.js';
           script.setAttribute('data-repo', 'Cosmos20016/Gesti-n-de-comentarios');
           script.setAttribute('data-repo-id', 'R_kgDOPSHLmA');
@@ -166,8 +166,8 @@ const jsonLd = {
         }
 
         // Sync theme when user toggles light/dark mode
-        var observer = new MutationObserver(function() {
-          var iframe = document.querySelector('iframe.giscus-frame');
+        const observer = new MutationObserver(function() {
+          const iframe = document.querySelector('iframe.giscus-frame');
           if (iframe && iframe.contentWindow) {
             iframe.contentWindow.postMessage(
               { giscus: { setConfig: { theme: getGiscusTheme() } } },
