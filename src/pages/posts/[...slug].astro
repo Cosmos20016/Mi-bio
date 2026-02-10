@@ -131,20 +131,57 @@ const jsonLd = {
         </a>
     </div>
 
-<script src="https://giscus-personal-woft.vercel.app/es/client.js"
-        data-repo="Cosmos20016/Gesti-n-de-comentarios"
-        data-repo-id="R_kgDOPSHLmA"
-        data-category="Announcements"
-        data-category-id="DIC_kwDOPSHLmM4CtXsZ"
-        data-mapping="pathname"
-        data-strict="0"
-        data-reactions-enabled="1"
-        data-emit-metadata="0"
-        data-input-position="bottom"
-        data-theme="noborder_dark"
-        data-lang="es"
-        crossorigin="anonymous"
-        async>
-</script>
+    <div class="giscus-wrapper mt-6" id="giscus-container"></div>
+    <script is:inline>
+      (function() {
+        function getGiscusTheme() {
+          return document.documentElement.classList.contains('dark')
+            ? 'noborder_dark'
+            : 'noborder_light';
+        }
+
+        function loadGiscus() {
+          const container = document.getElementById('giscus-container');
+          if (!container) return;
+          // Avoid duplicate loads
+          if (container.querySelector('script[src*="giscus"]')) return;
+          
+          const script = document.createElement('script');
+          script.src = 'https://giscus-personal-woft.vercel.app/es/client.js';
+          script.setAttribute('data-repo', 'Cosmos20016/Gesti-n-de-comentarios');
+          script.setAttribute('data-repo-id', 'R_kgDOPSHLmA');
+          script.setAttribute('data-category', 'Announcements');
+          script.setAttribute('data-category-id', 'DIC_kwDOPSHLmM4CtXsZ');
+          script.setAttribute('data-mapping', 'pathname');
+          script.setAttribute('data-strict', '1');
+          script.setAttribute('data-reactions-enabled', '1');
+          script.setAttribute('data-emit-metadata', '0');
+          script.setAttribute('data-input-position', 'bottom');
+          script.setAttribute('data-theme', getGiscusTheme());
+          script.setAttribute('data-lang', 'es');
+          script.setAttribute('data-loading', 'lazy');
+          script.crossOrigin = 'anonymous';
+          script.async = true;
+          container.appendChild(script);
+        }
+
+        // Sync theme when user toggles light/dark mode
+        const observer = new MutationObserver(function() {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage(
+              { giscus: { setConfig: { theme: getGiscusTheme() } } },
+              'https://giscus-personal-woft.vercel.app'
+            );
+          }
+        });
+        observer.observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ['class']
+        });
+
+        loadGiscus();
+      })();
+    </script>
 
 </MainGridLayout>

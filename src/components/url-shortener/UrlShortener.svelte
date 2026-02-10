@@ -107,7 +107,8 @@ const isValidAlias = (alias: string): boolean => {
 const shortenWithIsgd = async (longUrl: string): Promise<string> => {
 	const endpoint = `https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`;
 	const response = await fetch(endpoint);
-	if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+	if (!response.ok)
+		throw new Error(`HTTP ${response.status}: ${response.statusText}`);
 	const data = await response.json();
 	if (data.errorcode) throw new Error(data.errormessage || "Shortening failed");
 	return data.shorturl;
@@ -182,10 +183,10 @@ const addUrl = async () => {
 		saveUrls();
 		inputUrl = "";
 		inputAlias = "";
-		showSuccessToast(`✓ URL acortada exitosamente`);
+		showSuccessToast("✓ URL acortada exitosamente");
 	} catch (err) {
 		// Log error for debugging
-		console.error('URL shortening failed:', err);
+		console.error("URL shortening failed:", err);
 		// Fallback: guardar sin acortar
 		const newUrl: ShortenedUrl = {
 			id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
@@ -199,7 +200,7 @@ const addUrl = async () => {
 		saveUrls();
 		inputUrl = "";
 		inputAlias = "";
-		showSuccessToast(`⚠️ Guardado sin acortar (servicio no disponible)`);
+		showSuccessToast("⚠️ Guardado sin acortar (servicio no disponible)");
 	} finally {
 		isShortening = false;
 	}
@@ -224,7 +225,9 @@ const copyUrl = (urlEntry: ShortenedUrl) => {
 			}, 2000);
 		})
 		.catch(() => {
-			alert("Error al copiar al portapapeles. Verifica los permisos del navegador.");
+			alert(
+				"Error al copiar al portapapeles. Verifica los permisos del navegador.",
+			);
 		});
 };
 
@@ -239,7 +242,9 @@ const copyAlias = (urlEntry: ShortenedUrl) => {
 			}, 2000);
 		})
 		.catch(() => {
-			alert("Error al copiar al portapapeles. Verifica los permisos del navegador.");
+			alert(
+				"Error al copiar al portapapeles. Verifica los permisos del navegador.",
+			);
 		});
 };
 
@@ -287,9 +292,7 @@ const saveEditAlias = () => {
 		return;
 	}
 
-	urls = urls.map((u) =>
-		u.id === editingId ? { ...u, alias: newAlias } : u,
-	);
+	urls = urls.map((u) => (u.id === editingId ? { ...u, alias: newAlias } : u));
 	saveUrls();
 
 	editingId = null;
@@ -386,8 +389,7 @@ const formatDate = (isoDate: string): string => {
 
 // Keyboard shortcuts
 const onKey = (event: KeyboardEvent) => {
-	if (event.target && (event.target as HTMLElement).tagName === "INPUT")
-		return;
+	if (event.target && (event.target as HTMLElement).tagName === "INPUT") return;
 
 	if (event.key === "Escape" && showQR) {
 		closeQR();
