@@ -145,6 +145,7 @@ const tick = (timestamp: number) => {
 	if (scrollAccumulator >= cachedMaxScroll) {
 		scrollContainer.scrollTop = cachedMaxScroll;
 		scrollAccumulator = cachedMaxScroll;
+		stopProgressTimer();
 		isPlaying = false;
 		raf = null;
 		lastTime = null;
@@ -247,7 +248,7 @@ const pause = () => {
 	}
 	lastTime = null;
 	currentSpeed = 0;
-	scrollAccumulator = 0;
+	scrollAccumulator = scrollContainer?.scrollTop ?? 0;
 	stopProgressTimer();
 	updateProgress(); // One final update
 };
@@ -603,6 +604,16 @@ $: if (
 	scheduleSave();
 }
 
+$: if (isPlaying && content && scrollContainer && (fontSize || lineHeight)) {
+	// Recalculate on font/line changes during playback
+	requestAnimationFrame(() => {
+		cachedMaxScroll = Math.max(
+			content.scrollHeight - scrollContainer.clientHeight,
+			0,
+		);
+	});
+}
+
 onMount(() => {
 	// Dark mode detection with MutationObserver
 	isDark = document.documentElement.classList.contains("dark");
@@ -727,7 +738,7 @@ localStorage.setItem("teleprompter:onboarding:done", "true");
 <div class="teleprompter-header">
 <div>
 <h1 class="teleprompter-title">Teleprompter</h1>
-<p class="teleprompter-subtitle">Tu estudio de lectura profesional</p>
+<p class="teleprompter-subtitle">Tu estudio profesional de lectura en pantalla</p>
 <div class="status-row">
 <div class="status-indicator" style={`background-color: ${getStatusColor()}`}></div>
 <p class="teleprompter-status">{getStatus()}</p>
