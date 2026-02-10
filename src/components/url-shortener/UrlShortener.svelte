@@ -11,6 +11,7 @@ const storageKey = "urlshortener:urls";
 interface ShortenedUrl {
 	id: string;
 	originalUrl: string;
+	shortUrl: string;
 	alias: string;
 	createdAt: string;
 	copyCount: number;
@@ -34,6 +35,7 @@ let isReady = false;
 let showOnboarding = false;
 let editingId: string | null = null;
 let editingAlias = "";
+let isShortening = false;
 
 // Dark mode
 let darkModeObserver: MutationObserver | null = null;
@@ -47,7 +49,12 @@ const loadUrls = () => {
 	try {
 		const stored = localStorage.getItem(storageKey);
 		if (stored) {
-			urls = JSON.parse(stored);
+			const parsed = JSON.parse(stored);
+			// Add backward compatibility for URLs without shortUrl field
+			urls = parsed.map((url: ShortenedUrl) => ({
+				...url,
+				shortUrl: url.shortUrl || url.originalUrl,
+			}));
 		}
 	} catch (e) {
 		console.error("Failed to load URLs:", e);
@@ -96,6 +103,16 @@ const isValidAlias = (alias: string): boolean => {
 	return /^[a-zA-Z0-9-]{1,30}$/.test(alias);
 };
 
+// Shorten URL with is.gd service
+const shortenWithIsgd = async (longUrl: string): Promise<string> => {
+	const endpoint = `https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`;
+	const response = await fetch(endpoint);
+	if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+	const data = await response.json();
+	if (data.errorcode) throw new Error(data.errormessage || "Shortening failed");
+	return data.shorturl;
+};
+
 // Show success toast
 const showSuccessToast = (message: string) => {
 	successMessage = message;
@@ -107,7 +124,7 @@ const showSuccessToast = (message: string) => {
 };
 
 // Add URL
-const addUrl = () => {
+const addUrl = async () => {
 	if (!inputUrl.trim()) return;
 
 	const normalized = normalizeUrl(inputUrl.trim());
@@ -150,28 +167,49 @@ const addUrl = () => {
 		return;
 	}
 
-	const newUrl: ShortenedUrl = {
-		id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-		originalUrl: normalized,
-		alias,
-		createdAt: new Date().toISOString(),
-		copyCount: 0,
-	};
-
-	urls = [newUrl, ...urls];
-	saveUrls();
-	showSuccessToast(`✓ URL guardado como #${alias}`);
-
-	// Clear inputs
-	inputUrl = "";
-	inputAlias = "";
+	isShortening = true;
+	try {
+		const shortUrl = await shortenWithIsgd(normalized);
+		const newUrl: ShortenedUrl = {
+			id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+			originalUrl: normalized,
+			shortUrl,
+			alias,
+			createdAt: new Date().toISOString(),
+			copyCount: 0,
+		};
+		urls = [newUrl, ...urls];
+		saveUrls();
+		inputUrl = "";
+		inputAlias = "";
+		showSuccessToast(`✓ URL acortada exitosamente`);
+	} catch (err) {
+		// Log error for debugging
+		console.error('URL shortening failed:', err);
+		// Fallback: guardar sin acortar
+		const newUrl: ShortenedUrl = {
+			id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+			originalUrl: normalized,
+			shortUrl: normalized,
+			alias,
+			createdAt: new Date().toISOString(),
+			copyCount: 0,
+		};
+		urls = [newUrl, ...urls];
+		saveUrls();
+		inputUrl = "";
+		inputAlias = "";
+		showSuccessToast(`⚠️ Guardado sin acortar (servicio no disponible)`);
+	} finally {
+		isShortening = false;
+	}
 };
 
 // Copy URL to clipboard
 const copyUrl = (urlEntry: ShortenedUrl) => {
-	// Copy the ORIGINAL url (this is what users actually need)
+	// Copy the SHORT url from is.gd
 	navigator.clipboard
-		.writeText(urlEntry.originalUrl)
+		.writeText(urlEntry.shortUrl)
 		.then(() => {
 			// Increment copy count
 			urls = urls.map((u) =>
@@ -540,7 +578,9 @@ const closeOnboarding = () => {
 					class="input-alias"
 					on:keydown={(e) => e.key === "Enter" && addUrl()}
 				/>
-				<button class="btn-add" on:click={addUrl}>Acortar</button>
+				<button class="btn-add" on:click={addUrl} disabled={isShortening}>
+				{isShortening ? "⏳ Acortando..." : "🔗 Acortar URL"}
+			</button>
 			</div>
 			<p class="input-hint">
 				Sin alias, se genera uno automático. Ej: "mi-video", "blog-post"
@@ -659,13 +699,20 @@ const closeOnboarding = () => {
 								</div>
 							{/if}
 						</div>
-						<div class="url-original">{url.originalUrl}</div>
+						<!-- URL acortada (principal) -->
+						<div class="short-url-display">
+							<span class="short-url-text">{url.shortUrl}</span>
+						</div>
+						<!-- URL original (referencia, más pequeña) -->
+						<div class="original-url-ref">
+							<span class="text-xs opacity-60">Original: {url.originalUrl}</span>
+						</div>
 						<div class="url-card-actions">
 							<button
 								class="btn-card-action btn-copy-main"
 								class:copied={copiedId === url.id}
 								on:click={() => copyUrl(url)}
-								title="Copiar URL original al portapapeles"
+								title="Copiar URL acortada al portapapeles"
 							>
 								{copiedId === url.id ? "✓ Copiado" : "📋 Copiar URL"}
 							</button>
@@ -898,6 +945,17 @@ const closeOnboarding = () => {
 		box-shadow: 0 8px 20px oklch(0.7 0.14 var(--hue) / 0.35);
 	}
 
+	.btn-add:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+		transform: none;
+	}
+
+	.btn-add:disabled:hover {
+		transform: none;
+		box-shadow: none;
+	}
+
 	.input-hint {
 		margin-top: 0.75rem;
 		font-size: 0.85rem;
@@ -1086,6 +1144,43 @@ const closeOnboarding = () => {
 	:global(.dark) .url-original,
 	.dark .url-original {
 		color: #cbd5e1;
+	}
+
+	.short-url-display {
+		margin-bottom: 0.5rem;
+	}
+
+	.short-url-text {
+		color: oklch(0.6 0.14 var(--hue));
+		font-size: 1.05rem;
+		font-weight: 600;
+		word-break: break-all;
+		line-height: 1.5;
+	}
+
+	:global(.dark) .short-url-text,
+	.dark .short-url-text {
+		color: oklch(0.75 0.14 var(--hue));
+	}
+
+	.original-url-ref {
+		margin-bottom: 1rem;
+	}
+
+	.original-url-ref .text-xs {
+		font-size: 0.85rem;
+		color: #64748b;
+		word-break: break-all;
+		line-height: 1.4;
+	}
+
+	.original-url-ref .opacity-60 {
+		opacity: 0.6;
+	}
+
+	:global(.dark) .original-url-ref .text-xs,
+	.dark .original-url-ref .text-xs {
+		color: #94a3b8;
 	}
 
 	.url-card-actions {
