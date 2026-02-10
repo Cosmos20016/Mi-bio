@@ -576,16 +576,17 @@ if (window.swup) {
     return window.location.pathname.includes('/herramientas/');
   };
 
+  // Verifica si el elemento es interactivo (permite copiar/pegar)
+  const isInteractiveElement = (target) => {
+    return target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' || 
+           target.closest('pre') || target.closest('code') ||
+           target.closest('.teleprompter-wrapper') || target.closest('.url-shortener-wrapper');
+  };
+
   // Bloquea menú contextual solo en páginas de contenido
   document.addEventListener('contextmenu', function(e) {
     if (isToolPage()) return; // Permite en herramientas
-    const target = e.target;
-    // Permite en textareas, inputs y code blocks
-    if (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' || 
-        target.closest('pre') || target.closest('code') ||
-        target.closest('.teleprompter-wrapper') || target.closest('.url-shortener-wrapper')) {
-      return;
-    }
+    if (isInteractiveElement(e.target)) return; // Permite en elementos interactivos
     e.preventDefault();
   });
 
@@ -611,12 +612,7 @@ if (window.swup) {
   // Desactiva selección de texto SOLO en contenido del blog, no en herramientas
   document.addEventListener('selectstart', function(e) {
     if (isToolPage()) return;
-    const target = e.target;
-    if (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' || 
-        target.closest('pre') || target.closest('code') ||
-        target.closest('.teleprompter-wrapper') || target.closest('.url-shortener-wrapper')) {
-      return;
-    }
+    if (isInteractiveElement(e.target)) return; // Permite en elementos interactivos
     e.preventDefault();
   });
 </script>
