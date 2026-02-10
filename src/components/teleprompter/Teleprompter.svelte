@@ -33,7 +33,7 @@ let ultraClean = false;
 let countdown = 0;
 let isCountingDown = false;
 let showOnboarding = false;
-let helpTab = 'quickstart'; // Tab navigation: quickstart, youtube, shortcuts, tips
+let helpTab = "quickstart"; // Tab navigation: quickstart, youtube, shortcuts, tips
 let currentScript: string | null = null;
 let countdownDuration = 3; // Configurable: 0, 1, 2, 3, 5
 
@@ -82,10 +82,14 @@ $: if (lineElements.length !== lines.length) {
 $: wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
 $: charCount = text.length;
 $: estimatedMinutes = wordCount > 0 ? Math.floor(wordCount / 150) : 0;
-$: estimatedSeconds = wordCount > 0 ? Math.ceil((wordCount / 150) * 60) % 60 : 0;
-$: readingTimeLabel = wordCount > 0 
-	? (estimatedMinutes > 0 ? `~${estimatedMinutes}m ${estimatedSeconds}s` : `~${estimatedSeconds}s`)
-	: '';
+$: estimatedSeconds =
+	wordCount > 0 ? Math.ceil((wordCount / 150) * 60) % 60 : 0;
+$: readingTimeLabel =
+	wordCount > 0
+		? estimatedMinutes > 0
+			? `~${estimatedMinutes}m ${estimatedSeconds}s`
+			: `~${estimatedSeconds}s`
+		: "";
 
 const updateProgress = () => {
 	if (!scrollContainer || !content) return;
@@ -328,7 +332,7 @@ const toggleFullscreen = async () => {
 			await document.exitFullscreen();
 		}
 	} catch (e) {
-		console.warn('[Teleprompter] Fullscreen no disponible:', e);
+		console.warn("[Teleprompter] Fullscreen no disponible:", e);
 	}
 };
 
@@ -360,38 +364,69 @@ const loadState = () => {
 		const raw = localStorage.getItem(storageKey);
 		if (!raw) return;
 		const data = JSON.parse(raw);
-		if (typeof data !== 'object' || data === null) return; // Guard against invalid data
-		
+		if (typeof data !== "object" || data === null) return; // Guard against invalid data
+
 		// Load each field with individual error handling
-		try { if (data.text) text = data.text; } catch {}
-		try { if (data.speed) speed = data.speed; } catch {}
-		try { if (data.fontSize) fontSize = data.fontSize; } catch {}
-		try { if (data.lineHeight) lineHeight = data.lineHeight; } catch {}
-		try { if (typeof data.isMirror === "boolean") isMirror = data.isMirror; } catch {}
-		try { if (typeof data.autoCenter === "boolean") autoCenter = data.autoCenter; } catch {}
-		try { if (typeof data.smooth === "boolean") smooth = data.smooth; } catch {}
-		try { if (typeof data.glow === "boolean") glow = data.glow; } catch {}
-		try { if (typeof data.focusMode === "boolean") focusMode = data.focusMode; } catch {}
-		try { if (typeof data.dimOutside === "boolean") dimOutside = data.dimOutside; } catch {}
-		try { if (typeof data.ultraClean === "boolean") ultraClean = data.ultraClean; } catch {}
+		try {
+			if (data.text) text = data.text;
+		} catch {}
+		try {
+			if (data.speed) speed = data.speed;
+		} catch {}
+		try {
+			if (data.fontSize) fontSize = data.fontSize;
+		} catch {}
+		try {
+			if (data.lineHeight) lineHeight = data.lineHeight;
+		} catch {}
+		try {
+			if (typeof data.isMirror === "boolean") isMirror = data.isMirror;
+		} catch {}
+		try {
+			if (typeof data.autoCenter === "boolean") autoCenter = data.autoCenter;
+		} catch {}
+		try {
+			if (typeof data.smooth === "boolean") smooth = data.smooth;
+		} catch {}
+		try {
+			if (typeof data.glow === "boolean") glow = data.glow;
+		} catch {}
+		try {
+			if (typeof data.focusMode === "boolean") focusMode = data.focusMode;
+		} catch {}
+		try {
+			if (typeof data.dimOutside === "boolean") dimOutside = data.dimOutside;
+		} catch {}
+		try {
+			if (typeof data.ultraClean === "boolean") ultraClean = data.ultraClean;
+		} catch {}
 		try {
 			if (typeof data.countdownDuration === "number")
 				countdownDuration = data.countdownDuration;
 		} catch {}
-		
+
 		speed = Math.round(clamp(speed, speedMin, speedMax));
 		targetSpeed = speed;
 		currentSpeed = 0;
 	} catch (e) {
-		console.warn('[Teleprompter] Estado corrupto, usando valores por defecto:', e);
-		try { localStorage.removeItem(storageKey); } catch { /* ignore */ }
+		console.warn(
+			"[Teleprompter] Estado corrupto, usando valores por defecto:",
+			e,
+		);
+		try {
+			localStorage.removeItem(storageKey);
+		} catch {
+			/* ignore */
+		}
 	}
 };
 
 const scheduleSave = () => {
 	if (!isReady) return;
 	if (saveTimeout) clearTimeout(saveTimeout);
-	const delay = text.length > 5000 ? 500 : 300; // Smart debounce
+	// Smart debounce: longer delay for large texts to reduce localStorage write frequency
+	// 5000 chars ≈ 800-1000 words, reduces writes during heavy editing
+	const delay = text.length > 5000 ? 500 : 300;
 	saveTimeout = setTimeout(() => {
 		try {
 			const payload = {
@@ -415,13 +450,16 @@ const scheduleSave = () => {
 				saveCurrentScript();
 			}
 		} catch (e) {
-			console.warn('[Teleprompter] Error al guardar:', e);
-			// If localStorage is full, clean old scripts
-			if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+			console.warn("[Teleprompter] Error al guardar:", e);
+			// If localStorage is full, clean old scripts (keep only 10 most recent)
+			if (e instanceof DOMException && e.name === "QuotaExceededError") {
 				try {
-					const oldScripts = scripts.slice(10); // Keep only 10 most recent
-					oldScripts.forEach(s => deleteScript(s.id));
-				} catch { /* ignore */ }
+					// Keep first 10 scripts (most recent) and delete the rest
+					const scriptsToDelete = scripts.slice(10);
+					scriptsToDelete.forEach((s) => deleteScript(s.id));
+				} catch {
+					/* ignore */
+				}
 			}
 		}
 	}, delay);
@@ -452,9 +490,13 @@ const loadScripts = () => {
 			scripts = [];
 		}
 	} catch (e) {
-		console.warn('[Teleprompter] Scripts corruptos, inicializando vacío:', e);
+		console.warn("[Teleprompter] Scripts corruptos, inicializando vacío:", e);
 		scripts = [];
-		try { localStorage.removeItem("teleprompter:scripts"); } catch { /* ignore */ }
+		try {
+			localStorage.removeItem("teleprompter:scripts");
+		} catch {
+			/* ignore */
+		}
 	}
 };
 
@@ -566,11 +608,11 @@ const formatRelativeTime = (isoDate: string): string => {
 
 const formatDateTime = (isoDate: string): string => {
 	const date = new Date(isoDate);
-	return date.toLocaleDateString("es-ES", { 
-		day: "numeric", 
-		month: "short", 
-		hour: "2-digit", 
-		minute: "2-digit" 
+	return date.toLocaleDateString("es-ES", {
+		day: "numeric",
+		month: "short",
+		hour: "2-digit",
+		minute: "2-digit",
 	});
 };
 
@@ -600,32 +642,33 @@ const getEstimatedTimeRemaining = (): string => {
 
 // Touch handlers for mobile
 const handleTouchStart = (e: TouchEvent) => {
-	if (!isMobile && !('ontouchstart' in window)) return;
-	if ((e.target as HTMLElement)?.tagName === 'TEXTAREA') return;
-	
+	if (!isMobile && !("ontouchstart" in window)) return;
+	if ((e.target as HTMLElement)?.tagName === "TEXTAREA") return;
+
 	touchStartY = e.touches[0].clientY;
 };
 
 const handleTouchMove = (e: TouchEvent) => {
-	if (!isMobile && !('ontouchstart' in window)) return;
+	if (!isMobile && !("ontouchstart" in window)) return;
 	if (!isPlaying) return;
-	if ((e.target as HTMLElement)?.tagName === 'TEXTAREA') return;
-	
+	if ((e.target as HTMLElement)?.tagName === "TEXTAREA") return;
+
 	const deltaY = touchStartY - e.touches[0].clientY;
-	
+
 	if (Math.abs(deltaY) > SWIPE_THRESHOLD) {
 		// Swipe up = increase speed, Swipe down = decrease speed
-		const speedAdjustment = Math.sign(deltaY) * Math.max(2, Math.abs(deltaY) / 10);
+		const speedAdjustment =
+			Math.sign(deltaY) * Math.max(2, Math.abs(deltaY) / 10);
 		adjustSpeed(speedAdjustment);
 		touchStartY = e.touches[0].clientY; // Reset for continuous adjustment
 	}
 };
 
 const handleFrameClick = (e: MouseEvent) => {
-	if ((e.target as HTMLElement)?.tagName === 'TEXTAREA') return;
-	if ((e.target as HTMLElement)?.closest('.teleprompter-panel')) return;
-	if ((e.target as HTMLElement)?.closest('.teleprompter-float')) return;
-	
+	if ((e.target as HTMLElement)?.tagName === "TEXTAREA") return;
+	if ((e.target as HTMLElement)?.closest(".teleprompter-panel")) return;
+	if ((e.target as HTMLElement)?.closest(".teleprompter-float")) return;
+
 	const now = Date.now();
 	if (now - lastTapTime < TAP_THRESHOLD) {
 		// Double tap - toggle fullscreen
@@ -772,24 +815,27 @@ onMount(() => {
 		isFullscreen = Boolean(document.fullscreenElement);
 	};
 	document.addEventListener("fullscreenchange", onFullscreenChange);
-	
+
 	// Recalculate scroll on resize and orientation change
 	const onResize = () => {
 		if (isPlaying && scrollContainer && content) {
-			cachedMaxScroll = Math.max(content.scrollHeight - scrollContainer.clientHeight, 0);
+			cachedMaxScroll = Math.max(
+				content.scrollHeight - scrollContainer.clientHeight,
+				0,
+			);
 			scrollAccumulator = Math.min(scrollAccumulator, cachedMaxScroll);
 		}
 	};
 	const orientationHandler = () => setTimeout(onResize, 300);
-	window.addEventListener('resize', onResize);
-	window.addEventListener('orientationchange', orientationHandler);
-	
+	window.addEventListener("resize", onResize);
+	window.addEventListener("orientationchange", orientationHandler);
+
 	isReady = true;
 
 	return () => {
 		document.removeEventListener("fullscreenchange", onFullscreenChange);
-		window.removeEventListener('resize', onResize);
-		window.removeEventListener('orientationchange', orientationHandler);
+		window.removeEventListener("resize", onResize);
+		window.removeEventListener("orientationchange", orientationHandler);
 	};
 });
 
@@ -1270,12 +1316,29 @@ class:glow={glow}
 class:is-fullscreen={isFullscreen}
 bind:this={fullscreenTarget}
 >
-<div class="teleprompter-progress-top" on:click={(e) => {
-const rect = e.currentTarget.getBoundingClientRect();
-const clickX = e.clientX - rect.left;
-const progressValue = clickX / rect.width;
-scrollToProgress(progressValue);
-}}>
+<div 
+	class="teleprompter-progress-top" 
+	role="progressbar"
+	aria-valuenow={Math.round(progress * 100)}
+	aria-valuemin="0"
+	aria-valuemax="100"
+	tabindex="0"
+	on:click={(e) => {
+		const rect = e.currentTarget.getBoundingClientRect();
+		const clickX = e.clientX - rect.left;
+		const progressValue = clickX / rect.width;
+		scrollToProgress(progressValue);
+	}}
+	on:keydown={(e) => {
+		if (e.key === 'Enter' || e.key === ' ') {
+			e.preventDefault();
+			const rect = e.currentTarget.getBoundingClientRect();
+			const clickX = rect.width / 2; // Jump to middle by default
+			const progressValue = clickX / rect.width;
+			scrollToProgress(progressValue);
+		}
+	}}
+>
 <div class="progress-bar" style={`width: ${progress * 100}%`}></div>
 {#if isPlaying || progress > 0}
 <div class="time-remaining">{getEstimatedTimeRemaining()}</div>
