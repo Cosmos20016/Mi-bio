@@ -196,7 +196,7 @@ const bannerOffset =
 		@apply top-[calc(1rem_-_var(--banner-height-extend))]
 	}
 	.navbar-hidden {
-		@apply opacity-0 -translate-y-16
+		@apply opacity-0 -translate-y-4 pointer-events-none
 	}
 }
 </style>
@@ -464,43 +464,89 @@ if (window?.swup?.hooks) {
 let backToTopBtn = document.getElementById('back-to-top-btn');
 let toc = document.getElementById('toc-wrapper');
 let navbar = document.getElementById('navbar-wrapper')
+let lastScrollY = 0;
+let ticking = false;
+const SCROLL_DELTA = 60; // Pixels needed to trigger show/hide
+
 function scrollFunction() {
+	const currentScrollY = Math.max(document.body.scrollTop, document.documentElement.scrollTop);
 	let bannerHeight = window.innerHeight * (BANNER_HEIGHT / 100)
 
+	// Back to top button logic (keep existing)
 	if (backToTopBtn) {
-		if (document.body.scrollTop > bannerHeight || document.documentElement.scrollTop > bannerHeight) {
+		if (currentScrollY > bannerHeight) {
 			backToTopBtn.classList.remove('hide')
 		} else {
 			backToTopBtn.classList.add('hide')
 		}
 	}
 
+	// TOC logic (keep existing)
 	if (bannerEnabled && toc) {
-		if (document.body.scrollTop > bannerHeight || document.documentElement.scrollTop > bannerHeight) {
+		if (currentScrollY > bannerHeight) {
 			toc.classList.remove('toc-hide')
 		} else {
 			toc.classList.add('toc-hide')
 		}
 	}
 
-	if (!bannerEnabled) return
+	// Smart navbar with scroll direction detection
 	if (navbar) {
-		const NAVBAR_HEIGHT = 72
-		const MAIN_PANEL_EXCESS_HEIGHT = MAIN_PANEL_OVERLAPS_BANNER_HEIGHT * 16			// The height the main panel overlaps the banner
-
-		let bannerHeight = BANNER_HEIGHT
-		if (document.body.classList.contains('lg:is-home') && window.innerWidth >= 1024) {
-			bannerHeight = BANNER_HEIGHT_HOME
-		}
-		let threshold = window.innerHeight * (bannerHeight / 100) - NAVBAR_HEIGHT - MAIN_PANEL_EXCESS_HEIGHT - 16
-		if (document.body.scrollTop >= threshold || document.documentElement.scrollTop >= threshold) {
-			navbar.classList.add('navbar-hidden')
+		if (!bannerEnabled) {
+			// No banner: always use scroll direction logic
+			if (currentScrollY <= 10) {
+				// At the very top, always show
+				navbar.classList.remove('navbar-hidden')
+			} else if (currentScrollY < lastScrollY - 5) {
+				// Scrolling UP - show navbar immediately
+				navbar.classList.remove('navbar-hidden')
+			} else if (currentScrollY > lastScrollY + SCROLL_DELTA) {
+				// Scrolling DOWN past delta - hide navbar
+				navbar.classList.add('navbar-hidden')
+			}
 		} else {
-			navbar.classList.remove('navbar-hidden')
+			// With banner enabled
+			const NAVBAR_HEIGHT = 72
+			const MAIN_PANEL_EXCESS_HEIGHT = MAIN_PANEL_OVERLAPS_BANNER_HEIGHT * 16			// The height the main panel overlaps the banner
+
+			let navBannerHeight = BANNER_HEIGHT
+			if (document.body.classList.contains('lg:is-home') && window.innerWidth >= 1024) {
+				navBannerHeight = BANNER_HEIGHT_HOME
+			}
+			let threshold = window.innerHeight * (navBannerHeight / 100) - NAVBAR_HEIGHT - MAIN_PANEL_EXCESS_HEIGHT - 16
+
+			if (currentScrollY < threshold) {
+				// Still in banner area - keep original behavior
+				navbar.classList.remove('navbar-hidden')
+			} else if (currentScrollY <= threshold + 10) {
+				// Just past the threshold
+				navbar.classList.remove('navbar-hidden')
+			} else if (currentScrollY < lastScrollY - 5) {
+				// Scrolling UP - show navbar
+				navbar.classList.remove('navbar-hidden')
+			} else if (currentScrollY > lastScrollY + SCROLL_DELTA) {
+				// Scrolling DOWN - hide navbar
+				navbar.classList.add('navbar-hidden')
+			}
 		}
 	}
+
+	// Update lastScrollY only when there's meaningful movement
+	if (Math.abs(currentScrollY - lastScrollY) > 5) {
+		lastScrollY = currentScrollY;
+	}
 }
-window.onscroll = scrollFunction
+
+// Use requestAnimationFrame for performance
+window.onscroll = () => {
+	if (!ticking) {
+		requestAnimationFrame(() => {
+			scrollFunction();
+			ticking = false;
+		});
+		ticking = true;
+	}
+};
 
 window.onresize = () => {
 	// calculate the --banner-height-extend, which needs to be a multiple of 4 to avoid blurry text
