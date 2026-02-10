@@ -131,7 +131,9 @@ const jsonLd = {
         </a>
     </div>
 
-    <div class="giscus-wrapper mt-6" id="giscus-container"></div>
+    <!-- Giscus Comments with lazy loading and dynamic theme -->
+    <div id="giscus-container" class="mt-4"></div>
+
     <script is:inline>
       (function() {
         function getGiscusTheme() {
@@ -142,9 +144,7 @@ const jsonLd = {
 
         function loadGiscus() {
           const container = document.getElementById('giscus-container');
-          if (!container) return;
-          // Avoid duplicate loads
-          if (container.querySelector('script[src*="giscus"]')) return;
+          if (!container || container.querySelector('.giscus')) return;
           
           const script = document.createElement('script');
           script.src = 'https://giscus-personal-woft.vercel.app/es/client.js';
@@ -165,22 +165,36 @@ const jsonLd = {
           container.appendChild(script);
         }
 
-        // Sync theme when user toggles light/dark mode
-        const observer = new MutationObserver(function() {
+        function updateGiscusTheme() {
           const iframe = document.querySelector('iframe.giscus-frame');
-          if (iframe && iframe.contentWindow) {
-            iframe.contentWindow.postMessage(
-              { giscus: { setConfig: { theme: getGiscusTheme() } } },
-              'https://giscus-personal-woft.vercel.app'
-            );
-          }
-        });
-        observer.observe(document.documentElement, {
-          attributes: true,
-          attributeFilter: ['class']
-        });
+          if (!iframe) return;
+          iframe.contentWindow?.postMessage(
+            { giscus: { setConfig: { theme: getGiscusTheme() } } },
+            'https://giscus-personal-woft.vercel.app'
+          );
+        }
 
-        loadGiscus();
+        // Lazy load with IntersectionObserver
+        const container = document.getElementById('giscus-container');
+        if (container) {
+          const observer = new IntersectionObserver(
+            (entries) => {
+              if (entries[0].isIntersecting) {
+                loadGiscus();
+                observer.disconnect();
+              }
+            },
+            { rootMargin: '200px' }
+          );
+          observer.observe(container);
+        }
+
+        // Watch for theme changes
+        const themeObserver = new MutationObserver(() => updateGiscusTheme());
+        themeObserver.observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ['class'],
+        });
       })();
     </script>
 
