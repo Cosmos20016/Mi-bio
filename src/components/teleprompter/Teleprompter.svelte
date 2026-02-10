@@ -574,6 +574,18 @@ const formatDateTime = (isoDate: string): string => {
 	});
 };
 
+const applyYouTubeSettings = () => {
+	speed = 60; // 50-70 px/seg for natural reading
+	fontSize = 40; // 38-42px for good readability
+	lineHeight = 1.75; // 1.7-1.8 for comfortable eye spacing
+	isMirror = false; // Typically off for rear camera
+	focusMode = true; // Highlight current line
+	autoCenter = true; // Always enabled
+	countdownDuration = 3; // 3 seconds prep time
+	targetSpeed = speed;
+	scheduleSave();
+};
+
 const getEstimatedTimeRemaining = (): string => {
 	if (!scrollContainer || !content || speed === 0) return "";
 	const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
@@ -797,74 +809,249 @@ onDestroy(() => {
 <div class="teleprompter-wrapper" class:clean={ultraClean} class:dark={isDark}>
 {#if showMobileNotice && !allowMobile}
 <div class="teleprompter-mobile-overlay">
-<div class="teleprompter-mobile-card">
-<h2>📱 Teleprompter en móvil</h2>
-<p>
-Esta herramienta está optimizada para pantallas grandes, pero puedes usarla en móvil con estos controles:
-</p>
-<div class="mobile-tips">
-<div class="tip-item">
-<span class="tip-icon">👆</span>
-<div class="tip-text">
-<strong>Toca la pantalla</strong>
-<span>para pausar/reproducir</span>
-</div>
-</div>
-<div class="tip-item">
-<span class="tip-icon">👆👆</span>
-<div class="tip-text">
-<strong>Doble toque</strong>
-<span>para pantalla completa</span>
-</div>
-</div>
-<div class="tip-item">
-<span class="tip-icon">👆↕️</span>
-<div class="tip-text">
-<strong>Desliza arriba/abajo</strong>
-<span>para ajustar velocidad</span>
-</div>
-</div>
-</div>
-<div class="teleprompter-mobile-actions">
-<button
-class="btn-regular"
-on:click={() => {
-allowMobile = true;
-localStorage.setItem("teleprompter:mobile:dismissed", "true");
-}}>Continuar</button
->
-<a class="btn-plain" href="/herramientas/">Volver</a>
-</div>
-</div>
+	<div class="teleprompter-mobile-card premium-mobile">
+		<h2>🎬 Teleprompter Premium — Versión Móvil</h2>
+		<p class="premium-subtitle">
+			Experiencia optimizada para que grabes desde cualquier lugar
+		</p>
+		<p>
+			Esta herramienta está optimizada para pantallas grandes, pero puedes usarla en móvil con estos controles:
+		</p>
+		<div class="mobile-tips">
+			<div class="tip-item">
+				<span class="tip-icon">👆</span>
+				<div class="tip-text">
+					<strong>Toca la pantalla</strong>
+					<span>para pausar/reproducir</span>
+				</div>
+			</div>
+			<div class="tip-item">
+				<span class="tip-icon">👆👆</span>
+				<div class="tip-text">
+					<strong>Doble toque</strong>
+					<span>para pantalla completa</span>
+				</div>
+			</div>
+			<div class="tip-item">
+				<span class="tip-icon">👆↕️</span>
+				<div class="tip-text">
+					<strong>Desliza arriba/abajo</strong>
+					<span>para ajustar velocidad</span>
+				</div>
+			</div>
+		</div>
+		<div class="teleprompter-mobile-actions">
+			<button
+				class="btn-regular"
+				on:click={() => {
+					allowMobile = true;
+					localStorage.setItem("teleprompter:mobile:dismissed", "true");
+				}}>Continuar</button
+			>
+			<a class="btn-plain" href="/herramientas/">Volver</a>
+		</div>
+	</div>
 </div>
 {/if}
 
 {#if showOnboarding}
 <div class="teleprompter-onboarding-overlay">
-<div class="teleprompter-onboarding-card">
-<div class="onboarding-step">
-<div class="step-icon">📝</div>
-<h3>Pega tu guion</h3>
-<p>Escribe o pega el texto que deseas leer en el área de texto</p>
-</div>
-<div class="onboarding-step">
-<div class="step-icon">⚙️</div>
-<h3>Ajusta a tu ritmo</h3>
-<p>Personaliza velocidad, tamaño y otras opciones según tu preferencia</p>
-</div>
-<div class="onboarding-step">
-<div class="step-icon">▶️</div>
-<h3>Empieza a grabar</h3>
-<p>Presiona Play o Espacio para comenzar la lectura profesional</p>
-</div>
-<button
-class="btn-onboarding"
-on:click={() => {
-showOnboarding = false;
-localStorage.setItem("teleprompter:onboarding:done", "true");
-}}>Entendido</button
->
-</div>
+	<div class="teleprompter-onboarding-card premium">
+		<div class="onboarding-header">
+			<div class="logo-gradient">🎬</div>
+			<h2>Bienvenido al Teleprompter Premium</h2>
+			<p class="subtitle">Tu estudio profesional de lectura en pantalla</p>
+		</div>
+		
+		<div class="help-tabs">
+			<button 
+				class="tab-btn" 
+				class:active={helpTab === 'quickstart'}
+				on:click={() => helpTab = 'quickstart'}
+			>
+				Inicio rápido
+			</button>
+			<button 
+				class="tab-btn" 
+				class:active={helpTab === 'youtube'}
+				on:click={() => helpTab = 'youtube'}
+			>
+				Ajustes YouTube
+			</button>
+			<button 
+				class="tab-btn" 
+				class:active={helpTab === 'shortcuts'}
+				on:click={() => helpTab = 'shortcuts'}
+			>
+				Atajos
+			</button>
+			<button 
+				class="tab-btn" 
+				class:active={helpTab === 'tips'}
+				on:click={() => helpTab = 'tips'}
+			>
+				Tips Pro
+			</button>
+		</div>
+
+		<div class="tab-content">
+			{#if helpTab === 'quickstart'}
+				<div class="tab-panel">
+					<div class="onboarding-step">
+						<div class="step-icon">📝</div>
+						<h3>1. Pega tu guion</h3>
+						<p>Escribe o pega el texto que deseas leer en el área de texto</p>
+					</div>
+					<div class="onboarding-step">
+						<div class="step-icon">⚙️</div>
+						<h3>2. Ajusta a tu ritmo</h3>
+						<p>Personaliza velocidad, tamaño de fuente y otras opciones según tu preferencia</p>
+					</div>
+					<div class="onboarding-step">
+						<div class="step-icon">▶️</div>
+						<h3>3. Empieza a grabar</h3>
+						<p>Presiona Play o Espacio para comenzar la lectura profesional</p>
+					</div>
+				</div>
+			{:else if helpTab === 'youtube'}
+				<div class="tab-panel youtube-settings">
+					<h3>⚙️ Configuración recomendada para YouTube</h3>
+					<p class="tab-desc">Estos ajustes te ayudarán a grabar videos profesionales con lectura natural:</p>
+					
+					<div class="settings-list">
+						<div class="setting-item">
+							<span class="setting-label">🐢 Velocidad:</span>
+							<span class="setting-value">50-70 px/seg (lectura natural sin parecer robot)</span>
+						</div>
+						<div class="setting-item">
+							<span class="setting-label">📏 Tamaño fuente:</span>
+							<span class="setting-value">38-42px (legible a distancia del monitor)</span>
+						</div>
+						<div class="setting-item">
+							<span class="setting-label">📐 Interlineado:</span>
+							<span class="setting-value">1.7-1.8 (espaciado cómodo para los ojos)</span>
+						</div>
+						<div class="setting-item">
+							<span class="setting-label">🔄 Modo espejo:</span>
+							<span class="setting-value">Activado para cámara frontal / desactivado para trasera</span>
+						</div>
+						<div class="setting-item">
+							<span class="setting-label">🎯 Focus mode:</span>
+							<span class="setting-value">Activado (resalta la línea que estás leyendo)</span>
+						</div>
+						<div class="setting-item">
+							<span class="setting-label">🎯 Auto-centrar:</span>
+							<span class="setting-value">Activado siempre</span>
+						</div>
+						<div class="setting-item">
+							<span class="setting-label">⏱️ Countdown:</span>
+							<span class="setting-value">3 segundos (te da tiempo de prepararte)</span>
+						</div>
+					</div>
+					
+					<button class="btn-youtube-apply" on:click={() => {
+						applyYouTubeSettings();
+						helpTab = 'quickstart';
+					}}>
+						✨ Aplicar ajustes YouTube
+					</button>
+				</div>
+			{:else if helpTab === 'shortcuts'}
+				<div class="tab-panel shortcuts-panel">
+					<h3>⌨️ Atajos de teclado</h3>
+					<div class="shortcuts-table">
+						<div class="shortcut-row">
+							<span class="shortcut-key">Espacio / Enter</span>
+							<span class="shortcut-desc">Play / Pausa</span>
+						</div>
+						<div class="shortcut-row">
+							<span class="shortcut-key">R</span>
+							<span class="shortcut-desc">Reiniciar desde el inicio</span>
+						</div>
+						<div class="shortcut-row">
+							<span class="shortcut-key">↑ / ↓</span>
+							<span class="shortcut-desc">Ajustar velocidad ±10</span>
+						</div>
+						<div class="shortcut-row">
+							<span class="shortcut-key">Shift + ↑ / ↓</span>
+							<span class="shortcut-desc">Ajustar velocidad ±1 (preciso)</span>
+						</div>
+						<div class="shortcut-row">
+							<span class="shortcut-key">[ / ]</span>
+							<span class="shortcut-desc">Cambiar tamaño de fuente</span>
+						</div>
+						<div class="shortcut-row">
+							<span class="shortcut-key">M</span>
+							<span class="shortcut-desc">Activar/desactivar modo espejo</span>
+						</div>
+						<div class="shortcut-row">
+							<span class="shortcut-key">F</span>
+							<span class="shortcut-desc">Activar/desactivar Focus Mode</span>
+						</div>
+						<div class="shortcut-row">
+							<span class="shortcut-key">X</span>
+							<span class="shortcut-desc">Pantalla completa</span>
+						</div>
+						<div class="shortcut-row">
+							<span class="shortcut-key">L</span>
+							<span class="shortcut-desc">Modo limpio (oculta todo excepto texto)</span>
+						</div>
+					</div>
+				</div>
+			{:else if helpTab === 'tips'}
+				<div class="tab-panel tips-panel">
+					<h3>💡 Consejos profesionales</h3>
+					<div class="tips-list">
+						<div class="tip-item-pro">
+							<span class="tip-number">1</span>
+							<div class="tip-content">
+								<strong>Practica el guion 2-3 veces antes de grabar</strong>
+								<p>Familiarízate con el texto para una lectura más natural y fluida</p>
+							</div>
+						</div>
+						<div class="tip-item-pro">
+							<span class="tip-number">2</span>
+							<div class="tip-content">
+								<strong>Usa párrafos cortos de 2-3 líneas</strong>
+								<p>Facilita la lectura y evita perder el hilo de tu discurso</p>
+							</div>
+						</div>
+						<div class="tip-item-pro">
+							<span class="tip-number">3</span>
+							<div class="tip-content">
+								<strong>Mira a la cámara, no al texto</strong>
+								<p>Posiciona el teleprompter cerca de la cámara y usa visión periférica</p>
+							</div>
+						</div>
+						<div class="tip-item-pro">
+							<span class="tip-number">4</span>
+							<div class="tip-content">
+								<strong>Ajusta la velocidad ideal para ti</strong>
+								<p>No debes esperar al texto ni correr detrás de él. Encuentra tu ritmo natural</p>
+							</div>
+						</div>
+						<div class="tip-item-pro">
+							<span class="tip-number">5</span>
+							<div class="tip-content">
+								<strong>Usa el Focus Mode para grabaciones largas</strong>
+								<p>Resalta la línea actual y reduce la fatiga visual durante sesiones extensas</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			{/if}
+		</div>
+
+		<button
+			class="btn-onboarding premium-btn"
+			on:click={() => {
+				showOnboarding = false;
+				localStorage.setItem("teleprompter:onboarding:done", "true");
+			}}
+		>
+			Comenzar
+		</button>
+	</div>
 </div>
 {/if}
 
@@ -1083,7 +1270,12 @@ class:glow={glow}
 class:is-fullscreen={isFullscreen}
 bind:this={fullscreenTarget}
 >
-<div class="teleprompter-progress-top">
+<div class="teleprompter-progress-top" on:click={(e) => {
+const rect = e.currentTarget.getBoundingClientRect();
+const clickX = e.clientX - rect.left;
+const progressValue = clickX / rect.width;
+scrollToProgress(progressValue);
+}}>
 <div class="progress-bar" style={`width: ${progress * 100}%`}></div>
 {#if isPlaying || progress > 0}
 <div class="time-remaining">{getEstimatedTimeRemaining()}</div>
@@ -1100,6 +1292,7 @@ on:click={handleFrameClick}
 on:touchstart={handleTouchStart}
 on:touchmove={handleTouchMove}
 style={`padding: ${autoCenter ? "35vh 2rem 50vh" : "2.5rem 2rem"};`}
+tabindex="-1"
 >
 <div
 class="teleprompter-content"
@@ -1123,11 +1316,11 @@ bind:this={lineElements[index]}
 {/if}
 
 <div class="teleprompter-float">
-<button class="btn-float" on:click={toggle} title={isPlaying ? "Pausar" : "Reproducir"}>
+<button class="btn-float" on:click={toggle} title={isPlaying ? "Pausar" : "Reproducir"} aria-label={isPlaying ? "Pausar reproducción" : "Iniciar reproducción"}>
 {isPlaying ? "⏸" : isCountingDown ? "⏹" : "▶"}
 </button>
-<button class="btn-float" on:click={() => jump(-120)} title="Saltar arriba">↑</button>
-<button class="btn-float" on:click={() => jump(120)} title="Saltar abajo">↓</button>
+<button class="btn-float" on:click={() => jump(-120)} title="Saltar arriba" aria-label="Saltar hacia arriba">↑</button>
+<button class="btn-float" on:click={() => jump(120)} title="Saltar abajo" aria-label="Saltar hacia abajo">↓</button>
 {#if isFullscreen}
 <div class="float-speed-control">
 <input
@@ -1137,14 +1330,15 @@ min={speedMin}
 max={speedMax}
 step="1"
 bind:value={speed}
+aria-label="Control de velocidad"
 />
 <span class="mini-speed">{speed}</span>
 </div>
 {/if}
-<button class="btn-float" on:click={() => (isMirror = !isMirror)} title="Espejo"
+<button class="btn-float" on:click={() => (isMirror = !isMirror)} title="Espejo" aria-label="Activar o desactivar modo espejo"
 >M</button
 >
-<button class="btn-float" on:click={toggleFullscreen} title="Pantalla completa"
+<button class="btn-float" on:click={toggleFullscreen} title="Pantalla completa" aria-label="Activar o desactivar pantalla completa"
 >⛶</button
 >
 </div>
@@ -1348,6 +1542,342 @@ box-shadow: 0 12px 28px oklch(0.70 0.14 var(--hue) / 0.45);
 
 .btn-onboarding:active {
 transform: translateY(0) scale(0.98);
+}
+
+/* Premium onboarding styles */
+.teleprompter-onboarding-card.premium {
+max-width: 800px;
+}
+
+.onboarding-header {
+text-align: center;
+margin-bottom: 1.5rem;
+}
+
+.logo-gradient {
+font-size: 4rem;
+margin-bottom: 1rem;
+animation: scaleIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.onboarding-header h2 {
+font-size: 2rem;
+font-weight: 800;
+background: linear-gradient(135deg, oklch(0.70 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30)));
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+background-clip: text;
+margin-bottom: 0.5rem;
+}
+
+.onboarding-header .subtitle {
+font-size: 1.1rem;
+color: #64748b;
+font-weight: 500;
+}
+
+:global(.dark) .onboarding-header .subtitle,
+.dark .onboarding-header .subtitle {
+color: #94a3b8;
+}
+
+/* Help tabs */
+.help-tabs {
+display: flex;
+gap: 0.5rem;
+border-bottom: 2px solid oklch(0.90 0.02 var(--hue));
+margin-bottom: 1.5rem;
+overflow-x: auto;
+}
+
+:global(.dark) .help-tabs,
+.dark .help-tabs {
+border-bottom-color: oklch(0.30 0.02 var(--hue));
+}
+
+.tab-btn {
+background: transparent;
+border: none;
+padding: 0.75rem 1.25rem;
+font-size: 0.95rem;
+font-weight: 600;
+color: #64748b;
+cursor: pointer;
+transition: all 0.2s ease;
+border-bottom: 3px solid transparent;
+white-space: nowrap;
+}
+
+.tab-btn:hover {
+color: oklch(0.60 0.14 var(--hue));
+}
+
+.tab-btn.active {
+color: oklch(0.60 0.14 var(--hue));
+border-bottom-color: oklch(0.60 0.14 var(--hue));
+}
+
+:global(.dark) .tab-btn,
+.dark .tab-btn {
+color: #94a3b8;
+}
+
+:global(.dark) .tab-btn:hover,
+.dark .tab-btn:hover,
+:global(.dark) .tab-btn.active,
+.dark .tab-btn.active {
+color: oklch(0.70 0.14 var(--hue));
+border-bottom-color: oklch(0.70 0.14 var(--hue));
+}
+
+/* Tab content */
+.tab-content {
+min-height: 300px;
+animation: fadeIn 0.3s ease;
+}
+
+.tab-panel {
+animation: fadeInUp 0.3s ease;
+}
+
+.tab-desc {
+color: #64748b;
+margin-bottom: 1.5rem;
+line-height: 1.6;
+}
+
+:global(.dark) .tab-desc,
+.dark .tab-desc {
+color: #94a3b8;
+}
+
+/* YouTube settings panel */
+.youtube-settings h3 {
+font-size: 1.5rem;
+font-weight: 700;
+color: #0f172a;
+margin-bottom: 1rem;
+}
+
+:global(.dark) .youtube-settings h3,
+.dark .youtube-settings h3 {
+color: #e2e8f0;
+}
+
+.settings-list {
+display: grid;
+gap: 0.75rem;
+margin-bottom: 1.5rem;
+}
+
+.setting-item {
+display: flex;
+gap: 0.75rem;
+padding: 0.75rem;
+background: oklch(0.97 0.01 var(--hue));
+border-radius: 0.5rem;
+border-left: 3px solid oklch(0.70 0.14 var(--hue));
+}
+
+:global(.dark) .setting-item,
+.dark .setting-item {
+background: oklch(0.20 0.02 var(--hue));
+}
+
+.setting-label {
+font-weight: 700;
+color: #0f172a;
+min-width: 140px;
+}
+
+:global(.dark) .setting-label,
+.dark .setting-label {
+color: #e2e8f0;
+}
+
+.setting-value {
+color: #475569;
+line-height: 1.5;
+}
+
+:global(.dark) .setting-value,
+.dark .setting-value {
+color: #94a3b8;
+}
+
+.btn-youtube-apply {
+width: 100%;
+background: linear-gradient(135deg, #FF0000, #CC0000);
+color: white;
+border: none;
+border-radius: 0.75rem;
+padding: 1rem 2rem;
+font-weight: 700;
+font-size: 1.05rem;
+cursor: pointer;
+transition: transform 0.2s ease, box-shadow 0.3s ease;
+box-shadow: 0 8px 20px rgba(255, 0, 0, 0.3);
+}
+
+.btn-youtube-apply:hover {
+transform: translateY(-2px) scale(1.02);
+box-shadow: 0 12px 28px rgba(255, 0, 0, 0.4);
+}
+
+.btn-youtube-apply:active {
+transform: translateY(0) scale(0.98);
+}
+
+/* Shortcuts panel */
+.shortcuts-panel h3 {
+font-size: 1.5rem;
+font-weight: 700;
+color: #0f172a;
+margin-bottom: 1.5rem;
+}
+
+:global(.dark) .shortcuts-panel h3,
+.dark .shortcuts-panel h3 {
+color: #e2e8f0;
+}
+
+.shortcuts-table {
+display: grid;
+gap: 0.5rem;
+}
+
+.shortcut-row {
+display: grid;
+grid-template-columns: 180px 1fr;
+gap: 1rem;
+padding: 0.75rem;
+background: oklch(0.97 0.01 var(--hue));
+border-radius: 0.5rem;
+align-items: center;
+}
+
+:global(.dark) .shortcut-row,
+.dark .shortcut-row {
+background: oklch(0.20 0.02 var(--hue));
+}
+
+.shortcut-key {
+font-family: 'Monaco', 'Courier New', monospace;
+font-weight: 700;
+color: oklch(0.60 0.14 var(--hue));
+background: oklch(0.94 0.01 var(--hue));
+padding: 0.35rem 0.75rem;
+border-radius: 0.375rem;
+font-size: 0.9rem;
+text-align: center;
+}
+
+:global(.dark) .shortcut-key,
+.dark .shortcut-key {
+background: oklch(0.25 0.02 var(--hue));
+color: oklch(0.70 0.14 var(--hue));
+}
+
+.shortcut-desc {
+color: #475569;
+font-size: 0.95rem;
+}
+
+:global(.dark) .shortcut-desc,
+.dark .shortcut-desc {
+color: #94a3b8;
+}
+
+/* Tips panel */
+.tips-panel h3 {
+font-size: 1.5rem;
+font-weight: 700;
+color: #0f172a;
+margin-bottom: 1.5rem;
+}
+
+:global(.dark) .tips-panel h3,
+.dark .tips-panel h3 {
+color: #e2e8f0;
+}
+
+.tips-list {
+display: grid;
+gap: 1rem;
+}
+
+.tip-item-pro {
+display: flex;
+gap: 1rem;
+padding: 1rem;
+background: oklch(0.97 0.01 var(--hue));
+border-radius: 0.75rem;
+border-left: 4px solid oklch(0.70 0.14 var(--hue));
+}
+
+:global(.dark) .tip-item-pro,
+.dark .tip-item-pro {
+background: oklch(0.20 0.02 var(--hue));
+}
+
+.tip-number {
+display: flex;
+align-items: center;
+justify-content: center;
+min-width: 2rem;
+height: 2rem;
+background: oklch(0.70 0.14 var(--hue));
+color: white;
+border-radius: 50%;
+font-weight: 800;
+font-size: 1rem;
+}
+
+.tip-content strong {
+display: block;
+color: #0f172a;
+margin-bottom: 0.35rem;
+font-weight: 700;
+}
+
+:global(.dark) .tip-content strong,
+.dark .tip-content strong {
+color: #e2e8f0;
+}
+
+.tip-content p {
+color: #64748b;
+line-height: 1.5;
+font-size: 0.95rem;
+margin: 0;
+}
+
+:global(.dark) .tip-content p,
+.dark .tip-content p {
+color: #94a3b8;
+}
+
+.premium-btn {
+margin-top: 1rem;
+}
+
+/* Premium mobile card */
+.teleprompter-mobile-card.premium-mobile h2 {
+background: linear-gradient(135deg, oklch(0.70 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30)));
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+background-clip: text;
+}
+
+.premium-subtitle {
+font-weight: 600;
+color: oklch(0.60 0.14 var(--hue));
+margin-bottom: 1rem;
+}
+
+:global(.dark) .premium-subtitle,
+.dark .premium-subtitle {
+color: oklch(0.70 0.14 var(--hue));
 }
 
 /* Header */
@@ -2003,6 +2533,7 @@ right: 0;
 height: 3px;
 background: rgba(0, 0, 0, 0.1);
 z-index: 10;
+cursor: pointer;
 }
 
 :global(.dark) .teleprompter-progress-top,
