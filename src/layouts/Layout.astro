@@ -101,9 +101,13 @@ const bannerOffset =
 		<meta name="twitter:title" content={pageTitle}>
 		<meta name="twitter:description" content={description || pageTitle}>
 
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="generator" content={Astro.generator} />
-		<meta name="theme-color" content={`hsl(${configHue}, 70%, 50%)`}>
+		<meta name="theme-color" content={`hsl(${configHue}, 50%, 50%)`}>
+
+		<!-- DNS prefetch y preconnect para recursos externos -->
+		<link rel="dns-prefetch" href="https://api.qrserver.com" />
+		<link rel="preconnect" href="https://api.qrserver.com" crossorigin />
 		<link rel="dns-prefetch" href="https://fonts.googleapis.com">
 		<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 		{favicons.map(favicon => (
@@ -567,33 +571,48 @@ if (window.swup) {
 }
 </script>
 <script>
-  // Bloquea menú contextual
+  // Protección inteligente: solo protege contenido del blog, no herramientas
+  const isToolPage = () => {
+    return window.location.pathname.includes('/herramientas/');
+  };
+
+  // Verifica si el elemento es interactivo (permite copiar/pegar)
+  const isInteractiveElement = (target) => {
+    return target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' || 
+           target.closest('pre') || target.closest('code') ||
+           target.closest('.teleprompter-wrapper') || target.closest('.url-shortener-wrapper');
+  };
+
+  // Bloquea menú contextual solo en páginas de contenido
   document.addEventListener('contextmenu', function(e) {
+    if (isToolPage()) return; // Permite en herramientas
+    if (isInteractiveElement(e.target)) return; // Permite en elementos interactivos
     e.preventDefault();
   });
 
-  // Bloquea el arrastre de imágenes
+  // Bloquea arrastre de imágenes (esto sí puede ser global, no afecta herramientas)
   document.addEventListener('dragstart', function(e) {
     if (e.target.tagName === 'IMG') {
       e.preventDefault();
     }
   });
 
-  // Bloquea teclas para copiar/código fuente
+  // Bloquea solo teclas de ver código fuente, NO bloquea Ctrl+C
   document.addEventListener('keydown', function(e) {
-    // Ctrl+U, Ctrl+Shift+I, F12, Ctrl+C
     if (
       (e.ctrlKey && e.key.toLowerCase() === 'u') || // Ver código fuente
-      (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'i') || // Herramientas Dev
-      (e.key === 'F12') || // Herramientas Dev
-      (e.ctrlKey && e.key.toLowerCase() === 'c') // Copiar
+      (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'i') || // DevTools
+      (e.key === 'F12') // DevTools
     ) {
       e.preventDefault();
     }
+    // NOTA: NO bloquear Ctrl+C — rompe la funcionalidad de copiar en herramientas y code blocks
   });
 
-  // Desactiva selección de texto
+  // Desactiva selección de texto SOLO en contenido del blog, no en herramientas
   document.addEventListener('selectstart', function(e) {
+    if (isToolPage()) return;
+    if (isInteractiveElement(e.target)) return; // Permite en elementos interactivos
     e.preventDefault();
   });
 </script>
