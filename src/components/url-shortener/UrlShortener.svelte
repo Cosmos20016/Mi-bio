@@ -60,8 +60,65 @@ const categories = [
 ];
 
 // Palabras para generar alias legibles
-const adjectives = ['fast', 'cool', 'smart', 'bold', 'zen', 'nova', 'pro', 'top', 'max', 'ace', 'epic', 'mega', 'ultra', 'hyper', 'super', 'prime', 'elite', 'alpha', 'beta', 'neon'];
-const nouns = ['link', 'go', 'hub', 'bit', 'web', 'net', 'dot', 'io', 'app', 'dev', 'code', 'data', 'page', 'site', 'path', 'way', 'fox', 'owl', 'bee', 'cat'];
+const adjectives = [
+	"fast",
+	"cool",
+	"smart",
+	"bold",
+	"zen",
+	"nova",
+	"pro",
+	"top",
+	"max",
+	"ace",
+	"epic",
+	"mega",
+	"ultra",
+	"hyper",
+	"super",
+	"prime",
+	"elite",
+	"alpha",
+	"beta",
+	"neon",
+];
+const nouns = [
+	"link",
+	"go",
+	"hub",
+	"bit",
+	"web",
+	"net",
+	"dot",
+	"io",
+	"app",
+	"dev",
+	"code",
+	"data",
+	"page",
+	"site",
+	"path",
+	"way",
+	"fox",
+	"owl",
+	"bee",
+	"cat",
+];
+
+// Constants
+const MAX_DOMAIN_ALIAS_LENGTH = 8;
+
+// Category map for O(1) lookups
+const categoryMap = categories.reduce((acc, cat) => {
+	acc[cat.id] = cat;
+	return acc;
+}, {} as Record<string, typeof categories[0]>);
+
+// Helper to get category label without icon
+const getCategoryLabel = (categoryId: string): string => {
+	const cat = categoryMap[categoryId];
+	return cat ? cat.label.replace(cat.icon + ' ', '') : 'Otros';
+};
 
 // Load URLs from localStorage
 const loadUrls = () => {
@@ -93,17 +150,17 @@ const saveUrls = () => {
 
 // Generate a simple hash for alias
 const generateAlias = (url: string): string => {
-	// Intentar extraer algo del dominio primero
+	// Try to extract something from the domain first
 	try {
 		const parsed = new URL(url);
-		const domain = parsed.hostname.replace('www.', '').split('.')[0];
-		if (domain.length <= 8 && /^[a-zA-Z0-9]+$/.test(domain)) {
+		const domain = parsed.hostname.replace("www.", "").split(".")[0];
+		if (domain.length <= MAX_DOMAIN_ALIAS_LENGTH && /^[a-zA-Z0-9]+$/.test(domain)) {
 			const suffix = Math.random().toString(36).substring(2, 5);
 			return `${domain}-${suffix}`;
 		}
 	} catch {}
-	
-	// Fallback: generar alias memorable
+
+	// Fallback: generate memorable alias
 	const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
 	const noun = nouns[Math.floor(Math.random() * nouns.length)];
 	const num = Math.floor(Math.random() * 99);
@@ -114,9 +171,16 @@ const generateAlias = (url: string): string => {
 const detectCategory = (url: string): string => {
 	try {
 		const domain = new URL(url).hostname.toLowerCase();
-		if (/youtube|tiktok|instagram|facebook|twitter|x\.com|linkedin|threads/.test(domain)) return "social";
-		if (/github|gitlab|stackoverflow|npmjs|vercel|netlify/.test(domain)) return "dev";
-		if (/docs\.google|notion|slack|trello|asana|jira|figma/.test(domain)) return "work";
+		if (
+			/youtube|tiktok|instagram|facebook|twitter|x\.com|linkedin|threads/.test(
+				domain,
+			)
+		)
+			return "social";
+		if (/github|gitlab|stackoverflow|npmjs|vercel|netlify/.test(domain))
+			return "dev";
+		if (/docs\.google|notion|slack|trello|asana|jira|figma/.test(domain))
+			return "work";
 		return "other";
 	} catch {
 		return "other";
@@ -405,16 +469,19 @@ const importUrls = () => {
 
 // Filter and sort URLs
 $: filteredUrls = urls
-	.filter(u => {
-		const matchesSearch = !searchQuery || 
+	.filter((u) => {
+		const matchesSearch =
+			!searchQuery ||
 			u.originalUrl.toLowerCase().includes(searchQuery.toLowerCase()) ||
 			u.alias.toLowerCase().includes(searchQuery.toLowerCase()) ||
 			u.category.toLowerCase().includes(searchQuery.toLowerCase());
-		const matchesCategory = filterCategory === "all" || u.category === filterCategory;
+		const matchesCategory =
+			filterCategory === "all" || u.category === filterCategory;
 		return matchesSearch && matchesCategory;
 	})
 	.sort((a, b) => {
-		if (sortBy === "date") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+		if (sortBy === "date")
+			return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
 		if (sortBy === "copies") return b.copyCount - a.copyCount;
 		return a.alias.localeCompare(b.alias);
 	});
@@ -427,15 +494,18 @@ $: mostCopiedUrl = urls.reduce(
 	{ alias: "N/A", copyCount: 0 } as ShortenedUrl,
 );
 $: mostUsedCategory = (() => {
-	const categoryCounts = urls.reduce((acc, u) => {
-		acc[u.category] = (acc[u.category] || 0) + 1;
-		return acc;
-	}, {} as Record<string, number>);
-	const maxCategory = Object.entries(categoryCounts).reduce(
-		(max, [cat, count]) => count > max.count ? { cat, count } : max,
-		{ cat: "other", count: 0 }
+	const categoryCounts = urls.reduce(
+		(acc, u) => {
+			acc[u.category] = (acc[u.category] || 0) + 1;
+			return acc;
+		},
+		{} as Record<string, number>,
 	);
-	const category = categories.find(c => c.id === maxCategory.cat);
+	const maxCategory = Object.entries(categoryCounts).reduce(
+		(max, [cat, count]) => (count > max.count ? { cat, count } : max),
+		{ cat: "other", count: 0 },
+	);
+	const category = categoryMap[maxCategory.cat];
 	return category ? category.label : "🔗 Otros";
 })();
 
@@ -657,7 +727,7 @@ const closeOnboarding = () => {
 				/>
 				<select bind:value={inputCategory} class="select-category">
 					{#each categories.filter(c => c.id !== 'all') as cat}
-						<option value={cat.id}>{cat.icon} {cat.label.replace(cat.icon + ' ', '')}</option>
+						<option value={cat.id}>{cat.icon} {getCategoryLabel(cat.id)}</option>
 					{/each}
 				</select>
 				<button class="btn-add" on:click={addUrl} disabled={isShortening}>
@@ -678,7 +748,7 @@ const closeOnboarding = () => {
 						class:active={filterCategory === cat.id}
 						on:click={() => (filterCategory = cat.id)}
 					>
-						{cat.icon} {cat.label.replace(cat.icon + ' ', '')}
+						{cat.icon} {getCategoryLabel(cat.id)}
 					</button>
 				{/each}
 			</div>
@@ -801,7 +871,7 @@ const closeOnboarding = () => {
 										<img src={url.favicon} alt="" class="url-favicon" />
 									{/if}
 									<div class="url-alias">#{url.alias}</div>
-									<span class="url-category-badge">{categories.find(c => c.id === url.category)?.icon || '🔗'}</span>
+									<span class="url-category-badge">{categoryMap[url.category]?.icon || '🔗'}</span>
 								</div>
 								<div class="url-meta">
 									<span>{formatDate(url.createdAt)}</span>
