@@ -624,14 +624,14 @@ if (window.swup) {
 <script>
   // Bloquea menú contextual solo en imágenes
   document.addEventListener('contextmenu', function(e) {
-    if (e.target && e.target.tagName === 'IMG') {
+    if (e.target && (e.target as HTMLElement).tagName === 'IMG') {
       e.preventDefault();
     }
   });
 
   // Bloquea el arrastre de imágenes
   document.addEventListener('dragstart', function(e) {
-    if (e.target.tagName === 'IMG') {
+    if (e.target && (e.target as HTMLElement).tagName === 'IMG') {
       e.preventDefault();
     }
   });

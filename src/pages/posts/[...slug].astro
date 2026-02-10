@@ -172,11 +172,11 @@ const jsonLd = {
         const observer = new MutationObserver((mutations) => {
             for (const mutation of mutations) {
                 if (mutation.attributeName === 'class') {
-                    const iframe = document.querySelector('iframe.giscus-frame');
-                    if (iframe) {
+                    const iframe = document.querySelector('iframe.giscus-frame') as HTMLIFrameElement;
+                    if (iframe && iframe.contentWindow) {
                         const isDark = document.documentElement.classList.contains('dark');
                         const theme = isDark ? 'noborder_dark' : 'noborder_light';
-                        iframe.contentWindow?.postMessage(
+                        iframe.contentWindow.postMessage(
                             { giscus: { setConfig: { theme } } },
                             'https://giscus-personal-woft.vercel.app'
                         );

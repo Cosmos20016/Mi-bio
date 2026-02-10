@@ -15,12 +15,15 @@ interface ShortenedUrl {
 	alias: string;
 	createdAt: string;
 	copyCount: number;
+	category: string;
+	favicon: string;
 }
 
 // Core state
 let urls: ShortenedUrl[] = [];
 let inputUrl = "";
 let inputAlias = "";
+let inputCategory = "other";
 let searchQuery = "";
 let showQR = false;
 let qrUrl = "";
@@ -36,6 +39,8 @@ let showOnboarding = false;
 let editingId: string | null = null;
 let editingAlias = "";
 let isShortening = false;
+let filterCategory = "all";
+let viewMode: "grid" | "list" = "list";
 
 // Dark mode
 let darkModeObserver: MutationObserver | null = null;
@@ -44,16 +49,32 @@ let stopThemeWatch: (() => void) | null = null;
 // Max URLs to store
 const MAX_URLS = 100;
 
+// Categories
+const categories = [
+	{ id: "all", label: "📋 Todos", icon: "📋" },
+	{ id: "social", label: "📱 Social", icon: "📱" },
+	{ id: "work", label: "💼 Trabajo", icon: "💼" },
+	{ id: "personal", label: "🏠 Personal", icon: "🏠" },
+	{ id: "dev", label: "💻 Dev", icon: "💻" },
+	{ id: "other", label: "🔗 Otros", icon: "🔗" },
+];
+
+// Palabras para generar alias legibles
+const adjectives = ['fast', 'cool', 'smart', 'bold', 'zen', 'nova', 'pro', 'top', 'max', 'ace', 'epic', 'mega', 'ultra', 'hyper', 'super', 'prime', 'elite', 'alpha', 'beta', 'neon'];
+const nouns = ['link', 'go', 'hub', 'bit', 'web', 'net', 'dot', 'io', 'app', 'dev', 'code', 'data', 'page', 'site', 'path', 'way', 'fox', 'owl', 'bee', 'cat'];
+
 // Load URLs from localStorage
 const loadUrls = () => {
 	try {
 		const stored = localStorage.getItem(storageKey);
 		if (stored) {
 			const parsed = JSON.parse(stored);
-			// Add backward compatibility for URLs without shortUrl field
+			// Add backward compatibility for URLs without new fields
 			urls = parsed.map((url: ShortenedUrl) => ({
 				...url,
 				shortUrl: url.shortUrl || url.originalUrl,
+				category: url.category || "other",
+				favicon: url.favicon || "",
 			}));
 		}
 	} catch (e) {
@@ -72,12 +93,44 @@ const saveUrls = () => {
 
 // Generate a simple hash for alias
 const generateAlias = (url: string): string => {
-	let hash = 0;
-	for (let i = 0; i < url.length; i++) {
-		hash = (hash << 5) - hash + url.charCodeAt(i);
-		hash = hash & hash;
+	// Intentar extraer algo del dominio primero
+	try {
+		const parsed = new URL(url);
+		const domain = parsed.hostname.replace('www.', '').split('.')[0];
+		if (domain.length <= 8 && /^[a-zA-Z0-9]+$/.test(domain)) {
+			const suffix = Math.random().toString(36).substring(2, 5);
+			return `${domain}-${suffix}`;
+		}
+	} catch {}
+	
+	// Fallback: generar alias memorable
+	const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+	const noun = nouns[Math.floor(Math.random() * nouns.length)];
+	const num = Math.floor(Math.random() * 99);
+	return `${adj}-${noun}${num}`;
+};
+
+// Auto-detect category from URL
+const detectCategory = (url: string): string => {
+	try {
+		const domain = new URL(url).hostname.toLowerCase();
+		if (/youtube|tiktok|instagram|facebook|twitter|x\.com|linkedin|threads/.test(domain)) return "social";
+		if (/github|gitlab|stackoverflow|npmjs|vercel|netlify/.test(domain)) return "dev";
+		if (/docs\.google|notion|slack|trello|asana|jira|figma/.test(domain)) return "work";
+		return "other";
+	} catch {
+		return "other";
 	}
-	return Math.abs(hash).toString(36).substring(0, 6);
+};
+
+// Get favicon from URL
+const getFavicon = (url: string): string => {
+	try {
+		const domain = new URL(url).hostname;
+		return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+	} catch {
+		return "";
+	}
 };
 
 // Validate URL
@@ -178,11 +231,14 @@ const addUrl = async () => {
 			alias,
 			createdAt: new Date().toISOString(),
 			copyCount: 0,
+			category: inputCategory,
+			favicon: getFavicon(normalized),
 		};
 		urls = [newUrl, ...urls];
 		saveUrls();
 		inputUrl = "";
 		inputAlias = "";
+		inputCategory = "other";
 		showSuccessToast("✓ URL acortada exitosamente");
 	} catch (err) {
 		// Log error for debugging
@@ -195,11 +251,14 @@ const addUrl = async () => {
 			alias,
 			createdAt: new Date().toISOString(),
 			copyCount: 0,
+			category: inputCategory,
+			favicon: getFavicon(normalized),
 		};
 		urls = [newUrl, ...urls];
 		saveUrls();
 		inputUrl = "";
 		inputAlias = "";
+		inputCategory = "other";
 		showSuccessToast("⚠️ Guardado sin acortar (servicio no disponible)");
 	} finally {
 		isShortening = false;
@@ -346,19 +405,17 @@ const importUrls = () => {
 
 // Filter and sort URLs
 $: filteredUrls = urls
-	.filter(
-		(u) =>
+	.filter(u => {
+		const matchesSearch = !searchQuery || 
+			u.originalUrl.toLowerCase().includes(searchQuery.toLowerCase()) ||
 			u.alias.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			u.originalUrl.toLowerCase().includes(searchQuery.toLowerCase()),
-	)
+			u.category.toLowerCase().includes(searchQuery.toLowerCase());
+		const matchesCategory = filterCategory === "all" || u.category === filterCategory;
+		return matchesSearch && matchesCategory;
+	})
 	.sort((a, b) => {
-		if (sortBy === "date") {
-			return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-		}
-		if (sortBy === "copies") {
-			return b.copyCount - a.copyCount;
-		}
-		// name
+		if (sortBy === "date") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+		if (sortBy === "copies") return b.copyCount - a.copyCount;
 		return a.alias.localeCompare(b.alias);
 	});
 
@@ -369,6 +426,26 @@ $: mostCopiedUrl = urls.reduce(
 	(max, u) => (u.copyCount > max.copyCount ? u : max),
 	{ alias: "N/A", copyCount: 0 } as ShortenedUrl,
 );
+$: mostUsedCategory = (() => {
+	const categoryCounts = urls.reduce((acc, u) => {
+		acc[u.category] = (acc[u.category] || 0) + 1;
+		return acc;
+	}, {} as Record<string, number>);
+	const maxCategory = Object.entries(categoryCounts).reduce(
+		(max, [cat, count]) => count > max.count ? { cat, count } : max,
+		{ cat: "other", count: 0 }
+	);
+	const category = categories.find(c => c.id === maxCategory.cat);
+	return category ? category.label : "🔗 Otros";
+})();
+
+// Auto-detect category when URL changes
+$: if (inputUrl) {
+	const normalized = normalizeUrl(inputUrl.trim());
+	if (isValidUrl(normalized)) {
+		inputCategory = detectCategory(normalized);
+	}
+}
 
 // Format date
 const formatDate = (isoDate: string): string => {
@@ -543,12 +620,10 @@ const closeOnboarding = () => {
 					Organiza, acorta y gestiona tus enlaces favoritos
 				</p>
 				<div class="stats-row">
-					<span class="stat-item">{totalUrls} URLs</span>
-					<span class="stat-item">{totalCopies} copias totales</span>
-					{#if mostCopiedUrl.alias !== "N/A"}
-						<span class="stat-item"
-							>Más copiado: {mostCopiedUrl.alias} ({mostCopiedUrl.copyCount})</span
-						>
+					<span class="stat-item">📊 {totalUrls} URLs</span>
+					<span class="stat-item">📋 {totalCopies} copias</span>
+					{#if urls.length > 0}
+						<span class="stat-item">⭐ {mostUsedCategory}</span>
 					{/if}
 				</div>
 			</div>
@@ -580,14 +655,34 @@ const closeOnboarding = () => {
 					class="input-alias"
 					on:keydown={(e) => e.key === "Enter" && addUrl()}
 				/>
+				<select bind:value={inputCategory} class="select-category">
+					{#each categories.filter(c => c.id !== 'all') as cat}
+						<option value={cat.id}>{cat.icon} {cat.label.replace(cat.icon + ' ', '')}</option>
+					{/each}
+				</select>
 				<button class="btn-add" on:click={addUrl} disabled={isShortening}>
-				{isShortening ? "⏳ Acortando..." : "🔗 Acortar URL"}
+				{isShortening ? "⏳ Acortando..." : "🔗 Acortar"}
 			</button>
 			</div>
 			<p class="input-hint">
-				Sin alias, se genera uno automático. Ej: "mi-video", "blog-post"
+				Sin alias, se genera uno automático. Categoría detectada automáticamente.
 			</p>
 		</div>
+
+		<!-- Category Filter -->
+		{#if urls.length > 0}
+			<div class="category-filter">
+				{#each categories as cat}
+					<button
+						class="btn-category"
+						class:active={filterCategory === cat.id}
+						on:click={() => (filterCategory = cat.id)}
+					>
+						{cat.icon} {cat.label.replace(cat.icon + ' ', '')}
+					</button>
+				{/each}
+			</div>
+		{/if}
 
 		<!-- Search and Filter -->
 		<div class="filter-section">
@@ -618,6 +713,13 @@ const closeOnboarding = () => {
 					on:click={() => (sortBy = "name")}
 				>
 					🔤 Nombre
+				</button>
+				<button
+					class="btn-sort btn-view-toggle"
+					on:click={() => (viewMode = viewMode === 'list' ? 'grid' : 'list')}
+					title="Cambiar vista"
+				>
+					{viewMode === 'list' ? '🔲 Grid' : '📋 Lista'}
 				</button>
 			</div>
 		</div>
@@ -660,7 +762,7 @@ const closeOnboarding = () => {
 		{/if}
 
 		<!-- URLs List -->
-		<div class="urls-list">
+		<div class="urls-list" class:view-grid={viewMode === 'grid'}>
 			{#if filteredUrls.length === 0}
 				<div class="empty-state">
 					{#if searchQuery}
@@ -694,7 +796,13 @@ const closeOnboarding = () => {
 									</button>
 								</div>
 							{:else}
-								<div class="url-alias">#{url.alias}</div>
+								<div class="url-alias-row">
+									{#if url.favicon}
+										<img src={url.favicon} alt="" class="url-favicon" />
+									{/if}
+									<div class="url-alias">#{url.alias}</div>
+									<span class="url-category-badge">{categories.find(c => c.id === url.category)?.icon || '🔗'}</span>
+								</div>
 								<div class="url-meta">
 									<span>{formatDate(url.createdAt)}</span>
 									<span class="copy-count">{url.copyCount} copias</span>
@@ -716,7 +824,7 @@ const closeOnboarding = () => {
 								on:click={() => copyUrl(url)}
 								title="Copiar URL acortada al portapapeles"
 							>
-								{copiedId === url.id ? "✓ Copiado" : "📋 Copiar URL"}
+								{copiedId === url.id ? "✓ Copiado" : "📋 Copiar"}
 							</button>
 							<button
 								class="btn-card-action"
@@ -724,16 +832,16 @@ const closeOnboarding = () => {
 								on:click={() => copyAlias(url)}
 								title="Copiar alias corto"
 							>
-								{copiedAliasId === url.id ? "✓ Copiado" : "🏷️ Alias"}
+								{copiedAliasId === url.id ? "✓" : "🏷️"}
 							</button>
 							<button class="btn-card-action" on:click={() => showQRCode(url)}>
-								📱 QR
+								📱
 							</button>
 							<button
 								class="btn-card-action"
 								on:click={() => startEditAlias(url)}
 							>
-								✏️ Editar
+								✏️
 							</button>
 							<button
 								class="btn-card-action btn-delete"
@@ -884,7 +992,7 @@ const closeOnboarding = () => {
 
 	.input-row {
 		display: grid;
-		grid-template-columns: 1fr auto auto;
+		grid-template-columns: 1fr auto auto auto;
 		gap: 0.75rem;
 	}
 
@@ -895,7 +1003,8 @@ const closeOnboarding = () => {
 	}
 
 	.input-url,
-	.input-alias {
+	.input-alias,
+	.select-category {
 		padding: 0.75rem 1rem;
 		border: 2px solid oklch(0.9 0.02 var(--hue));
 		border-radius: 0.75rem;
@@ -907,15 +1016,18 @@ const closeOnboarding = () => {
 
 	:global(.dark) .input-url,
 	:global(.dark) .input-alias,
+	:global(.dark) .select-category,
 	.dark .input-url,
-	.dark .input-alias {
+	.dark .input-alias,
+	.dark .select-category {
 		background: oklch(0.25 0.02 var(--hue));
 		color: #e2e8f0;
 		border-color: oklch(0.35 0.03 var(--hue));
 	}
 
 	.input-url:focus,
-	.input-alias:focus {
+	.input-alias:focus,
+	.select-category:focus {
 		outline: none;
 		border-color: oklch(0.7 0.14 var(--hue));
 		box-shadow: 0 0 0 3px oklch(0.7 0.14 var(--hue) / 0.1);
@@ -923,6 +1035,11 @@ const closeOnboarding = () => {
 
 	.input-alias {
 		min-width: 150px;
+	}
+
+	.select-category {
+		min-width: 140px;
+		cursor: pointer;
 	}
 
 	.btn-add {
@@ -967,6 +1084,67 @@ const closeOnboarding = () => {
 	:global(.dark) .input-hint,
 	.dark .input-hint {
 		color: #94a3b8;
+	}
+
+	/* Category Filter */
+	.category-filter {
+		display: flex;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+		padding: 0.75rem;
+		background: oklch(0.98 0.01 var(--hue));
+		border-radius: 0.75rem;
+		border: 1px solid oklch(0.92 0.02 var(--hue));
+	}
+
+	:global(.dark) .category-filter,
+	.dark .category-filter {
+		background: oklch(0.2 0.02 var(--hue));
+		border-color: oklch(0.3 0.03 var(--hue));
+	}
+
+	.btn-category {
+		padding: 0.5rem 1rem;
+		background: white;
+		color: #475569;
+		border: 1px solid #e2e8f0;
+		border-radius: 0.5rem;
+		font-size: 0.9rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	:global(.dark) .btn-category,
+	.dark .btn-category {
+		background: oklch(0.25 0.02 var(--hue));
+		color: #cbd5e1;
+		border-color: oklch(0.35 0.03 var(--hue));
+	}
+
+	.btn-category:hover {
+		background: oklch(0.95 0.02 var(--hue));
+		border-color: oklch(0.8 0.06 var(--hue));
+		color: oklch(0.5 0.12 var(--hue));
+		transform: translateY(-1px);
+	}
+
+	:global(.dark) .btn-category:hover,
+	.dark .btn-category:hover {
+		background: oklch(0.3 0.03 var(--hue));
+		border-color: oklch(0.45 0.08 var(--hue));
+		color: oklch(0.75 0.14 var(--hue));
+	}
+
+	.btn-category.active {
+		background: linear-gradient(
+			135deg,
+			oklch(0.7 0.14 var(--hue)),
+			oklch(0.65 0.16 calc(var(--hue) + 30))
+		);
+		color: white;
+		border-color: transparent;
+		box-shadow: 0 4px 12px oklch(0.7 0.14 var(--hue) / 0.3);
 	}
 
 	/* Filter Section */
@@ -1057,6 +1235,16 @@ const closeOnboarding = () => {
 		gap: 1rem;
 	}
 
+	.urls-list.view-grid {
+		grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	}
+
+	@media (max-width: 768px) {
+		.urls-list.view-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+
 	.empty-state {
 		text-align: center;
 		padding: 3rem 1rem;
@@ -1117,6 +1305,24 @@ const closeOnboarding = () => {
 	:global(.dark) .url-alias,
 	.dark .url-alias {
 		color: oklch(0.7 0.14 var(--hue));
+	}
+
+	.url-alias-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.url-favicon {
+		width: 20px;
+		height: 20px;
+		object-fit: contain;
+		border-radius: 0.25rem;
+	}
+
+	.url-category-badge {
+		font-size: 1rem;
+		opacity: 0.7;
 	}
 
 	.url-meta {
