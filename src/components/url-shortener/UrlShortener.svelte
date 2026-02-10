@@ -107,7 +107,7 @@ const isValidAlias = (alias: string): boolean => {
 const shortenWithIsgd = async (longUrl: string): Promise<string> => {
 	const endpoint = `https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`;
 	const response = await fetch(endpoint);
-	if (!response.ok) throw new Error("API error");
+	if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
 	const data = await response.json();
 	if (data.errorcode) throw new Error(data.errormessage || "Shortening failed");
 	return data.shorturl;
@@ -184,6 +184,8 @@ const addUrl = async () => {
 		inputAlias = "";
 		showSuccessToast(`✓ URL acortada exitosamente`);
 	} catch (err) {
+		// Log error for debugging
+		console.error('URL shortening failed:', err);
 		// Fallback: guardar sin acortar
 		const newUrl: ShortenedUrl = {
 			id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
