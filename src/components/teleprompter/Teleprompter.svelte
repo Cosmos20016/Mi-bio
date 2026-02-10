@@ -33,6 +33,7 @@ let ultraClean = false;
 let countdown = 0;
 let isCountingDown = false;
 let showOnboarding = false;
+let helpTab = 'quickstart'; // Tab navigation: quickstart, youtube, shortcuts, tips
 let currentScript: string | null = null;
 let countdownDuration = 3; // Configurable: 0, 1, 2, 3, 5
 
@@ -79,7 +80,12 @@ $: if (lineElements.length !== lines.length) {
 
 // Word count and estimated reading time
 $: wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
-$: estimatedReadingTime = wordCount > 0 ? Math.ceil((wordCount / 150) * 60) : 0; // 150 words per minute
+$: charCount = text.length;
+$: estimatedMinutes = wordCount > 0 ? Math.floor(wordCount / 150) : 0;
+$: estimatedSeconds = wordCount > 0 ? Math.ceil((wordCount / 150) * 60) % 60 : 0;
+$: readingTimeLabel = wordCount > 0 
+	? (estimatedMinutes > 0 ? `~${estimatedMinutes}m ${estimatedSeconds}s` : `~${estimatedSeconds}s`)
+	: '';
 
 const updateProgress = () => {
 	if (!scrollContainer || !content) return;
@@ -140,8 +146,12 @@ const tick = (timestamp: number) => {
 
 	// Smooth speed interpolation (frame-rate independent)
 	// Using a time constant of ~100ms for responsive but smooth transitions
-	const smoothing = 1 - Math.exp(-delta * 10);
-	currentSpeed += (targetSpeed - currentSpeed) * smoothing;
+	if (smooth) {
+		const smoothing = 1 - Math.exp(-delta * 10);
+		currentSpeed += (targetSpeed - currentSpeed) * smoothing;
+	} else {
+		currentSpeed = targetSpeed; // Instant change
+	}
 
 	// Snap when close enough
 	if (Math.abs(currentSpeed - targetSpeed) < 0.5) {
@@ -287,6 +297,7 @@ const clearText = () => {
 	text = "";
 	if (scrollContainer) {
 		scrollContainer.scrollTop = 0;
+		scrollAccumulator = 0;
 	}
 	updateProgress();
 };
@@ -310,10 +321,14 @@ const scrollToProgress = (value: number) => {
 
 const toggleFullscreen = async () => {
 	if (!fullscreenTarget) return;
-	if (!document.fullscreenElement) {
-		await fullscreenTarget.requestFullscreen();
-	} else {
-		await document.exitFullscreen();
+	try {
+		if (!document.fullscreenElement) {
+			await fullscreenTarget.requestFullscreen();
+		} else {
+			await document.exitFullscreen();
+		}
+	} catch (e) {
+		console.warn('[Teleprompter] Fullscreen no disponible:', e);
 	}
 };
 
@@ -344,66 +359,72 @@ const loadState = () => {
 	try {
 		const raw = localStorage.getItem(storageKey);
 		if (!raw) return;
-		const data = JSON.parse(raw) as Partial<{
-			text: string;
-			speed: number;
-			fontSize: number;
-			lineHeight: number;
-			isMirror: boolean;
-			autoCenter: boolean;
-			smooth: boolean;
-			glow: boolean;
-			focusMode: boolean;
-			dimOutside: boolean;
-			ultraClean: boolean;
-			countdownDuration: number;
-		}>;
-		if (data.text) text = data.text;
-		if (data.speed) speed = data.speed;
-		if (data.fontSize) fontSize = data.fontSize;
-		if (data.lineHeight) lineHeight = data.lineHeight;
-		if (typeof data.isMirror === "boolean") isMirror = data.isMirror;
-		if (typeof data.autoCenter === "boolean") autoCenter = data.autoCenter;
-		if (typeof data.smooth === "boolean") smooth = data.smooth;
-		if (typeof data.glow === "boolean") glow = data.glow;
-		if (typeof data.focusMode === "boolean") focusMode = data.focusMode;
-		if (typeof data.dimOutside === "boolean") dimOutside = data.dimOutside;
-		if (typeof data.ultraClean === "boolean") ultraClean = data.ultraClean;
-		if (typeof data.countdownDuration === "number")
-			countdownDuration = data.countdownDuration;
+		const data = JSON.parse(raw);
+		if (typeof data !== 'object' || data === null) return; // Guard against invalid data
+		
+		// Load each field with individual error handling
+		try { if (data.text) text = data.text; } catch {}
+		try { if (data.speed) speed = data.speed; } catch {}
+		try { if (data.fontSize) fontSize = data.fontSize; } catch {}
+		try { if (data.lineHeight) lineHeight = data.lineHeight; } catch {}
+		try { if (typeof data.isMirror === "boolean") isMirror = data.isMirror; } catch {}
+		try { if (typeof data.autoCenter === "boolean") autoCenter = data.autoCenter; } catch {}
+		try { if (typeof data.smooth === "boolean") smooth = data.smooth; } catch {}
+		try { if (typeof data.glow === "boolean") glow = data.glow; } catch {}
+		try { if (typeof data.focusMode === "boolean") focusMode = data.focusMode; } catch {}
+		try { if (typeof data.dimOutside === "boolean") dimOutside = data.dimOutside; } catch {}
+		try { if (typeof data.ultraClean === "boolean") ultraClean = data.ultraClean; } catch {}
+		try {
+			if (typeof data.countdownDuration === "number")
+				countdownDuration = data.countdownDuration;
+		} catch {}
+		
 		speed = Math.round(clamp(speed, speedMin, speedMax));
 		targetSpeed = speed;
 		currentSpeed = 0;
-	} catch {
-		// ignore invalid storage
+	} catch (e) {
+		console.warn('[Teleprompter] Estado corrupto, usando valores por defecto:', e);
+		try { localStorage.removeItem(storageKey); } catch { /* ignore */ }
 	}
 };
 
 const scheduleSave = () => {
 	if (!isReady) return;
 	if (saveTimeout) clearTimeout(saveTimeout);
+	const delay = text.length > 5000 ? 500 : 300; // Smart debounce
 	saveTimeout = setTimeout(() => {
-		const payload = {
-			text,
-			speed,
-			fontSize,
-			lineHeight,
-			isMirror,
-			autoCenter,
-			smooth,
-			glow,
-			focusMode,
-			dimOutside,
-			ultraClean,
-			countdownDuration,
-		};
-		localStorage.setItem(storageKey, JSON.stringify(payload));
+		try {
+			const payload = {
+				text,
+				speed,
+				fontSize,
+				lineHeight,
+				isMirror,
+				autoCenter,
+				smooth,
+				glow,
+				focusMode,
+				dimOutside,
+				ultraClean,
+				countdownDuration,
+			};
+			localStorage.setItem(storageKey, JSON.stringify(payload));
 
-		// Auto-save current script
-		if (currentScript && text.trim()) {
-			saveCurrentScript();
+			// Auto-save current script
+			if (currentScript && text.trim()) {
+				saveCurrentScript();
+			}
+		} catch (e) {
+			console.warn('[Teleprompter] Error al guardar:', e);
+			// If localStorage is full, clean old scripts
+			if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+				try {
+					const oldScripts = scripts.slice(10); // Keep only 10 most recent
+					oldScripts.forEach(s => deleteScript(s.id));
+				} catch { /* ignore */ }
+			}
 		}
-	}, 300);
+	}, delay);
 };
 
 // Script history functions
@@ -420,9 +441,20 @@ let scripts: SavedScript[] = [];
 const loadScripts = () => {
 	try {
 		const raw = localStorage.getItem("teleprompter:scripts");
-		scripts = raw ? JSON.parse(raw) : [];
-	} catch {
+		if (!raw) {
+			scripts = [];
+			return;
+		}
+		const data = JSON.parse(raw);
+		if (Array.isArray(data)) {
+			scripts = data;
+		} else {
+			scripts = [];
+		}
+	} catch (e) {
+		console.warn('[Teleprompter] Scripts corruptos, inicializando vacío:', e);
 		scripts = [];
+		try { localStorage.removeItem("teleprompter:scripts"); } catch { /* ignore */ }
 	}
 };
 
@@ -530,6 +562,16 @@ const formatRelativeTime = (isoDate: string): string => {
 	if (diffDays === 1) return "Ayer";
 	if (diffDays < 7) return `Hace ${diffDays} días`;
 	return date.toLocaleDateString("es-ES", { month: "short", day: "numeric" });
+};
+
+const formatDateTime = (isoDate: string): string => {
+	const date = new Date(isoDate);
+	return date.toLocaleDateString("es-ES", { 
+		day: "numeric", 
+		month: "short", 
+		hour: "2-digit", 
+		minute: "2-digit" 
+	});
 };
 
 const getEstimatedTimeRemaining = (): string => {
@@ -726,15 +768,16 @@ onMount(() => {
 			scrollAccumulator = Math.min(scrollAccumulator, cachedMaxScroll);
 		}
 	};
+	const orientationHandler = () => setTimeout(onResize, 300);
 	window.addEventListener('resize', onResize);
-	window.addEventListener('orientationchange', () => setTimeout(onResize, 300));
+	window.addEventListener('orientationchange', orientationHandler);
 	
 	isReady = true;
 
 	return () => {
 		document.removeEventListener("fullscreenchange", onFullscreenChange);
 		window.removeEventListener('resize', onResize);
-		window.removeEventListener('orientationchange', () => setTimeout(onResize, 300));
+		window.removeEventListener('orientationchange', orientationHandler);
 	};
 });
 
@@ -833,7 +876,7 @@ localStorage.setItem("teleprompter:onboarding:done", "true");
 <div class="status-indicator" style={`background-color: ${getStatusColor()}`}></div>
 <p class="teleprompter-status">{getStatus()}</p>
 {#if wordCount > 0}
-<span class="word-count">· {wordCount} palabras · ~{estimatedReadingTime}s</span>
+<span class="word-count">· {wordCount} palabras · {readingTimeLabel}</span>
 {/if}
 </div>
 </div>
@@ -877,7 +920,7 @@ if (id) loadScript(id);
 <option value="">-- Nuevo guion --</option>
 {#each scripts as script}
 <option value={script.id}>
-{script.name} · {formatRelativeTime(script.updatedAt)}
+{script.name} · {formatDateTime(script.updatedAt)}
 </option>
 {/each}
 </select>
