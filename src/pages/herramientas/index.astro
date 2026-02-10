@@ -28,12 +28,20 @@ import { url } from "@utils/url-utils";
         </div>
       </a>
 
-      <div class="card-base p-6 rounded-[var(--radius-large)] border border-dashed border-black/10 dark:border-white/15 opacity-70">
-        <h2 class="text-xl font-semibold">🚀 Próximamente</h2>
-        <p class="text-50">
-          Más herramientas profesionales para creadores de contenido llegarán pronto. ¡Estamos trabajando en cosas increíbles!
-        </p>
-      </div>
+      <a
+        class="card-base p-6 rounded-[var(--radius-large)] border border-black/5 dark:border-white/10 hover:scale-[1.01] transition"
+        href={url("/herramientas/acortador/")}
+      >
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">🔗</span>
+          <div>
+            <h2 class="text-xl font-semibold">Acortador de URLs</h2>
+            <p class="text-50">
+              Organiza y gestiona tus enlaces favoritos. Genera QR codes al instante, historial con estadísticas y exporta tu biblioteca completa.
+            </p>
+          </div>
+        </div>
+      </a>
     </div>
   </section>
 </MainGridLayout>
