@@ -170,29 +170,39 @@ const addUrl = () => {
 // Copy URL to clipboard
 const copyUrl = (urlEntry: ShortenedUrl) => {
 	// Copy the ORIGINAL url (this is what users actually need)
-	navigator.clipboard.writeText(urlEntry.originalUrl).then(() => {
-		// Increment copy count
-		urls = urls.map((u) =>
-			u.id === urlEntry.id ? { ...u, copyCount: u.copyCount + 1 } : u,
-		);
-		saveUrls();
+	navigator.clipboard
+		.writeText(urlEntry.originalUrl)
+		.then(() => {
+			// Increment copy count
+			urls = urls.map((u) =>
+				u.id === urlEntry.id ? { ...u, copyCount: u.copyCount + 1 } : u,
+			);
+			saveUrls();
 
-		// Show feedback
-		copiedId = urlEntry.id;
-		setTimeout(() => {
-			copiedId = null;
-		}, 2000);
-	});
+			// Show feedback
+			copiedId = urlEntry.id;
+			setTimeout(() => {
+				copiedId = null;
+			}, 2000);
+		})
+		.catch(() => {
+			alert("Error al copiar al portapapeles. Verifica los permisos del navegador.");
+		});
 };
 
 // Copy alias to clipboard
 const copyAlias = (urlEntry: ShortenedUrl) => {
-	navigator.clipboard.writeText(`#${urlEntry.alias}`).then(() => {
-		copiedAliasId = urlEntry.id;
-		setTimeout(() => {
-			copiedAliasId = null;
-		}, 2000);
-	});
+	navigator.clipboard
+		.writeText(`#${urlEntry.alias}`)
+		.then(() => {
+			copiedAliasId = urlEntry.id;
+			setTimeout(() => {
+				copiedAliasId = null;
+			}, 2000);
+		})
+		.catch(() => {
+			alert("Error al copiar al portapapeles. Verifica los permisos del navegador.");
+		});
 };
 
 // Delete URL
@@ -579,7 +589,7 @@ const closeOnboarding = () => {
 						<span class="info-icon">📋</span>
 						<div>
 							<strong>Guarda y organiza</strong>
-							<p>Almacena tus URLs favoritos con alias fáciles de recordar</p>
+							<p>Almacena tus enlaces favoritos con alias fáciles de recordar</p>
 						</div>
 					</div>
 					<div class="info-item">
