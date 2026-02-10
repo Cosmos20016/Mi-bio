@@ -109,15 +109,18 @@ const nouns = [
 const MAX_DOMAIN_ALIAS_LENGTH = 8;
 
 // Category map for O(1) lookups
-const categoryMap = categories.reduce((acc, cat) => {
-	acc[cat.id] = cat;
-	return acc;
-}, {} as Record<string, typeof categories[0]>);
+const categoryMap = categories.reduce(
+	(acc, cat) => {
+		acc[cat.id] = cat;
+		return acc;
+	},
+	{} as Record<string, (typeof categories)[0]>,
+);
 
 // Helper to get category label without icon
 const getCategoryLabel = (categoryId: string): string => {
 	const cat = categoryMap[categoryId];
-	return cat ? cat.label.replace(cat.icon + ' ', '') : 'Otros';
+	return cat ? cat.label.replace(cat.icon + " ", "") : "Otros";
 };
 
 // Load URLs from localStorage
@@ -154,7 +157,10 @@ const generateAlias = (url: string): string => {
 	try {
 		const parsed = new URL(url);
 		const domain = parsed.hostname.replace("www.", "").split(".")[0];
-		if (domain.length <= MAX_DOMAIN_ALIAS_LENGTH && /^[a-zA-Z0-9]+$/.test(domain)) {
+		if (
+			domain.length <= MAX_DOMAIN_ALIAS_LENGTH &&
+			/^[a-zA-Z0-9]+$/.test(domain)
+		) {
 			const suffix = Math.random().toString(36).substring(2, 5);
 			return `${domain}-${suffix}`;
 		}
@@ -220,15 +226,61 @@ const isValidAlias = (alias: string): boolean => {
 	return /^[a-zA-Z0-9-]{1,30}$/.test(alias);
 };
 
-// Shorten URL with is.gd service
+// API 1: CleanURI (gratis, sin auth, CORS habilitado, confiable en móvil)
+const shortenWithCleanUri = async (longUrl: string): Promise<string> => {
+	const response = await fetch("https://cleanuri.com/api/v1/shorten", {
+		method: "POST",
+		headers: { "Content-Type": "application/x-www-form-urlencoded" },
+		body: `url=${encodeURIComponent(longUrl)}`,
+	});
+	if (!response.ok) throw new Error(`CleanURI HTTP ${response.status}`);
+	const data = await response.json();
+	if (data.error) throw new Error(data.error);
+	return data.result_url;
+};
+
+// API 2: TinyURL (la más reconocida, CORS desde frontend)
+const shortenWithTinyUrl = async (longUrl: string): Promise<string> => {
+	const response = await fetch(
+		`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`,
+	);
+	if (!response.ok) throw new Error(`TinyURL HTTP ${response.status}`);
+	const shortUrl = await response.text();
+	if (!shortUrl.startsWith("http")) throw new Error("TinyURL response invalid");
+	return shortUrl.trim();
+};
+
+// API 3: is.gd (fallback, funciona bien en desktop)
 const shortenWithIsgd = async (longUrl: string): Promise<string> => {
 	const endpoint = `https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`;
 	const response = await fetch(endpoint);
-	if (!response.ok)
-		throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+	if (!response.ok) throw new Error(`is.gd HTTP ${response.status}`);
 	const data = await response.json();
 	if (data.errorcode) throw new Error(data.errormessage || "Shortening failed");
 	return data.shorturl;
+};
+
+// Controlador principal: prueba APIs en cascada hasta que una funcione
+const shortenUrl = async (longUrl: string): Promise<string> => {
+	const apis = [
+		{ name: "CleanURI", fn: shortenWithCleanUri },
+		{ name: "TinyURL", fn: shortenWithTinyUrl },
+		{ name: "is.gd", fn: shortenWithIsgd },
+	];
+
+	for (const api of apis) {
+		try {
+			const result = await api.fn(longUrl);
+			if (result && result !== longUrl && result.startsWith("http")) {
+				console.log(`✓ URL acortada con ${api.name}`);
+				return result;
+			}
+		} catch (err) {
+			console.warn(`✗ ${api.name} falló:`, err);
+		}
+	}
+
+	throw new Error("Todos los servicios de acortamiento no disponibles");
 };
 
 // Show success toast
@@ -287,7 +339,7 @@ const addUrl = async () => {
 
 	isShortening = true;
 	try {
-		const shortUrl = await shortenWithIsgd(normalized);
+		const shortUrl = await shortenUrl(normalized);
 		const newUrl: ShortenedUrl = {
 			id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
 			originalUrl: normalized,
@@ -331,7 +383,7 @@ const addUrl = async () => {
 
 // Copy URL to clipboard
 const copyUrl = (urlEntry: ShortenedUrl) => {
-	// Copy the SHORT url from is.gd
+	// Copy the SHORT url
 	navigator.clipboard
 		.writeText(urlEntry.shortUrl)
 		.then(() => {
