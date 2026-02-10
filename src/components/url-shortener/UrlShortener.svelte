@@ -25,6 +25,9 @@ let showQR = false;
 let qrUrl = "";
 let qrAlias = "";
 let copiedId: string | null = null;
+let copiedAliasId: string | null = null;
+let showSuccess = false;
+let successMessage = "";
 let sortBy: "date" | "copies" | "name" = "date";
 let isDark = false;
 let isReady = false;
@@ -73,8 +76,8 @@ const generateAlias = (url: string): string => {
 // Validate URL
 const isValidUrl = (url: string): boolean => {
 	try {
-		new URL(url);
-		return true;
+		const parsed = new URL(url);
+		return parsed.protocol === "http:" || parsed.protocol === "https:";
 	} catch {
 		return false;
 	}
@@ -91,6 +94,16 @@ const normalizeUrl = (url: string): string => {
 // Validate alias
 const isValidAlias = (alias: string): boolean => {
 	return /^[a-zA-Z0-9-]{1,30}$/.test(alias);
+};
+
+// Show success toast
+const showSuccessToast = (message: string) => {
+	successMessage = message;
+	showSuccess = true;
+	setTimeout(() => {
+		showSuccess = false;
+		successMessage = "";
+	}, 3000);
 };
 
 // Add URL
@@ -117,6 +130,20 @@ const addUrl = () => {
 		return;
 	}
 
+	// Check for duplicate URL
+	const existingUrl = urls.find((u) => u.originalUrl === normalized);
+	if (existingUrl) {
+		// Instead of blocking, ask if they want to copy the existing one
+		if (
+			confirm(
+				`Este URL ya existe con alias #${existingUrl.alias}. ¿Copiar al portapapeles?`,
+			)
+		) {
+			copyUrl(existingUrl);
+		}
+		return;
+	}
+
 	// Check max URLs
 	if (urls.length >= MAX_URLS) {
 		alert(`Máximo ${MAX_URLS} URLs permitidos`);
@@ -133,6 +160,7 @@ const addUrl = () => {
 
 	urls = [newUrl, ...urls];
 	saveUrls();
+	showSuccessToast(`✓ URL guardado como #${alias}`);
 
 	// Clear inputs
 	inputUrl = "";
@@ -140,20 +168,41 @@ const addUrl = () => {
 };
 
 // Copy URL to clipboard
-const copyUrl = (url: ShortenedUrl) => {
-	navigator.clipboard.writeText(url.originalUrl).then(() => {
-		// Increment copy count
-		urls = urls.map((u) =>
-			u.id === url.id ? { ...u, copyCount: u.copyCount + 1 } : u,
-		);
-		saveUrls();
+const copyUrl = (urlEntry: ShortenedUrl) => {
+	// Copy the ORIGINAL url (this is what users actually need)
+	navigator.clipboard
+		.writeText(urlEntry.originalUrl)
+		.then(() => {
+			// Increment copy count
+			urls = urls.map((u) =>
+				u.id === urlEntry.id ? { ...u, copyCount: u.copyCount + 1 } : u,
+			);
+			saveUrls();
 
-		// Show feedback
-		copiedId = url.id;
-		setTimeout(() => {
-			copiedId = null;
-		}, 2000);
-	});
+			// Show feedback
+			copiedId = urlEntry.id;
+			setTimeout(() => {
+				copiedId = null;
+			}, 2000);
+		})
+		.catch(() => {
+			alert("Error al copiar al portapapeles. Verifica los permisos del navegador.");
+		});
+};
+
+// Copy alias to clipboard
+const copyAlias = (urlEntry: ShortenedUrl) => {
+	navigator.clipboard
+		.writeText(`#${urlEntry.alias}`)
+		.then(() => {
+			copiedAliasId = urlEntry.id;
+			setTimeout(() => {
+				copiedAliasId = null;
+			}, 2000);
+		})
+		.catch(() => {
+			alert("Error al copiar al portapapeles. Verifica los permisos del navegador.");
+		});
 };
 
 // Delete URL
@@ -421,8 +470,28 @@ const closeOnboarding = () => {
 						/>
 					</div>
 					<p class="qr-url">{qrUrl}</p>
-					<button class="btn-close-qr" on:click={closeQR}>Cerrar</button>
+					<div class="qr-actions">
+						<button class="btn-close-qr" on:click={closeQR}>Cerrar</button>
+						<a
+							class="btn-download-qr"
+							href={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qrUrl)}`}
+							download={`qr-${qrAlias}.png`}
+							target="_blank"
+						>
+							💾 Descargar QR
+						</a>
+					</div>
 				</div>
+			</div>
+		{/if}
+
+		<!-- Success Toast -->
+		{#if showSuccess}
+			<div
+				class="toast-success"
+				style="animation: slideInUp 0.3s ease, fadeOut 0.3s ease 2.7s"
+			>
+				<span>{successMessage}</span>
 			</div>
 		{/if}
 
@@ -511,6 +580,43 @@ const closeOnboarding = () => {
 			</div>
 		</div>
 
+		<!-- Info Section -->
+		{#if urls.length === 0 && !searchQuery}
+			<div class="info-section">
+				<h3>¿Cómo funciona?</h3>
+				<div class="info-grid">
+					<div class="info-item">
+						<span class="info-icon">📋</span>
+						<div>
+							<strong>Guarda y organiza</strong>
+							<p>Almacena tus enlaces favoritos con alias fáciles de recordar</p>
+						</div>
+					</div>
+					<div class="info-item">
+						<span class="info-icon">📱</span>
+						<div>
+							<strong>Genera QR Codes</strong>
+							<p>Crea códigos QR al instante para compartir en físico</p>
+						</div>
+					</div>
+					<div class="info-item">
+						<span class="info-icon">📊</span>
+						<div>
+							<strong>Rastrea tu uso</strong>
+							<p>Mira cuántas veces has copiado cada enlace</p>
+						</div>
+					</div>
+					<div class="info-item">
+						<span class="info-icon">💾</span>
+						<div>
+							<strong>Exporta todo</strong>
+							<p>Descarga o importa tu biblioteca completa como JSON</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		{/if}
+
 		<!-- URLs List -->
 		<div class="urls-list">
 			{#if filteredUrls.length === 0}
@@ -556,11 +662,20 @@ const closeOnboarding = () => {
 						<div class="url-original">{url.originalUrl}</div>
 						<div class="url-card-actions">
 							<button
-								class="btn-card-action"
+								class="btn-card-action btn-copy-main"
 								class:copied={copiedId === url.id}
 								on:click={() => copyUrl(url)}
+								title="Copiar URL original al portapapeles"
 							>
-								{copiedId === url.id ? "✓ Copiado" : "📋 Copiar"}
+								{copiedId === url.id ? "✓ Copiado" : "📋 Copiar URL"}
+							</button>
+							<button
+								class="btn-card-action"
+								class:copied={copiedAliasId === url.id}
+								on:click={() => copyAlias(url)}
+								title="Copiar alias corto"
+							>
+								{copiedAliasId === url.id ? "✓ Copiado" : "🏷️ Alias"}
 							</button>
 							<button class="btn-card-action" on:click={() => showQRCode(url)}>
 								📱 QR
@@ -605,6 +720,13 @@ const closeOnboarding = () => {
 		position: relative;
 		color: #0f172a;
 		transition: all 0.3s ease;
+		font-family: inherit;
+	}
+
+	.url-shortener-wrapper input,
+	.url-shortener-wrapper button,
+	.url-shortener-wrapper select {
+		font-family: inherit;
 	}
 
 	:global(.dark) .url-shortener-wrapper,
@@ -1309,5 +1431,160 @@ const closeOnboarding = () => {
 			opacity: 1;
 			transform: translateY(0);
 		}
+	}
+
+	@keyframes slideInUp {
+		from {
+			transform: translateX(-50%) translateY(20px);
+			opacity: 0;
+		}
+		to {
+			transform: translateX(-50%) translateY(0);
+			opacity: 1;
+		}
+	}
+
+	@keyframes fadeOut {
+		from {
+			opacity: 1;
+		}
+		to {
+			opacity: 0;
+		}
+	}
+
+	/* Toast notification */
+	.toast-success {
+		position: fixed;
+		bottom: 2rem;
+		left: 50%;
+		transform: translateX(-50%);
+		background: linear-gradient(
+			135deg,
+			oklch(0.7 0.14 var(--hue)),
+			oklch(0.65 0.16 calc(var(--hue) + 30))
+		);
+		color: white;
+		padding: 0.75rem 1.5rem;
+		border-radius: 999px;
+		font-weight: 600;
+		font-size: 0.95rem;
+		box-shadow: 0 8px 32px oklch(0.7 0.14 var(--hue) / 0.3);
+		z-index: 1000;
+		pointer-events: none;
+	}
+
+	/* Copy main button highlight */
+	.btn-copy-main {
+		background: linear-gradient(
+			135deg,
+			oklch(0.7 0.14 var(--hue)),
+			oklch(0.65 0.16 calc(var(--hue) + 30))
+		) !important;
+		color: white !important;
+		font-weight: 600;
+	}
+
+	.btn-copy-main:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 4px 12px oklch(0.7 0.14 var(--hue) / 0.3);
+	}
+
+	.btn-copy-main.copied {
+		background: #10b981 !important;
+	}
+
+	/* Download QR button */
+	.btn-download-qr {
+		display: inline-block;
+		padding: 0.75rem 1.5rem;
+		background: linear-gradient(
+			135deg,
+			oklch(0.7 0.14 var(--hue)),
+			oklch(0.65 0.16 calc(var(--hue) + 30))
+		);
+		color: white;
+		border-radius: 0.75rem;
+		font-weight: 600;
+		text-decoration: none;
+		transition: all 0.2s ease;
+	}
+
+	.btn-download-qr:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 4px 12px oklch(0.7 0.14 var(--hue) / 0.3);
+	}
+
+	.qr-actions {
+		display: flex;
+		gap: 0.75rem;
+		justify-content: center;
+	}
+
+	/* Info section */
+	.info-section {
+		background: rgba(255, 255, 255, 0.8);
+		backdrop-filter: blur(10px);
+		border-radius: 1.25rem;
+		padding: 1.5rem;
+		border: 1px solid rgba(0, 0, 0, 0.05);
+	}
+
+	:global(.dark) .info-section,
+	.dark .info-section {
+		background: rgba(30, 41, 59, 0.6);
+		border-color: rgba(255, 255, 255, 0.1);
+	}
+
+	.info-section h3 {
+		font-size: 1.25rem;
+		font-weight: 700;
+		margin-bottom: 1rem;
+		color: oklch(0.6 0.14 var(--hue));
+	}
+
+	:global(.dark) .info-section h3,
+	.dark .info-section h3 {
+		color: oklch(0.75 0.14 var(--hue));
+	}
+
+	.info-grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 1rem;
+	}
+
+	@media (max-width: 768px) {
+		.info-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	.info-item {
+		display: flex;
+		gap: 0.75rem;
+		align-items: flex-start;
+	}
+
+	.info-icon {
+		font-size: 1.5rem;
+		flex-shrink: 0;
+	}
+
+	.info-item strong {
+		display: block;
+		font-weight: 600;
+		margin-bottom: 0.25rem;
+	}
+
+	.info-item p {
+		font-size: 0.85rem;
+		color: #64748b;
+		margin: 0;
+	}
+
+	:global(.dark) .info-item p,
+	.dark .info-item p {
+		color: #94a3b8;
 	}
 </style>
