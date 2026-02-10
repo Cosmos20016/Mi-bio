@@ -63,6 +63,12 @@ let cachedMaxScroll = 0;
 let progressUpdateTimer: ReturnType<typeof setInterval> | null = null;
 let scrollAccumulator = 0;
 
+// Touch handling for mobile
+let touchStartY = 0;
+let lastTapTime = 0;
+const TAP_THRESHOLD = 300; // milliseconds
+const SWIPE_THRESHOLD = 30; // pixels
+
 const clamp = (value: number, min: number, max: number) =>
 	Math.min(Math.max(value, min), max);
 
@@ -70,6 +76,10 @@ $: lines = text.split("\n");
 $: if (lineElements.length !== lines.length) {
 	lineElements = lines.map((_, i) => lineElements[i] || null);
 }
+
+// Word count and estimated reading time
+$: wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+$: estimatedReadingTime = wordCount > 0 ? Math.ceil((wordCount / 150) * 60) : 0; // 150 words per minute
 
 const updateProgress = () => {
 	if (!scrollContainer || !content) return;
@@ -485,11 +495,11 @@ const getSpeedLabel = (spd: number): string => {
 };
 
 const getStatus = (): string => {
-	if (isPlaying) return "Reproduciendo...";
-	if (isCountingDown) return "Iniciando...";
-	if (progress >= 0.99) return "Finalizado";
-	if (progress > 0) return "Pausado";
-	return "Listo";
+	if (isPlaying) return "Al aire 🔴";
+	if (isCountingDown) return "Cuenta regresiva...";
+	if (progress >= 0.99) return "Fin de guion ✓";
+	if (progress > 0) return "En pausa ⏸";
+	return "En línea";
 };
 
 const getStatusColor = (): string => {
@@ -532,6 +542,51 @@ const getEstimatedTimeRemaining = (): string => {
 	const minutes = Math.floor(seconds / 60);
 	const secs = seconds % 60;
 	return `${minutes}:${secs.toString().padStart(2, "0")}`;
+};
+
+// Touch handlers for mobile
+const handleTouchStart = (e: TouchEvent) => {
+	if (!isMobile && !('ontouchstart' in window)) return;
+	if ((e.target as HTMLElement)?.tagName === 'TEXTAREA') return;
+	
+	touchStartY = e.touches[0].clientY;
+};
+
+const handleTouchMove = (e: TouchEvent) => {
+	if (!isMobile && !('ontouchstart' in window)) return;
+	if (!isPlaying) return;
+	if ((e.target as HTMLElement)?.tagName === 'TEXTAREA') return;
+	
+	const deltaY = touchStartY - e.touches[0].clientY;
+	
+	if (Math.abs(deltaY) > SWIPE_THRESHOLD) {
+		// Swipe up = increase speed, Swipe down = decrease speed
+		const speedAdjustment = Math.sign(deltaY) * Math.max(2, Math.abs(deltaY) / 10);
+		adjustSpeed(speedAdjustment);
+		touchStartY = e.touches[0].clientY; // Reset for continuous adjustment
+	}
+};
+
+const handleFrameClick = (e: MouseEvent) => {
+	if ((e.target as HTMLElement)?.tagName === 'TEXTAREA') return;
+	if ((e.target as HTMLElement)?.closest('.teleprompter-panel')) return;
+	if ((e.target as HTMLElement)?.closest('.teleprompter-float')) return;
+	
+	const now = Date.now();
+	if (now - lastTapTime < TAP_THRESHOLD) {
+		// Double tap - toggle fullscreen
+		toggleFullscreen();
+		lastTapTime = 0;
+	} else {
+		// Single tap - toggle play/pause
+		lastTapTime = now;
+		setTimeout(() => {
+			if (lastTapTime !== 0) {
+				toggle();
+				lastTapTime = 0;
+			}
+		}, TAP_THRESHOLD);
+	}
 };
 
 const onKey = (event: KeyboardEvent) => {
@@ -663,10 +718,23 @@ onMount(() => {
 		isFullscreen = Boolean(document.fullscreenElement);
 	};
 	document.addEventListener("fullscreenchange", onFullscreenChange);
+	
+	// Recalculate scroll on resize and orientation change
+	const onResize = () => {
+		if (isPlaying && scrollContainer && content) {
+			cachedMaxScroll = Math.max(content.scrollHeight - scrollContainer.clientHeight, 0);
+			scrollAccumulator = Math.min(scrollAccumulator, cachedMaxScroll);
+		}
+	};
+	window.addEventListener('resize', onResize);
+	window.addEventListener('orientationchange', () => setTimeout(onResize, 300));
+	
 	isReady = true;
 
 	return () => {
 		document.removeEventListener("fullscreenchange", onFullscreenChange);
+		window.removeEventListener('resize', onResize);
+		window.removeEventListener('orientationchange', () => setTimeout(onResize, 300));
 	};
 });
 
@@ -687,11 +755,33 @@ onDestroy(() => {
 {#if showMobileNotice && !allowMobile}
 <div class="teleprompter-mobile-overlay">
 <div class="teleprompter-mobile-card">
-<h2>Teleprompter recomendado para PC</h2>
+<h2>📱 Teleprompter en móvil</h2>
 <p>
-Esta herramienta está optimizada para pantallas grandes. Puedes continuar en móvil,
-pero la experiencia será limitada.
+Esta herramienta está optimizada para pantallas grandes, pero puedes usarla en móvil con estos controles:
 </p>
+<div class="mobile-tips">
+<div class="tip-item">
+<span class="tip-icon">👆</span>
+<div class="tip-text">
+<strong>Toca la pantalla</strong>
+<span>para pausar/reproducir</span>
+</div>
+</div>
+<div class="tip-item">
+<span class="tip-icon">👆👆</span>
+<div class="tip-text">
+<strong>Doble toque</strong>
+<span>para pantalla completa</span>
+</div>
+</div>
+<div class="tip-item">
+<span class="tip-icon">👆↕️</span>
+<div class="tip-text">
+<strong>Desliza arriba/abajo</strong>
+<span>para ajustar velocidad</span>
+</div>
+</div>
+</div>
 <div class="teleprompter-mobile-actions">
 <button
 class="btn-regular"
@@ -742,6 +832,9 @@ localStorage.setItem("teleprompter:onboarding:done", "true");
 <div class="status-row">
 <div class="status-indicator" style={`background-color: ${getStatusColor()}`}></div>
 <p class="teleprompter-status">{getStatus()}</p>
+{#if wordCount > 0}
+<span class="word-count">· {wordCount} palabras · ~{estimatedReadingTime}s</span>
+{/if}
 </div>
 </div>
 <div class="teleprompter-header-actions">
@@ -960,6 +1053,9 @@ bind:this={fullscreenTarget}
 class="teleprompter-frame"
 bind:this={scrollContainer}
 on:wheel={handleWheel}
+on:click={handleFrameClick}
+on:touchstart={handleTouchStart}
+on:touchmove={handleTouchMove}
 style={`padding: ${autoCenter ? "35vh 2rem 50vh" : "2.5rem 2rem"};`}
 >
 <div
@@ -2250,13 +2346,110 @@ gap: 0.35rem;
 }
 
 .btn-float {
-width: 38px;
-height: 38px;
-font-size: 1rem;
+width: 44px;
+height: 44px;
+font-size: 1.1rem;
 }
 
 .teleprompter-countdown span {
 font-size: 5rem;
 }
+}
+
+/* Landscape mode optimizations */
+@media (orientation: landscape) and (max-height: 500px) {
+.teleprompter-screen {
+height: 85vh;
+min-height: unset;
+}
+
+.teleprompter-header {
+flex-direction: row;
+gap: 0.5rem;
+}
+
+.teleprompter-panel {
+padding: 0.75rem;
+}
+
+.teleprompter-float {
+bottom: 0.5rem;
+padding: 0.4rem;
+}
+
+.btn-float {
+width: 36px;
+height: 36px;
+font-size: 0.9rem;
+}
+
+.teleprompter-footer {
+display: none;
+}
+}
+
+/* Mobile tips styles */
+.mobile-tips {
+display: flex;
+flex-direction: column;
+gap: 0.75rem;
+margin: 1rem 0;
+}
+
+.tip-item {
+display: flex;
+align-items: center;
+gap: 1rem;
+padding: 0.75rem;
+background: oklch(0.95 0.01 var(--hue));
+border-radius: 0.5rem;
+}
+
+:global(.dark) .tip-item,
+.dark .tip-item {
+background: oklch(0.20 0.02 var(--hue));
+}
+
+.tip-icon {
+font-size: 1.5rem;
+flex-shrink: 0;
+}
+
+.tip-text {
+display: flex;
+flex-direction: column;
+gap: 0.1rem;
+}
+
+.tip-text strong {
+font-size: 0.9rem;
+color: oklch(0.35 0.03 var(--hue));
+}
+
+:global(.dark) .tip-text strong,
+.dark .tip-text strong {
+color: oklch(0.85 0.03 var(--hue));
+}
+
+.tip-text span {
+font-size: 0.8rem;
+color: oklch(0.50 0.02 var(--hue));
+}
+
+:global(.dark) .tip-text span,
+.dark .tip-text span {
+color: oklch(0.65 0.02 var(--hue));
+}
+
+/* Word count styles */
+.word-count {
+margin-left: 0.5rem;
+font-size: 0.85rem;
+color: oklch(0.55 0.02 var(--hue));
+}
+
+:global(.dark) .word-count,
+.dark .word-count {
+color: oklch(0.70 0.02 var(--hue));
 }
 </style>
