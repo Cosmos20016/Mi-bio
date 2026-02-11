@@ -59,6 +59,17 @@ const categories = [
 	{ id: "other", label: "🔗 Otros", icon: "🔗" },
 ];
 
+// Fallback SVG icon for failed favicon loads
+const fallbackIconSvg = `data:image/svg+xml,${encodeURIComponent(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+</svg>
+`)}`;
+
+// Track which favicons failed to load
+let failedFavicons = new Set<string>();
+
 // Palabras para generar alias legibles
 const adjectives = [
 	"fast",
@@ -193,13 +204,34 @@ const detectCategory = (url: string): string => {
 	}
 };
 
-// Get favicon from URL
+// Get favicon from URL with fallback chain
 const getFavicon = (url: string): string => {
 	try {
 		const domain = new URL(url).hostname;
-		return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+		// Use DuckDuckGo Icons API (more reliable on mobile)
+		return `https://icons.duckduckgo.com/ip3/${domain}.ico`;
 	} catch {
 		return "";
+	}
+};
+
+// Handle favicon load errors
+const handleFaviconError = (event: Event, urlId: string) => {
+	const img = event.currentTarget as HTMLImageElement;
+	if (!failedFavicons.has(urlId)) {
+		failedFavicons.add(urlId);
+		// Try Favicone as second fallback
+		if (img.src.includes("duckduckgo.com")) {
+			try {
+				const domain = new URL(img.alt || "").hostname;
+				img.src = `https://favicone.com/${domain}?s=32`;
+				return;
+			} catch {
+				// Fall through to SVG fallback
+			}
+		}
+		// Use inline SVG fallback
+		img.src = fallbackIconSvg;
 	}
 };
 
@@ -239,15 +271,14 @@ const shortenWithCleanUri = async (longUrl: string): Promise<string> => {
 	return data.result_url;
 };
 
-// API 2: TinyURL (la más reconocida, CORS desde frontend)
-const shortenWithTinyUrl = async (longUrl: string): Promise<string> => {
-	const response = await fetch(
-		`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`,
-	);
-	if (!response.ok) throw new Error(`TinyURL HTTP ${response.status}`);
-	const shortUrl = await response.text();
-	if (!shortUrl.startsWith("http")) throw new Error("TinyURL response invalid");
-	return shortUrl.trim();
+// API 2: v.gd (sin publicidad, mismo backend que is.gd, fallback adicional)
+const shortenWithVgd = async (longUrl: string): Promise<string> => {
+	const endpoint = `https://v.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`;
+	const response = await fetch(endpoint);
+	if (!response.ok) throw new Error(`v.gd HTTP ${response.status}`);
+	const data = await response.json();
+	if (data.errorcode) throw new Error(data.errormessage || "Shortening failed");
+	return data.shorturl;
 };
 
 // API 3: is.gd (fallback, funciona bien en desktop)
@@ -260,12 +291,12 @@ const shortenWithIsgd = async (longUrl: string): Promise<string> => {
 	return data.shorturl;
 };
 
-// Controlador principal: prueba APIs en cascada hasta que una funcione
+// Controlador principal: prueba APIs sin publicidad en cascada hasta que una funcione
 const shortenUrl = async (longUrl: string): Promise<string> => {
 	const apis = [
 		{ name: "CleanURI", fn: shortenWithCleanUri },
-		{ name: "TinyURL", fn: shortenWithTinyUrl },
 		{ name: "is.gd", fn: shortenWithIsgd },
+		{ name: "v.gd", fn: shortenWithVgd },
 	];
 
 	for (const api of apis) {
@@ -355,7 +386,7 @@ const addUrl = async () => {
 		inputUrl = "";
 		inputAlias = "";
 		inputCategory = "other";
-		showSuccessToast("✓ URL acortada exitosamente");
+		showSuccessToast("✓ URL acortada · Sin publicidad");
 	} catch (err) {
 		// Log error for debugging
 		console.error("URL shortening failed:", err);
@@ -920,7 +951,12 @@ const closeOnboarding = () => {
 							{:else}
 								<div class="url-alias-row">
 									{#if url.favicon}
-										<img src={url.favicon} alt="" class="url-favicon" />
+										<img 
+											src={url.favicon} 
+											alt={url.originalUrl} 
+											class="url-favicon" 
+											on:error={(e) => handleFaviconError(e, url.id)}
+										/>
 									{/if}
 									<div class="url-alias">#{url.alias}</div>
 									<span class="url-category-badge">{categoryMap[url.category]?.icon || '🔗'}</span>
@@ -985,6 +1021,7 @@ const closeOnboarding = () => {
 			</div>
 			<div class="footer-info">
 				{totalUrls}/{MAX_URLS} URLs guardados
+				<span class="ad-free-badge">🔒 Sin publicidad · Enlaces limpios</span>
 			</div>
 		</div>
 	</div>
@@ -1440,6 +1477,9 @@ const closeOnboarding = () => {
 		height: 20px;
 		object-fit: contain;
 		border-radius: 0.25rem;
+		flex-shrink: 0;
+		image-rendering: auto;
+		background-color: rgba(148, 163, 184, 0.1);
 	}
 
 	.url-category-badge {
@@ -1826,6 +1866,25 @@ const closeOnboarding = () => {
 		border-color: oklch(0.35 0.03 var(--hue));
 	}
 
+	.footer-info {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 0.25rem;
+	}
+
+	.ad-free-badge {
+		font-size: 0.75rem;
+		color: #10b981;
+		font-weight: 500;
+		opacity: 0.9;
+	}
+
+	:global(.dark) .ad-free-badge,
+	.dark .ad-free-badge {
+		color: #34d399;
+	}
+
 	/* Animations */
 	@keyframes fadeIn {
 		from {
@@ -1982,6 +2041,11 @@ const closeOnboarding = () => {
 	@media (max-width: 768px) {
 		.info-grid {
 			grid-template-columns: 1fr;
+		}
+
+		.url-favicon {
+			width: 18px;
+			height: 18px;
 		}
 	}
 
