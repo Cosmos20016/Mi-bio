@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kevin Borja - Sin conexión</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+      padding: 20px;
+      transition: background 0.3s ease;
+    }
+
+    /* Light mode colors */
+    body {
+      background: linear-gradient(135deg, 
+        oklch(0.95 0.02 250) 0%,
+        oklch(0.92 0.04 260) 50%,
+        oklch(0.90 0.03 240) 100%);
+    }
+
+    /* Dark mode colors */
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: linear-gradient(135deg, 
+          oklch(0.15 0.05 250) 0%,
+          oklch(0.12 0.08 260) 50%,
+          oklch(0.10 0.06 240) 100%);
+        color: oklch(0.95 0.01 250);
+      }
+    }
+
+    /* Particles container */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Create multiple particles with CSS */
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      background: radial-gradient(circle, 
+        oklch(0.7 0.15 250) 0%, 
+        transparent 70%);
+      animation: float linear infinite;
+      opacity: 0.3;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .particle {
+        background: radial-gradient(circle, 
+          oklch(0.6 0.2 250) 0%, 
+          transparent 70%);
+        opacity: 0.4;
+      }
+    }
+
+    /* Generate particles with different sizes and positions */
+    .particle:nth-child(1) { width: 3px; height: 3px; left: 10%; animation-duration: 8s; animation-delay: 0s; }
+    .particle:nth-child(2) { width: 5px; height: 5px; left: 20%; animation-duration: 12s; animation-delay: 2s; }
+    .particle:nth-child(3) { width: 2px; height: 2px; left: 30%; animation-duration: 10s; animation-delay: 1s; }
+    .particle:nth-child(4) { width: 4px; height: 4px; left: 40%; animation-duration: 15s; animation-delay: 3s; }
+    .particle:nth-child(5) { width: 3px; height: 3px; left: 50%; animation-duration: 11s; animation-delay: 0s; }
+    .particle:nth-child(6) { width: 6px; height: 6px; left: 60%; animation-duration: 13s; animation-delay: 2s; }
+    .particle:nth-child(7) { width: 2px; height: 2px; left: 70%; animation-duration: 9s; animation-delay: 1s; }
+    .particle:nth-child(8) { width: 4px; height: 4px; left: 80%; animation-duration: 14s; animation-delay: 4s; }
+    .particle:nth-child(9) { width: 3px; height: 3px; left: 90%; animation-duration: 10s; animation-delay: 0s; }
+    .particle:nth-child(10) { width: 5px; height: 5px; left: 15%; animation-duration: 12s; animation-delay: 3s; }
+    .particle:nth-child(11) { width: 2px; height: 2px; left: 25%; animation-duration: 11s; animation-delay: 1s; }
+    .particle:nth-child(12) { width: 4px; height: 4px; left: 35%; animation-duration: 13s; animation-delay: 2s; }
+    .particle:nth-child(13) { width: 3px; height: 3px; left: 45%; animation-duration: 10s; animation-delay: 0s; }
+    .particle:nth-child(14) { width: 5px; height: 5px; left: 55%; animation-duration: 14s; animation-delay: 4s; }
+    .particle:nth-child(15) { width: 2px; height: 2px; left: 65%; animation-duration: 9s; animation-delay: 1s; }
+    .particle:nth-child(16) { width: 4px; height: 4px; left: 75%; animation-duration: 12s; animation-delay: 3s; }
+    .particle:nth-child(17) { width: 3px; height: 3px; left: 85%; animation-duration: 11s; animation-delay: 0s; }
+    .particle:nth-child(18) { width: 6px; height: 6px; left: 95%; animation-duration: 15s; animation-delay: 2s; }
+    .particle:nth-child(19) { width: 2px; height: 2px; left: 5%; animation-duration: 10s; animation-delay: 1s; }
+    .particle:nth-child(20) { width: 4px; height: 4px; left: 55%; animation-duration: 13s; animation-delay: 3s; }
+
+    @keyframes float {
+      0% {
+        transform: translateY(100vh) translateX(0) scale(1);
+        opacity: 0;
+      }
+      10% {
+        opacity: 0.3;
+      }
+      90% {
+        opacity: 0.3;
+      }
+      100% {
+        transform: translateY(-100px) translateX(20px) scale(0.8);
+        opacity: 0;
+      }
+    }
+
+    /* Content container */
+    .content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    /* WiFi icon container */
+    .icon-container {
+      margin: 0 auto 2rem;
+      width: 120px;
+      height: 120px;
+    }
+
+    /* Animated WiFi icon */
+    .wifi-icon {
+      width: 100%;
+      height: 100%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(1.05);
+        opacity: 0.8;
+      }
+    }
+
+    /* Title with gradient animation */
+    .title {
+      font-size: clamp(2rem, 8vw, 3.5rem);
+      font-weight: 700;
+      margin-bottom: 1rem;
+      background: linear-gradient(
+        90deg,
+        #7c5fff 0%,
+        #00e580 50%,
+        #FFD700 100%
+      );
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradient-shift 3s ease-in-out infinite;
+    }
+
+    @keyframes gradient-shift {
+      0%, 100% {
+        background-position: 0% center;
+      }
+      50% {
+        background-position: 100% center;
+      }
+    }
+
+    /* Main message */
+    .message {
+      font-size: clamp(1.25rem, 4vw, 1.75rem);
+      margin-bottom: 1rem;
+      line-height: 1.4;
+      color: oklch(0.3 0.05 250);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .message {
+        color: oklch(0.85 0.03 250);
+      }
+    }
+
+    /* Bio message */
+    .bio {
+      font-size: clamp(1rem, 3vw, 1.25rem);
+      margin-bottom: 2.5rem;
+      opacity: 0.8;
+      font-style: italic;
+      color: oklch(0.4 0.05 250);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .bio {
+        color: oklch(0.75 0.03 250);
+      }
+    }
+
+    /* Retry button */
+    .retry-button {
+      display: inline-block;
+      padding: 1rem 2.5rem;
+      font-size: 1.125rem;
+      font-weight: 500;
+      color: white;
+      background: linear-gradient(135deg, #7c5fff 0%, #00e580 100%);
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(124, 95, 255, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .retry-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(124, 95, 255, 0.4);
+    }
+
+    .retry-button:active {
+      transform: translateY(0);
+    }
+
+    .retry-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+      transition: left 0.5s ease;
+    }
+
+    .retry-button:hover::before {
+      left: 100%;
+    }
+
+    /* Footer */
+    .footer {
+      position: fixed;
+      bottom: 20px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 0.875rem;
+      opacity: 0.6;
+      color: oklch(0.5 0.05 250);
+      z-index: 1;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .footer {
+        color: oklch(0.65 0.03 250);
+      }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 640px) {
+      .icon-container {
+        width: 100px;
+        height: 100px;
+        margin-bottom: 1.5rem;
+      }
+
+      .retry-button {
+        padding: 0.875rem 2rem;
+        font-size: 1rem;
+      }
+
+      .bio {
+        margin-bottom: 2rem;
+      }
+    }
+
+    /* Connection status indicator */
+    .status-indicator {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: oklch(0.5 0.15 30);
+      box-shadow: 0 0 10px oklch(0.5 0.15 30);
+      z-index: 1;
+    }
+
+    .status-indicator.online {
+      background: oklch(0.7 0.2 140);
+      box-shadow: 0 0 10px oklch(0.7 0.2 140);
+      animation: blink 1s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Particles background -->
+  <div class="particles">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+  </div>
+
+  <!-- Connection status indicator -->
+  <div class="status-indicator" id="statusIndicator" aria-label="Estado de conexión"></div>
+
+  <!-- Main content -->
+  <div class="content">
+    <!-- WiFi Disconnected SVG Icon -->
+    <div class="icon-container">
+      <svg class="wifi-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Señal perdida">
+        <!-- Diagonal line (signal lost) -->
+        <line x1="4" y1="4" x2="20" y2="20" stroke="url(#gradient1)" stroke-width="2" stroke-linecap="round"/>
+        
+        <!-- WiFi arcs (broken) -->
+        <path d="M1 9C4.5 5.5 9.5 3 12 3C14.5 3 19.5 5.5 23 9" 
+              stroke="url(#gradient1)" 
+              stroke-width="2" 
+              stroke-linecap="round" 
+              stroke-dasharray="3 3"
+              opacity="0.4"/>
+        
+        <path d="M4 12C6.5 9.5 9 8 12 8C15 8 17.5 9.5 20 12" 
+              stroke="url(#gradient2)" 
+              stroke-width="2" 
+              stroke-linecap="round" 
+              stroke-dasharray="3 3"
+              opacity="0.5"/>
+        
+        <path d="M7 15C8.5 13.5 10 13 12 13C14 13 15.5 13.5 17 15" 
+              stroke="url(#gradient3)" 
+              stroke-width="2" 
+              stroke-linecap="round" 
+              stroke-dasharray="2 2"
+              opacity="0.6"/>
+        
+        <!-- Center dot -->
+        <circle cx="12" cy="19" r="2" fill="url(#gradient3)"/>
+        
+        <!-- Gradients for the icon -->
+        <defs>
+          <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#7c5fff;stop-opacity:1" />
+            <stop offset="50%" style="stop-color:#00e580;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#FFD700;stop-opacity:1" />
+          </linearGradient>
+          <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#00e580;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#7c5fff;stop-opacity:1" />
+          </linearGradient>
+          <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#7c5fff;stop-opacity:1" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+
+    <h1 class="title">Kevin Borja</h1>
+    <p class="message">Parece que la conexión se tomó un descanso</p>
+    <p class="bio">Sencillo, creativo, yo — pero necesito internet para mostrarte todo</p>
+    
+    <button class="retry-button" onclick="location.reload()" aria-label="Reintentar conexión">
+      Reintentar
+    </button>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer" role="contentinfo">
+    kevinborja.com • Volveremos pronto
+  </footer>
+
+  <!-- Auto-reconnection script -->
+  <script>
+    // Update status indicator
+    const statusIndicator = document.getElementById('statusIndicator');
+    
+    function updateConnectionStatus() {
+      if (navigator.onLine) {
+        statusIndicator.classList.add('online');
+        statusIndicator.setAttribute('aria-label', 'En línea');
+      } else {
+        statusIndicator.classList.remove('online');
+        statusIndicator.setAttribute('aria-label', 'Sin conexión');
+      }
+    }
+
+    // Check initial status
+    updateConnectionStatus();
+
+    // Listen for online event
+    window.addEventListener('online', function() {
+      console.log('Connection restored, redirecting...');
+      updateConnectionStatus();
+      
+      // Add a small delay to show the status change
+      setTimeout(function() {
+        // Try to navigate to the page user was trying to visit
+        // If not available, go to home page
+        const intendedUrl = sessionStorage.getItem('offline-intended-url') || '/';
+        sessionStorage.removeItem('offline-intended-url');
+        window.location.href = intendedUrl;
+      }, 500);
+    });
+
+    // Listen for offline event
+    window.addEventListener('offline', function() {
+      console.log('Connection lost');
+      updateConnectionStatus();
+    });
+
+    // Store the current URL for when connection is restored
+    // This will be set by the service worker, but we can also store it here
+    if (!sessionStorage.getItem('offline-intended-url')) {
+      sessionStorage.setItem('offline-intended-url', '/');
+    }
+  </script>
+</body>
+</html>
