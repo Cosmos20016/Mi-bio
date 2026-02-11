@@ -127,7 +127,7 @@ self.addEventListener("fetch", (event) => {
 					})
 					.catch(() => {
 						// Si no hay caché ni red, devolver respuesta vacía
-						return cached || new Response("", { status: 503 });
+						return new Response("", { status: 503 });
 					});
 
 				// Devolver caché inmediatamente si existe, sino esperar la red
