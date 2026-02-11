@@ -654,7 +654,7 @@ if ('serviceWorker' in navigator) {
       .then(reg => {
         console.log('SW registered:', reg.scope);
         // Check for updates periodically
-        setInterval(() => reg.update(), 60 * 60 * 1000); // cada hora
+        setInterval(() => reg.update(), 60 * 60 * 1000); // every hour
       })
       .catch(err => console.log('SW registration failed:', err));
   });

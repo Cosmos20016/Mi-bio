@@ -4,6 +4,7 @@
 const CACHE_NAME = 'kevinborja-v2';
 const OFFLINE_URL = '/offline.html';
 const PRECACHE_URLS = [OFFLINE_URL, '/'];
+const NETWORK_TIMEOUT_MS = 3000;
 
 // Install event - pre-cache offline page
 self.addEventListener('install', (event) => {
@@ -75,7 +76,7 @@ self.addEventListener('fetch', (event) => {
           return response;
         }),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Network timeout')), 3000)
+          setTimeout(() => reject(new Error('Network timeout')), NETWORK_TIMEOUT_MS)
         )
       ]).catch(() => {
         console.log('[Service Worker] Network request failed or timed out');
