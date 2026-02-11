@@ -650,8 +650,12 @@ if (window.swup) {
 <script is:inline>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('SW registered:', reg.scope))
+    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
+      .then(reg => {
+        console.log('SW registered:', reg.scope);
+        // Check for updates periodically
+        setInterval(() => reg.update(), 60 * 60 * 1000); // cada hora
+      })
       .catch(err => console.log('SW registration failed:', err));
   });
 }
