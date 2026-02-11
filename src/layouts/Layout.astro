@@ -111,7 +111,7 @@ const bannerOffset =
 
 		<!-- Preload critical fonts -->
 		<link rel="preload" href="/_astro/roboto-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
-		{enableBanner && banner && <link rel="preload" href={banner.startsWith('/') ? url(banner) : url(`/src/${banner}`)} as="image" fetchpriority="high" />}
+		{enableBanner && banner && <link rel="preload" href={banner.startsWith('/') ? url(banner) : url(`/${banner}`)} as="image" fetchpriority="high" />}
 
 		<!-- DNS prefetch y preconnect para recursos externos -->
 		<link rel="dns-prefetch" href="https://api.qrserver.com" />
