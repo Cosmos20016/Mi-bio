@@ -90,6 +90,9 @@ const bannerOffset =
 		<meta property="og:url" content={Astro.url}>
 		<meta property="og:title" content={pageTitle}>
 		<meta property="og:description" content={description || pageTitle}>
+		<meta property="og:image" content={new URL('/og-default.png', Astro.site).href}>
+		<meta property="og:image:width" content="1200">
+		<meta property="og:image:height" content="630">
 		{setOGTypeArticle ? (
         <meta property="og:type" content="article" />
         ) : (
@@ -100,6 +103,7 @@ const bannerOffset =
 		<meta property="twitter:url" content={Astro.url}>
 		<meta name="twitter:title" content={pageTitle}>
 		<meta name="twitter:description" content={description || pageTitle}>
+		<meta name="twitter:image" content={new URL('/og-default.png', Astro.site).href}>
 
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="generator" content={Astro.generator} />
@@ -107,6 +111,7 @@ const bannerOffset =
 
 		<!-- Preload critical fonts -->
 		<link rel="preload" href="/_astro/roboto-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+		{enableBanner && banner && <link rel="preload" href={banner.startsWith('/') ? url(banner) : url(`/${banner}`)} as="image" fetchpriority="high" />}
 
 		<!-- DNS prefetch y preconnect para recursos externos -->
 		<link rel="dns-prefetch" href="https://api.qrserver.com" />
@@ -122,6 +127,7 @@ const bannerOffset =
 				media={favicon.theme && `(prefers-color-scheme: ${favicon.theme})`}
 			/>
 		))}
+		<link rel="manifest" href="/manifest.json">
 
 		<!-- Set the theme before the page is rendered to avoid a flash -->
 		<script is:inline define:vars={{DEFAULT_THEME, LIGHT_MODE, DARK_MODE, AUTO_MODE, BANNER_HEIGHT_EXTEND, PAGE_WIDTH, configHue}}>

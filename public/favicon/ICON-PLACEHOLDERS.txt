@@ -1,0 +1,21 @@
+<!-- PLACEHOLDER: icon-192.png and icon-512.png -->
+These files are required for PWA (Progressive Web App) support.
+
+You need to create:
+1. icon-192.png (192x192 pixels) - Standard app icon
+2. icon-512.png (512x512 pixels) - High-resolution app icon
+
+These icons should be simplified versions of your logo/brand that work well
+at small sizes and when placed on different background colors.
+
+IMPORTANT: The manifest.json currently uses only standard icons (not maskable).
+If you want to support maskable icons (icons that adapt to different device shapes):
+- Create a separate icon-512-maskable.png file
+- Ensure important content is in the center "safe zone" (about 80% of the image)
+- Avoid placing text or logos too close to the edges
+- Add it to manifest.json with "purpose": "maskable"
+
+You can use existing favicons as a base and scale them up, or create new 
+simplified versions specifically for PWA icons.
+
+Tip: Use https://maskable.app/ to test your maskable icon design.
