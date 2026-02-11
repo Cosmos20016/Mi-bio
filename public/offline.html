@@ -431,11 +431,10 @@
       
       // Add a small delay to show the status change
       setTimeout(function() {
-        // Try to navigate to the page user was trying to visit
-        // If not available, go to home page
-        const intendedUrl = sessionStorage.getItem('offline-intended-url') || '/';
-        sessionStorage.removeItem('offline-intended-url');
-        window.location.href = intendedUrl;
+        // Redirect to home page or use browser's back navigation
+        // Since Service Worker doesn't pass the intended URL reliably,
+        // we'll redirect to home page
+        window.location.href = '/';
       }, 500);
     });
 
@@ -444,12 +443,6 @@
       console.log('Connection lost');
       updateConnectionStatus();
     });
-
-    // Store the current URL for when connection is restored
-    // This will be set by the service worker, but we can also store it here
-    if (!sessionStorage.getItem('offline-intended-url')) {
-      sessionStorage.setItem('offline-intended-url', '/');
-    }
   </script>
 </body>
 </html>

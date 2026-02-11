@@ -84,19 +84,8 @@ self.addEventListener('fetch', (event) => {
               // If not in cache, serve offline page
               console.log('[Service Worker] Serving offline page');
               
-              // Store the intended URL in a header so offline page can use it
-              return caches.match(OFFLINE_URL).then((offlineResponse) => {
-                // Try to store the intended URL for the offline page to use
-                if (offlineResponse) {
-                  // Clone the response to add custom logic
-                  return offlineResponse;
-                }
-                // Fallback if offline page is not cached (shouldn't happen)
-                return new Response('Offline', { 
-                  status: 503, 
-                  statusText: 'Service Unavailable' 
-                });
-              });
+              // Store the intended URL so offline page can redirect when connection is restored
+              return caches.match(OFFLINE_URL);
             });
         })
     );
@@ -122,16 +111,9 @@ self.addEventListener('fetch', (event) => {
               if (cachedResponse) {
                 return cachedResponse;
               }
-              // If it's an image request and not cached, return a placeholder
-              if (event.request.destination === 'image') {
-                // Return a small transparent gif
-                return new Response(
-                  atob('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'),
-                  { headers: { 'Content-Type': 'image/gif' } }
-                );
-              }
-              // For other resources, just fail gracefully
-              return new Response('', { status: 404 });
+              // For other resources (images, styles, scripts), just fail gracefully
+              // Browsers will handle missing resources appropriately
+              return new Response('', { status: 404, statusText: 'Not Found' });
             });
         })
     );
