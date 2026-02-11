@@ -680,8 +680,14 @@ if ('serviceWorker' in navigator) {
 
   // Cuando la página vuelve de segundo plano, verificar actualizaciones
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+    if (document.visibilityState === 'visible') {
+      navigator.serviceWorker.getRegistration().then(reg => {
+        if (reg && reg.waiting) {
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        } else if (reg) {
+          reg.update();
+        }
+      });
     }
   });
 }

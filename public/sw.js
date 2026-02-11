@@ -57,15 +57,18 @@ self.addEventListener("activate", (event) => {
 });
 
 // Limitar el número de entradas en la caché
+let cacheUpdateCounter = 0;
 async function trimCache(cacheName, maxEntries) {
 	const cache = await caches.open(cacheName);
 	const keys = await cache.keys();
 	if (keys.length > maxEntries) {
-		// Eliminar las entradas más antiguas (las primeras)
+		// Eliminar las entradas más antiguas (las primeras) en paralelo
 		const deleteCount = keys.length - maxEntries;
+		const deletePromises = [];
 		for (let i = 0; i < deleteCount; i++) {
-			await cache.delete(keys[i]);
+			deletePromises.push(cache.delete(keys[i]));
 		}
+		await Promise.all(deletePromises);
 	}
 }
 
@@ -112,8 +115,12 @@ self.addEventListener("fetch", (event) => {
 							const clone = response.clone();
 							caches.open(CACHE_NAME).then((cache) => {
 								cache.put(event.request, clone);
-								// Limpiar caché periódicamente
-								trimCache(CACHE_NAME, MAX_CACHE_ENTRIES);
+								// Limpiar caché periódicamente (cada 10 peticiones)
+								cacheUpdateCounter++;
+								if (cacheUpdateCounter >= 10) {
+									cacheUpdateCounter = 0;
+									trimCache(CACHE_NAME, MAX_CACHE_ENTRIES);
+								}
 							});
 						}
 						return response;
