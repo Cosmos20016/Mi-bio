@@ -34,8 +34,13 @@ const jsonLd = {
 	description: entry.data.description || entry.data.title,
 	keywords: entry.data.tags,
 	image: entry.data.image
-		? new URL(entry.data.image.startsWith('/') ? entry.data.image : `/src/${entry.data.image}`, Astro.site).href
-		: new URL('/og-default.png', Astro.site).href,
+		? new URL(
+				entry.data.image.startsWith("/")
+					? entry.data.image
+					: `/src/${entry.data.image}`,
+				Astro.site,
+			).href
+		: new URL("/og-default.png", Astro.site).href,
 	author: {
 		"@type": "Person",
 		name: profileConfig.name,
