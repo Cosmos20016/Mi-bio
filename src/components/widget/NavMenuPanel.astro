@@ -45,12 +45,11 @@ function setupNavMenuClose() {
 setupNavMenuClose();
 
 // Re-setup after Swup page transitions
-document.addEventListener('swup:enable', () => {
-    if (window.swup) {
-        window.swup.hooks.on('page:view', setupNavMenuClose);
-    }
-});
 if (window.swup) {
     window.swup.hooks.on('page:view', setupNavMenuClose);
+} else {
+    document.addEventListener('swup:enable', () => {
+        window.swup.hooks.on('page:view', setupNavMenuClose);
+    });
 }
 </script>
