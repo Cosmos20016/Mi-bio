@@ -18,7 +18,26 @@ const PRECACHE_ROUTES = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE_ROUTES))
+      .then((cache) => {
+        // Pre-cache offline page first (critical)
+        return cache.add(OFFLINE_URL).then(() => {
+          // Pre-cache routes individually to prevent installation failure
+          const precachePromises = PRECACHE_ROUTES
+            .filter((url) => url !== OFFLINE_URL)
+            .map((url) =>
+              fetch(url, { credentials: 'same-origin' })
+                .then((response) => {
+                  if (response.ok) {
+                    return cache.put(url, response);
+                  }
+                })
+                .catch(() => {
+                  // Silent fail - don't prevent installation if a route is unavailable
+                })
+            );
+          return Promise.all(precachePromises);
+        });
+      })
       .then(() => self.skipWaiting())
   );
 });
@@ -72,7 +91,7 @@ self.addEventListener('fetch', (event) => {
             return response;
           });
         })
-        .catch(() => new Response('', { status: 503 }))
+        .catch(() => new Response('Service Unavailable', { status: 503, statusText: 'Service Unavailable' }))
     );
     return;
   }
@@ -106,6 +125,6 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       })
-      .catch(() => caches.match(event.request).then((cached) => cached || new Response('', { status: 503 })))
+      .catch(() => caches.match(event.request).then((cached) => cached || new Response('Service Unavailable', { status: 503, statusText: 'Service Unavailable' })))
   );
 });
