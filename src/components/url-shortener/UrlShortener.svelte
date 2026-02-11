@@ -222,12 +222,15 @@ const handleFaviconError = (event: Event, urlId: string) => {
 		failedFavicons.add(urlId);
 		// Try Favicone as second fallback
 		if (img.src.includes("duckduckgo.com")) {
-			try {
-				const domain = new URL(img.alt || "").hostname;
-				img.src = `https://favicone.com/${domain}?s=32`;
-				return;
-			} catch {
-				// Fall through to SVG fallback
+			const originalUrl = img.dataset.url;
+			if (originalUrl) {
+				try {
+					const domain = new URL(originalUrl).hostname;
+					img.src = `https://favicone.com/${domain}?s=32`;
+					return;
+				} catch {
+					// Fall through to SVG fallback
+				}
 			}
 		}
 		// Use inline SVG fallback
@@ -458,6 +461,8 @@ const copyAlias = (urlEntry: ShortenedUrl) => {
 const deleteUrl = (id: string) => {
 	if (confirm("¿Eliminar este URL?")) {
 		urls = urls.filter((u) => u.id !== id);
+		// Clean up failed favicon tracking for deleted URL
+		failedFavicons.delete(id);
 		saveUrls();
 	}
 };
@@ -953,7 +958,8 @@ const closeOnboarding = () => {
 									{#if url.favicon}
 										<img 
 											src={url.favicon} 
-											alt={url.originalUrl} 
+											alt="" 
+											data-url={url.originalUrl}
 											class="url-favicon" 
 											on:error={(e) => handleFaviconError(e, url.id)}
 										/>
