@@ -1,14 +1,14 @@
 {
-  "name": "Kevin Borja",
-  "short_name": "Kevin",
-  "description": "Sencillo, creativo, yo",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "hsl(250, 50%, 50%)",
-  "orientation": "any",
-  "icons": [
-    { "src": "/favicon/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/favicon/icon-512.png", "sizes": "512x512", "type": "image/png" }
-  ]
+	"name": "Kevin Borja",
+	"short_name": "Kevin",
+	"description": "Sencillo, creativo, yo",
+	"start_url": "/",
+	"display": "browser",
+	"background_color": "#ffffff",
+	"theme_color": "hsl(250, 50%, 50%)",
+	"orientation": "any",
+	"icons": [
+		{ "src": "/favicon/icon-192.png", "sizes": "192x192", "type": "image/png" },
+		{ "src": "/favicon/icon-512.png", "sizes": "512x512", "type": "image/png" }
+	]
 }

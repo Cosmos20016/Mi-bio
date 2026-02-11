@@ -129,6 +129,10 @@ const bannerOffset =
 		))}
 		<link rel="manifest" href="/manifest.json">
 
+		<!-- Precarga de rutas principales para navegación instantánea -->
+		<link rel="prefetch" href="/archive/" />
+		<link rel="prefetch" href="/about/" />
+
 		<!-- Set the theme before the page is rendered to avoid a flash -->
 		<script is:inline define:vars={{DEFAULT_THEME, LIGHT_MODE, DARK_MODE, AUTO_MODE, BANNER_HEIGHT_EXTEND, PAGE_WIDTH, configHue}}>
 			// Load the theme from local storage
@@ -654,15 +658,37 @@ if (window.swup) {
 </script>
 
 <script is:inline>
+// Bloquear prompt de instalación PWA en todos los navegadores
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  return false;
+});
+</script>
+
+<script is:inline>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
       .then(reg => {
-        console.log('SW registered:', reg.scope);
-        // Check for updates periodically
-        setInterval(() => reg.update(), 60 * 60 * 1000); // every hour
+        // Verificar actualizaciones periódicamente (cada hora)
+        setInterval(() => reg.update(), 60 * 60 * 1000);
       })
-      .catch(err => console.log('SW registration failed:', err));
+      .catch(() => {
+        // Service Worker no disponible, la página funciona sin él
+      });
+  });
+
+  // Cuando la página vuelve de segundo plano, verificar actualizaciones
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      navigator.serviceWorker.getRegistration().then(reg => {
+        if (reg && reg.waiting) {
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        } else if (reg) {
+          reg.update();
+        }
+      });
+    }
   });
 }
 </script>
