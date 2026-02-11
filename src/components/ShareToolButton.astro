@@ -6,7 +6,7 @@ interface Props {
 }
 
 const { toolName, toolDescription, toolUrl } = Astro.props;
-const uniqueId = `share-btn-${Math.random().toString(36).substr(2, 9)}`;
+const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
 ---
 
 <div class="share-tool-button-wrapper">
@@ -121,7 +121,7 @@ const uniqueId = `share-btn-${Math.random().toString(36).substr(2, 9)}`;
         // Use native share on mobile if available
         if (isMobile && hasNativeShare) {
           try {
-            await (navigator as any).share({
+            await navigator.share({
               title: toolName,
               text: shareText,
               url: absoluteUrl,
