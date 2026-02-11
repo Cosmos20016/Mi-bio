@@ -1,15 +1,15 @@
 /* Page transition animations with Swup */
 html.is-changing .transition-swup-fade {
-    @apply transition-all duration-200
+    @apply transition-all duration-300 ease-out
 }
 html.is-animating .transition-swup-fade {
-    @apply opacity-0 translate-y-4
+    @apply opacity-0 translate-y-2
 }
 
 /* Fade-in animations for components */
 @keyframes fade-in-up {
     0% {
-        transform: translateY(2rem);
+        transform: translateY(1rem);
         opacity: 0;
     }
     100% {
@@ -21,7 +21,7 @@ html.is-animating .transition-swup-fade {
 /* Main components */
 .onload-animation {
     opacity: 0;
-    animation: 300ms fade-in-up;
+    animation: 350ms cubic-bezier(0.22, 1, 0.36, 1) fade-in-up;
     animation-fill-mode: forwards;
     will-change: opacity, transform;
 }
@@ -38,17 +38,17 @@ html.is-animating .transition-swup-fade {
     animation-delay: var(--content-delay);
 }
 .footer {
-    animation-delay: 250ms;
+    animation-delay: 200ms;
 }
 #banner-credit {
-    animation-delay: 400ms;
+    animation-delay: 350ms;
 }
 
 /* Post content */
 #post-container :nth-child(1) { animation-delay: calc(var(--content-delay) + 0ms) }
 #post-container :nth-child(2) { animation-delay: calc(var(--content-delay) + 50ms) }
 #post-container :nth-child(3) { animation-delay: calc(var(--content-delay) + 100ms) }
-#post-container :nth-child(4) { animation-delay: calc(var(--content-delay) + 175ms) }
-#post-container :nth-child(5) { animation-delay: calc(var(--content-delay) + 250ms) }
-#post-container :nth-child(6) { animation-delay: calc(var(--content-delay) + 325ms) }
+#post-container :nth-child(4) { animation-delay: calc(var(--content-delay) + 150ms) }
+#post-container :nth-child(5) { animation-delay: calc(var(--content-delay) + 200ms) }
+#post-container :nth-child(6) { animation-delay: calc(var(--content-delay) + 250ms) }
 
