@@ -19,12 +19,13 @@ const config = profileConfig;
         <ImageWrapper src={config.avatar || ""} alt="Profile Image of the Author" class="mx-auto lg:w-full h-full lg:mt-0 "></ImageWrapper>
     </a>
     <div class="px-2">
-        <div class="font-bold text-xl text-center mb-1 dark:text-neutral-50 transition flex items-center justify-center gap-1.5">
+        <div class="font-bold text-xl text-center mb-1 dark:text-neutral-50 transition flex items-center justify-center gap-1">
             {config.name}
-            <span class="verified-badge" title="Cuenta verificada" aria-label="Cuenta verificada">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="verified-icon">
-                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" class="verified-shield"/>
-                    <path d="M10 15.5l-3.5-3.5 1.41-1.41L10 12.67l5.59-5.59L17 8.5l-7 7z" class="verified-check"/>
+            <span class="meta-verified-badge" title="Cuenta verificada" aria-label="Cuenta verificada" role="img">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="meta-verified-icon">
+                    <circle cx="12" cy="12" r="12" fill="#0095F6"/>
+                    <!-- Checkmark path with rounded edges -->
+                    <path d="M17.2 8.5L10.4 15.5L6.8 11.8" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </span>
         </div>
@@ -46,41 +47,31 @@ const config = profileConfig;
 </div>
 
 <style>
-    .verified-badge {
+    .meta-verified-badge {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        position: relative;
+        cursor: default;
     }
 
-    .verified-icon {
-        width: 1.25rem;
-        height: 1.25rem;
-        filter: drop-shadow(0 1px 2px oklch(0.7 0.14 var(--hue) / 0.3));
-        transition: all 0.3s ease;
+    .meta-verified-icon {
+        width: 1.15rem;
+        height: 1.15rem;
+        transition: all 0.2s ease;
     }
 
-    .verified-badge:hover .verified-icon {
-        filter: drop-shadow(0 2px 6px oklch(0.7 0.14 var(--hue) / 0.5));
-        transform: scale(1.1);
+    .meta-verified-badge:hover .meta-verified-icon {
+        transform: scale(1.08);
+        filter: drop-shadow(0 0 4px rgba(0, 149, 246, 0.4));
     }
 
-    .verified-shield {
-        fill: oklch(0.6 0.16 var(--hue));
-        transition: fill 0.3s ease;
+    :global(.dark) .meta-verified-icon {
+        filter: drop-shadow(0 0 3px rgba(0, 149, 246, 0.25));
     }
 
-    :global(.dark) .verified-shield {
-        fill: oklch(0.72 0.14 var(--hue));
-    }
-
-    .verified-check {
-        fill: white;
-    }
-
-    :global(.dark) .verified-check {
-        fill: oklch(0.98 0.005 var(--hue));
+    :global(.dark) .meta-verified-badge:hover .meta-verified-icon {
+        filter: drop-shadow(0 0 6px rgba(0, 149, 246, 0.5));
     }
 </style>
 
