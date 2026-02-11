@@ -1,47 +1,431 @@
 ---
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { url } from "@utils/url-utils";
+
+const tools = [
+  {
+    name: "Teleprompter Studio",
+    description: "Tu estudio profesional de lectura en pantalla. Velocidad precisa, espejo, focus mode, atajos de teclado y countdown.",
+    href: url("/herramientas/teleprompter/"),
+    icon: "📺",
+    badge: "Pro",
+    features: ["Modo espejo", "Focus mode", "Atajos de teclado", "Countdown"],
+  },
+  {
+    name: "Acortador de URLs",
+    description: "Acorta, organiza y gestiona tus enlaces. QR codes al instante, historial con estadísticas y exportación.",
+    href: url("/herramientas/acortador/"),
+    icon: "🔗",
+    badge: "Sin publicidad",
+    features: ["QR Codes", "Categorías", "Sin publicidad", "Exportar JSON"],
+  },
+];
 ---
 
 <MainGridLayout title="Herramientas" description="Herramientas premium para creadores">
-  <section class="space-y-6 text-90">
-    <header class="space-y-2">
-      <h1 class="text-3xl font-bold">🛠️ Herramientas</h1>
-      <p class="text-75">
-        Suite de herramientas profesionales para potenciar tu contenido y creatividad.
+  <section class="tools-hub">
+    <!-- Header con gradiente del tema -->
+    <header class="tools-header">
+      <div class="tools-header-icon">🛠️</div>
+      <h1 class="tools-title">Herramientas</h1>
+      <p class="tools-subtitle">
+        Suite exclusiva de herramientas profesionales para potenciar tu contenido y creatividad.
       </p>
+      <div class="tools-stats">
+        <span class="tools-stat">{tools.length} herramientas</span>
+        <span class="tools-stat-divider">·</span>
+        <span class="tools-stat">100% gratuitas</span>
+        <span class="tools-stat-divider">·</span>
+        <span class="tools-stat">Sin publicidad</span>
+      </div>
     </header>
 
-    <div class="grid gap-6 md:grid-cols-2">
-      <a
-        class="card-base p-6 rounded-[var(--radius-large)] border border-black/5 dark:border-white/10 hover:scale-[1.01] transition"
-        href={url("/herramientas/teleprompter/")}
-      >
-        <div class="flex items-center gap-3">
-          <span class="text-2xl">📺</span>
-          <div>
-            <h2 class="text-xl font-semibold">Teleprompter Studio</h2>
-            <p class="text-50">
-              Tu estudio profesional de lectura en pantalla. Control preciso de velocidad, modo espejo, focus mode, atajos de teclado, countdown ajustable e historial de guiones guardados.
-            </p>
-          </div>
-        </div>
-      </a>
+    <!-- Grid de herramientas -->
+    <div class="tools-grid">
+      {tools.map((tool, i) => (
+        <a
+          class="tool-card"
+          href={tool.href}
+          style={`animation-delay: calc(var(--content-delay) + ${i * 100}ms)`}
+        >
+          <!-- Badge -->
+          <div class="tool-badge">{tool.badge}</div>
 
-      <a
-        class="card-base p-6 rounded-[var(--radius-large)] border border-black/5 dark:border-white/10 hover:scale-[1.01] transition"
-        href={url("/herramientas/acortador/")}
-      >
-        <div class="flex items-center gap-3">
-          <span class="text-2xl">🔗</span>
-          <div>
-            <h2 class="text-xl font-semibold">Acortador de URLs</h2>
-            <p class="text-50">
-              Organiza y gestiona tus enlaces favoritos. Genera QR codes al instante, historial con estadísticas y exporta tu biblioteca completa.
-            </p>
+          <!-- Icono -->
+          <div class="tool-icon-wrapper">
+            <span class="tool-icon">{tool.icon}</span>
           </div>
-        </div>
-      </a>
+
+          <!-- Contenido -->
+          <div class="tool-content">
+            <h2 class="tool-name">{tool.name}</h2>
+            <p class="tool-description">{tool.description}</p>
+          </div>
+
+          <!-- Features -->
+          <div class="tool-features">
+            {tool.features.map((feature) => (
+              <span class="tool-feature-tag">{feature}</span>
+            ))}
+          </div>
+
+          <!-- CTA visual -->
+          <div class="tool-cta">
+            <span>Abrir herramienta</span>
+            <span class="tool-cta-arrow">→</span>
+          </div>
+        </a>
+      ))}
+    </div>
+
+    <!-- Footer informativo -->
+    <div class="tools-footer">
+      <p>
+        🔒 Todas las herramientas funcionan en tu navegador. Tu datos nunca salen de tu dispositivo.
+      </p>
     </div>
   </section>
 </MainGridLayout>
+
+<style>
+  /* Hub principal */
+  .tools-hub {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  /* Header */
+  .tools-header {
+    text-align: center;
+    padding: 1rem 0 0.5rem;
+  }
+
+  .tools-header-icon {
+    font-size: 3rem;
+    margin-bottom: 0.75rem;
+    filter: drop-shadow(0 4px 12px oklch(0.7 0.14 var(--hue) / 0.3));
+  }
+
+  .tools-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(
+      135deg,
+      oklch(0.65 0.16 var(--hue)),
+      oklch(0.6 0.18 calc(var(--hue) + 40))
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+  }
+
+  :global(.dark) .tools-title {
+    background: linear-gradient(
+      135deg,
+      oklch(0.75 0.14 var(--hue)),
+      oklch(0.7 0.16 calc(var(--hue) + 40))
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  .tools-subtitle {
+    color: #475569;
+    font-size: 1.05rem;
+    line-height: 1.5;
+    max-width: 32rem;
+    margin: 0 auto 0.75rem;
+  }
+
+  :global(.dark) .tools-subtitle {
+    color: #94a3b8;
+  }
+
+  .tools-stats {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .tools-stat {
+    color: oklch(0.55 0.12 var(--hue));
+  }
+
+  :global(.dark) .tools-stat {
+    color: oklch(0.72 0.12 var(--hue));
+  }
+
+  .tools-stat-divider {
+    color: #cbd5e1;
+  }
+
+  :global(.dark) .tools-stat-divider {
+    color: #475569;
+  }
+
+  /* Grid */
+  .tools-grid {
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 768px) {
+    .tools-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  /* Card de herramienta */
+  .tool-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.75rem;
+    background: var(--card-bg);
+    border-radius: var(--radius-large);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    animation: toolFadeIn 0.5s ease both;
+  }
+
+  :global(.dark) .tool-card {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .tool-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(
+      90deg,
+      oklch(0.7 0.14 var(--hue)),
+      oklch(0.65 0.16 calc(var(--hue) + 60))
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .tool-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px oklch(0.7 0.14 var(--hue) / 0.12),
+                0 8px 16px rgba(0, 0, 0, 0.06);
+    border-color: oklch(0.8 0.08 var(--hue));
+  }
+
+  :global(.dark) .tool-card:hover {
+    box-shadow: 0 20px 40px oklch(0.4 0.1 var(--hue) / 0.2),
+                0 8px 16px rgba(0, 0, 0, 0.3);
+    border-color: oklch(0.45 0.08 var(--hue));
+  }
+
+  .tool-card:hover::before {
+    opacity: 1;
+  }
+
+  .tool-card:active {
+    transform: translateY(-2px);
+  }
+
+  /* Badge */
+  .tool-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.25rem 0.6rem;
+    border-radius: 9999px;
+    background: oklch(0.93 0.04 var(--hue));
+    color: oklch(0.5 0.14 var(--hue));
+  }
+
+  :global(.dark) .tool-badge {
+    background: oklch(0.3 0.05 var(--hue));
+    color: oklch(0.78 0.12 var(--hue));
+  }
+
+  /* Icono */
+  .tool-icon-wrapper {
+    width: 3.5rem;
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1rem;
+    background: oklch(0.95 0.03 var(--hue));
+    transition: all 0.3s ease;
+  }
+
+  :global(.dark) .tool-icon-wrapper {
+    background: oklch(0.28 0.03 var(--hue));
+  }
+
+  .tool-card:hover .tool-icon-wrapper {
+    transform: scale(1.08);
+    background: oklch(0.9 0.06 var(--hue));
+  }
+
+  :global(.dark) .tool-card:hover .tool-icon-wrapper {
+    background: oklch(0.35 0.06 var(--hue));
+  }
+
+  .tool-icon {
+    font-size: 1.75rem;
+  }
+
+  /* Contenido */
+  .tool-name {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 0.35rem;
+    line-height: 1.3;
+  }
+
+  :global(.dark) .tool-name {
+    color: #f1f5f9;
+  }
+
+  .tool-description {
+    font-size: 0.9rem;
+    color: #64748b;
+    line-height: 1.55;
+  }
+
+  :global(.dark) .tool-description {
+    color: #94a3b8;
+  }
+
+  /* Features */
+  .tool-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .tool-feature-tag {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.55rem;
+    border-radius: 0.375rem;
+    background: oklch(0.96 0.015 var(--hue));
+    color: #475569;
+    border: 1px solid oklch(0.92 0.02 var(--hue));
+  }
+
+  :global(.dark) .tool-feature-tag {
+    background: oklch(0.22 0.02 var(--hue));
+    color: #94a3b8;
+    border-color: oklch(0.32 0.03 var(--hue));
+  }
+
+  /* CTA */
+  .tool-cta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: oklch(0.55 0.14 var(--hue));
+    margin-top: 0.25rem;
+    transition: all 0.2s ease;
+  }
+
+  :global(.dark) .tool-cta {
+    color: oklch(0.72 0.14 var(--hue));
+  }
+
+  .tool-cta-arrow {
+    transition: transform 0.2s ease;
+    font-size: 1rem;
+  }
+
+  .tool-card:hover .tool-cta-arrow {
+    transform: translateX(4px);
+  }
+
+  .tool-card:hover .tool-cta {
+    color: oklch(0.6 0.16 var(--hue));
+  }
+
+  :global(.dark) .tool-card:hover .tool-cta {
+    color: oklch(0.78 0.16 var(--hue));
+  }
+
+  /* Footer */
+  .tools-footer {
+    text-align: center;
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-large);
+    background: oklch(0.97 0.008 var(--hue));
+    border: 1px dashed oklch(0.88 0.03 var(--hue));
+  }
+
+  :global(.dark) .tools-footer {
+    background: oklch(0.2 0.015 var(--hue));
+    border-color: oklch(0.32 0.03 var(--hue));
+  }
+
+  .tools-footer p {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin: 0;
+  }
+
+  :global(.dark) .tools-footer p {
+    color: #94a3b8;
+  }
+
+  /* Animation */
+  @keyframes toolFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Mobile adjustments */
+  @media (max-width: 640px) {
+    .tools-title {
+      font-size: 2rem;
+    }
+
+    .tools-header-icon {
+      font-size: 2.5rem;
+    }
+
+    .tool-card {
+      padding: 1.25rem;
+    }
+
+    .tool-icon-wrapper {
+      width: 3rem;
+      height: 3rem;
+    }
+
+    .tool-icon {
+      font-size: 1.5rem;
+    }
+  }
+</style>
