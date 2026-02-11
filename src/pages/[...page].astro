@@ -5,6 +5,7 @@ import PostPage from "../components/PostPage.astro";
 import { PAGE_SIZE } from "../constants/constants";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { getSortedPosts } from "../utils/content-utils";
+import { profileConfig, siteConfig } from "../config";
 
 export const getStaticPaths = (async ({ paginate }) => {
 	const allBlogPosts = await getSortedPosts();
@@ -15,9 +16,34 @@ export const getStaticPaths = (async ({ paginate }) => {
 const { page } = Astro.props;
 
 const len = page.data.length;
+
+// Only add JSON-LD for the first page (home page)
+const isHomePage = page.currentPage === 1;
+const jsonLd = isHomePage ? {
+	"@context": "https://schema.org",
+	"@type": "WebSite",
+	name: profileConfig.name,
+	url: Astro.site?.toString(),
+	description: profileConfig.bio,
+	author: {
+		"@type": "Person",
+		name: profileConfig.name,
+		url: new URL("/about/", Astro.site).href,
+		sameAs: [
+			"https://www.youtube.com/@kevinborjayt",
+			"https://www.facebook.com/share/16n7f7zdYQ/"
+		]
+	},
+	potentialAction: {
+		"@type": "SearchAction",
+		target: new URL("?q={search_term_string}", Astro.site).href,
+		"query-input": "required name=search_term_string"
+	}
+} : null;
 ---
 
 <MainGridLayout>
+	{isHomePage && jsonLd && <script is:inline slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>}
     <PostPage page={page}></PostPage>
     <Pagination class="mx-auto onload-animation" page={page} style={`animation-delay: calc(var(--content-delay) + ${(len)*50}ms)`}></Pagination>
 </MainGridLayout>

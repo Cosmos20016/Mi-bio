@@ -1,0 +1,19 @@
+<!-- PLACEHOLDER: icon-192.png and icon-512.png -->
+These files are required for PWA (Progressive Web App) support.
+
+You need to create:
+1. icon-192.png (192x192 pixels)
+2. icon-512.png (512x512 pixels)
+
+These icons should be simplified versions of your logo/brand that work well
+at small sizes and when placed on different background colors.
+
+For maskable icons (icon that adapts to different device shapes):
+- Use the same 512x512 icon
+- Ensure important content is in the center "safe zone" (about 80% of the image)
+- Avoid placing text or logos too close to the edges
+
+You can use existing favicons as a base and scale them up, or create new 
+simplified versions specifically for PWA icons.
+
+Tip: Use https://maskable.app/ to test your maskable icon design.
