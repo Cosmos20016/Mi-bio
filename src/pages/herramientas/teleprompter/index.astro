@@ -5,16 +5,229 @@ import { url } from "@utils/url-utils";
 ---
 
 <MainGridLayout title="Teleprompter" description="Teleprompter Studio para creadores">
-  <section class="space-y-6 text-90">
-    <a class="link inline-flex items-center gap-2" href={url("/herramientas/")}>← Volver a herramientas</a>
+  <section class="tool-page">
+    <!-- Navegación superior mejorada -->
+    <nav class="tool-nav">
+      <a class="tool-nav-back" href={url("/herramientas/")}>
+        <span class="tool-nav-arrow">←</span>
+        <span>Herramientas</span>
+      </a>
+      <div class="tool-nav-breadcrumb">
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-current">Teleprompter Studio</span>
+      </div>
+    </nav>
 
-    <div class="space-y-2">
-      <h1 class="text-3xl font-bold">📺 Teleprompter Studio</h1>
-      <p class="text-75">
-        Tu estudio profesional de lectura en pantalla. Control preciso de velocidad, tamaño de fuente, modo espejo, focus mode, atajos de teclado, countdown personalizable y pantalla completa.
-      </p>
-    </div>
+    <!-- Header de la herramienta -->
+    <header class="tool-page-header">
+      <div class="tool-page-icon-wrapper">
+        <span class="tool-page-icon">📺</span>
+      </div>
+      <div>
+        <h1 class="tool-page-title">Teleprompter Studio</h1>
+        <p class="tool-page-description">
+          Tu estudio profesional de lectura en pantalla. Velocidad precisa, modo espejo, focus mode, atajos de teclado, countdown personalizable y pantalla completa.
+        </p>
+        <div class="tool-page-badges">
+          <span class="tool-page-badge">Pro</span>
+          <span class="tool-page-badge">Pantalla completa</span>
+          <span class="tool-page-badge">Atajos</span>
+        </div>
+      </div>
+    </header>
 
     <Teleprompter client:only="svelte" />
   </section>
 </MainGridLayout>
+
+<style>
+  .tool-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  /* Navigation */
+  .tool-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+  }
+
+  .tool-nav-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: oklch(0.55 0.12 var(--hue));
+    text-decoration: none;
+    padding: 0.4rem 0.75rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+  }
+
+  :global(.dark) .tool-nav-back {
+    color: oklch(0.72 0.12 var(--hue));
+  }
+
+  .tool-nav-back:hover {
+    background: oklch(0.95 0.025 var(--hue));
+    color: oklch(0.5 0.14 var(--hue));
+  }
+
+  :global(.dark) .tool-nav-back:hover {
+    background: oklch(0.28 0.03 var(--hue));
+    color: oklch(0.78 0.14 var(--hue));
+  }
+
+  .tool-nav-arrow {
+    transition: transform 0.2s ease;
+    font-size: 1rem;
+  }
+
+  .tool-nav-back:hover .tool-nav-arrow {
+    transform: translateX(-3px);
+  }
+
+  .tool-nav-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.85rem;
+  }
+
+  .breadcrumb-sep {
+    color: #cbd5e1;
+  }
+
+  :global(.dark) .breadcrumb-sep {
+    color: #475569;
+  }
+
+  .breadcrumb-current {
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  :global(.dark) .breadcrumb-current {
+    color: #94a3b8;
+  }
+
+  /* Header */
+  .tool-page-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    background: var(--card-bg);
+    border-radius: var(--radius-large);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  :global(.dark) .tool-page-header {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .tool-page-icon-wrapper {
+    width: 3.5rem;
+    height: 3.5rem;
+    min-width: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1rem;
+    background: oklch(0.95 0.03 var(--hue));
+  }
+
+  :global(.dark) .tool-page-icon-wrapper {
+    background: oklch(0.28 0.03 var(--hue));
+  }
+
+  .tool-page-icon {
+    font-size: 1.75rem;
+  }
+
+  .tool-page-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    background: linear-gradient(
+      135deg,
+      oklch(0.65 0.16 var(--hue)),
+      oklch(0.6 0.18 calc(var(--hue) + 40))
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.35rem;
+    line-height: 1.2;
+  }
+
+  :global(.dark) .tool-page-title {
+    background: linear-gradient(
+      135deg,
+      oklch(0.75 0.14 var(--hue)),
+      oklch(0.7 0.16 calc(var(--hue) + 40))
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  .tool-page-description {
+    font-size: 0.9rem;
+    color: #64748b;
+    line-height: 1.55;
+    margin-bottom: 0.65rem;
+  }
+
+  :global(.dark) .tool-page-description {
+    color: #94a3b8;
+  }
+
+  .tool-page-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .tool-page-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.2rem 0.55rem;
+    border-radius: 9999px;
+    background: oklch(0.93 0.04 var(--hue));
+    color: oklch(0.5 0.14 var(--hue));
+  }
+
+  :global(.dark) .tool-page-badge {
+    background: oklch(0.3 0.05 var(--hue));
+    color: oklch(0.78 0.12 var(--hue));
+  }
+
+  /* Mobile */
+  @media (max-width: 640px) {
+    .tool-page-header {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 1rem 1.25rem;
+    }
+
+    .tool-page-title {
+      font-size: 1.5rem;
+    }
+
+    .tool-page-icon-wrapper {
+      width: 3rem;
+      height: 3rem;
+      min-width: 3rem;
+    }
+
+    .tool-page-icon {
+      font-size: 1.5rem;
+    }
+  }
+</style>
