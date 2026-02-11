@@ -37,7 +37,7 @@ const jsonLd = {
 		? new URL(
 				entry.data.image.startsWith("/")
 					? entry.data.image
-					: `/src/${entry.data.image}`,
+					: `/${entry.data.image}`,
 				Astro.site,
 			).href
 		: new URL("/og-default.png", Astro.site).href,
