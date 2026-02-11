@@ -50,19 +50,18 @@ self.addEventListener('fetch', (event) => {
             .then((cached) => cached || caches.match(OFFLINE_URL));
         })
     );
-    return;
+  } else {
+    // Non-navigation requests: network first, cache fallback
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request).then((cached) => cached || new Response('', { status: 503 })))
+    );
   }
-
-  // Non-navigation requests: network first, cache fallback
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return response;
-      })
-      .catch(() => caches.match(event.request).then((r) => r || new Response('', { status: 408 })))
-  );
 });
