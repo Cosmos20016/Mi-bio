@@ -1,8 +1,10 @@
 // Service Worker for kevinborja.com
 // Provides offline experience with network-first strategy
 
-const CACHE_NAME = 'kevinborja-v1';
+const CACHE_NAME = 'kevinborja-v2';
 const OFFLINE_URL = '/offline.html';
+const PRECACHE_URLS = [OFFLINE_URL, '/'];
+const NETWORK_TIMEOUT_MS = 3000;
 
 // Install event - pre-cache offline page
 self.addEventListener('install', (event) => {
@@ -11,8 +13,8 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('[Service Worker] Pre-caching offline page');
-        return cache.add(OFFLINE_URL);
+        console.log('[Service Worker] Pre-caching critical resources');
+        return cache.addAll(PRECACHE_URLS);
       })
       .then(() => {
         console.log('[Service Worker] Skip waiting');
@@ -26,8 +28,9 @@ self.addEventListener('activate', (event) => {
   console.log('[Service Worker] Activating...');
   
   event.waitUntil(
-    caches.keys()
-      .then((cacheNames) => {
+    Promise.all([
+      // Clean old caches
+      caches.keys().then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
             if (cacheName !== CACHE_NAME) {
@@ -36,11 +39,13 @@ self.addEventListener('activate', (event) => {
             }
           })
         );
-      })
-      .then(() => {
-        console.log('[Service Worker] Claiming clients');
-        return self.clients.claim();
-      })
+      }),
+      // Enable navigation preload if supported
+      self.registration.navigationPreload && 
+        self.registration.navigationPreload.enable(),
+      // Claim clients immediately
+      self.clients.claim()
+    ])
   );
 });
 
@@ -59,8 +64,8 @@ self.addEventListener('fetch', (event) => {
   // Handle navigation requests (page loads)
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request)
-        .then((response) => {
+      Promise.race([
+        fetch(event.request).then((response) => {
           // If network request is successful, cache it and return
           if (response && response.status === 200) {
             const responseClone = response.clone();
@@ -69,25 +74,26 @@ self.addEventListener('fetch', (event) => {
             });
           }
           return response;
-        })
-        .catch((error) => {
-          console.log('[Service Worker] Network request failed, trying cache:', error);
-          
-          // Try to get from cache
-          return caches.match(event.request)
-            .then((cachedResponse) => {
-              if (cachedResponse) {
-                console.log('[Service Worker] Serving from cache:', event.request.url);
-                return cachedResponse;
-              }
-              
-              // If not in cache, serve offline page
-              console.log('[Service Worker] Serving offline page');
-              
-              // Store the intended URL so offline page can redirect when connection is restored
-              return caches.match(OFFLINE_URL);
-            });
-        })
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Network timeout')), NETWORK_TIMEOUT_MS)
+        )
+      ]).catch(() => {
+        console.log('[Service Worker] Network request failed or timed out');
+        
+        // Try to get from cache
+        return caches.match(event.request)
+          .then((cachedResponse) => {
+            if (cachedResponse) {
+              console.log('[Service Worker] Serving from cache:', event.request.url);
+              return cachedResponse;
+            }
+            
+            // If not in cache, serve offline page
+            console.log('[Service Worker] Serving offline page');
+            return caches.match(OFFLINE_URL);
+          });
+      })
     );
   } else {
     // For non-navigation requests (images, styles, scripts, etc.)
