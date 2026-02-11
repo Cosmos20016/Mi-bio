@@ -164,40 +164,39 @@
       background-clip: text;
       -webkit-text-fill-color: transparent;
       animation: gradient-shift 3s ease-in-out infinite;
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      gap: 0.5rem;
+      justify-content: center;
+      gap: 0.4rem;
     }
 
-    /* Meta Verified Badge */
+    /* Verified badge */
     .verified-badge {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
       cursor: default;
-      vertical-align: middle;
     }
 
-    .meta-verified-icon {
-      width: 1.2rem;
-      height: 1.2rem;
+    .verified-icon {
+      width: 1.4rem;
+      height: 1.4rem;
       transition: transform 0.2s ease, filter 0.2s ease;
     }
 
-    .verified-badge:hover .meta-verified-icon {
-      transform: scale(1.12);
-      filter: drop-shadow(0 0 5px rgba(0, 149, 246, 0.45));
+    .verified-badge:hover .verified-icon {
+      transform: scale(1.15);
+      filter: drop-shadow(0 0 6px rgba(0, 149, 246, 0.5));
     }
 
     @media (prefers-color-scheme: dark) {
-      .meta-verified-icon {
+      .verified-icon {
         filter: drop-shadow(0 0 3px rgba(0, 149, 246, 0.3));
       }
-
-      .verified-badge:hover .meta-verified-icon {
-        transform: scale(1.12);
-        filter: drop-shadow(0 0 7px rgba(0, 149, 246, 0.55));
+      .verified-badge:hover .verified-icon {
+        transform: scale(1.15);
+        filter: drop-shadow(0 0 8px rgba(0, 149, 246, 0.6));
       }
     }
 
@@ -427,18 +426,15 @@
       </svg>
     </div>
 
-    <h1 class="title">Kevin Borja <span class="verified-badge" title="Cuenta verificada" aria-label="Cuenta verificada" role="img"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none" class="meta-verified-icon">
-    <!-- Roseta festoneada azul (sello oficial Meta Verified) -->
-    <path
-        d="M19.998 3.094 24.19 0l2.457 4.744 5.326-.855.781 5.375 4.98 2.033-1.91 5.06 3.71 3.893-3.71 3.893 1.91 5.06-4.98 2.033-.781 5.375-5.326-.855L24.19 40l-4.192-3.094L15.806 40l-2.457-4.744-5.326.855-.781-5.375-4.98-2.033 1.91-5.06L.462 19.75l3.71-3.893-1.91-5.06 4.98-2.033.781-5.375 5.326.855L15.806 0l4.192 3.094Z"
-        fill="#0095F6"
-    />
-    <!-- Checkmark blanco centrado -->
-    <path
-        d="M17.204 27.326l-6.247-6.248 2.478-2.478 3.769 3.769 8.556-8.557 2.478 2.479-11.034 11.035Z"
-        fill="white"
-    />
-</svg></span></h1>
+    <h1 class="title">
+      Kevin Borja
+      <span class="verified-badge" title="Cuenta verificada" aria-label="Cuenta verificada" role="img">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none" class="verified-icon">
+          <path d="M19.998 3.094 24.19 0l2.457 4.744 5.326-.855.781 5.375 4.98 2.033-1.91 5.06 3.71 3.893-3.71 3.893 1.91 5.06-4.98 2.033-.781 5.375-5.326-.855L24.19 40l-4.192-3.094L15.806 40l-2.457-4.744-5.326.855-.781-5.375-4.98-2.033 1.91-5.06L.462 19.75l3.71-3.893-1.91-5.06 4.98-2.033.781-5.375 5.326.855L15.806 0l4.192 3.094Z" fill="#0095F6"/>
+          <path d="M17.204 27.326l-6.247-6.248 2.478-2.478 3.769 3.769 8.556-8.557 2.478 2.479-11.034 11.035Z" fill="white"/>
+        </svg>
+      </span>
+    </h1>
     <p class="message">Parece que la conexión se tomó un descanso</p>
     <p class="bio">Sencillo, creativo, yo — pero necesito internet para mostrarte todo</p>
     
