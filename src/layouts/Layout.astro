@@ -129,6 +129,11 @@ const bannerOffset =
 		))}
 		<link rel="manifest" href="/manifest.json">
 
+		<!-- Prefetch de rutas principales para navegación rápida -->
+		<link rel="prefetch" href="/" />
+		<link rel="prefetch" href="/archive/" />
+		<link rel="prefetch" href="/about/" />
+
 		<!-- Set the theme before the page is rendered to avoid a flash -->
 		<script is:inline define:vars={{DEFAULT_THEME, LIGHT_MODE, DARK_MODE, AUTO_MODE, BANNER_HEIGHT_EXTEND, PAGE_WIDTH, configHue}}>
 			// Load the theme from local storage
@@ -654,6 +659,13 @@ if (window.swup) {
 </script>
 
 <script is:inline>
+// Bloquear prompt de instalación PWA
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+});
+</script>
+
+<script is:inline>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
@@ -665,4 +677,25 @@ if ('serviceWorker' in navigator) {
       .catch(err => console.log('SW registration failed:', err));
   });
 }
+</script>
+
+<script is:inline>
+// Mantener página fresca al volver del segundo plano
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    // Verificar si la página lleva mucho tiempo en segundo plano (más de 30 minutos)
+    const lastActive = sessionStorage.getItem('lastActive');
+    const now = Date.now();
+    if (lastActive && (now - parseInt(lastActive)) > 30 * 60 * 1000) {
+      // Recargar silenciosamente solo el contenido principal via fetch si está disponible en caché
+      // No forzar recarga completa para evitar parpadeo
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'CHECK_UPDATE' });
+      }
+    }
+    sessionStorage.setItem('lastActive', now.toString());
+  } else {
+    sessionStorage.setItem('lastActive', Date.now().toString());
+  }
+});
 </script>

@@ -3,7 +3,7 @@
   "short_name": "Kevin",
   "description": "Sencillo, creativo, yo",
   "start_url": "/",
-  "display": "standalone",
+  "display": "browser",
   "background_color": "#ffffff",
   "theme_color": "hsl(250, 50%, 50%)",
   "orientation": "any",
