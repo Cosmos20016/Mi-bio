@@ -1,6 +1,7 @@
 ---
 import Teleprompter from "@components/teleprompter/Teleprompter.svelte";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
+import ShareToolButton from "@components/ShareToolButton.astro";
 import { url } from "@utils/url-utils";
 ---
 
@@ -28,10 +29,17 @@ import { url } from "@utils/url-utils";
         <p class="tool-page-description">
           Tu estudio profesional de lectura en pantalla. Velocidad precisa, modo espejo, focus mode, atajos de teclado, countdown personalizable y pantalla completa.
         </p>
-        <div class="tool-page-badges">
-          <span class="tool-page-badge">Pro</span>
-          <span class="tool-page-badge">Pantalla completa</span>
-          <span class="tool-page-badge">Atajos</span>
+        <div class="tool-page-header-actions">
+          <div class="tool-page-badges">
+            <span class="tool-page-badge">Pro</span>
+            <span class="tool-page-badge">Pantalla completa</span>
+            <span class="tool-page-badge">Atajos</span>
+          </div>
+          <ShareToolButton 
+            toolName="Teleprompter Studio"
+            toolDescription="Tu estudio profesional de lectura en pantalla con velocidad precisa, modo espejo y más"
+            toolUrl="/herramientas/teleprompter/"
+          />
         </div>
       </div>
     </header>
@@ -184,6 +192,13 @@ import { url } from "@utils/url-utils";
 
   :global(.dark) .tool-page-description {
     color: #94a3b8;
+  }
+
+  .tool-page-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
   }
 
   .tool-page-badges {

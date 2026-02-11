@@ -1,6 +1,7 @@
 ---
 import UrlShortener from "@components/url-shortener/UrlShortener.svelte";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
+import ShareToolButton from "@components/ShareToolButton.astro";
 import { url } from "@utils/url-utils";
 ---
 
@@ -28,10 +29,17 @@ import { url } from "@utils/url-utils";
         <p class="tool-page-description">
           Acorta, organiza y comparte tus enlaces favoritos. QR codes al instante, historial completo y exportación sin límites.
         </p>
-        <div class="tool-page-badges">
-          <span class="tool-page-badge">Sin publicidad</span>
-          <span class="tool-page-badge">Privado</span>
-          <span class="tool-page-badge">Gratuito</span>
+        <div class="tool-page-header-actions">
+          <div class="tool-page-badges">
+            <span class="tool-page-badge">Sin publicidad</span>
+            <span class="tool-page-badge">Privado</span>
+            <span class="tool-page-badge">Gratuito</span>
+          </div>
+          <ShareToolButton 
+            toolName="Acortador de URLs"
+            toolDescription="Acorta, organiza y comparte tus enlaces favoritos con QR codes al instante"
+            toolUrl="/herramientas/acortador/"
+          />
         </div>
       </div>
     </header>
@@ -184,6 +192,13 @@ import { url } from "@utils/url-utils";
 
   :global(.dark) .tool-page-description {
     color: #94a3b8;
+  }
+
+  .tool-page-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
   }
 
   .tool-page-badges {
