@@ -1,8 +1,8 @@
 // Service Worker for kevinborja.com
 // Optimized caching strategy for fast navigation
 
-const CACHE_NAME = 'kevinborja-v4';
-const STATIC_CACHE = 'kevinborja-static-v4';
+const CACHE_NAME = 'kevinborja-v5';
+const STATIC_CACHE = 'kevinborja-static-v5';
 const OFFLINE_URL = '/offline.html';
 
 // Routes to pre-cache for instant navigation
