@@ -265,8 +265,8 @@ const isValidAlias = (alias: string): boolean => {
 const shortenWithCleanUri = async (longUrl: string): Promise<string> => {
 	const response = await fetch("https://cleanuri.com/api/v1/shorten", {
 		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ url: longUrl })
+		headers: { "Content-Type": "application/x-www-form-urlencoded" },
+		body: `url=${encodeURIComponent(longUrl)}`,
 	});
 	if (!response.ok) throw new Error(`CleanURI HTTP ${response.status}`);
 	const data = await response.json();
@@ -301,20 +301,30 @@ const shortenWithShrtcode = async (longUrl: string): Promise<string> => {
 	return data.result.full_short_link;
 };
 
+// API 4: ulvis.net (gratis, sin ads)
+const shortenWithUlvis = async (longUrl: string): Promise<string> => {
+	const endpoint = `https://ulvis.net/API/write/get?url=${encodeURIComponent(longUrl)}&type=json`;
+	const response = await fetch(endpoint);
+	if (!response.ok) throw new Error(`ulvis.net HTTP ${response.status}`);
+	const data = await response.json();
+	if (!data.data || !data.data.url) throw new Error("No short URL returned");
+	return data.data.url;
+};
+
 // Controlador principal: prueba APIs sin publicidad en cascada hasta que una funcione
 const shortenUrl = async (longUrl: string): Promise<string> => {
 	const apis = [
 		{ name: "CleanURI", fn: shortenWithCleanUri },
 		{ name: "spoo.me", fn: shortenWithSpooMe },
 		{ name: "shrtco.de", fn: shortenWithShrtcode },
+		{ name: "ulvis.net", fn: shortenWithUlvis },
 	];
 
 	for (const api of apis) {
 		try {
-			console.log(`Intentando ${api.name}...`);
 			const result = await api.fn(longUrl);
 			if (result && result !== longUrl && result.startsWith("http")) {
-				console.log(`✓ URL acortada con ${api.name}: ${result}`);
+				console.log(`✓ URL acortada con ${api.name}`);
 				return result;
 			}
 		} catch (err) {
@@ -322,7 +332,6 @@ const shortenUrl = async (longUrl: string): Promise<string> => {
 		}
 	}
 
-	console.error("Todos los servicios de acortamiento no disponibles");
 	throw new Error("Todos los servicios de acortamiento no disponibles");
 };
 
@@ -366,7 +375,7 @@ const addUrl = async () => {
 		// Instead of blocking, ask if they want to copy the existing one
 		if (
 			confirm(
-				`Este URL ya existe con alias #${existingUrl.alias}. ¿Copiar al portapeles?`,
+				`Este URL ya existe con alias #${existingUrl.alias}. ¿Copiar al portapapeles?`,
 			)
 		) {
 			copyUrl(existingUrl);
@@ -648,11 +657,6 @@ const onKey = (event: KeyboardEvent) => {
 		exportUrls();
 	}
 };
-
-// Focus input action
-function focusInput(node: HTMLElement) {
-	node.focus();
-}
 
 // Initialize
 onMount(() => {
