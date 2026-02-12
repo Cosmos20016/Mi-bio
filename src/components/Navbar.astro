@@ -62,23 +62,9 @@ let links: NavBarLink[] = navBarConfig.links.map(
 </div>
 
 <script>
-function switchTheme() {
-    if (localStorage.theme === 'dark') {
-        document.documentElement.classList.remove('dark');
-        localStorage.theme = 'light';
-    } else {
-        document.documentElement.classList.add('dark');
-        localStorage.theme = 'dark';
-    }
-}
-
 function loadButtonScript() {
-    let switchBtn = document.getElementById("scheme-switch");
-    if (switchBtn) {
-        switchBtn.onclick = function () {
-            switchTheme()
-        };
-    }
+    // NOTE: The #scheme-switch button is handled by the LightDarkSwitch.svelte component
+    // Do NOT override its onclick here, as it causes conflicts with the Svelte state
 
     let settingBtn = document.getElementById("display-settings-switch");
     if (settingBtn) {
