@@ -276,14 +276,17 @@ const shortenWithCleanUri = async (longUrl: string): Promise<string> => {
 
 // API 2: spoo.me (gratis, sin ads, CORS habilitado)
 const shortenWithSpooMe = async (longUrl: string): Promise<string> => {
-	const response = await fetch("https://spoo.me/api/shorten", {
+	const response = await fetch("https://spoo.me/", {
 		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ url: longUrl })
+		headers: {
+			"Content-Type": "application/x-www-form-urlencoded",
+			Accept: "application/json",
+		},
+		body: `url=${encodeURIComponent(longUrl)}`,
 	});
 	if (!response.ok) throw new Error(`spoo.me HTTP ${response.status}`);
 	const data = await response.json();
-	if (!data.success || !data.short_url) throw new Error("No short URL returned");
+	if (!data.short_url) throw new Error("No short URL returned");
 	return data.short_url;
 };
 
@@ -298,39 +301,20 @@ const shortenWithShrtcode = async (longUrl: string): Promise<string> => {
 	return data.result.full_short_link;
 };
 
-// API 4: ulvis.net (gratis, sin ads)
-const shortenWithUlvis = async (longUrl: string): Promise<string> => {
-	const response = await fetch(`https://ulvis.net/api.php?url=${encodeURIComponent(longUrl)}`);
-	if (!response.ok) throw new Error(`ulvis.net HTTP ${response.status}`);
-	const data = await response.json();
-	if (!data.shorturl) throw new Error("No short URL returned");
-	return data.shorturl;
-};
-
-// API 5: is.gd (gratis, sin ads, confiable)
-const shortenWithIsGd = async (longUrl: string): Promise<string> => {
-	const response = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`);
-	if (!response.ok) throw new Error(`is.gd HTTP ${response.status}`);
-	const data = await response.json();
-	if (!data.shorturl) throw new Error("No short URL returned");
-	return data.shorturl;
-};
-
 // Controlador principal: prueba APIs sin publicidad en cascada hasta que una funcione
 const shortenUrl = async (longUrl: string): Promise<string> => {
 	const apis = [
 		{ name: "CleanURI", fn: shortenWithCleanUri },
 		{ name: "spoo.me", fn: shortenWithSpooMe },
 		{ name: "shrtco.de", fn: shortenWithShrtcode },
-		{ name: "ulvis.net", fn: shortenWithUlvis },
-		{ name: "is.gd", fn: shortenWithIsGd },
 	];
 
 	for (const api of apis) {
 		try {
+			console.log(`Intentando ${api.name}...`);
 			const result = await api.fn(longUrl);
 			if (result && result !== longUrl && result.startsWith("http")) {
-				console.log(`✓ URL acortada con ${api.name}`);
+				console.log(`✓ URL acortada con ${api.name}: ${result}`);
 				return result;
 			}
 		} catch (err) {
@@ -338,6 +322,7 @@ const shortenUrl = async (longUrl: string): Promise<string> => {
 		}
 	}
 
+	console.error("Todos los servicios de acortamiento no disponibles");
 	throw new Error("Todos los servicios de acortamiento no disponibles");
 };
 
