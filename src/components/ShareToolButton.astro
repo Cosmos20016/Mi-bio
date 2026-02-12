@@ -1,8 +1,8 @@
 ---
 interface Props {
-  toolName: string;
-  toolDescription: string;
-  toolUrl: string;
+	toolName: string;
+	toolDescription: string;
+	toolUrl: string;
 }
 
 const { toolName, toolDescription, toolUrl } = Astro.props;
@@ -137,12 +137,16 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
             });
             return;
           } catch (err) {
-            // If user cancels or error occurs, fall back to popup
-            console.log('Native share cancelled or failed:', err);
+            // If user cancelled the native share dialog, just do nothing
+            if (err instanceof DOMException && err.name === 'AbortError') {
+              return;
+            }
+            // Only fall through to popup for real errors (not cancellations)
+            console.log('Native share failed, falling back to popup:', err);
           }
         }
         
-        // Show popup for desktop or if native share fails
+        // Show popup for desktop or if native share truly fails
         togglePopup(e);
       }, { signal });
 
