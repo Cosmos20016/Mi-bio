@@ -42,7 +42,7 @@ function toggleScheme() {
 			break;
 		}
 	}
-switchScheme(seq[(i + 1) % seq.length]);
+	switchScheme(seq[(i + 1) % seq.length]);
 }
 
 function showPanel() {

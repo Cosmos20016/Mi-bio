@@ -27,7 +27,7 @@ let dimOutside = true;
 let isFullscreen = false;
 let isMobile = false;
 let allowMobile = false;
-let showMobileNotice = false;
+let showMobileBanner = false;
 let isReady = false;
 let ultraClean = false;
 let countdown = 0;
@@ -784,9 +784,8 @@ onMount(() => {
 	window.addEventListener("keydown", onKey);
 	const mql = window.matchMedia("(max-width: 768px)");
 	isMobile = mql.matches;
-	const dismissedMobile = localStorage.getItem("teleprompter:mobile:dismissed");
-	showMobileNotice = isMobile && !dismissedMobile;
-	allowMobile = !showMobileNotice;
+	showMobileBanner = isMobile;
+	allowMobile = true; // Siempre permitir usar en móvil, sin bloquear
 
 	applyStoredThemeToDocument();
 	stopThemeWatch = watchSystemThemeChanges(getStoredTheme());
@@ -853,53 +852,6 @@ onDestroy(() => {
 </script>
 
 <div class="teleprompter-wrapper" class:clean={ultraClean} class:dark={isDark}>
-{#if showMobileNotice && !allowMobile}
-<div class="teleprompter-mobile-overlay">
-	<div class="teleprompter-mobile-card premium-mobile">
-		<h2>🎬 Teleprompter Premium — Versión Móvil</h2>
-		<p class="premium-subtitle">
-			Experiencia optimizada para que grabes desde cualquier lugar
-		</p>
-		<p>
-			Esta herramienta está optimizada para pantallas grandes, pero puedes usarla en móvil con estos controles:
-		</p>
-		<div class="mobile-tips">
-			<div class="tip-item">
-				<span class="tip-icon">👆</span>
-				<div class="tip-text">
-					<strong>Toca la pantalla</strong>
-					<span>para pausar/reproducir</span>
-				</div>
-			</div>
-			<div class="tip-item">
-				<span class="tip-icon">👆👆</span>
-				<div class="tip-text">
-					<strong>Doble toque</strong>
-					<span>para pantalla completa</span>
-				</div>
-			</div>
-			<div class="tip-item">
-				<span class="tip-icon">👆↕️</span>
-				<div class="tip-text">
-					<strong>Desliza arriba/abajo</strong>
-					<span>para ajustar velocidad</span>
-				</div>
-			</div>
-		</div>
-		<div class="teleprompter-mobile-actions">
-			<button
-				class="btn-regular"
-				on:click={() => {
-					allowMobile = true;
-					localStorage.setItem("teleprompter:mobile:dismissed", "true");
-				}}>Continuar</button
-			>
-			<a class="btn-plain" href="/herramientas/">Volver</a>
-		</div>
-	</div>
-</div>
-{/if}
-
 {#if showOnboarding}
 <div class="teleprompter-onboarding-overlay">
 	<div class="teleprompter-onboarding-card premium">
@@ -1137,6 +1089,16 @@ on:click={() => (showControls = !showControls)}
 </button>
 </div>
 </div>
+
+{#if showMobileBanner}
+<div class="mobile-tip-banner">
+	<div class="mobile-tip-content">
+		<span class="mobile-tip-icon">💡</span>
+		<p>Para una experiencia completa, usa una pantalla más grande. <strong>👆 Toca</strong> para pausar · <strong>👆👆</strong> pantalla completa</p>
+	</div>
+	<button class="mobile-tip-close" on:click={() => showMobileBanner = false} aria-label="Cerrar">✕</button>
+</div>
+{/if}
 
 <div class="teleprompter-panel">
 <div class="script-manager">
@@ -1445,64 +1407,6 @@ display: none;
 
 .teleprompter-wrapper.clean .teleprompter-screen {
 height: 70vh;
-}
-
-/* Mobile overlay */
-.teleprompter-mobile-overlay {
-position: fixed;
-inset: 0;
-background: rgba(0, 0, 0, 0.7);
-backdrop-filter: blur(8px);
-z-index: 50;
-display: flex;
-align-items: center;
-justify-content: center;
-padding: 1.5rem;
-animation: fadeIn 0.3s ease;
-}
-
-.teleprompter-mobile-card {
-max-width: 420px;
-background: rgba(255, 255, 255, 0.98);
-border-radius: 1.25rem;
-padding: 1.5rem;
-box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-border: 1px solid rgba(255, 255, 255, 0.3);
-animation: scaleIn 0.3s ease;
-}
-
-:global(.dark) .teleprompter-mobile-card,
-.dark .teleprompter-mobile-card {
-background: rgba(15, 23, 42, 0.98);
-border-color: rgba(148, 163, 184, 0.2);
-}
-
-.teleprompter-mobile-card h2 {
-font-size: 1.2rem;
-margin-bottom: 0.5rem;
-color: #0f172a;
-}
-
-:global(.dark) .teleprompter-mobile-card h2,
-.dark .teleprompter-mobile-card h2 {
-color: #e2e8f0;
-}
-
-.teleprompter-mobile-card p {
-color: #334155;
-margin-bottom: 1rem;
-line-height: 1.5;
-}
-
-:global(.dark) .teleprompter-mobile-card p,
-.dark .teleprompter-mobile-card p {
-color: #cbd5e1;
-}
-
-.teleprompter-mobile-actions {
-display: flex;
-gap: 0.75rem;
-flex-wrap: wrap;
 }
 
 /* Onboarding overlay */
@@ -1922,25 +1826,6 @@ color: #94a3b8;
 
 .premium-btn {
 margin-top: 1rem;
-}
-
-/* Premium mobile card */
-.teleprompter-mobile-card.premium-mobile h2 {
-background: linear-gradient(135deg, oklch(0.70 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30)));
--webkit-background-clip: text;
--webkit-text-fill-color: transparent;
-background-clip: text;
-}
-
-.premium-subtitle {
-font-weight: 600;
-color: oklch(0.60 0.14 var(--hue));
-margin-bottom: 1rem;
-}
-
-:global(.dark) .premium-subtitle,
-.dark .premium-subtitle {
-color: oklch(0.70 0.14 var(--hue));
 }
 
 /* Header */
@@ -3025,59 +2910,6 @@ display: none;
 }
 }
 
-/* Mobile tips styles */
-.mobile-tips {
-display: flex;
-flex-direction: column;
-gap: 0.75rem;
-margin: 1rem 0;
-}
-
-.tip-item {
-display: flex;
-align-items: center;
-gap: 1rem;
-padding: 0.75rem;
-background: oklch(0.95 0.01 var(--hue));
-border-radius: 0.5rem;
-}
-
-:global(.dark) .tip-item,
-.dark .tip-item {
-background: oklch(0.20 0.02 var(--hue));
-}
-
-.tip-icon {
-font-size: 1.5rem;
-flex-shrink: 0;
-}
-
-.tip-text {
-display: flex;
-flex-direction: column;
-gap: 0.1rem;
-}
-
-.tip-text strong {
-font-size: 0.9rem;
-color: oklch(0.35 0.03 var(--hue));
-}
-
-:global(.dark) .tip-text strong,
-.dark .tip-text strong {
-color: oklch(0.85 0.03 var(--hue));
-}
-
-.tip-text span {
-font-size: 0.8rem;
-color: oklch(0.50 0.02 var(--hue));
-}
-
-:global(.dark) .tip-text span,
-.dark .tip-text span {
-color: oklch(0.65 0.02 var(--hue));
-}
-
 /* Word count styles */
 .word-count {
 margin-left: 0.5rem;
@@ -3088,5 +2920,95 @@ color: oklch(0.55 0.02 var(--hue));
 :global(.dark) .word-count,
 .dark .word-count {
 color: oklch(0.70 0.02 var(--hue));
+}
+
+/* Mobile tip banner - subtle, non-invasive */
+.mobile-tip-banner {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 0.75rem;
+padding: 0.65rem 1rem;
+background: oklch(0.94 0.03 var(--hue));
+border: 1px solid oklch(0.88 0.05 var(--hue));
+border-radius: 0.75rem;
+font-size: 0.82rem;
+line-height: 1.4;
+color: oklch(0.40 0.08 var(--hue));
+animation: fadeIn 0.4s ease;
+}
+
+:global(.dark) .mobile-tip-banner,
+.dark .mobile-tip-banner {
+background: oklch(0.22 0.03 var(--hue));
+border-color: oklch(0.32 0.05 var(--hue));
+color: oklch(0.78 0.06 var(--hue));
+}
+
+.mobile-tip-content {
+display: flex;
+align-items: flex-start;
+gap: 0.5rem;
+flex: 1;
+min-width: 0;
+}
+
+.mobile-tip-icon {
+font-size: 1.1rem;
+flex-shrink: 0;
+line-height: 1.3;
+}
+
+.mobile-tip-content p {
+margin: 0;
+color: inherit;
+font-size: inherit;
+line-height: inherit;
+}
+
+.mobile-tip-content p strong {
+color: oklch(0.50 0.12 var(--hue));
+font-weight: 600;
+}
+
+:global(.dark) .mobile-tip-content p strong,
+.dark .mobile-tip-content p strong {
+color: oklch(0.72 0.12 var(--hue));
+}
+
+.mobile-tip-close {
+background: none;
+border: none;
+color: oklch(0.55 0.05 var(--hue));
+font-size: 1rem;
+cursor: pointer;
+padding: 0.25rem;
+border-radius: 0.375rem;
+line-height: 1;
+flex-shrink: 0;
+transition: all 0.2s ease;
+}
+
+.mobile-tip-close:hover {
+background: oklch(0.88 0.04 var(--hue));
+color: oklch(0.40 0.08 var(--hue));
+}
+
+:global(.dark) .mobile-tip-close,
+.dark .mobile-tip-close {
+color: oklch(0.60 0.05 var(--hue));
+}
+
+:global(.dark) .mobile-tip-close:hover,
+.dark .mobile-tip-close:hover {
+background: oklch(0.30 0.04 var(--hue));
+color: oklch(0.80 0.06 var(--hue));
+}
+
+/* Hide on desktop */
+@media (min-width: 769px) {
+.mobile-tip-banner {
+display: none;
+}
 }
 </style>
