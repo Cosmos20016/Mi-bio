@@ -208,34 +208,31 @@ const detectCategory = (url: string): string => {
 const getFavicon = (url: string): string => {
 	try {
 		const domain = new URL(url).hostname;
-		// Use DuckDuckGo Icons API (more reliable on mobile)
-		return `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+		// Use Google S2 favicons API as primary (more reliable)
+		return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
 	} catch {
-		return "";
+		return fallbackIconSvg;
 	}
 };
 
 // Handle favicon load errors
 const handleFaviconError = (event: Event, urlId: string) => {
 	const img = event.currentTarget as HTMLImageElement;
+	const originalUrl = img.dataset.url;
+
 	if (!failedFavicons.has(urlId)) {
 		failedFavicons.add(urlId);
-		// Try Favicone as second fallback
-		if (img.src.includes("duckduckgo.com")) {
-			const originalUrl = img.dataset.url;
-			if (originalUrl) {
-				try {
-					const domain = new URL(originalUrl).hostname;
-					img.src = `https://favicone.com/${domain}?s=32`;
-					return;
-				} catch {
-					// Fall through to SVG fallback
-				}
-			}
+		// Try DuckDuckGo as second fallback
+		if (originalUrl) {
+			try {
+				const domain = new URL(originalUrl).hostname;
+				img.src = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+				return;
+			} catch {}
 		}
-		// Use inline SVG fallback
-		img.src = fallbackIconSvg;
 	}
+	// Final fallback: inline SVG
+	img.src = fallbackIconSvg;
 };
 
 // Validate URL
@@ -274,32 +271,50 @@ const shortenWithCleanUri = async (longUrl: string): Promise<string> => {
 	return data.result_url;
 };
 
-// API 2: v.gd (sin publicidad, mismo backend que is.gd, fallback adicional)
-const shortenWithVgd = async (longUrl: string): Promise<string> => {
-	const endpoint = `https://v.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`;
-	const response = await fetch(endpoint);
-	if (!response.ok) throw new Error(`v.gd HTTP ${response.status}`);
+// API 2: spoo.me (gratis, sin ads, CORS habilitado)
+const shortenWithSpooMe = async (longUrl: string): Promise<string> => {
+	const response = await fetch("https://spoo.me/", {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/x-www-form-urlencoded",
+			Accept: "application/json",
+		},
+		body: `url=${encodeURIComponent(longUrl)}`,
+	});
+	if (!response.ok) throw new Error(`spoo.me HTTP ${response.status}`);
 	const data = await response.json();
-	if (data.errorcode) throw new Error(data.errormessage || "Shortening failed");
-	return data.shorturl;
+	if (!data.short_url) throw new Error("No short URL returned");
+	return data.short_url;
 };
 
-// API 3: is.gd (fallback, funciona bien en desktop)
-const shortenWithIsgd = async (longUrl: string): Promise<string> => {
-	const endpoint = `https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`;
+// API 3: shrtco.de (gratis, sin ads, CORS habilitado)
+const shortenWithShrtcode = async (longUrl: string): Promise<string> => {
+	const endpoint = `https://api.shrtco.de/v2/shorten?url=${encodeURIComponent(longUrl)}`;
 	const response = await fetch(endpoint);
-	if (!response.ok) throw new Error(`is.gd HTTP ${response.status}`);
+	if (!response.ok) throw new Error(`shrtco.de HTTP ${response.status}`);
 	const data = await response.json();
-	if (data.errorcode) throw new Error(data.errormessage || "Shortening failed");
-	return data.shorturl;
+	if (!data.ok || !data.result)
+		throw new Error(data.error || "Shortening failed");
+	return data.result.full_short_link;
+};
+
+// API 4: ulvis.net (gratis, sin ads)
+const shortenWithUlvis = async (longUrl: string): Promise<string> => {
+	const endpoint = `https://ulvis.net/API/write/get?url=${encodeURIComponent(longUrl)}&type=json`;
+	const response = await fetch(endpoint);
+	if (!response.ok) throw new Error(`ulvis.net HTTP ${response.status}`);
+	const data = await response.json();
+	if (!data.data || !data.data.url) throw new Error("No short URL returned");
+	return data.data.url;
 };
 
 // Controlador principal: prueba APIs sin publicidad en cascada hasta que una funcione
 const shortenUrl = async (longUrl: string): Promise<string> => {
 	const apis = [
 		{ name: "CleanURI", fn: shortenWithCleanUri },
-		{ name: "is.gd", fn: shortenWithIsgd },
-		{ name: "v.gd", fn: shortenWithVgd },
+		{ name: "spoo.me", fn: shortenWithSpooMe },
+		{ name: "shrtco.de", fn: shortenWithShrtcode },
+		{ name: "ulvis.net", fn: shortenWithUlvis },
 	];
 
 	for (const api of apis) {
@@ -391,25 +406,28 @@ const addUrl = async () => {
 		inputCategory = "other";
 		showSuccessToast("✓ URL acortada · Sin publicidad");
 	} catch (err) {
-		// Log error for debugging
 		console.error("URL shortening failed:", err);
-		// Fallback: guardar sin acortar
-		const newUrl: ShortenedUrl = {
-			id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-			originalUrl: normalized,
-			shortUrl: normalized,
-			alias,
-			createdAt: new Date().toISOString(),
-			copyCount: 0,
-			category: inputCategory,
-			favicon: getFavicon(normalized),
-		};
-		urls = [newUrl, ...urls];
-		saveUrls();
-		inputUrl = "";
-		inputAlias = "";
-		inputCategory = "other";
-		showSuccessToast("⚠️ Guardado sin acortar (servicio no disponible)");
+		const saveAnyway = confirm(
+			"No se pudo acortar la URL (los servicios no están disponibles). ¿Guardarla de todos modos sin acortar?",
+		);
+		if (saveAnyway) {
+			const newUrl: ShortenedUrl = {
+				id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+				originalUrl: normalized,
+				shortUrl: normalized,
+				alias,
+				createdAt: new Date().toISOString(),
+				copyCount: 0,
+				category: inputCategory,
+				favicon: getFavicon(normalized),
+			};
+			urls = [newUrl, ...urls];
+			saveUrls();
+			inputUrl = "";
+			inputAlias = "";
+			inputCategory = "other";
+			showSuccessToast("⚠️ Guardado sin acortar");
+		}
 	} finally {
 		isShortening = false;
 	}
