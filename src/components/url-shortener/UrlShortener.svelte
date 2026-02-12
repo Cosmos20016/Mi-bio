@@ -220,6 +220,7 @@ const handleFaviconError = (event: Event, urlId: string) => {
 	const img = event.currentTarget as HTMLImageElement;
 	const originalUrl = img.dataset.url;
 
+	// First failure: try DuckDuckGo fallback
 	if (!failedFavicons.has(urlId)) {
 		failedFavicons.add(urlId);
 		// Try DuckDuckGo as second fallback
@@ -228,10 +229,12 @@ const handleFaviconError = (event: Event, urlId: string) => {
 				const domain = new URL(originalUrl).hostname;
 				img.src = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
 				return;
-			} catch {}
+			} catch {
+				// Invalid URL, fall through to SVG fallback
+			}
 		}
 	}
-	// Final fallback: inline SVG
+	// Second failure or no original URL: use inline SVG fallback
 	img.src = fallbackIconSvg;
 };
 
