@@ -265,8 +265,8 @@ const isValidAlias = (alias: string): boolean => {
 const shortenWithCleanUri = async (longUrl: string): Promise<string> => {
 	const response = await fetch("https://cleanuri.com/api/v1/shorten", {
 		method: "POST",
-		headers: { "Content-Type": "application/x-www-form-urlencoded" },
-		body: `url=${encodeURIComponent(longUrl)}`,
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ url: longUrl })
 	});
 	if (!response.ok) throw new Error(`CleanURI HTTP ${response.status}`);
 	const data = await response.json();
@@ -276,17 +276,14 @@ const shortenWithCleanUri = async (longUrl: string): Promise<string> => {
 
 // API 2: spoo.me (gratis, sin ads, CORS habilitado)
 const shortenWithSpooMe = async (longUrl: string): Promise<string> => {
-	const response = await fetch("https://spoo.me/", {
+	const response = await fetch("https://spoo.me/api/shorten", {
 		method: "POST",
-		headers: {
-			"Content-Type": "application/x-www-form-urlencoded",
-			Accept: "application/json",
-		},
-		body: `url=${encodeURIComponent(longUrl)}`,
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ url: longUrl })
 	});
 	if (!response.ok) throw new Error(`spoo.me HTTP ${response.status}`);
 	const data = await response.json();
-	if (!data.short_url) throw new Error("No short URL returned");
+	if (!data.success || !data.short_url) throw new Error("No short URL returned");
 	return data.short_url;
 };
 
@@ -303,12 +300,20 @@ const shortenWithShrtcode = async (longUrl: string): Promise<string> => {
 
 // API 4: ulvis.net (gratis, sin ads)
 const shortenWithUlvis = async (longUrl: string): Promise<string> => {
-	const endpoint = `https://ulvis.net/API/write/get?url=${encodeURIComponent(longUrl)}&type=json`;
-	const response = await fetch(endpoint);
+	const response = await fetch(`https://ulvis.net/api.php?url=${encodeURIComponent(longUrl)}`);
 	if (!response.ok) throw new Error(`ulvis.net HTTP ${response.status}`);
 	const data = await response.json();
-	if (!data.data || !data.data.url) throw new Error("No short URL returned");
-	return data.data.url;
+	if (!data.shorturl) throw new Error("No short URL returned");
+	return data.shorturl;
+};
+
+// API 5: is.gd (gratis, sin ads, confiable)
+const shortenWithIsGd = async (longUrl: string): Promise<string> => {
+	const response = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`);
+	if (!response.ok) throw new Error(`is.gd HTTP ${response.status}`);
+	const data = await response.json();
+	if (!data.shorturl) throw new Error("No short URL returned");
+	return data.shorturl;
 };
 
 // Controlador principal: prueba APIs sin publicidad en cascada hasta que una funcione
@@ -318,6 +323,7 @@ const shortenUrl = async (longUrl: string): Promise<string> => {
 		{ name: "spoo.me", fn: shortenWithSpooMe },
 		{ name: "shrtco.de", fn: shortenWithShrtcode },
 		{ name: "ulvis.net", fn: shortenWithUlvis },
+		{ name: "is.gd", fn: shortenWithIsGd },
 	];
 
 	for (const api of apis) {
@@ -375,7 +381,7 @@ const addUrl = async () => {
 		// Instead of blocking, ask if they want to copy the existing one
 		if (
 			confirm(
-				`Este URL ya existe con alias #${existingUrl.alias}. ¿Copiar al portapapeles?`,
+				`Este URL ya existe con alias #${existingUrl.alias}. ¿Copiar al portapeles?`,
 			)
 		) {
 			copyUrl(existingUrl);
@@ -657,6 +663,11 @@ const onKey = (event: KeyboardEvent) => {
 		exportUrls();
 	}
 };
+
+// Focus input action
+function focusInput(node: HTMLElement) {
+	node.focus();
+}
 
 // Initialize
 onMount(() => {
