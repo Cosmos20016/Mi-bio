@@ -250,42 +250,38 @@ const detectCategory = (url: string): string => {
 	}
 };
 
-// Get favicon with reliable primary service
+// Get favicon from URL with fallback chain
 const getFavicon = (url: string): string => {
 	try {
 		const domain = new URL(url).hostname;
-		// Primary: Favicone.com (loads real favicons better)
-		return `https://favicone.com/${domain}`;
+		// Use Google S2 favicons API as primary (more reliable)
+		return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
 	} catch {
 		return fallbackIconSvg;
 	}
 };
 
-// Handle errors with Icon Horse as fallback, then category icon
+// Handle favicon load errors
 const handleFaviconError = (event: Event, urlId: string) => {
 	const img = event.currentTarget as HTMLImageElement;
 	const originalUrl = img.dataset.url;
 
-	// First failure: try Icon Horse as secondary
+	// First failure: try DuckDuckGo fallback
 	if (!failedFavicons.has(urlId)) {
 		failedFavicons.add(urlId);
+		// Try DuckDuckGo as second fallback
 		if (originalUrl) {
 			try {
 				const domain = new URL(originalUrl).hostname;
-				img.src = `https://icon.horse/icon/${domain}`;
+				img.src = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
 				return;
 			} catch {
-				// Fall through to category icon
+				// Invalid URL, fall through to SVG fallback
 			}
 		}
 	}
-	// Final fallback: category icon (much better than SVG)
-	if (originalUrl) {
-		const category = detectCategory(originalUrl);
-		img.src = categoryMap[category]?.icon || '🔗';
-	} else {
-		img.src = '🔗'; // Ultimate fallback
-	}
+	// Second failure or no original URL: use inline SVG fallback
+	img.src = fallbackIconSvg;
 };
 
 // Normalize URL (add https:// if missing)
