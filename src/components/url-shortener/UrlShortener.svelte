@@ -50,14 +50,7 @@ let stopThemeWatch: (() => void) | null = null;
 const MAX_URLS = 100;
 
 // Categories
-const categories = [
-	{ id: "all", label: "📋 Todos", icon: "📋" },
-	{ id: "social", label: "📱 Social", icon: "📱" },
-	{ id: "work", label: "💼 Trabajo", icon: "💼" },
-	{ id: "personal", label: "🏠 Personal", icon: "🏠" },
-	{ id: "dev", label: "💻 Dev", icon: "💻" },
-	{ id: "other", label: "🔗 Otros", icon: "🔗" },
-];
+
 
 // Fallback SVG icon for failed favicon loads
 const fallbackIconSvg = `data:image/svg+xml,${encodeURIComponent(`
@@ -67,7 +60,17 @@ const fallbackIconSvg = `data:image/svg+xml,${encodeURIComponent(`
 </svg>
 `)}`;
 
-// Track which favicons failed to load
+// Categories
+const categories = [
+	{ id: "all", label: "📂 Todos", icon: "📂" },
+	{ id: "social", label: "📱 Social", icon: "📱" },
+	{ id: "work", label: "💼 Trabajo", icon: "💼" },
+	{ id: "personal", label: "👤 Personal", icon: "👤" },
+	{ id: "dev", label: "💻 Dev", icon: "💻" },
+	{ id: "other", label: "🌐 Otros", icon: "🌐" },
+];
+
+rack which favicons failed to load
 let failedFavicons = new Set<string>();
 
 // Palabras para generar alias legibles
