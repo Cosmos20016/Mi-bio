@@ -2146,4 +2146,4 @@ const closeOnboarding = () => {
 	.dark .info-item p {
 		color: #94a3b8;
 	}
-</style>
+</style>2
