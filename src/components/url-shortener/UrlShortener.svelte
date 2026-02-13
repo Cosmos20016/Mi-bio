@@ -70,7 +70,7 @@ const categories = [
 	{ id: "other", label: "🔗 Otros", icon: "🔗" },
 ];
 
-// Track which favicons failed to load
+rack which favicons failed to load
 let failedFavicons = new Set<string>();
 
 // Palabras para generar alias legibles
@@ -282,6 +282,16 @@ const handleFaviconError = (event: Event, urlId: string) => {
 	}
 	// Second failure or no original URL: use inline SVG fallback
 	img.src = fallbackIconSvg;
+};
+
+// Validate URL
+const isValidUrl = (url: string): boolean => {
+	try {
+		const parsed = new URL(url);
+		return parsed.protocol === "http:" || parsed.protocol === "https:";
+	} catch {
+		return false;
+	}
 };
 
 // Normalize URL (add https:// if missing)
