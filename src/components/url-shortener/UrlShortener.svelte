@@ -70,7 +70,7 @@ const categories = [
 	{ id: "other", label: "🔗 Otros", icon: "🔗" },
 ];
 
-rack which favicons failed to load
+// rack which favicons failed to load
 let failedFavicons = new Set<string>();
 
 // Palabras para generar alias legibles
