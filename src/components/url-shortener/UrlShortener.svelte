@@ -68,7 +68,7 @@ const categories = [
 	{ id: "personal", label: "🏠 Personal", icon: "🏠" },
 	{ id: "dev", label: "💻 Dev", icon: "💻" },
 	{ id: "other", label: "🔗 Otros", icon: "🔗" },
-];
+]
 
 rack which favicons failed to load
 let failedFavicons = new Set<string>();
