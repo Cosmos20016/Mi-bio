@@ -189,37 +189,47 @@ const categoryRules = {
 	social: [
 		'youtube', 'tiktok', 'instagram', 'facebook', 'twitter', 'x.com', 'linkedin', 'threads',
 		'pinterest', 'reddit', 'twitch', 'discord', 'snapchat', 'tumblr', 'weibo', 'vk.com',
-		'telegram.org', 'whatsapp', 'signal', 'mastodon'
+		'telegram.org', 'whatsapp', 'signal', 'mastodon', 'parler', 'gab', 'truthsocial',
+		'mewe', 'clubhouse', 'beeper', 'matrix.org', 'session', 'threema', 'element.io',
+		'tinder', 'bumble', 'hinge', 'ok.ru', 'odnoklassniki', 'renren', 'qzone', 'douyin',
+		'kuaishou', 'bilibili', 'xiaohongshu', 'douban', 'zhihu', 'tieba', 'weibo.cn'
 	],
 	dev: [
 		'github', 'gitlab', 'stackoverflow', 'npmjs', 'vercel', 'netlify', 'codepen', 'codesandbox',
 		'replit', 'heroku', 'digitalocean', 'firebase', 'supabase', 'aws.amazon', 'azure.microsoft',
-		'gcp.google', 'cloudflare', 'bitbucket', 'sourceforge', 'docker', 'kubernetes'
+		'gcp.google', 'cloudflare', 'bitbucket', 'sourceforge', 'docker', 'kubernetes', 'jenkins',
+		'travis-ci', 'circleci', 'githubactions', 'terraform', 'ansible', 'puppet', 'chef.io',
+		'vagrant', 'virtualbox', 'vmware', 'hyper-v', 'proxmox', 'openstack', 'linode', 'vultr',
+		'rackspace', 'godaddy', 'namecheap', 'hostinger', 'siteground', 'bluehost', 'dreamhost',
+		'hostgator', '1and1', 'ovh', 'hetzner', 'contabo', 'ionos', 'strato', 'web.de',
+		'glitch', 'codeanywhere', 'c9.io', 'koding', 'nitrous.io', 'codio', 'cloud9', 'repl.it',
+		'jsfiddle', 'jsbin', 'plnkr', 'fiddle.jshell', 'codeply', 'bootply', 'sqlfiddle', 'dbfiddle'
 	],
 	work: [
 		'docs.google', 'notion', 'slack', 'trello', 'asana', 'jira', 'figma', 'zoom', 'teams.microsoft',
 		'meet.google', 'monday.com', 'clickup', 'confluence', 'atlassian', 'dropbox', 'drive.google',
-		'onedrive', 'sharepoint', 'box.com', 'evernote', 'todoist', 'basecamp', 'teamwork.com'
+		'onedrive', 'sharepoint', 'box.com', 'evernote', 'todoist', 'basecamp', 'teamwork.com',
+		'microsoft.com', 'office.com', 'outlook.com', 'skype', 'webex', 'gotomeeting', 'join.me',
+		'teamviewer', 'anydesk', 'logmein', 'remotedesktop', 'citrix', 'vmware', 'parallels',
+		'adobe.com', 'photoshop', 'illustrator', 'indesign', 'premiere', 'aftereffects', 'lightroom',
+		'behance', 'dribbble', 'canva', 'invision', 'sketch', 'framer', 'webflow', 'carrd',
+		'surveymonkey', 'typeform', 'googleforms', 'jotform', 'wufoo', 'limeSurvey', 'qualtrics',
+		'hubspot', 'salesforce', 'zoho', 'pipedrive', 'crm', 'erp', 'sap', 'oracle', 'microsoftdynamics',
+		'mailchimp', 'constantcontact', 'sendinblue', 'activecampaign', 'klaviyo', 'drip', 'convertkit',
+		'miro', 'lucidchart', 'draw.io', 'diagrams.net', 'gliffy', 'visio', 'edraw', 'smartdraw',
+		'zoom.us', 'goto.com', 'bluejeans', 'ringcentral', '8x8', 'grasshopper', 'nextiva'
 	],
 	personal: [
 		'blogspot', 'wordpress.com', 'medium', 'tumblr', 'wix', 'squarespace', 'weebly', 'jimdo',
-		'substack', 'ghost.org', 'patreon', 'ko-fi', 'gumroad', 'etsy', 'shopify', 'ebay', 'amazon'
+		'substack', 'ghost.org', 'patreon', 'ko-fi', 'gumroad', 'etsy', 'shopify', 'ebay', 'amazon',
+		'bandcamp', 'soundcloud', 'spotify', 'deezer', 'tidal', 'applemusic', 'pandora', 'lastfm',
+		'mixcloud', 'audiomack', 'distroKid', 'tunecore', 'cdbaby', 'reverbnation', 'myspace',
+		'deviantart', 'artstation', 'newgrounds', 'itch.io', 'gamejolt', 'steamcommunity', 'epicgames',
+		'gog.com', 'origin', 'uplay', 'battlenet', 'warcraft', 'overwatch', 'leagueoflegends',
+		'behance', 'dribbble', 'portfolio', 'cargocollective', 'carbonmade', 'format', 'cargo.site',
+		'squarespace.com', 'webflow.com', 'carrd.co', 'about.me', 'linktree', 'bio.fm', 'milkshake.app',
+		'paypal.me', 'venmo', 'cashapp', 'ko-fi.com', 'buy me a coffee', 'donate.ly', 'fundly'
 	]
-};
-
-// Auto-detect category from URL (mejorada)
-const detectCategory = (url: string): string => {
-	try {
-		const hostname = new URL(url).hostname.toLowerCase();
-		for (const [category, domains] of Object.entries(categoryRules)) {
-			if (domains.some(domain => hostname.includes(domain))) {
-				return category;
-			}
-		}
-		return 'other';
-	} catch {
-		return 'other';
-	}
 };
 
 // Auto-detect category from URL (mejorada)
