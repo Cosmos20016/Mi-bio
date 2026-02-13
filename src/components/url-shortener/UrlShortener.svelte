@@ -306,37 +306,36 @@ const detectCategory = (url: string): string => {
 	}
 };
 
-// Get favicon from URL with fallback chain
+// Get favicon from URL with better primary service
 const getFavicon = (url: string): string => {
 	try {
 		const domain = new URL(url).hostname;
-		// Use Google S2 favicons API as primary (more reliable)
-		return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+		// Use Icon Horse as primary (loads real favicons better)
+		return `https://icon.horse/icon/${domain}`;
 	} catch {
 		return fallbackIconSvg;
 	}
 };
 
-// Handle favicon load errors
+// Handle favicon load errors with improved fallbacks
 const handleFaviconError = (event: Event, urlId: string) => {
 	const img = event.currentTarget as HTMLImageElement;
 	const originalUrl = img.dataset.url;
 
-	// First failure: try DuckDuckGo fallback
+	// First failure: try Google S2 as secondary
 	if (!failedFavicons.has(urlId)) {
 		failedFavicons.add(urlId);
-		// Try DuckDuckGo as second fallback
 		if (originalUrl) {
 			try {
 				const domain = new URL(originalUrl).hostname;
-				img.src = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+				img.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
 				return;
 			} catch {
-				// Invalid URL, fall through to SVG fallback
+				// Fall through to SVG
 			}
 		}
 	}
-	// Second failure or no original URL: use inline SVG fallback
+	// Final fallback: SVG icon
 	img.src = fallbackIconSvg;
 };
 
