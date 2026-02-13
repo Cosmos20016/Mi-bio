@@ -411,7 +411,7 @@ const addUrl = async () => {
 	} catch (err) {
 		console.error("URL shortening failed:", err);
 		const saveAnyway = confirm(
-			"No se pudo acortar la URL (los servicios no están disponibles). ¿Guardarla de todos modos sin acortar?",
+			"El acortamiento de enlaces está temporalmente inactivo. ¿Guardar enlace original?",
 		);
 		if (saveAnyway) {
 			const newUrl: ShortenedUrl = {
