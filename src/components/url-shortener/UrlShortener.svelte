@@ -306,39 +306,39 @@ const detectCategory = (url: string): string => {
 	}
 };
 
-// Get favicon from URL with better primary service
+// Get favicon with primary FaviconKit (more reliable for client-side)
 const getFavicon = (url: string): string => {
 	try {
 		const domain = new URL(url).hostname;
-		// Use Icon Horse as primary (loads real favicons better)
-		return `https://icon.horse/icon/${domain}`;
+		// Primary: FaviconKit (simple and CORS-friendly)
+		return `https://api.faviconkit.com/${domain}/32`;
 	} catch {
 		return fallbackIconSvg;
 	}
 };
 
-// Handle favicon load errors with improved fallbacks
+// Handle errors with Icon Horse as fallback
 const handleFaviconError = (event: Event, urlId: string) => {
 	const img = event.currentTarget as HTMLImageElement;
 	const originalUrl = img.dataset.url;
 
-	// First failure: try Google S2 as secondary
+	// First failure: try Icon Horse as secondary
 	if (!failedFavicons.has(urlId)) {
 		failedFavicons.add(urlId);
 		if (originalUrl) {
 			try {
 				const domain = new URL(originalUrl).hostname;
-				img.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+				img.src = `https://icon.horse/icon/${domain}`;
 				return;
 			} catch {
 				// Fall through to SVG
 			}
 		}
 	}
-	// Final fallback: SVG icon
+	// Final fallback
 	img.src = fallbackIconSvg;
 };
-
+s
 // Validate URL
 const isValidUrl = (url: string): boolean => {
 	try {
