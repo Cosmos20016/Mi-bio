@@ -62,12 +62,12 @@ const fallbackIconSvg = `data:image/svg+xml,${encodeURIComponent(`
 
 // Categories
 const categories = [
-	{ id: "all", label: "📂 Todos", icon: "📂" },
+	{ id: "all", label: "📋 Todos", icon: "📋" },
 	{ id: "social", label: "📱 Social", icon: "📱" },
 	{ id: "work", label: "💼 Trabajo", icon: "💼" },
-	{ id: "personal", label: "👤 Personal", icon: "👤" },
+	{ id: "personal", label: "🏠 Personal", icon: "🏠" },
 	{ id: "dev", label: "💻 Dev", icon: "💻" },
-	{ id: "other", label: "🌐 Otros", icon: "🌐" },
+	{ id: "other", label: "🔗 Otros", icon: "🔗" },
 ];
 
 rack which favicons failed to load
