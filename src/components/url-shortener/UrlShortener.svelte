@@ -184,111 +184,42 @@ const generateAlias = (url: string): string => {
 	return `${adj}-${noun}${num}`;
 };
 
-// Auto-detect category from URL
 // Reglas de detección de categorías (fácil de agregar más dominios)
 const categoryRules = {
 	social: [
 		'youtube', 'tiktok', 'instagram', 'facebook', 'twitter', 'x.com', 'linkedin', 'threads',
 		'pinterest', 'reddit', 'twitch', 'discord', 'snapchat', 'tumblr', 'weibo', 'vk.com',
-		'telegram.org', 'whatsapp', 'signal', 'mastodon', 'parler', 'gab', 'truthsocial',
-		'mewe', 'clubhouse', 'beeper', 'matrix.org', 'session', 'threema', 'element.io'
+		'telegram.org', 'whatsapp', 'signal', 'mastodon'
 	],
 	dev: [
 		'github', 'gitlab', 'stackoverflow', 'npmjs', 'vercel', 'netlify', 'codepen', 'codesandbox',
 		'replit', 'heroku', 'digitalocean', 'firebase', 'supabase', 'aws.amazon', 'azure.microsoft',
-		'gcp.google', 'cloudflare', 'bitbucket', 'sourceforge', 'docker', 'kubernetes', 'jenkins',
-		'travis-ci', 'circleci', 'githubactions', 'terraform', 'ansible', 'puppet', 'chef.io',
-		'vagrant', 'virtualbox', 'vmware', 'hyper-v', 'proxmox', 'openstack', 'linode', 'vultr',
-		'rackspace', 'godaddy', 'namecheap', 'hostinger', 'siteground', 'bluehost', 'dreamhost',
-		'hostgator', '1and1', 'ovh', 'hetzner', 'contabo', 'ionos', 'strato', 'web.de'
+		'gcp.google', 'cloudflare', 'bitbucket', 'sourceforge', 'docker', 'kubernetes'
 	],
 	work: [
 		'docs.google', 'notion', 'slack', 'trello', 'asana', 'jira', 'figma', 'zoom', 'teams.microsoft',
 		'meet.google', 'monday.com', 'clickup', 'confluence', 'atlassian', 'dropbox', 'drive.google',
-		'onedrive', 'sharepoint', 'box.com', 'evernote', 'todoist', 'basecamp', 'teamwork.com',
-		'microsoft.com', 'office.com', 'outlook.com', 'skype', 'webex', 'gotomeeting', 'join.me',
-		'teamviewer', 'anydesk', 'logmein', 'remotedesktop', 'citrix', 'vmware', 'parallels',
-		'adobe.com', 'photoshop', 'illustrator', 'indesign', 'premiere', 'aftereffects', 'lightroom',
-		'behance', 'dribbble', 'canva', 'invision', 'sketch', 'framer', 'webflow', 'carrd',
-		'surveymonkey', 'typeform', 'googleforms', 'jotform', 'wufoo', 'limeSurvey', 'qualtrics',
-		'hubspot', 'salesforce', 'zoho', 'pipedrive', 'crm', 'erp', 'sap', 'oracle', 'microsoftdynamics'
+		'onedrive', 'sharepoint', 'box.com', 'evernote', 'todoist', 'basecamp', 'teamwork.com'
 	],
 	personal: [
 		'blogspot', 'wordpress.com', 'medium', 'tumblr', 'wix', 'squarespace', 'weebly', 'jimdo',
-		'substack', 'ghost.org', 'patreon', 'ko-fi', 'gumroad', 'etsy', 'shopify', 'ebay', 'amazon',
-		'bandcamp', 'soundcloud', 'spotify', 'deezer', 'tidal', 'applemusic', 'pandora', 'lastfm',
-		'mixcloud', 'audiomack', 'distroKid', 'tunecore', 'cdbaby', 'reverbnation', 'myspace',
-		'deviantart', 'artstation', 'newgrounds', 'itch.io', 'gamejolt', 'steamcommunity', 'epicgames',
-		'gog.com', 'origin', 'uplay', 'battlenet', 'warcraft', 'overwatch', 'leagueoflegends'
-	],
-	shopping: [
-		'amazon', 'ebay', 'alibaba', 'aliexpress', 'walmart', 'target', 'bestbuy', 'costco', 'ikea',
-		'home depot', 'lowes', 'macys', 'kohls', 'jcpenney', 'sears', 'kmart', 'overstock', 'wayfair',
-		'chegg', 'textbookx', 'bookdepository', 'barnesandnoble', 'goodreads', 'audible', 'kindle',
-		'flipkart', 'snapdeal', 'myntra', 'ajio', 'bigbasket', 'swiggy', 'zomato', 'doordash', 'uber eats',
-		'grubhub', 'postmates', 'instacart', 'kroger', 'safeway', 'wholefoods', 'traderjoes', 'publix'
-	],
-	entertainment: [
-		'youtube', 'netflix', 'hulu', 'disney+', 'amazonprime', 'hbomax', 'apple tv', 'peacock',
-		'paramount+', 'crave', 'crunchyroll', 'funimation', 'anime-planet', 'myanimelist', 'kissanime',
-		'twitch', 'streamlabs', 'obsproject', 'discord', 'teamspeak', 'ventrilo', 'mumble', 'razer',
-		'steelseries', 'logitech', 'corsair', 'hyperx', 'astro', 'turtlebeach', 'sony', 'playstation',
-		'xbox', 'nintendo', 'switch', 'wii', 'gamecube', 'sega', 'atari', 'arcade', 'steam', 'epicgames',
-		'gog', 'origin', 'uplay', 'battlenet', 'rockstar', 'ubisoft', 'ea.com', 'activision', 'blizzard',
-		'bethesda', 'valve', 'riotgames', 'mojang', 'minecraft', 'roblox', 'fortnite', 'pubg', 'apexlegends',
-		'cod', 'overwatch', 'leagueoflegends', 'dota2', 'csgo', 'valorant', 'amongus', 'fallguys', 'jackbox'
-	],
-	news: [
-		'cnn', 'bbc', 'nytimes', 'washingtonpost', 'theguardian', 'reuters', 'apnews', 'bloomberg',
-		'wsj', 'forbes', 'businessinsider', 'techcrunch', 'wired', 'arstechnica', 'slashdot', 'hackernews',
-		'reddit', 'quora', 'stackexchange', 'medium', 'substack', 'buzzfeed', 'vice', 'mashable',
-		'gizmodo', 'theverge', 'engadget', 'cnet', 'pcmag', 'zdnet', 'anandtech', 'tomshardware',
-		'phoronix', 'distrowatch', 'linuxmint', 'ubuntu', 'debian', 'archlinux', 'fedora', 'centos'
-	],
-	education: [
-		'coursera', 'udemy', 'edx', 'khanacademy', 'codecademy', 'freecodecamp', 'udacity', 'pluralsight',
-		'linkedin learning', 'skillshare', 'masterclass', 'teachable', 'thinkific', 'academy', 'mooc',
-		'google classroom', 'canvas', 'blackboard', 'moodle', 'brightspace', 'schoology', 'edmodo',
-		'duolingo', 'babbel', 'memrise', 'busuu', 'lingua', 'rosetta stone', 'pimsleur', 'bbc languages',
-		'wikipedia', 'wolframalpha', 'mathway', 'symbolab', 'desmos', 'geogebra', 'scratch.mit.edu'
-	],
-	finance: [
-		'paypal', 'stripe', 'venmo', 'cashapp', 'zelle', 'applepay', 'googlepay', 'samsungpay',
-		'bankofamerica', 'chase', 'wellsfargo', 'citibank', 'usbank', 'capitalone', 'discover',
-		'americaneagle', 'pnc', 'tdbank', 'suntrust', 'bbt', 'regions', 'fifththird', 'keybank',
-		'huntington', 'comerica', 'mufg', 'jpmorgan', 'goldmansachs', 'morganstanley', 'barclays',
-		'hsbc', 'ubs', 'credit suisse', 'deutsche bank', 'bnp paribas', 'societe generale', 'ing',
-		'robinhood', 'etrade', 'fidelity', 'schwab', 'tdameritrade', 'interactivebrokers', 'webull',
-		'coinbase', 'binance', 'kraken', 'gemini', 'bitfinex', 'bitstamp', 'poloniex', 'bittrex'
-	],
-	health: [
-		'webmd', 'mayoclinic', 'nih.gov', 'cdc.gov', 'who.int', 'medlineplus', 'healthline', 'medicalnewstoday',
-		'verywellhealth', 'livestrong', 'menshealth', 'womenshealth', 'prevention', 'fitnessmagazine',
-		'self.com', 'cosmopolitan', 'elle', 'vogue', 'harpersbazaar', 'allure', 'glamour', 'seventeen',
-		'teen vogue', 'myfitnesspal', 'fitbit', 'garmin', 'strava', 'endomondo', 'runtastic', 'mapmyrun',
-		'nike run club', 'adidas running', 'peloton', 'soulcycle', 'yoga', 'mindfulness', 'headspace',
-		'calm', 'insight timer', 'meditation', 'therapy', 'betterhelp', 'talkspace', '7cups', 'crisis text line'
-	],
-	travel: [
-		'booking', 'expedia', 'tripadvisor', 'airbnb', 'vrbo', 'hotels.com', 'kayak', 'priceline',
-		'agoda', 'ctrip', 'qunar', 'makemytrip', 'cleartrip', 'yatra', 'ixigo', 'redbus', 'abhibus',
-		'uber', 'lyft', 'didi', 'grab', 'ola', 'careem', 'bolt', 'gett', 'freenow', 'taxi', 'limo',
-		'rentalcars', 'turo', 'getaround', 'zipcar', 'car2go', 'reachnow', 'drive', 'wework', 'regus',
-		'coworking', 'nomad', 'digital nomad', 'backpacking', 'hostelworld', 'hostels', 'couchsurfing',
-		'blablacar', 'rome2rio', 'moovit', 'citymapper', 'transit', 'flights', 'skyscanner', 'momondo'
-	],
-	food: [
-		'allrecipes', 'foodnetwork', 'tasty', 'delish', 'bonappetit', 'epicurious', 'seriouseats',
-		'thespruceeats', 'simplyrecipes', 'tasteofhome', 'bettycrocker', 'pillsbury', 'campbells',
-		'kraft', 'hellmanns', 'heinz', 'ketchup', 'mustard', 'mayo', 'olive oil', 'vinegar', 'spices',
-		'herbs', 'salt', 'sugar', 'flour', 'eggs', 'milk', 'cheese', 'butter', 'bread', 'pasta',
-		'rice', 'potatoes', 'vegetables', 'fruit', 'meat', 'chicken', 'beef', 'pork', 'fish', 'seafood',
-		'sushi', 'pizza', 'burger', 'sandwich', 'salad', 'soup', 'stew', 'curry', 'chili', 'tacos',
-		'burritos', 'enchiladas', 'quesadillas', 'nachos', 'guacamole', 'salsa', 'chips', 'dip',
-		'cookies', 'cake', 'pie', 'brownie', 'muffin', 'cupcake', 'donut', 'ice cream', 'frozen yogurt',
-		'smoothie', 'juice', 'coffee', 'tea', 'beer', 'wine', 'cocktail', 'whiskey', 'vodka', 'rum',
-		'gin', 'tequila', 'brandy', 'champagne', 'sparkling wine', 'liqueur', 'absinthe', 'amaro'
+		'substack', 'ghost.org', 'patreon', 'ko-fi', 'gumroad', 'etsy', 'shopify', 'ebay', 'amazon'
 	]
+};
+
+// Auto-detect category from URL (mejorada)
+const detectCategory = (url: string): string => {
+	try {
+		const hostname = new URL(url).hostname.toLowerCase();
+		for (const [category, domains] of Object.entries(categoryRules)) {
+			if (domains.some(domain => hostname.includes(domain))) {
+				return category;
+			}
+		}
+		return 'other';
+	} catch {
+		return 'other';
+	}
 };
 
 // Auto-detect category from URL (mejorada)
