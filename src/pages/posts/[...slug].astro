@@ -150,8 +150,8 @@ const jsonLd = {
         </a>
     </div>
 
-    <!-- Giscus Comments -->
-    <div id="giscus-container" class="giscus-wrapper">
+    <!-- Giscus Comments - Ancho completo en móviles -->
+    <div id="giscus-container" class="giscus-wrapper mt-6 min-h-[200px]">
         <div class="flex items-center justify-center py-8 text-black/50 dark:text-white/50">
             <span class="text-sm">Cargando comentarios...</span>
         </div>
@@ -291,30 +291,33 @@ const jsonLd = {
     </script>
 
     <style>
-        /* ✅ Contenedor base */
+        /* ✅ Base container - CRÍTICO: Ancho completo sin restricciones */
         .giscus-wrapper {
-            width: 100%;
-            max-width: 100%;
-            margin-top: 1.5rem;
-            min-height: 200px;
+            width: 100vw;
+            position: relative;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
             overflow: visible;
-            transition: all 0.3s ease;
         }
         
         #giscus-container {
             width: 100%;
+            max-width: 100%;
             background: transparent !important;
         }
         
-        /* ✅ Iframe base */
+        /* ✅ Iframe responsivo */
         #giscus-container :global(iframe.giscus-frame) {
             width: 100% !important;
+            max-width: 100% !important;
             border: none !important;
             background: transparent !important;
             display: block;
         }
         
-        /* ✅ Modo claro */
+        /* ✅ Tema claro */
         :global(:not(.dark)) #giscus-container {
             background-color: white !important;
         }
@@ -324,7 +327,7 @@ const jsonLd = {
             color-scheme: light;
         }
         
-        /* ✅ Modo oscuro */
+        /* ✅ Tema oscuro */
         :global(.dark) #giscus-container {
             background-color: transparent !important;
         }
@@ -334,74 +337,58 @@ const jsonLd = {
             color-scheme: dark;
         }
         
-        /* 📱 MÓVILES (320px - 480px) - Teléfonos pequeños */
-        @media (max-width: 480px) {
+        /* 📱 MÓVILES - Ancho completo de viewport */
+        @media (max-width: 768px) {
             .giscus-wrapper {
-                margin-left: -1rem;
-                margin-right: -1rem;
-                width: calc(100% + 2rem);
                 padding: 0;
             }
             
-            #giscus-container :global(iframe.giscus-frame) {
-                padding: 0 0.75rem;
-                min-height: 280px;
-                max-width: 100vw;
-            }
-        }
-        
-        /* 📱 MÓVILES (481px - 768px) - Teléfonos grandes */
-        @media (min-width: 481px) and (max-width: 768px) {
-            .giscus-wrapper {
-                margin-left: -1.25rem;
-                margin-right: -1.25rem;
-                width: calc(100% + 2.5rem);
-                padding: 0;
-            }
-            
-            #giscus-container :global(iframe.giscus-frame) {
+            #giscus-container {
                 padding: 0 1rem;
+            }
+            
+            #giscus-container :global(iframe.giscus-frame) {
                 min-height: 300px;
             }
         }
         
-        /* 📱 TABLETS (769px - 1024px) */
+        /* 📱 TABLETS */
         @media (min-width: 769px) and (max-width: 1024px) {
             .giscus-wrapper {
-                margin: 1.5rem 0;
                 width: 100%;
-                max-width: 100%;
+                position: static;
+                left: auto;
+                right: auto;
+                margin-left: 0;
+                margin-right: 0;
+            }
+            
+            #giscus-container {
+                padding: 0 1rem;
             }
             
             #giscus-container :global(iframe.giscus-frame) {
-                padding: 0 0.5rem;
                 min-height: 320px;
             }
         }
         
-        /* 💻 DESKTOP PEQUEÑO (1025px - 1366px) */
-        @media (min-width: 1025px) and (max-width: 1366px) {
+        /* 💻 DESKTOP */
+        @media (min-width: 1025px) {
             .giscus-wrapper {
-                margin: 1.5rem auto;
                 width: 100%;
-                max-width: 100%;
+                position: static;
+                left: auto;
+                right: auto;
+                margin-left: 0;
+                margin-right: 0;
+            }
+            
+            #giscus-container {
+                padding: 0;
             }
             
             #giscus-container :global(iframe.giscus-frame) {
                 min-height: 350px;
-            }
-        }
-        
-        /* 🖥️ DESKTOP GRANDE (> 1367px) */
-        @media (min-width: 1367px) {
-            .giscus-wrapper {
-                margin: 2rem auto;
-                width: 100%;
-                max-width: 100%;
-            }
-            
-            #giscus-container :global(iframe.giscus-frame) {
-                min-height: 400px;
             }
         }
         
@@ -410,7 +397,7 @@ const jsonLd = {
             background: transparent !important;
         }
         
-        /* ✅ Smooth scrolling en móviles */
+        /* ✅ Smooth scrolling */
         @media (max-width: 768px) {
             #giscus-container {
                 -webkit-overflow-scrolling: touch;
@@ -418,7 +405,7 @@ const jsonLd = {
             }
         }
         
-        /* ✅ Asegurar que los botones sean táctiles en móvil */
+        /* ✅ Botones táctiles */
         @media (hover: none) and (pointer: coarse) {
             #giscus-container :global(button),
             #giscus-container :global(a) {
