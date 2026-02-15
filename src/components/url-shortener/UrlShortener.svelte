@@ -73,45 +73,43 @@ const categoryRules = {
 const adjectives = ["fast", "cool", "smart", "bold", "zen", "nova", "pro", "top", "max", "ace"];
 const nouns = ["link", "go", "hub", "bit", "web", "net", "dot", "io", "app", "dev"];
 
-// Favicon mapping por dominio popular
+// Favicon mapping por dominio popular - emojis de ALTA CALIDAD y precisos
 const domainIcons: Record<string, string> = {
-	'youtube.com': '▶️',
-	'youtu.be': '▶️',
-	'facebook.com': '📘',
-	'fb.com': '📘',
-	'instagram.com': '📸',
-	'twitter.com': '🐦',
-	'x.com': '✖️',
+	// Redes Sociales
+	'youtube.com': '▶️', 'youtu.be': '▶️',
+	'facebook.com': '👤', 'fb.com': '👤',
+	'instagram.com': '📷', 
+	'twitter.com': '🐦', 'x.com': '✖️',
 	'linkedin.com': '💼',
-	'reddit.com': '🤖',
+	'reddit.com': '🟠',
 	'tiktok.com': '🎵',
-	'pinterest.com': '📌',
+	'pinterest.com': '📍',
 	'snapchat.com': '👻',
 	'whatsapp.com': '💬',
-	'telegram.org': '✈️',
-	'telegram.me': '✈️',
-	'discord.com': '💬',
-	'discord.gg': '💬',
+	'telegram.org': '✈️', 'telegram.me': '✈️',
+	'discord.com': '💬', 'discord.gg': '💬',
 	'twitch.tv': '🟣',
-	'vimeo.com': '🎬',
-	'github.com': '⚫',
+	'vimeo.com': '▶️',
+	
+	// Desarrollo & Tech
+	'github.com': '🐙',
 	'gitlab.com': '🦊',
 	'stackoverflow.com': '📚',
-	'stackexchange.com': '💡',
+	'stackexchange.com': '💭',
 	'npmjs.com': '📦',
 	'pypi.org': '🐍',
-	'vercel.app': '▲',
-	'vercel.com': '▲',
-	'netlify.app': '💚',
-	'netlify.com': '💚',
+	'vercel.app': '▲', 'vercel.com': '▲',
+	'netlify.app': '💚', 'netlify.com': '💚',
 	'heroku.com': '🟣',
 	'codepen.io': '✏️',
 	'codesandbox.io': '📦',
 	'replit.com': '🔄',
 	'glitch.com': '🎏',
+	
+	// Google Services
 	'gmail.com': '✉️',
 	'google.com': '🔍',
-	'drive.google.com': '📁',
+	'drive.google.com': '💾',
 	'docs.google.com': '📄',
 	'sheets.google.com': '📊',
 	'slides.google.com': '📽️',
@@ -119,94 +117,58 @@ const domainIcons: Record<string, string> = {
 	'calendar.google.com': '📅',
 	'meet.google.com': '📹',
 	'classroom.google.com': '🎓',
-	'outlook.com': '📧',
-	'hotmail.com': '📧',
+	
+	// Microsoft
+	'outlook.com': '📧', 'hotmail.com': '📧',
 	'office.com': '📎',
 	'teams.microsoft.com': '👥',
 	'onedrive.com': '☁️',
 	'azure.com': '☁️',
+	
+	// AI & Productivity
+	'claude.ai': '🤖',
+	'anthropic.com': '🤖',
+	'openai.com': '🤖',
+	'chatgpt.com': '💬',
 	'notion.so': '📝',
 	'trello.com': '📋',
-	'asana.com': '✓',
+	'asana.com': '✅',
 	'monday.com': '📊',
 	'slack.com': '💬',
 	'figma.com': '🎨',
 	'canva.com': '🎨',
 	'miro.com': '🖼️',
 	'airtable.com': '📊',
-	'clickup.com': '✓',
+	'clickup.com': '✅',
+	
+	// E-commerce
 	'amazon.com': '📦',
 	'ebay.com': '🛍️',
 	'aliexpress.com': '🛒',
 	'mercadolibre.com': '🛒',
 	'etsy.com': '🎨',
 	'shopify.com': '🛒',
-	'woocommerce.com': '🛒',
+	
+	// Streaming
 	'netflix.com': '🎬',
 	'hulu.com': '📺',
 	'disneyplus.com': '🏰',
-	'primevideo.com': '🎬',
+	'primevideo.com': '▶️',
 	'hbomax.com': '🎭',
 	'spotify.com': '🎵',
 	'soundcloud.com': '🔊',
-	'apple.com/music': '🍎',
+	'apple.com': '🍎',
 	'deezer.com': '🎵',
-	'zoom.us': '📹',
-	'skype.com': '📞',
-	'webex.com': '📹',
-	'gotomeeting.com': '📹',
+	
+	// Cloud
+	'cloudflare.com': '☁️',
+	'dash.cloudflare.com': '⚡',
 	'dropbox.com': '📦',
 	'box.com': '📦',
 	'icloud.com': '☁️',
-	'mega.nz': '☁️',
-	'mediafire.com': '🔥',
-	'paypal.com': '💰',
-	'stripe.com': '💳',
-	'venmo.com': '💸',
-	'cashapp.com': '💵',
-	'wise.com': '💱',
-	'revolut.com': '💳',
-	'coursera.org': '🎓',
-	'udemy.com': '📚',
-	'edx.org': '🎓',
-	'khanacademy.org': '📖',
-	'duolingo.com': '🦉',
-	'skillshare.com': '🎨',
-	'medium.com': '✍️',
-	'wordpress.com': '✍️',
-	'wordpress.org': '✍️',
-	'tumblr.com': '📝',
-	'blogger.com': '📝',
-	'substack.com': '📰',
-	'ghost.org': '👻',
-	'wix.com': '🌐',
-	'squarespace.com': '■',
-	'webflow.com': '🌊',
-	'carrd.co': '🌐',
-	'nytimes.com': '📰',
-	'cnn.com': '📺',
-	'bbc.com': '📻',
-	'theguardian.com': '📰',
-	'washingtonpost.com': '📰',
-	'steam.com': '🎮',
-	'epicgames.com': '🎮',
-	'playstation.com': '🎮',
-	'xbox.com': '🎮',
-	'nintendo.com': '🎮',
-	'airbnb.com': '🏠',
-	'booking.com': '🏨',
-	'expedia.com': '✈️',
-	'tripadvisor.com': '🦉',
-	'ubereats.com': '🍔',
-	'doordash.com': '🚪',
-	'grubhub.com': '🍕',
-	'rappi.com': '🛵',
-	'wikipedia.org': '📚',
-	'reddit.com': '🤖',
-	'quora.com': '❓',
-	'yelp.com': '⭐',
-	'imdb.com': '🎬',
-	'weather.com': '🌤️',
+	
+	// Dominios personales comunes
+	'kevinborja.com': '👨‍💻',
 };
 
 const fallbackIcon = "🔗";
@@ -214,63 +176,29 @@ const fallbackIcon = "🔗";
 const getDomainIcon = (url: string): string => {
 	try {
 		const hostname = new URL(url).hostname.toLowerCase();
+		// Remover www. para búsqueda
+		const cleanHostname = hostname.replace('www.', '');
+		
+		// Búsqueda exacta primero
+		if (domainIcons[cleanHostname]) return domainIcons[cleanHostname];
 		if (domainIcons[hostname]) return domainIcons[hostname];
+		
+		// Búsqueda por subdominios y dominios parciales
 		for (const [domain, icon] of Object.entries(domainIcons)) {
-			if (hostname.includes(domain)) return icon;
+			if (cleanHostname.includes(domain) || hostname.includes(domain)) {
+				return icon;
+			}
 		}
+		
+		// Detección por TLD y patrones
+		if (cleanHostname.endsWith('.dev') || cleanHostname.endsWith('.io')) return '💻';
+		if (cleanHostname.endsWith('.app')) return '📱';
+		if (cleanHostname.endsWith('.edu')) return '🎓';
+		if (cleanHostname.endsWith('.gov')) return '🏛️';
+		if (cleanHostname.endsWith('.org')) return '🌐';
+		
 	} catch {}
 	return fallbackIcon;
-};
-
-// ✅ SOLUCIÓN HÍBRIDA MÁS ROBUSTA
-const getFaviconUrl = (url: string): string => {
-	try {
-		const parsed = new URL(url);
-		const domain = parsed.hostname;
-		// Google S2 con tamaño 32 (más confiable que 64 o 128)
-		return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
-	} catch {
-		return "";
-	}
-};
-
-// Función de fallback para intentar con el favicon directo del dominio
-const getDirectFaviconUrl = (url: string): string => {
-	try {
-		const parsed = new URL(url);
-		return `${parsed.protocol}//${parsed.hostname}/favicon.ico`;
-	} catch {
-		return "";
-	}
-};
-
-// Función para validar si un favicon URL es válido
-const validateFaviconUrl = async (faviconUrl: string, originalUrl: string): Promise<string> => {
-	return new Promise((resolve) => {
-		const img = new Image();
-		const timeout = setTimeout(() => {
-			// Si tarda más de 3 segundos, usar directo
-			img.src = '';
-			resolve(getDirectFaviconUrl(originalUrl));
-		}, 3000);
-
-		img.onload = () => {
-			clearTimeout(timeout);
-			// Validar que la imagen tiene tamaño válido
-			if (img.width > 0 && img.height > 0) {
-				resolve(faviconUrl);
-			} else {
-				resolve(getDirectFaviconUrl(originalUrl));
-			}
-		};
-
-		img.onerror = () => {
-			clearTimeout(timeout);
-			resolve(getDirectFaviconUrl(originalUrl));
-		};
-
-		img.src = faviconUrl;
-	});
 };
 
 // Utility functions
@@ -346,7 +274,8 @@ const loadUrls = () => {
 				shortUrl: url.shortUrl || url.originalUrl,
 				category: url.category || "other",
 				favicon: getDomainIcon(url.originalUrl),
-				faviconUrl: getFaviconUrl(url.originalUrl),
+				// Limpiar faviconUrl obsoleto
+				faviconUrl: undefined,
 			}));
 		}
 	} catch (e) {
@@ -463,10 +392,6 @@ const addUrl = async () => {
 	isShortening = true;
 	try {
 		const shortUrl = await shortenUrl(normalized);
-		const initialFaviconUrl = getFaviconUrl(normalized);
-		
-		// ✅ Pre-validar el favicon antes de guardarlo
-		const validatedFaviconUrl = await validateFaviconUrl(initialFaviconUrl, normalized);
 		
 		const newUrl: ShortenedUrl = {
 			id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
@@ -477,7 +402,6 @@ const addUrl = async () => {
 			copyCount: 0,
 			category: inputCategory,
 			favicon: getDomainIcon(normalized),
-			faviconUrl: validatedFaviconUrl,
 		};
 		urls = [newUrl, ...urls];
 		saveUrls();
@@ -487,9 +411,6 @@ const addUrl = async () => {
 		showSuccessToast("✓ URL acortada");
 	} catch (err) {
 		if (confirm("El acortamiento está temporalmente inactivo. ¿Guardar enlace original?")) {
-			const initialFaviconUrl = getFaviconUrl(normalized);
-			const validatedFaviconUrl = await validateFaviconUrl(initialFaviconUrl, normalized);
-			
 			const newUrl: ShortenedUrl = {
 				id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
 				originalUrl: normalized,
@@ -499,7 +420,6 @@ const addUrl = async () => {
 				copyCount: 0,
 				category: inputCategory,
 				favicon: getDomainIcon(normalized),
-				faviconUrl: validatedFaviconUrl,
 			};
 			urls = [newUrl, ...urls];
 			saveUrls();
@@ -840,28 +760,6 @@ onDestroy(() => {
 										<span class="url-favicon-emoji">
 											{url.favicon}
 										</span>
-										{#if url.faviconUrl}
-											<img 
-												src={url.faviconUrl} 
-												alt="" 
-												class="favicon-img-real"
-												loading="lazy"
-												crossorigin="anonymous"
-												on:error={(e) => {
-													const img = e.currentTarget;
-													const currentSrc = img.src;
-													const directFavicon = getDirectFaviconUrl(url.originalUrl);
-													
-													// Si estamos usando Google y falla, intentar favicon directo
-													if (currentSrc.includes('google.com') && directFavicon) {
-														img.src = directFavicon;
-													} else {
-														// Si el directo también falla, ocultar
-														img.style.display = 'none';
-													}
-												}}
-											/>
-										{/if}
 									</span>
 									<div class="url-alias">#{url.alias}</div>
 									<span class="url-category-badge">{categoryMap[url.category]?.icon || '🔗'}</span>
@@ -1325,37 +1223,21 @@ onDestroy(() => {
 
 	.url-favicon-container {
 		position: relative;
-		width: 24px;
-		height: 24px;
+		width: 28px;
+		height: 28px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
 	}
 
-	/* ✅ Emoji siempre visible como fallback */
 	.url-favicon-emoji {
-		font-size: 1.4rem;
-		width: 24px;
-		height: 24px;
+		font-size: 1.5rem;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		flex-shrink: 0;
-		position: relative;
-		z-index: 1;
-	}
-
-	/* Imagen real se superpone si carga exitosamente */
-	.favicon-img-real {
-		position: absolute;
-		left: 0;
-		top: 0;
-		width: 24px;
-		height: 24px;
-		object-fit: contain;
-		z-index: 2;
-		border-radius: 3px;
+		line-height: 1;
+		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
 	}
 
 	.url-category-badge {
