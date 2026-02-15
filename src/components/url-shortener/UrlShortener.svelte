@@ -17,18 +17,7 @@ interface ShortenedUrl {
 	copyCount: number;
 	category: string;
 	favicon: string;
-    faviconUrl: string;
 }
-
-// Función para obtener la URL del favicon usando Google API
-const getFaviconUrl = (originalUrl: string): string => {
-    try {
-        const domain = new URL(originalUrl).origin; // Extrae el dominio (ej. https://www.youtube.com)
-        return `https://www.google.com/s2/favicons?sz=32&domain_url=${domain}`;
-    } catch (e) {
-        return ''; // Si falla, no mostrar icono (evita errores)
-    }
-};
 
 // Core state
 let urls: ShortenedUrl[] = [];
@@ -455,7 +444,6 @@ const addUrl = async () => {
 			copyCount: 0,
 			category: inputCategory,
 			favicon: getFavicon(normalized),
-            faviconUrl,
 		};
 		urls = [newUrl, ...urls];
 		saveUrls();
@@ -1007,56 +995,48 @@ const closeOnboarding = () => {
 					{/if}
 				</div>
 			{:else}
-    {#each filteredUrls as url (url.id)}
-        <div class="url-card">
-            <div class="url-card-header">
-                {#if editingId === url.id}
-                    <input
-                        type="text"
-                        bind:value={editingAlias}
-                        class="input-edit-alias"
-                        on:keydown={(e) => {
-                            if (e.key === "Enter") saveEditAlias();
-                            if (e.key === "Escape") cancelEditAlias();
-                        }}
-                        autofocus
-                    />
-                    <div class="edit-actions">
-                        <button class="btn-icon btn-save" on:click={saveEditAlias}>
-                            ✓
-                        </button>
-                        <button class="btn-icon btn-cancel" on:click={cancelEditAlias}>
-                            ✕
-                        </button>
-                    </div>
-                {:else}
-                    <div class="url-alias-row">
-                        {#if url.favicon}
-                            <img 
-                                src={url.favicon} 
-                                alt="" 
-                                data-url={url.originalUrl}
-                                class="url-favicon" 
-                                on:error={(e) => handleFaviconError(e, url.id)}
-                            />
-                        {/if}
-                        <div class="url-alias">#{url.alias}</div>
-                        <span class="url-category-badge">{categoryMap[url.category]?.icon || '🔗'}</span>
-                    </div>
-                    {/if}
-                    <div class="url-meta">
-                        <span>{formatDate(url.createdAt)}</span>
-                        <span class="copy-count">{url.copyCount} copias</span>
-                        <span class="url-alias">{url.alias}</span>
-                        {#if url.faviconUrl}
-                            <img src={url.faviconUrl} alt="Icono del sitio" width="16" height="16" class="favicon-icon" />
-                        {/if}
-                    </div>
-                {/if}
-            </div>
-        </div>
-    {/each}
-{/if}
+				{#each filteredUrls as url (url.id)}
+					<div class="url-card">
+						<div class="url-card-header">
+							{#if editingId === url.id}
+								<input
+									type="text"
+									bind:value={editingAlias}
+									class="input-edit-alias"
+									on:keydown={(e) => {
+										if (e.key === "Enter") saveEditAlias();
+										if (e.key === "Escape") cancelEditAlias();
+									}}
+									autofocus
+								/>
+								<div class="edit-actions">
+									<button class="btn-icon btn-save" on:click={saveEditAlias}>
+										✓
+									</button>
+									<button class="btn-icon btn-cancel" on:click={cancelEditAlias}>
+										✕
+									</button>
+								</div>
+							{:else}
+								<div class="url-alias-row">
+									{#if url.favicon}
+										<img 
+											src={url.favicon} 
+											alt="" 
+											data-url={url.originalUrl}
+											class="url-favicon" 
+											on:error={(e) => handleFaviconError(e, url.id)}
+										/>
+									{/if}
+									<div class="url-alias">#{url.alias}</div>
+									<span class="url-category-badge">{categoryMap[url.category]?.icon || '🔗'}</span>
+								</div>
+								<div class="url-meta">
+									<span>{formatDate(url.createdAt)}</span>
+									<span class="copy-count">{url.copyCount} copias</span>
+								</div>
+							{/if}
+						</div>
 						<!-- URL acortada (principal) -->
 						<div class="short-url-display">
 							<span class="short-url-text">{url.shortUrl}</span>
@@ -2166,10 +2146,4 @@ const closeOnboarding = () => {
 	.dark .info-item p {
 		color: #94a3b8;
 	}
-
-.favicon-icon {
-    margin-right: 8px;
-    border-radius: 2px;
-    vertical-align: middle;
-}
 </style>2
