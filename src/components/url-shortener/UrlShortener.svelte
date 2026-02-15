@@ -222,17 +222,55 @@ const getDomainIcon = (url: string): string => {
 	return fallbackIcon;
 };
 
-// ✅ SOLUCIÓN SIMPLE Y EFECTIVA: Clearbit API (el más confiable)
+// ✅ SOLUCIÓN HÍBRIDA MÁS ROBUSTA
 const getFaviconUrl = (url: string): string => {
 	try {
 		const parsed = new URL(url);
 		const domain = parsed.hostname;
-		// Clearbit es el servicio más confiable usado por miles de empresas
-		// Tiene cache permanente y funciona con prácticamente todos los sitios
-		return `https://logo.clearbit.com/${domain}`;
+		// Google S2 con tamaño 32 (más confiable que 64 o 128)
+		return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
 	} catch {
 		return "";
 	}
+};
+
+// Función de fallback para intentar con el favicon directo del dominio
+const getDirectFaviconUrl = (url: string): string => {
+	try {
+		const parsed = new URL(url);
+		return `${parsed.protocol}//${parsed.hostname}/favicon.ico`;
+	} catch {
+		return "";
+	}
+};
+
+// Función para validar si un favicon URL es válido
+const validateFaviconUrl = async (faviconUrl: string, originalUrl: string): Promise<string> => {
+	return new Promise((resolve) => {
+		const img = new Image();
+		const timeout = setTimeout(() => {
+			// Si tarda más de 3 segundos, usar directo
+			img.src = '';
+			resolve(getDirectFaviconUrl(originalUrl));
+		}, 3000);
+
+		img.onload = () => {
+			clearTimeout(timeout);
+			// Validar que la imagen tiene tamaño válido
+			if (img.width > 0 && img.height > 0) {
+				resolve(faviconUrl);
+			} else {
+				resolve(getDirectFaviconUrl(originalUrl));
+			}
+		};
+
+		img.onerror = () => {
+			clearTimeout(timeout);
+			resolve(getDirectFaviconUrl(originalUrl));
+		};
+
+		img.src = faviconUrl;
+	});
 };
 
 // Utility functions
@@ -425,6 +463,11 @@ const addUrl = async () => {
 	isShortening = true;
 	try {
 		const shortUrl = await shortenUrl(normalized);
+		const initialFaviconUrl = getFaviconUrl(normalized);
+		
+		// ✅ Pre-validar el favicon antes de guardarlo
+		const validatedFaviconUrl = await validateFaviconUrl(initialFaviconUrl, normalized);
+		
 		const newUrl: ShortenedUrl = {
 			id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
 			originalUrl: normalized,
@@ -434,7 +477,7 @@ const addUrl = async () => {
 			copyCount: 0,
 			category: inputCategory,
 			favicon: getDomainIcon(normalized),
-			faviconUrl: getFaviconUrl(normalized),
+			faviconUrl: validatedFaviconUrl,
 		};
 		urls = [newUrl, ...urls];
 		saveUrls();
@@ -444,6 +487,9 @@ const addUrl = async () => {
 		showSuccessToast("✓ URL acortada");
 	} catch (err) {
 		if (confirm("El acortamiento está temporalmente inactivo. ¿Guardar enlace original?")) {
+			const initialFaviconUrl = getFaviconUrl(normalized);
+			const validatedFaviconUrl = await validateFaviconUrl(initialFaviconUrl, normalized);
+			
 			const newUrl: ShortenedUrl = {
 				id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
 				originalUrl: normalized,
@@ -453,7 +499,7 @@ const addUrl = async () => {
 				copyCount: 0,
 				category: inputCategory,
 				favicon: getDomainIcon(normalized),
-				faviconUrl: getFaviconUrl(normalized),
+				faviconUrl: validatedFaviconUrl,
 			};
 			urls = [newUrl, ...urls];
 			saveUrls();
@@ -791,20 +837,31 @@ onDestroy(() => {
 							{:else}
 								<div class="url-alias-row">
 									<span class="url-favicon-container">
+										<span class="url-favicon-emoji">
+											{url.favicon}
+										</span>
 										{#if url.faviconUrl}
 											<img 
 												src={url.faviconUrl} 
 												alt="" 
 												class="favicon-img-real"
+												loading="lazy"
+												crossorigin="anonymous"
 												on:error={(e) => {
-													// Si falla, simplemente ocultar la imagen
-													e.currentTarget.style.display = 'none';
+													const img = e.currentTarget;
+													const currentSrc = img.src;
+													const directFavicon = getDirectFaviconUrl(url.originalUrl);
+													
+													// Si estamos usando Google y falla, intentar favicon directo
+													if (currentSrc.includes('google.com') && directFavicon) {
+														img.src = directFavicon;
+													} else {
+														// Si el directo también falla, ocultar
+														img.style.display = 'none';
+													}
 												}}
 											/>
 										{/if}
-										<span class="url-favicon-emoji">
-											{url.favicon}
-										</span>
 									</span>
 									<div class="url-alias">#{url.alias}</div>
 									<span class="url-category-badge">{categoryMap[url.category]?.icon || '🔗'}</span>
