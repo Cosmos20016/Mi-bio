@@ -19,12 +19,20 @@ interface ShortenedUrl {
 	favicon: string;
 }
 
+// ============================================================================
+// STATE MANAGEMENT
+// ============================================================================
 // Core state
 let urls: ShortenedUrl[] = [];
 let inputUrl = "";
 let inputAlias = "";
 let inputCategory = "other";
 let searchQuery = "";
+let filterCategory = "all";
+let sortBy: "date" | "copies" | "name" = "date";
+let viewMode: "grid" | "list" = "list";
+
+// UI state
 let showQR = false;
 let qrUrl = "";
 let qrAlias = "";
@@ -32,24 +40,27 @@ let copiedId: string | null = null;
 let copiedAliasId: string | null = null;
 let showSuccess = false;
 let successMessage = "";
-let sortBy: "date" | "copies" | "name" = "date";
 let isDark = false;
 let isReady = false;
 let showOnboarding = false;
 let editingId: string | null = null;
 let editingAlias = "";
 let isShortening = false;
-let filterCategory = "all";
-let viewMode: "grid" | "list" = "list";
 
-// Dark mode
+// Dark mode observers
 let darkModeObserver: MutationObserver | null = null;
 let stopThemeWatch: (() => void) | null = null;
 
-// Max URLs to store
-const MAX_URLS = 100;
+// Favicon error tracking
+let failedFavicons = new Set<string>();
 
-// Categories
+// ============================================================================
+// CONSTANTS & CONFIGURATION
+// ============================================================================
+const MAX_URLS = 100;
+const MAX_DOMAIN_ALIAS_LENGTH = 8;
+
+// Categories configuration
 const categories = [
 	{ id: "all", label: "📋 Todos", icon: "📋" },
 	{ id: "social", label: "📱 Social", icon: "📱" },
@@ -59,132 +70,7 @@ const categories = [
 	{ id: "other", label: "🔗 Otros", icon: "🔗" },
 ];
 
-// Fallback SVG icon for failed favicon loads
-const fallbackIconSvg = `data:image/svg+xml,${encodeURIComponent(`
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-</svg>
-`)}`;
-
-// Track which favicons failed to load
-let failedFavicons = new Set<string>();
-
-// Palabras para generar alias legibles
-const adjectives = [
-	"fast",
-	"cool",
-	"smart",
-	"bold",
-	"zen",
-	"nova",
-	"pro",
-	"top",
-	"max",
-	"ace",
-	"epic",
-	"mega",
-	"ultra",
-	"hyper",
-	"super",
-	"prime",
-	"elite",
-	"alpha",
-	"beta",
-	"neon",
-];
-const nouns = [
-	"link",
-	"go",
-	"hub",
-	"bit",
-	"web",
-	"net",
-	"dot",
-	"io",
-	"app",
-	"dev",
-	"code",
-	"data",
-	"page",
-	"site",
-	"path",
-	"way",
-	"fox",
-	"owl",
-	"bee",
-	"cat",
-];
-
-// Constants
-const MAX_DOMAIN_ALIAS_LENGTH = 8;
-
-// Category map for O(1) lookups
-const categoryMap = categories.reduce(
-	(acc, cat) => {
-		acc[cat.id] = cat;
-		return acc;
-	},
-	{} as Record<string, (typeof categories)[0]>,
-);
-
-// Helper to get category label without icon
-const getCategoryLabel = (categoryId: string): string => {
-	const cat = categoryMap[categoryId];
-	return cat ? cat.label.replace(cat.icon + " ", "") : "Otros";
-};
-
-// Load URLs from localStorage
-const loadUrls = () => {
-	try {
-		const stored = localStorage.getItem(storageKey);
-		if (stored) {
-			const parsed = JSON.parse(stored);
-			// Add backward compatibility for URLs without new fields
-			urls = parsed.map((url: ShortenedUrl) => ({
-				...url,
-				shortUrl: url.shortUrl || url.originalUrl,
-				category: url.category || "other",
-				favicon: url.favicon || "",
-			}));
-		}
-	} catch (e) {
-		console.error("Failed to load URLs:", e);
-	}
-};
-
-// Save URLs to localStorage
-const saveUrls = () => {
-	try {
-		localStorage.setItem(storageKey, JSON.stringify(urls));
-	} catch (e) {
-		console.error("Failed to save URLs:", e);
-	}
-};
-
-// Generate a simple hash for alias
-const generateAlias = (url: string): string => {
-	// Try to extract something from the domain first
-	try {
-		const parsed = new URL(url);
-		const domain = parsed.hostname.replace("www.", "").split(".")[0];
-		if (
-			domain.length <= MAX_DOMAIN_ALIAS_LENGTH &&
-			/^[a-zA-Z0-9]+$/.test(domain)
-		) {
-			const suffix = Math.random().toString(36).substring(2, 5);
-			return `${domain}-${suffix}`;
-		}
-	} catch {}
-
-	// Fallback: generate memorable alias
-	const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
-	const noun = nouns[Math.floor(Math.random() * nouns.length)];
-	const num = Math.floor(Math.random() * 99);
-	return `${adj}-${noun}${num}`;
-};
-
-// Reglas de detección de categorías (fácil de agregar más dominios)
+// Category detection rules
 const categoryRules = {
 	social: [
 		'youtube', 'tiktok', 'instagram', 'facebook', 'twitter', 'x.com', 'linkedin', 'threads',
@@ -232,7 +118,42 @@ const categoryRules = {
 	]
 };
 
-// Auto-detect category from URL (mejorada)
+// Alias generation words
+const adjectives = [
+	"fast", "cool", "smart", "bold", "zen", "nova", "pro", "top", "max", "ace",
+	"epic", "mega", "ultra", "hyper", "super", "prime", "elite", "alpha", "beta", "neon",
+];
+const nouns = [
+	"link", "go", "hub", "bit", "web", "net", "dot", "io", "app", "dev",
+	"code", "data", "page", "site", "path", "way", "fox", "owl", "bee", "cat",
+];
+
+// Fallback SVG icon
+const fallbackIconSvg = `data:image/svg+xml,${encodeURIComponent(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+</svg>
+`)}`;
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+// Category utilities
+const categoryMap = categories.reduce(
+	(acc, cat) => {
+		acc[cat.id] = cat;
+		return acc;
+	},
+	{} as Record<string, (typeof categories)[0]>,
+);
+
+const getCategoryLabel = (categoryId: string): string => {
+	const cat = categoryMap[categoryId];
+	return cat ? cat.label.replace(cat.icon + " ", "") : "Otros";
+};
+
 const detectCategory = (url: string): string => {
 	try {
 		const hostname = new URL(url).hostname.toLowerCase();
@@ -247,41 +168,7 @@ const detectCategory = (url: string): string => {
 	}
 };
 
-// Get favicon from URL with fallback chain
-const getFavicon = (url: string): string => {
-	try {
-		const domain = new URL(url).hostname;
-		// Use Google S2 favicons API as primary (more reliable)
-		return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
-	} catch {
-		return fallbackIconSvg;
-	}
-};
-
-// Handle favicon load errors
-const handleFaviconError = (event: Event, urlId: string) => {
-	const img = event.currentTarget as HTMLImageElement;
-	const originalUrl = img.dataset.url;
-
-	// First failure: try DuckDuckGo fallback
-	if (!failedFavicons.has(urlId)) {
-		failedFavicons.add(urlId);
-		// Try DuckDuckGo as second fallback
-		if (originalUrl) {
-			try {
-				const domain = new URL(originalUrl).hostname;
-				img.src = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
-				return;
-			} catch {
-				// Invalid URL, fall through to SVG fallback
-			}
-		}
-	}
-	// Second failure or no original URL: use inline SVG fallback
-	img.src = fallbackIconSvg;
-};
-
-// Validate URL
+// URL utilities
 const isValidUrl = (url: string): boolean => {
 	try {
 		const parsed = new URL(url);
@@ -291,7 +178,6 @@ const isValidUrl = (url: string): boolean => {
 	}
 };
 
-// Normalize URL (add https:// if missing)
 const normalizeUrl = (url: string): string => {
 	if (!url.startsWith("http://") && !url.startsWith("https://")) {
 		return `https://${url}`;
@@ -299,12 +185,105 @@ const normalizeUrl = (url: string): string => {
 	return url;
 };
 
-// Validate alias
 const isValidAlias = (alias: string): boolean => {
 	return /^[a-zA-Z0-9-]{1,30}$/.test(alias);
 };
 
-// API 1: CleanURI (gratis, sin auth, CORS habilitado, confiable en móvil)
+// Favicon utilities
+const getFavicon = (url: string): string => {
+	try {
+		const domain = new URL(url).hostname;
+		return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+	} catch {
+		return fallbackIconSvg;
+	}
+};
+
+const handleFaviconError = (event: Event, urlId: string) => {
+	const img = event.currentTarget as HTMLImageElement;
+	const originalUrl = img.dataset.url;
+
+	if (!failedFavicons.has(urlId)) {
+		failedFavicons.add(urlId);
+		if (originalUrl) {
+			try {
+				const domain = new URL(originalUrl).hostname;
+				img.src = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+				return;
+			} catch {}
+		}
+	}
+	img.src = fallbackIconSvg;
+};
+
+// Alias generation
+const generateAlias = (url: string): string => {
+	try {
+		const parsed = new URL(url);
+		const domain = parsed.hostname.replace("www.", "").split(".")[0];
+		if (
+			domain.length <= MAX_DOMAIN_ALIAS_LENGTH &&
+			/^[a-zA-Z0-9]+$/.test(domain)
+		) {
+			const suffix = Math.random().toString(36).substring(2, 5);
+			return `${domain}-${suffix}`;
+		}
+	} catch {}
+
+	const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+	const noun = nouns[Math.floor(Math.random() * nouns.length)];
+	const num = Math.floor(Math.random() * 99);
+	return `${adj}-${noun}${num}`;
+};
+
+// Date formatting
+const formatDate = (isoDate: string): string => {
+	const date = new Date(isoDate);
+	const now = new Date();
+	const diffMs = now.getTime() - date.getTime();
+	const diffMins = Math.floor(diffMs / 60000);
+	const diffHours = Math.floor(diffMs / 3600000);
+	const diffDays = Math.floor(diffMs / 86400000);
+
+	if (diffMins < 1) return "Ahora";
+	if (diffMins < 60) return `Hace ${diffMins} min`;
+	if (diffHours < 24) return `Hace ${diffHours} h`;
+	if (diffDays === 1) return "Ayer";
+	if (diffDays < 7) return `Hace ${diffDays} días`;
+	return date.toLocaleDateString("es-ES", { month: "short", day: "numeric" });
+};
+
+// ============================================================================
+// STORAGE FUNCTIONS
+// ============================================================================
+const loadUrls = () => {
+	try {
+		const stored = localStorage.getItem(storageKey);
+		if (stored) {
+			const parsed = JSON.parse(stored);
+			urls = parsed.map((url: ShortenedUrl) => ({
+				...url,
+				shortUrl: url.shortUrl || url.originalUrl,
+				category: url.category || "other",
+				favicon: url.favicon || getFavicon(url.originalUrl),
+			}));
+		}
+	} catch (e) {
+		console.error("Failed to load URLs:", e);
+	}
+};
+
+const saveUrls = () => {
+	try {
+		localStorage.setItem(storageKey, JSON.stringify(urls));
+	} catch (e) {
+		console.error("Failed to save URLs:", e);
+	}
+};
+
+// ============================================================================
+// URL SHORTENING APIs
+// ============================================================================
 const shortenWithCleanUri = async (longUrl: string): Promise<string> => {
 	const response = await fetch("https://cleanuri.com/api/v1/shorten", {
 		method: "POST",
@@ -317,7 +296,6 @@ const shortenWithCleanUri = async (longUrl: string): Promise<string> => {
 	return data.result_url;
 };
 
-// API 2: spoo.me (gratis, sin ads, CORS habilitado)
 const shortenWithSpooMe = async (longUrl: string): Promise<string> => {
 	const response = await fetch("https://spoo.me/", {
 		method: "POST",
@@ -333,7 +311,6 @@ const shortenWithSpooMe = async (longUrl: string): Promise<string> => {
 	return data.short_url;
 };
 
-// API 3: shrtco.de (gratis, sin ads, CORS habilitado)
 const shortenWithShrtcode = async (longUrl: string): Promise<string> => {
 	const endpoint = `https://api.shrtco.de/v2/shorten?url=${encodeURIComponent(longUrl)}`;
 	const response = await fetch(endpoint);
@@ -344,7 +321,6 @@ const shortenWithShrtcode = async (longUrl: string): Promise<string> => {
 	return data.result.full_short_link;
 };
 
-// API 4: ulvis.net (gratis, sin ads)
 const shortenWithUlvis = async (longUrl: string): Promise<string> => {
 	const endpoint = `https://ulvis.net/API/write/get?url=${encodeURIComponent(longUrl)}&type=json`;
 	const response = await fetch(endpoint);
@@ -354,7 +330,6 @@ const shortenWithUlvis = async (longUrl: string): Promise<string> => {
 	return data.data.url;
 };
 
-// Controlador principal: prueba APIs sin publicidad en cascada hasta que una funcione
 const shortenUrl = async (longUrl: string): Promise<string> => {
 	const apis = [
 		{ name: "CleanURI", fn: shortenWithCleanUri },
@@ -378,7 +353,9 @@ const shortenUrl = async (longUrl: string): Promise<string> => {
 	throw new Error("Todos los servicios de acortamiento no disponibles");
 };
 
-// Show success toast
+// ============================================================================
+// UI ACTIONS
+// ============================================================================
 const showSuccessToast = (message: string) => {
 	successMessage = message;
 	showSuccess = true;
@@ -388,7 +365,6 @@ const showSuccessToast = (message: string) => {
 	}, 3000);
 };
 
-// Add URL
 const addUrl = async () => {
 	if (!inputUrl.trim()) return;
 
@@ -406,16 +382,13 @@ const addUrl = async () => {
 		return;
 	}
 
-	// Check for duplicate alias
 	if (urls.some((u) => u.alias === alias)) {
 		alert("Ya existe un URL con ese alias");
 		return;
 	}
 
-	// Check for duplicate URL
 	const existingUrl = urls.find((u) => u.originalUrl === normalized);
 	if (existingUrl) {
-		// Instead of blocking, ask if they want to copy the existing one
 		if (
 			confirm(
 				`Este URL ya existe con alias #${existingUrl.alias}. ¿Copiar al portapapeles?`,
@@ -426,7 +399,6 @@ const addUrl = async () => {
 		return;
 	}
 
-	// Check max URLs
 	if (urls.length >= MAX_URLS) {
 		alert(`Máximo ${MAX_URLS} URLs permitidos`);
 		return;
@@ -479,19 +451,14 @@ const addUrl = async () => {
 	}
 };
 
-// Copy URL to clipboard
 const copyUrl = (urlEntry: ShortenedUrl) => {
-	// Copy the SHORT url
 	navigator.clipboard
 		.writeText(urlEntry.shortUrl)
 		.then(() => {
-			// Increment copy count
 			urls = urls.map((u) =>
 				u.id === urlEntry.id ? { ...u, copyCount: u.copyCount + 1 } : u,
 			);
 			saveUrls();
-
-			// Show feedback
 			copiedId = urlEntry.id;
 			setTimeout(() => {
 				copiedId = null;
@@ -504,7 +471,6 @@ const copyUrl = (urlEntry: ShortenedUrl) => {
 		});
 };
 
-// Copy alias to clipboard
 const copyAlias = (urlEntry: ShortenedUrl) => {
 	navigator.clipboard
 		.writeText(`#${urlEntry.alias}`)
@@ -521,37 +487,31 @@ const copyAlias = (urlEntry: ShortenedUrl) => {
 		});
 };
 
-// Delete URL
 const deleteUrl = (id: string) => {
 	if (confirm("¿Eliminar este URL?")) {
 		urls = urls.filter((u) => u.id !== id);
-		// Clean up failed favicon tracking for deleted URL
 		failedFavicons.delete(id);
 		saveUrls();
 	}
 };
 
-// Show QR code
 const showQRCode = (url: ShortenedUrl) => {
 	qrUrl = url.originalUrl;
 	qrAlias = url.alias;
 	showQR = true;
 };
 
-// Close QR modal
 const closeQR = () => {
 	showQR = false;
 	qrUrl = "";
 	qrAlias = "";
 };
 
-// Start editing alias
 const startEditAlias = (url: ShortenedUrl) => {
 	editingId = url.id;
 	editingAlias = url.alias;
 };
 
-// Save edited alias
 const saveEditAlias = () => {
 	if (!editingId) return;
 
@@ -561,7 +521,6 @@ const saveEditAlias = () => {
 		return;
 	}
 
-	// Check for duplicate alias
 	if (urls.some((u) => u.alias === newAlias && u.id !== editingId)) {
 		alert("Ya existe un URL con ese alias");
 		return;
@@ -574,13 +533,11 @@ const saveEditAlias = () => {
 	editingAlias = "";
 };
 
-// Cancel editing
 const cancelEditAlias = () => {
 	editingId = null;
 	editingAlias = "";
 };
 
-// Export URLs
 const exportUrls = () => {
 	const dataStr = JSON.stringify(urls, null, 2);
 	const dataBlob = new Blob([dataStr], { type: "application/json" });
@@ -592,7 +549,6 @@ const exportUrls = () => {
 	URL.revokeObjectURL(url);
 };
 
-// Import URLs
 const importUrls = () => {
 	const input = document.createElement("input");
 	input.type = "file";
@@ -619,7 +575,14 @@ const importUrls = () => {
 	input.click();
 };
 
-// Filter and sort URLs
+const closeOnboarding = () => {
+	showOnboarding = false;
+	localStorage.setItem("urlshortener:onboarding", "true");
+};
+
+// ============================================================================
+// REACTIVE STATEMENTS
+// ============================================================================
 $: filteredUrls = urls
 	.filter((u) => {
 		const matchesSearch =
@@ -638,7 +601,6 @@ $: filteredUrls = urls
 		return a.alias.localeCompare(b.alias);
 	});
 
-// Statistics
 $: totalUrls = urls.length;
 $: totalCopies = urls.reduce((sum, u) => sum + u.copyCount, 0);
 $: mostCopiedUrl = urls.reduce(
@@ -661,7 +623,6 @@ $: mostUsedCategory = (() => {
 	return category ? category.label : "🔗 Otros";
 })();
 
-// Auto-detect category when URL changes
 $: if (inputUrl) {
 	const normalized = normalizeUrl(inputUrl.trim());
 	if (isValidUrl(normalized)) {
@@ -669,24 +630,9 @@ $: if (inputUrl) {
 	}
 }
 
-// Format date
-const formatDate = (isoDate: string): string => {
-	const date = new Date(isoDate);
-	const now = new Date();
-	const diffMs = now.getTime() - date.getTime();
-	const diffMins = Math.floor(diffMs / 60000);
-	const diffHours = Math.floor(diffMs / 3600000);
-	const diffDays = Math.floor(diffMs / 86400000);
-
-	if (diffMins < 1) return "Ahora";
-	if (diffMins < 60) return `Hace ${diffMins} min`;
-	if (diffHours < 24) return `Hace ${diffHours} h`;
-	if (diffDays === 1) return "Ayer";
-	if (diffDays < 7) return `Hace ${diffDays} días`;
-	return date.toLocaleDateString("es-ES", { month: "short", day: "numeric" });
-};
-
-// Keyboard shortcuts
+// ============================================================================
+// LIFECYCLE
+// ============================================================================
 const onKey = (event: KeyboardEvent) => {
 	if (event.target && (event.target as HTMLElement).tagName === "INPUT") return;
 
@@ -701,11 +647,9 @@ const onKey = (event: KeyboardEvent) => {
 	}
 };
 
-// Initialize
 onMount(() => {
 	loadUrls();
 
-	// Dark mode detection
 	const htmlElement = document.documentElement;
 	isDark = htmlElement.classList.contains("dark");
 
@@ -725,15 +669,12 @@ onMount(() => {
 		attributeFilter: ["class"],
 	});
 
-	// Theme watcher
 	applyStoredThemeToDocument();
 	const theme = getStoredTheme();
 	stopThemeWatch = watchSystemThemeChanges(theme);
 
-	// Keyboard shortcuts
 	document.addEventListener("keydown", onKey);
 
-	// Check if first time
 	const hasSeenOnboarding = localStorage.getItem("urlshortener:onboarding");
 	if (!hasSeenOnboarding && urls.length === 0) {
 		showOnboarding = true;
@@ -751,11 +692,6 @@ onDestroy(() => {
 	}
 	document.removeEventListener("keydown", onKey);
 });
-
-const closeOnboarding = () => {
-	showOnboarding = false;
-	localStorage.setItem("urlshortener:onboarding", "true");
-};
 </script>
 
 {#if isReady}
@@ -883,8 +819,8 @@ const closeOnboarding = () => {
 					{/each}
 				</select>
 				<button class="btn-add" on:click={addUrl} disabled={isShortening}>
-				{isShortening ? "⏳ Acortando..." : "🔗 Acortar"}
-			</button>
+					{isShortening ? "⏳ Acortando..." : "🔗 Acortar"}
+				</button>
 			</div>
 			<p class="input-hint">
 				Sin alias, se genera uno automático. Categoría detectada automáticamente.
@@ -1037,14 +973,17 @@ const closeOnboarding = () => {
 								</div>
 							{/if}
 						</div>
+						
 						<!-- URL acortada (principal) -->
 						<div class="short-url-display">
 							<span class="short-url-text">{url.shortUrl}</span>
 						</div>
-						<!-- URL original (referencia, más pequeña) -->
+						
+						<!-- URL original (referencia) -->
 						<div class="original-url-ref">
 							<span class="text-xs opacity-60">Original: {url.originalUrl}</span>
 						</div>
+						
 						<div class="url-card-actions">
 							<button
 								class="btn-card-action btn-copy-main"
@@ -1571,19 +1510,6 @@ const closeOnboarding = () => {
 
 	.copy-count {
 		font-weight: 600;
-	}
-
-	.url-original {
-		color: #475569;
-		font-size: 0.95rem;
-		word-break: break-all;
-		margin-bottom: 1rem;
-		line-height: 1.5;
-	}
-
-	:global(.dark) .url-original,
-	.dark .url-original {
-		color: #cbd5e1;
 	}
 
 	.short-url-display {
@@ -2146,4 +2072,4 @@ const closeOnboarding = () => {
 	.dark .info-item p {
 		color: #94a3b8;
 	}
-</style>2
+</style>
