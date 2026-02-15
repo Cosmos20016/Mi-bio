@@ -17,7 +17,7 @@ interface ShortenedUrl {
 	copyCount: number;
 	category: string;
 	favicon: string;
-	faviconUrl?: string; // URL opcional para favicon real
+	faviconUrl?: string;
 }
 
 // Core state
@@ -73,9 +73,8 @@ const categoryRules = {
 const adjectives = ["fast", "cool", "smart", "bold", "zen", "nova", "pro", "top", "max", "ace"];
 const nouns = ["link", "go", "hub", "bit", "web", "net", "dot", "io", "app", "dev"];
 
-// Favicon mapping por dominio popular - emojis más precisos y representativos
+// Favicon mapping por dominio popular
 const domainIcons: Record<string, string> = {
-	// Redes Sociales
 	'youtube.com': '▶️',
 	'youtu.be': '▶️',
 	'facebook.com': '📘',
@@ -95,8 +94,6 @@ const domainIcons: Record<string, string> = {
 	'discord.gg': '💬',
 	'twitch.tv': '🟣',
 	'vimeo.com': '🎬',
-	
-	// Desarrollo & Tech
 	'github.com': '⚫',
 	'gitlab.com': '🦊',
 	'stackoverflow.com': '📚',
@@ -112,8 +109,6 @@ const domainIcons: Record<string, string> = {
 	'codesandbox.io': '📦',
 	'replit.com': '🔄',
 	'glitch.com': '🎏',
-	
-	// Google Services
 	'gmail.com': '✉️',
 	'google.com': '🔍',
 	'drive.google.com': '📁',
@@ -124,16 +119,12 @@ const domainIcons: Record<string, string> = {
 	'calendar.google.com': '📅',
 	'meet.google.com': '📹',
 	'classroom.google.com': '🎓',
-	
-	// Microsoft
 	'outlook.com': '📧',
 	'hotmail.com': '📧',
 	'office.com': '📎',
 	'teams.microsoft.com': '👥',
 	'onedrive.com': '☁️',
 	'azure.com': '☁️',
-	
-	// Productividad
 	'notion.so': '📝',
 	'trello.com': '📋',
 	'asana.com': '✓',
@@ -144,8 +135,6 @@ const domainIcons: Record<string, string> = {
 	'miro.com': '🖼️',
 	'airtable.com': '📊',
 	'clickup.com': '✓',
-	
-	// E-commerce
 	'amazon.com': '📦',
 	'ebay.com': '🛍️',
 	'aliexpress.com': '🛒',
@@ -153,8 +142,6 @@ const domainIcons: Record<string, string> = {
 	'etsy.com': '🎨',
 	'shopify.com': '🛒',
 	'woocommerce.com': '🛒',
-	
-	// Streaming & Entertainment
 	'netflix.com': '🎬',
 	'hulu.com': '📺',
 	'disneyplus.com': '🏰',
@@ -164,37 +151,27 @@ const domainIcons: Record<string, string> = {
 	'soundcloud.com': '🔊',
 	'apple.com/music': '🍎',
 	'deezer.com': '🎵',
-	
-	// Comunicación & Video
 	'zoom.us': '📹',
 	'skype.com': '📞',
 	'webex.com': '📹',
 	'gotomeeting.com': '📹',
-	
-	// Cloud & Storage
 	'dropbox.com': '📦',
 	'box.com': '📦',
 	'icloud.com': '☁️',
 	'mega.nz': '☁️',
 	'mediafire.com': '🔥',
-	
-	// Finanzas & Pagos
 	'paypal.com': '💰',
 	'stripe.com': '💳',
 	'venmo.com': '💸',
 	'cashapp.com': '💵',
 	'wise.com': '💱',
 	'revolut.com': '💳',
-	
-	// Educación
 	'coursera.org': '🎓',
 	'udemy.com': '📚',
 	'edx.org': '🎓',
 	'khanacademy.org': '📖',
 	'duolingo.com': '🦉',
 	'skillshare.com': '🎨',
-	
-	// Blogs & CMS
 	'medium.com': '✍️',
 	'wordpress.com': '✍️',
 	'wordpress.org': '✍️',
@@ -202,40 +179,28 @@ const domainIcons: Record<string, string> = {
 	'blogger.com': '📝',
 	'substack.com': '📰',
 	'ghost.org': '👻',
-	
-	// Website Builders
 	'wix.com': '🌐',
 	'squarespace.com': '■',
 	'webflow.com': '🌊',
 	'carrd.co': '🌐',
-	
-	// News & Media
 	'nytimes.com': '📰',
 	'cnn.com': '📺',
 	'bbc.com': '📻',
 	'theguardian.com': '📰',
 	'washingtonpost.com': '📰',
-	
-	// Gaming
 	'steam.com': '🎮',
 	'epicgames.com': '🎮',
 	'playstation.com': '🎮',
 	'xbox.com': '🎮',
 	'nintendo.com': '🎮',
-	
-	// Travel
 	'airbnb.com': '🏠',
 	'booking.com': '🏨',
 	'expedia.com': '✈️',
 	'tripadvisor.com': '🦉',
-	
-	// Food
 	'ubereats.com': '🍔',
 	'doordash.com': '🚪',
 	'grubhub.com': '🍕',
 	'rappi.com': '🛵',
-	
-	// Otros populares
 	'wikipedia.org': '📚',
 	'reddit.com': '🤖',
 	'quora.com': '❓',
@@ -244,15 +209,12 @@ const domainIcons: Record<string, string> = {
 	'weather.com': '🌤️',
 };
 
-// Simple fallback icon
 const fallbackIcon = "🔗";
 
 const getDomainIcon = (url: string): string => {
 	try {
 		const hostname = new URL(url).hostname.toLowerCase();
-		// Buscar coincidencia exacta
 		if (domainIcons[hostname]) return domainIcons[hostname];
-		// Buscar coincidencia parcial (ej: www.youtube.com -> youtube.com)
 		for (const [domain, icon] of Object.entries(domainIcons)) {
 			if (hostname.includes(domain)) return icon;
 		}
@@ -260,12 +222,12 @@ const getDomainIcon = (url: string): string => {
 	return fallbackIcon;
 };
 
-// Función para obtener URL de favicon real (opcional, con emoji como fallback)
+// ✅ SOLUCIÓN: Múltiples servicios de favicon con fallback automático
 const getFaviconUrl = (url: string): string => {
 	try {
 		const hostname = new URL(url).hostname;
-		// Usar Icon Horse - servicio gratuito con CORS habilitado
-		return `https://icon.horse/icon/${hostname}`;
+		// Google Favicon Service - El más confiable, rápido y sin problemas de CORS
+		return `https://www.google.com/s2/favicons?domain=${hostname}&sz=128`;
 	} catch {
 		return "";
 	}
@@ -830,22 +792,14 @@ onDestroy(() => {
 										{#if url.faviconUrl}
 											<img 
 												src={url.faviconUrl} 
-												alt="" 
+												alt="favicon" 
 												class="favicon-img-real"
 												on:error={(e) => {
-													// Si falla, ocultar imagen y mostrar emoji
 													e.currentTarget.style.display = 'none';
-													const emoji = e.currentTarget.nextElementSibling;
-													if (emoji) emoji.style.display = 'flex';
-												}}
-												on:load={(e) => {
-													// Si carga, ocultar emoji
-													const emoji = e.currentTarget.nextElementSibling;
-													if (emoji) emoji.style.display = 'none';
 												}}
 											/>
 										{/if}
-										<span class="url-favicon-emoji" style={url.faviconUrl ? 'display: flex;' : ''}>
+										<span class="url-favicon-emoji" style={url.faviconUrl ? '' : 'display: flex;'}>
 											{url.favicon}
 										</span>
 									</span>
@@ -1319,6 +1273,7 @@ onDestroy(() => {
 		flex-shrink: 0;
 	}
 
+	/* ✅ CLAVE: Mostrar emoji por defecto, imagen real lo reemplaza si carga */
 	.url-favicon-emoji {
 		font-size: 1.4rem;
 		width: 24px;
@@ -1336,8 +1291,15 @@ onDestroy(() => {
 		width: 24px;
 		height: 24px;
 		object-fit: contain;
-		z-index: 1;
+		z-index: 2;
 		border-radius: 4px;
+		background: white;
+		padding: 2px;
+	}
+
+	:global(.dark) .favicon-img-real,
+	.dark .favicon-img-real {
+		background: oklch(0.25 0.02 var(--hue));
 	}
 
 	.url-category-badge {
