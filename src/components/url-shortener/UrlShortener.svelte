@@ -112,7 +112,8 @@ const isValidAlias = (alias: string): boolean => /^[a-zA-Z0-9-]{1,30}$/.test(ali
 const getFavicon = (url: string): string => {
 	try {
 		const domain = new URL(url).hostname;
-		return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+		// Usar DuckDuckGo que es más confiable y no requiere tamaño
+		return `https://icons.duckduckgo.com/ip3/${domain}.ico`;
 	} catch {
 		return "";
 	}
@@ -638,7 +639,25 @@ onDestroy(() => {
 								<div class="url-alias-row">
 									<span class="url-favicon">
 										{#if url.favicon}
-											<img src={url.favicon} alt="" class="favicon-img" on:error={(e) => e.currentTarget.style.display = 'none'} />
+											<img 
+												src={url.favicon} 
+												alt="" 
+												class="favicon-img"
+												on:error={(e) => {
+													// Intentar con Google como fallback
+													const target = e.currentTarget;
+													if (!target.src.includes('google.com')) {
+														try {
+															const domain = new URL(url.originalUrl).hostname;
+															target.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+														} catch {
+															target.style.display = 'none';
+														}
+													} else {
+														target.style.display = 'none';
+													}
+												}}
+											/>
 										{/if}
 										{fallbackIcon}
 									</span>
@@ -1111,6 +1130,7 @@ onDestroy(() => {
 		justify-content: center;
 		position: relative;
 		flex-shrink: 0;
+		color: rgba(100, 116, 139, 0.5);
 	}
 
 	.favicon-img {
@@ -1121,8 +1141,16 @@ onDestroy(() => {
 		height: 20px;
 		object-fit: contain;
 		background: white;
-		border-radius: 2px;
+		border-radius: 3px;
 		z-index: 1;
+		padding: 1px;
+	}
+
+	.favicon-img[src] {
+		/* Cuando la imagen tiene src, ocultar el emoji de fondo */
+		~ * {
+			opacity: 0;
+		}
 	}
 
 	:global(.dark) .favicon-img,
