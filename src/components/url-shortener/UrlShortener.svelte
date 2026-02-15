@@ -222,28 +222,17 @@ const getDomainIcon = (url: string): string => {
 	return fallbackIcon;
 };
 
-// ✅ SOLUCIÓN DEFINITIVA: Sistema multi-servicio con fallback inteligente
-const getFaviconUrls = (url: string): string[] => {
-	try {
-		const hostname = new URL(url).hostname;
-		const cleanHostname = hostname.replace('www.', '');
-		
-		// Array de servicios en orden de prioridad
-		return [
-			`https://www.google.com/s2/favicons?domain=${cleanHostname}&sz=64`,
-			`https://icons.duckduckgo.com/ip3/${cleanHostname}.ico`,
-			`https://favicons.githubusercontent.com/${cleanHostname}`,
-			`https://${cleanHostname}/favicon.ico`,
-		];
-	} catch {
-		return [];
-	}
-};
-
-// Función auxiliar para obtener la primera URL
+// ✅ SOLUCIÓN SIMPLE Y EFECTIVA: Clearbit API (el más confiable)
 const getFaviconUrl = (url: string): string => {
-	const urls = getFaviconUrls(url);
-	return urls[0] || "";
+	try {
+		const parsed = new URL(url);
+		const domain = parsed.hostname;
+		// Clearbit es el servicio más confiable usado por miles de empresas
+		// Tiene cache permanente y funciona con prácticamente todos los sitios
+		return `https://logo.clearbit.com/${domain}`;
+	} catch {
+		return "";
+	}
 };
 
 // Utility functions
@@ -805,32 +794,11 @@ onDestroy(() => {
 										{#if url.faviconUrl}
 											<img 
 												src={url.faviconUrl} 
-												alt="favicon" 
+												alt="" 
 												class="favicon-img-real"
-												data-url={url.originalUrl}
-												data-fallback-index="0"
 												on:error={(e) => {
-													const img = e.currentTarget;
-													const originalUrl = img.getAttribute('data-url');
-													const currentIndex = parseInt(img.getAttribute('data-fallback-index') || '0');
-													const fallbackUrls = getFaviconUrls(originalUrl);
-													
-													// Intentar con el siguiente servicio
-													if (currentIndex < fallbackUrls.length - 1) {
-														img.setAttribute('data-fallback-index', String(currentIndex + 1));
-														img.src = fallbackUrls[currentIndex + 1];
-													} else {
-														// Todos los servicios fallaron, ocultar imagen
-														img.style.display = 'none';
-													}
-												}}
-												on:load={(e) => {
-													const img = e.currentTarget;
-													// Validar si la imagen es real (no placeholder vacío o muy pequeña)
-													if (img.naturalWidth === 0 || img.naturalWidth < 8 || img.naturalHeight === 0 || img.naturalHeight < 8) {
-														// Trigger error handler para probar siguiente servicio
-														img.dispatchEvent(new Event('error'));
-													}
+													// Si falla, simplemente ocultar la imagen
+													e.currentTarget.style.display = 'none';
 												}}
 											/>
 										{/if}
@@ -1308,7 +1276,7 @@ onDestroy(() => {
 		flex-shrink: 0;
 	}
 
-	/* ✅ CLAVE: Emoji siempre visible como fallback, imagen real lo tapa si carga */
+	/* ✅ Emoji siempre visible como fallback */
 	.url-favicon-emoji {
 		font-size: 1.4rem;
 		width: 24px;
@@ -1321,6 +1289,7 @@ onDestroy(() => {
 		z-index: 1;
 	}
 
+	/* Imagen real se superpone si carga exitosamente */
 	.favicon-img-real {
 		position: absolute;
 		left: 0;
@@ -1329,14 +1298,7 @@ onDestroy(() => {
 		height: 24px;
 		object-fit: contain;
 		z-index: 2;
-		border-radius: 4px;
-		background: white;
-		padding: 2px;
-	}
-
-	:global(.dark) .favicon-img-real,
-	.dark .favicon-img-real {
-		background: oklch(0.25 0.02 var(--hue));
+		border-radius: 3px;
 	}
 
 	.url-category-badge {
