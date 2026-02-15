@@ -193,8 +193,11 @@ const isValidAlias = (alias: string): boolean => {
 const getFavicon = (url: string): string => {
 	try {
 		const domain = new URL(url).hostname;
-		return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
-	} catch {
+		const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+		console.log(`🎨 Favicon generado para ${domain}: ${faviconUrl}`);
+		return faviconUrl;
+	} catch (e) {
+		console.error(`❌ Error generando favicon para ${url}:`, e);
 		return fallbackIconSvg;
 	}
 };
@@ -203,17 +206,40 @@ const handleFaviconError = (event: Event, urlId: string) => {
 	const img = event.currentTarget as HTMLImageElement;
 	const originalUrl = img.dataset.url;
 
-	if (!failedFavicons.has(urlId)) {
-		failedFavicons.add(urlId);
-		if (originalUrl) {
-			try {
-				const domain = new URL(originalUrl).hostname;
-				img.src = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
-				return;
-			} catch {}
-		}
+	console.warn(`⚠️ Favicon falló para URL ID: ${urlId}, URL original: ${originalUrl}`);
+
+	if (!originalUrl) {
+		console.log('❌ No hay URL original, usando fallback SVG');
+		img.src = fallbackIconSvg;
+		return;
 	}
-	img.src = fallbackIconSvg;
+
+	const failureCount = failedFavicons.has(urlId) ? 1 : 0;
+	failedFavicons.add(urlId);
+
+	try {
+		const domain = new URL(originalUrl).hostname;
+		
+		// Try different favicon services in order
+		if (failureCount === 0) {
+			// First fallback: DuckDuckGo
+			const fallbackUrl = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+			console.log(`🔄 Intentando fallback 1 (DuckDuckGo): ${fallbackUrl}`);
+			img.src = fallbackUrl;
+		} else if (failureCount === 1) {
+			// Second fallback: Favicon.io
+			const fallbackUrl = `https://favicons.githubusercontent.com/${domain}`;
+			console.log(`🔄 Intentando fallback 2 (GitHub): ${fallbackUrl}`);
+			img.src = fallbackUrl;
+		} else {
+			// Final fallback: SVG icon
+			console.log('🔄 Usando fallback final: SVG genérico');
+			img.src = fallbackIconSvg;
+		}
+	} catch (e) {
+		console.error('❌ Error en handleFaviconError:', e);
+		img.src = fallbackIconSvg;
+	}
 };
 
 // Alias generation
@@ -575,6 +601,24 @@ const importUrls = () => {
 	input.click();
 };
 
+const refreshAllFavicons = () => {
+	if (!confirm("¿Actualizar todos los favicons? Esto recargará los íconos de las páginas.")) {
+		return;
+	}
+	
+	// Clear failed favicons cache
+	failedFavicons.clear();
+	
+	// Update all URLs with fresh favicons from original URLs
+	urls = urls.map(url => ({
+		...url,
+		favicon: getFavicon(url.originalUrl)
+	}));
+	
+	saveUrls();
+	showSuccessToast("✓ Favicons actualizados");
+};
+
 const closeOnboarding = () => {
 	showOnboarding = false;
 	localStorage.setItem("urlshortener:onboarding", "true");
@@ -787,6 +831,9 @@ onDestroy(() => {
 			</div>
 
 			<div class="header-actions">
+				<button class="btn-action" on:click={refreshAllFavicons}>
+					🔄 Actualizar Íconos
+				</button>
 				<button class="btn-action" on:click={exportUrls}>
 					📤 Exportar
 				</button>
@@ -956,13 +1003,16 @@ onDestroy(() => {
 							{:else}
 								<div class="url-alias-row">
 									{#if url.favicon}
-										<img 
-											src={url.favicon} 
-											alt="" 
-											data-url={url.originalUrl}
-											class="url-favicon" 
-											on:error={(e) => handleFaviconError(e, url.id)}
-										/>
+										<div class="favicon-container">
+											<img 
+												src={url.favicon} 
+												alt="Favicon" 
+												data-url={url.originalUrl}
+												class="url-favicon" 
+												on:error={(e) => handleFaviconError(e, url.id)}
+												loading="lazy"
+											/>
+										</div>
 									{/if}
 									<div class="url-alias">#{url.alias}</div>
 									<span class="url-category-badge">{categoryMap[url.category]?.icon || '🔗'}</span>
@@ -1481,14 +1531,33 @@ onDestroy(() => {
 		gap: 0.5rem;
 	}
 
-	.url-favicon {
-		width: 20px;
-		height: 20px;
-		object-fit: contain;
-		border-radius: 0.25rem;
+	.favicon-container {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 28px;
+		height: 28px;
+		border-radius: 0.375rem;
+		background: rgba(255, 255, 255, 0.5);
+		border: 1px solid rgba(0, 0, 0, 0.05);
 		flex-shrink: 0;
-		image-rendering: auto;
+	}
+
+	:global(.dark) .favicon-container,
+	.dark .favicon-container {
+		background: rgba(15, 23, 42, 0.5);
+		border-color: rgba(255, 255, 255, 0.05);
+	}
+
+	.url-favicon {
+		width: 24px;
+		height: 24px;
+		object-fit: contain;
+		border-radius: 0.3rem;
+		flex-shrink: 0;
+		image-rendering: -webkit-optimize-contrast;
 		background-color: rgba(148, 163, 184, 0.1);
+		padding: 2px;
 	}
 
 	.url-category-badge {
@@ -2072,4 +2141,4 @@ onDestroy(() => {
 	.dark .info-item p {
 		color: #94a3b8;
 	}
-</style>
+</style>s
