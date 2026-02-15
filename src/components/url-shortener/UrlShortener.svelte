@@ -19,9 +19,6 @@ interface ShortenedUrl {
 	favicon: string;
 }
 
-// ============================================================================
-// STATE MANAGEMENT
-// ============================================================================
 // Core state
 let urls: ShortenedUrl[] = [];
 let inputUrl = "";
@@ -51,16 +48,11 @@ let isShortening = false;
 let darkModeObserver: MutationObserver | null = null;
 let stopThemeWatch: (() => void) | null = null;
 
-// Favicon error tracking
-let failedFavicons = new Set<string>();
-
-// ============================================================================
-// CONSTANTS & CONFIGURATION
-// ============================================================================
+// Constants
 const MAX_URLS = 100;
 const MAX_DOMAIN_ALIAS_LENGTH = 8;
 
-// Categories configuration
+// Categories
 const categories = [
 	{ id: "all", label: "📋 Todos", icon: "📋" },
 	{ id: "social", label: "📱 Social", icon: "📱" },
@@ -70,82 +62,21 @@ const categories = [
 	{ id: "other", label: "🔗 Otros", icon: "🔗" },
 ];
 
-// Category detection rules
 const categoryRules = {
-	social: [
-		'youtube', 'tiktok', 'instagram', 'facebook', 'twitter', 'x.com', 'linkedin', 'threads',
-		'pinterest', 'reddit', 'twitch', 'discord', 'snapchat', 'tumblr', 'weibo', 'vk.com',
-		'telegram.org', 'whatsapp', 'signal', 'mastodon', 'parler', 'gab', 'truthsocial',
-		'mewe', 'clubhouse', 'beeper', 'matrix.org', 'session', 'threema', 'element.io',
-		'tinder', 'bumble', 'hinge', 'ok.ru', 'odnoklassniki', 'renren', 'qzone', 'douyin',
-		'kuaishou', 'bilibili', 'xiaohongshu', 'douban', 'zhihu', 'tieba', 'weibo.cn'
-	],
-	dev: [
-		'github', 'gitlab', 'stackoverflow', 'npmjs', 'vercel', 'netlify', 'codepen', 'codesandbox',
-		'replit', 'heroku', 'digitalocean', 'firebase', 'supabase', 'aws.amazon', 'azure.microsoft',
-		'gcp.google', 'cloudflare', 'bitbucket', 'sourceforge', 'docker', 'kubernetes', 'jenkins',
-		'travis-ci', 'circleci', 'githubactions', 'terraform', 'ansible', 'puppet', 'chef.io',
-		'vagrant', 'virtualbox', 'vmware', 'hyper-v', 'proxmox', 'openstack', 'linode', 'vultr',
-		'rackspace', 'godaddy', 'namecheap', 'hostinger', 'siteground', 'bluehost', 'dreamhost',
-		'hostgator', '1and1', 'ovh', 'hetzner', 'contabo', 'ionos', 'strato', 'web.de',
-		'glitch', 'codeanywhere', 'c9.io', 'koding', 'nitrous.io', 'codio', 'cloud9', 'repl.it',
-		'jsfiddle', 'jsbin', 'plnkr', 'fiddle.jshell', 'codeply', 'bootply', 'sqlfiddle', 'dbfiddle'
-	],
-	work: [
-		'docs.google', 'notion', 'slack', 'trello', 'asana', 'jira', 'figma', 'zoom', 'teams.microsoft',
-		'meet.google', 'monday.com', 'clickup', 'confluence', 'atlassian', 'dropbox', 'drive.google',
-		'onedrive', 'sharepoint', 'box.com', 'evernote', 'todoist', 'basecamp', 'teamwork.com',
-		'microsoft.com', 'office.com', 'outlook.com', 'skype', 'webex', 'gotomeeting', 'join.me',
-		'teamviewer', 'anydesk', 'logmein', 'remotedesktop', 'citrix', 'vmware', 'parallels',
-		'adobe.com', 'photoshop', 'illustrator', 'indesign', 'premiere', 'aftereffects', 'lightroom',
-		'behance', 'dribbble', 'canva', 'invision', 'sketch', 'framer', 'webflow', 'carrd',
-		'surveymonkey', 'typeform', 'googleforms', 'jotform', 'wufoo', 'limeSurvey', 'qualtrics',
-		'hubspot', 'salesforce', 'zoho', 'pipedrive', 'crm', 'erp', 'sap', 'oracle', 'microsoftdynamics',
-		'mailchimp', 'constantcontact', 'sendinblue', 'activecampaign', 'klaviyo', 'drip', 'convertkit',
-		'miro', 'lucidchart', 'draw.io', 'diagrams.net', 'gliffy', 'visio', 'edraw', 'smartdraw',
-		'zoom.us', 'goto.com', 'bluejeans', 'ringcentral', '8x8', 'grasshopper', 'nextiva'
-	],
-	personal: [
-		'blogspot', 'wordpress.com', 'medium', 'tumblr', 'wix', 'squarespace', 'weebly', 'jimdo',
-		'substack', 'ghost.org', 'patreon', 'ko-fi', 'gumroad', 'etsy', 'shopify', 'ebay', 'amazon',
-		'bandcamp', 'soundcloud', 'spotify', 'deezer', 'tidal', 'applemusic', 'pandora', 'lastfm',
-		'mixcloud', 'audiomack', 'distroKid', 'tunecore', 'cdbaby', 'reverbnation', 'myspace',
-		'deviantart', 'artstation', 'newgrounds', 'itch.io', 'gamejolt', 'steamcommunity', 'epicgames',
-		'gog.com', 'origin', 'uplay', 'battlenet', 'warcraft', 'overwatch', 'leagueoflegends',
-		'behance', 'dribbble', 'portfolio', 'cargocollective', 'carbonmade', 'format', 'cargo.site',
-		'squarespace.com', 'webflow.com', 'carrd.co', 'about.me', 'linktree', 'bio.fm', 'milkshake.app',
-		'paypal.me', 'venmo', 'cashapp', 'ko-fi.com', 'buy me a coffee', 'donate.ly', 'fundly'
-	]
+	social: ['youtube', 'tiktok', 'instagram', 'facebook', 'twitter', 'x.com', 'linkedin', 'threads', 'pinterest', 'reddit', 'twitch', 'discord', 'snapchat'],
+	dev: ['github', 'gitlab', 'stackoverflow', 'npmjs', 'vercel', 'netlify', 'codepen', 'codesandbox', 'replit'],
+	work: ['docs.google', 'notion', 'slack', 'trello', 'asana', 'jira', 'figma', 'zoom', 'teams.microsoft', 'meet.google'],
+	personal: ['blogspot', 'wordpress.com', 'medium', 'tumblr', 'wix', 'squarespace', 'spotify', 'soundcloud']
 };
 
-// Alias generation words
-const adjectives = [
-	"fast", "cool", "smart", "bold", "zen", "nova", "pro", "top", "max", "ace",
-	"epic", "mega", "ultra", "hyper", "super", "prime", "elite", "alpha", "beta", "neon",
-];
-const nouns = [
-	"link", "go", "hub", "bit", "web", "net", "dot", "io", "app", "dev",
-	"code", "data", "page", "site", "path", "way", "fox", "owl", "bee", "cat",
-];
+const adjectives = ["fast", "cool", "smart", "bold", "zen", "nova", "pro", "top", "max", "ace"];
+const nouns = ["link", "go", "hub", "bit", "web", "net", "dot", "io", "app", "dev"];
 
-// Fallback SVG icon with better styling
-const fallbackIconSvg = `data:image/svg+xml,${encodeURIComponent(`
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%2364748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <circle cx="12" cy="12" r="10" fill="%23e2e8f0" stroke="%2394a3b8"/>
-  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="%233b82f6"/>
-  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="%233b82f6"/>
-</svg>
-`)}`;
+// Simple fallback icon
+const fallbackIcon = "🔗";
 
-// Track which favicons failed to load
-let failedFavicons = new Set<string>();
-const categoryMap = categories.reduce(
-	(acc, cat) => {
-		acc[cat.id] = cat;
-		return acc;
-	},
-	{} as Record<string, (typeof categories)[0]>,
-);
+// Utility functions
+const categoryMap = categories.reduce((acc, cat) => { acc[cat.id] = cat; return acc; }, {} as Record<string, (typeof categories)[0]>);
 
 const getCategoryLabel = (categoryId: string): string => {
 	const cat = categoryMap[categoryId];
@@ -156,17 +87,12 @@ const detectCategory = (url: string): string => {
 	try {
 		const hostname = new URL(url).hostname.toLowerCase();
 		for (const [category, domains] of Object.entries(categoryRules)) {
-			if (domains.some(domain => hostname.includes(domain))) {
-				return category;
-			}
+			if (domains.some(domain => hostname.includes(domain))) return category;
 		}
-		return 'other';
-	} catch {
-		return 'other';
-	}
+	} catch {}
+	return 'other';
 };
 
-// URL utilities
 const isValidUrl = (url: string): boolean => {
 	try {
 		const parsed = new URL(url);
@@ -177,94 +103,34 @@ const isValidUrl = (url: string): boolean => {
 };
 
 const normalizeUrl = (url: string): string => {
-	if (!url.startsWith("http://") && !url.startsWith("https://")) {
-		return `https://${url}`;
-	}
+	if (!url.startsWith("http://") && !url.startsWith("https://")) return `https://${url}`;
 	return url;
 };
 
-const isValidAlias = (alias: string): boolean => {
-	return /^[a-zA-Z0-9-]{1,30}$/.test(alias);
-};
+const isValidAlias = (alias: string): boolean => /^[a-zA-Z0-9-]{1,30}$/.test(alias);
 
-// Favicon utilities
 const getFavicon = (url: string): string => {
 	try {
-		const urlObj = new URL(url);
-		const domain = urlObj.hostname;
-		
-		// Use icon.horse - a reliable, privacy-focused favicon service
-		const faviconUrl = `https://icon.horse/icon/${domain}`;
-		console.log(`🎨 Favicon generado para ${domain}: ${faviconUrl}`);
-		return faviconUrl;
-	} catch (e) {
-		console.error(`❌ Error generando favicon para ${url}:`, e);
-		return fallbackIconSvg;
+		const domain = new URL(url).hostname;
+		return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+	} catch {
+		return "";
 	}
 };
 
-const handleFaviconError = (event: Event, urlId: string) => {
-	const img = event.currentTarget as HTMLImageElement;
-	const originalUrl = img.dataset.url;
-	const currentSrc = img.src;
-
-	console.warn(`⚠️ Favicon falló para URL ID: ${urlId}, URL: ${originalUrl}`);
-
-	if (!originalUrl) {
-		img.src = fallbackIconSvg;
-		return;
-	}
-
-	try {
-		const urlObj = new URL(originalUrl);
-		const domain = urlObj.hostname;
-		
-		// Cascade of fallback services
-		if (currentSrc.includes('icon.horse')) {
-			// Try Google as first fallback
-			img.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
-			console.log(`🔄 Fallback 1: Google S2`);
-		} else if (currentSrc.includes('google.com')) {
-			// Try DuckDuckGo as second fallback  
-			img.src = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
-			console.log(`🔄 Fallback 2: DuckDuckGo`);
-		} else if (currentSrc.includes('duckduckgo.com')) {
-			// Try direct favicon.ico as third fallback
-			img.src = `${urlObj.protocol}//${domain}/favicon.ico`;
-			console.log(`🔄 Fallback 3: Direct favicon.ico`);
-		} else {
-			// All services failed, use SVG
-			img.src = fallbackIconSvg;
-			console.log(`🔄 Fallback final: SVG`);
-			failedFavicons.add(urlId);
-		}
-	} catch (e) {
-		console.error('❌ Error en handleFaviconError:', e);
-		img.src = fallbackIconSvg;
-	}
-};
-
-// Alias generation
 const generateAlias = (url: string): string => {
 	try {
 		const parsed = new URL(url);
 		const domain = parsed.hostname.replace("www.", "").split(".")[0];
-		if (
-			domain.length <= MAX_DOMAIN_ALIAS_LENGTH &&
-			/^[a-zA-Z0-9]+$/.test(domain)
-		) {
-			const suffix = Math.random().toString(36).substring(2, 5);
-			return `${domain}-${suffix}`;
+		if (domain.length <= MAX_DOMAIN_ALIAS_LENGTH && /^[a-zA-Z0-9]+$/.test(domain)) {
+			return `${domain}-${Math.random().toString(36).substring(2, 5)}`;
 		}
 	} catch {}
-
 	const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
 	const noun = nouns[Math.floor(Math.random() * nouns.length)];
-	const num = Math.floor(Math.random() * 99);
-	return `${adj}-${noun}${num}`;
+	return `${adj}-${noun}${Math.floor(Math.random() * 99)}`;
 };
 
-// Date formatting
 const formatDate = (isoDate: string): string => {
 	const date = new Date(isoDate);
 	const now = new Date();
@@ -281,15 +147,12 @@ const formatDate = (isoDate: string): string => {
 	return date.toLocaleDateString("es-ES", { month: "short", day: "numeric" });
 };
 
-// ============================================================================
-// STORAGE FUNCTIONS
-// ============================================================================
+// Storage
 const loadUrls = () => {
 	try {
 		const stored = localStorage.getItem(storageKey);
 		if (stored) {
-			const parsed = JSON.parse(stored);
-			urls = parsed.map((url: ShortenedUrl) => ({
+			urls = JSON.parse(stored).map((url: ShortenedUrl) => ({
 				...url,
 				shortUrl: url.shortUrl || url.originalUrl,
 				category: url.category || "other",
@@ -309,9 +172,7 @@ const saveUrls = () => {
 	}
 };
 
-// ============================================================================
-// URL SHORTENING APIs
-// ============================================================================
+// URL Shortening APIs
 const shortenWithCleanUri = async (longUrl: string): Promise<string> => {
 	const response = await fetch("https://cleanuri.com/api/v1/shorten", {
 		method: "POST",
@@ -327,10 +188,7 @@ const shortenWithCleanUri = async (longUrl: string): Promise<string> => {
 const shortenWithSpooMe = async (longUrl: string): Promise<string> => {
 	const response = await fetch("https://spoo.me/", {
 		method: "POST",
-		headers: {
-			"Content-Type": "application/x-www-form-urlencoded",
-			Accept: "application/json",
-		},
+		headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
 		body: `url=${encodeURIComponent(longUrl)}`,
 	});
 	if (!response.ok) throw new Error(`spoo.me HTTP ${response.status}`);
@@ -340,22 +198,11 @@ const shortenWithSpooMe = async (longUrl: string): Promise<string> => {
 };
 
 const shortenWithShrtcode = async (longUrl: string): Promise<string> => {
-	const endpoint = `https://api.shrtco.de/v2/shorten?url=${encodeURIComponent(longUrl)}`;
-	const response = await fetch(endpoint);
+	const response = await fetch(`https://api.shrtco.de/v2/shorten?url=${encodeURIComponent(longUrl)}`);
 	if (!response.ok) throw new Error(`shrtco.de HTTP ${response.status}`);
 	const data = await response.json();
-	if (!data.ok || !data.result)
-		throw new Error(data.error || "Shortening failed");
+	if (!data.ok || !data.result) throw new Error(data.error || "Shortening failed");
 	return data.result.full_short_link;
-};
-
-const shortenWithUlvis = async (longUrl: string): Promise<string> => {
-	const endpoint = `https://ulvis.net/API/write/get?url=${encodeURIComponent(longUrl)}&type=json`;
-	const response = await fetch(endpoint);
-	if (!response.ok) throw new Error(`ulvis.net HTTP ${response.status}`);
-	const data = await response.json();
-	if (!data.data || !data.data.url) throw new Error("No short URL returned");
-	return data.data.url;
 };
 
 const shortenUrl = async (longUrl: string): Promise<string> => {
@@ -363,27 +210,22 @@ const shortenUrl = async (longUrl: string): Promise<string> => {
 		{ name: "CleanURI", fn: shortenWithCleanUri },
 		{ name: "spoo.me", fn: shortenWithSpooMe },
 		{ name: "shrtco.de", fn: shortenWithShrtcode },
-		{ name: "ulvis.net", fn: shortenWithUlvis },
 	];
 
 	for (const api of apis) {
 		try {
 			const result = await api.fn(longUrl);
 			if (result && result !== longUrl && result.startsWith("http")) {
-				console.log(`✓ URL acortada con ${api.name}`);
 				return result;
 			}
 		} catch (err) {
-			console.warn(`✗ ${api.name} falló:`, err);
+			console.warn(`${api.name} falló:`, err);
 		}
 	}
-
 	throw new Error("Todos los servicios de acortamiento no disponibles");
 };
 
-// ============================================================================
-// UI ACTIONS
-// ============================================================================
+// UI Actions
 const showSuccessToast = (message: string) => {
 	successMessage = message;
 	showSuccess = true;
@@ -417,11 +259,7 @@ const addUrl = async () => {
 
 	const existingUrl = urls.find((u) => u.originalUrl === normalized);
 	if (existingUrl) {
-		if (
-			confirm(
-				`Este URL ya existe con alias #${existingUrl.alias}. ¿Copiar al portapapeles?`,
-			)
-		) {
+		if (confirm(`Este URL ya existe con alias #${existingUrl.alias}. ¿Copiar al portapapeles?`)) {
 			copyUrl(existingUrl);
 		}
 		return;
@@ -450,13 +288,9 @@ const addUrl = async () => {
 		inputUrl = "";
 		inputAlias = "";
 		inputCategory = "other";
-		showSuccessToast("✓ URL acortada · Sin publicidad");
+		showSuccessToast("✓ URL acortada");
 	} catch (err) {
-		console.error("URL shortening failed:", err);
-		const saveAnyway = confirm(
-			"El acortamiento de enlaces está temporalmente inactivo. ¿Guardar enlace original?",
-		);
-		if (saveAnyway) {
+		if (confirm("El acortamiento está temporalmente inactivo. ¿Guardar enlace original?")) {
 			const newUrl: ShortenedUrl = {
 				id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
 				originalUrl: normalized,
@@ -480,45 +314,24 @@ const addUrl = async () => {
 };
 
 const copyUrl = (urlEntry: ShortenedUrl) => {
-	navigator.clipboard
-		.writeText(urlEntry.shortUrl)
-		.then(() => {
-			urls = urls.map((u) =>
-				u.id === urlEntry.id ? { ...u, copyCount: u.copyCount + 1 } : u,
-			);
-			saveUrls();
-			copiedId = urlEntry.id;
-			setTimeout(() => {
-				copiedId = null;
-			}, 2000);
-		})
-		.catch(() => {
-			alert(
-				"Error al copiar al portapapeles. Verifica los permisos del navegador.",
-			);
-		});
+	navigator.clipboard.writeText(urlEntry.shortUrl).then(() => {
+		urls = urls.map((u) => u.id === urlEntry.id ? { ...u, copyCount: u.copyCount + 1 } : u);
+		saveUrls();
+		copiedId = urlEntry.id;
+		setTimeout(() => { copiedId = null; }, 2000);
+	}).catch(() => alert("Error al copiar al portapapeles"));
 };
 
 const copyAlias = (urlEntry: ShortenedUrl) => {
-	navigator.clipboard
-		.writeText(`#${urlEntry.alias}`)
-		.then(() => {
-			copiedAliasId = urlEntry.id;
-			setTimeout(() => {
-				copiedAliasId = null;
-			}, 2000);
-		})
-		.catch(() => {
-			alert(
-				"Error al copiar al portapapeles. Verifica los permisos del navegador.",
-			);
-		});
+	navigator.clipboard.writeText(`#${urlEntry.alias}`).then(() => {
+		copiedAliasId = urlEntry.id;
+		setTimeout(() => { copiedAliasId = null; }, 2000);
+	}).catch(() => alert("Error al copiar al portapapeles"));
 };
 
 const deleteUrl = (id: string) => {
 	if (confirm("¿Eliminar este URL?")) {
 		urls = urls.filter((u) => u.id !== id);
-		failedFavicons.delete(id);
 		saveUrls();
 	}
 };
@@ -542,21 +355,17 @@ const startEditAlias = (url: ShortenedUrl) => {
 
 const saveEditAlias = () => {
 	if (!editingId) return;
-
 	const newAlias = editingAlias.trim();
 	if (!newAlias || !isValidAlias(newAlias)) {
-		alert("Alias inválido. Solo letras, números y guiones (1-30 caracteres)");
+		alert("Alias inválido");
 		return;
 	}
-
 	if (urls.some((u) => u.alias === newAlias && u.id !== editingId)) {
 		alert("Ya existe un URL con ese alias");
 		return;
 	}
-
 	urls = urls.map((u) => (u.id === editingId ? { ...u, alias: newAlias } : u));
 	saveUrls();
-
 	editingId = null;
 	editingAlias = "";
 };
@@ -584,7 +393,6 @@ const importUrls = () => {
 	input.onchange = (e) => {
 		const file = (e.target as HTMLInputElement).files?.[0];
 		if (!file) return;
-
 		const reader = new FileReader();
 		reader.onload = (e) => {
 			try {
@@ -594,7 +402,7 @@ const importUrls = () => {
 					saveUrls();
 					alert(`${imported.length} URLs importados`);
 				}
-			} catch (err) {
+			} catch {
 				alert("Error al importar archivo");
 			}
 		};
@@ -603,90 +411,40 @@ const importUrls = () => {
 	input.click();
 };
 
-const refreshAllFavicons = () => {
-	if (!confirm("¿Actualizar todos los favicons? Esto recargará los íconos de las páginas.")) {
-		return;
-	}
-	
-	// Clear failed favicons cache
-	failedFavicons.clear();
-	
-	// Update all URLs with fresh favicons from original URLs
-	urls = urls.map(url => ({
-		...url,
-		favicon: getFavicon(url.originalUrl)
-	}));
-	
-	saveUrls();
-	showSuccessToast("✓ Favicons actualizados");
-};
-
 const closeOnboarding = () => {
 	showOnboarding = false;
 	localStorage.setItem("urlshortener:onboarding", "true");
 };
 
-// ============================================================================
-// REACTIVE STATEMENTS
-// ============================================================================
-$: filteredUrls = urls
-	.filter((u) => {
-		const matchesSearch =
-			!searchQuery ||
-			u.originalUrl.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			u.alias.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			u.category.toLowerCase().includes(searchQuery.toLowerCase());
-		const matchesCategory =
-			filterCategory === "all" || u.category === filterCategory;
-		return matchesSearch && matchesCategory;
-	})
-	.sort((a, b) => {
-		if (sortBy === "date")
-			return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-		if (sortBy === "copies") return b.copyCount - a.copyCount;
-		return a.alias.localeCompare(b.alias);
-	});
+// Reactive statements
+$: filteredUrls = urls.filter((u) => {
+	const matchesSearch = !searchQuery || u.originalUrl.toLowerCase().includes(searchQuery.toLowerCase()) || u.alias.toLowerCase().includes(searchQuery.toLowerCase());
+	const matchesCategory = filterCategory === "all" || u.category === filterCategory;
+	return matchesSearch && matchesCategory;
+}).sort((a, b) => {
+	if (sortBy === "date") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+	if (sortBy === "copies") return b.copyCount - a.copyCount;
+	return a.alias.localeCompare(b.alias);
+});
 
 $: totalUrls = urls.length;
 $: totalCopies = urls.reduce((sum, u) => sum + u.copyCount, 0);
-$: mostCopiedUrl = urls.reduce(
-	(max, u) => (u.copyCount > max.copyCount ? u : max),
-	{ alias: "N/A", copyCount: 0 } as ShortenedUrl,
-);
 $: mostUsedCategory = (() => {
-	const categoryCounts = urls.reduce(
-		(acc, u) => {
-			acc[u.category] = (acc[u.category] || 0) + 1;
-			return acc;
-		},
-		{} as Record<string, number>,
-	);
-	const maxCategory = Object.entries(categoryCounts).reduce(
-		(max, [cat, count]) => (count > max.count ? { cat, count } : max),
-		{ cat: "other", count: 0 },
-	);
+	const categoryCounts = urls.reduce((acc, u) => { acc[u.category] = (acc[u.category] || 0) + 1; return acc; }, {} as Record<string, number>);
+	const maxCategory = Object.entries(categoryCounts).reduce((max, [cat, count]) => (count > max.count ? { cat, count } : max), { cat: "other", count: 0 });
 	const category = categoryMap[maxCategory.cat];
 	return category ? category.label : "🔗 Otros";
 })();
 
 $: if (inputUrl) {
 	const normalized = normalizeUrl(inputUrl.trim());
-	if (isValidUrl(normalized)) {
-		inputCategory = detectCategory(normalized);
-	}
+	if (isValidUrl(normalized)) inputCategory = detectCategory(normalized);
 }
 
-// ============================================================================
-// LIFECYCLE
-// ============================================================================
+// Lifecycle
 const onKey = (event: KeyboardEvent) => {
 	if (event.target && (event.target as HTMLElement).tagName === "INPUT") return;
-
-	if (event.key === "Escape" && showQR) {
-		closeQR();
-		return;
-	}
-
+	if (event.key === "Escape" && showQR) closeQR();
 	if ((event.ctrlKey || event.metaKey) && event.key === "e") {
 		event.preventDefault();
 		exportUrls();
@@ -695,134 +453,79 @@ const onKey = (event: KeyboardEvent) => {
 
 onMount(() => {
 	loadUrls();
-
 	const htmlElement = document.documentElement;
 	isDark = htmlElement.classList.contains("dark");
-
-	darkModeObserver = new MutationObserver((mutations) => {
-		for (const mutation of mutations) {
-			if (
-				mutation.type === "attributes" &&
-				mutation.attributeName === "class"
-			) {
-				isDark = htmlElement.classList.contains("dark");
-			}
-		}
+	darkModeObserver = new MutationObserver(() => {
+		isDark = htmlElement.classList.contains("dark");
 	});
-
-	darkModeObserver.observe(htmlElement, {
-		attributes: true,
-		attributeFilter: ["class"],
-	});
-
+	darkModeObserver.observe(htmlElement, { attributes: true, attributeFilter: ["class"] });
 	applyStoredThemeToDocument();
 	const theme = getStoredTheme();
 	stopThemeWatch = watchSystemThemeChanges(theme);
-
 	document.addEventListener("keydown", onKey);
-
 	const hasSeenOnboarding = localStorage.getItem("urlshortener:onboarding");
-	if (!hasSeenOnboarding && urls.length === 0) {
-		showOnboarding = true;
-	}
-
+	if (!hasSeenOnboarding && urls.length === 0) showOnboarding = true;
 	isReady = true;
 });
 
 onDestroy(() => {
-	if (darkModeObserver) {
-		darkModeObserver.disconnect();
-	}
-	if (stopThemeWatch) {
-		stopThemeWatch();
-	}
+	if (darkModeObserver) darkModeObserver.disconnect();
+	if (stopThemeWatch) stopThemeWatch();
 	document.removeEventListener("keydown", onKey);
 });
 </script>
 
 {#if isReady}
 	<div class="url-shortener-wrapper" class:dark={isDark}>
-		<!-- Onboarding -->
 		{#if showOnboarding}
 			<div class="url-shortener-onboarding-overlay">
 				<div class="url-shortener-onboarding-card">
 					<div class="onboarding-step">
 						<div class="step-icon">🔗</div>
 						<h3>Acorta tus URLs</h3>
-						<p>
-							Pega cualquier URL largo y crea un alias personalizado para
-							acceder fácilmente
-						</p>
+						<p>Pega cualquier URL largo y crea un alias personalizado</p>
 					</div>
-
 					<div class="onboarding-step">
 						<div class="step-icon">📊</div>
 						<h3>Organiza y rastrea</h3>
-						<p>
-							Historial completo con estadísticas de uso, búsqueda y
-							ordenamiento
-						</p>
+						<p>Historial completo con estadísticas de uso</p>
 					</div>
-
 					<div class="onboarding-step">
 						<div class="step-icon">📱</div>
 						<h3>Genera QR Codes</h3>
-						<p>
-							Crea códigos QR al instante para compartir tus enlaces en físico
-						</p>
+						<p>Crea códigos QR al instante</p>
 					</div>
-
-					<button class="btn-onboarding" on:click={closeOnboarding}>
-						¡Comenzar!
-					</button>
+					<button class="btn-onboarding" on:click={closeOnboarding}>¡Comenzar!</button>
 				</div>
 			</div>
 		{/if}
 
-		<!-- QR Modal -->
 		{#if showQR}
 			<div class="url-shortener-qr-overlay" on:click={closeQR}>
 				<div class="url-shortener-qr-card" on:click={(e) => e.stopPropagation()}>
 					<h3>QR Code: {qrAlias}</h3>
 					<div class="qr-container">
-						<img
-							src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}`}
-							alt="QR Code"
-						/>
+						<img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}`} alt="QR Code" />
 					</div>
 					<p class="qr-url">{qrUrl}</p>
 					<div class="qr-actions">
 						<button class="btn-close-qr" on:click={closeQR}>Cerrar</button>
-						<a
-							class="btn-download-qr"
-							href={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qrUrl)}`}
-							download={`qr-${qrAlias}.png`}
-							target="_blank"
-						>
-							💾 Descargar QR
-						</a>
+						<a class="btn-download-qr" href={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qrUrl)}`} download={`qr-${qrAlias}.png`} target="_blank">💾 Descargar QR</a>
 					</div>
 				</div>
 			</div>
 		{/if}
 
-		<!-- Success Toast -->
 		{#if showSuccess}
-			<div
-				class="toast-success"
-				style="animation: slideInUp 0.3s ease, fadeOut 0.3s ease 2.7s"
-			>
+			<div class="toast-success">
 				<span>{successMessage}</span>
 			</div>
 		{/if}
 
-		<!-- Header -->
 		<div class="url-shortener-header">
 			<div>
 				<h2 class="url-shortener-title">Acortador de URLs</h2>
-				<p class="url-shortener-subtitle">
-					Organiza, acorta y gestiona tus enlaces favoritos
-				</p>
+				<p class="url-shortener-subtitle">Organiza, acorta y gestiona tus enlaces favoritos</p>
 				<div class="stats-row">
 					<span class="stat-item">📊 {totalUrls} URLs</span>
 					<span class="stat-item">📋 {totalCopies} copias</span>
@@ -831,37 +534,16 @@ onDestroy(() => {
 					{/if}
 				</div>
 			</div>
-
 			<div class="header-actions">
-				<button class="btn-action" on:click={refreshAllFavicons}>
-					🔄 Actualizar Íconos
-				</button>
-				<button class="btn-action" on:click={exportUrls}>
-					📤 Exportar
-				</button>
-				<button class="btn-action" on:click={importUrls}>
-					📥 Importar
-				</button>
+				<button class="btn-action" on:click={exportUrls}>📤 Exportar</button>
+				<button class="btn-action" on:click={importUrls}>📥 Importar</button>
 			</div>
 		</div>
 
-		<!-- Input Section -->
 		<div class="input-section">
 			<div class="input-row">
-				<input
-					type="text"
-					bind:value={inputUrl}
-					placeholder="Pega tu URL largo aquí..."
-					class="input-url"
-					on:keydown={(e) => e.key === "Enter" && addUrl()}
-				/>
-				<input
-					type="text"
-					bind:value={inputAlias}
-					placeholder="Alias (opcional)"
-					class="input-alias"
-					on:keydown={(e) => e.key === "Enter" && addUrl()}
-				/>
+				<input type="text" bind:value={inputUrl} placeholder="Pega tu URL largo aquí..." class="input-url" on:keydown={(e) => e.key === "Enter" && addUrl()} />
+				<input type="text" bind:value={inputAlias} placeholder="Alias (opcional)" class="input-alias" on:keydown={(e) => e.key === "Enter" && addUrl()} />
 				<select bind:value={inputCategory} class="select-category">
 					{#each categories.filter(c => c.id !== 'all') as cat}
 						<option value={cat.id}>{cat.icon} {getCategoryLabel(cat.id)}</option>
@@ -871,67 +553,31 @@ onDestroy(() => {
 					{isShortening ? "⏳ Acortando..." : "🔗 Acortar"}
 				</button>
 			</div>
-			<p class="input-hint">
-				Sin alias, se genera uno automático. Categoría detectada automáticamente.
-			</p>
+			<p class="input-hint">Sin alias, se genera uno automático. Categoría detectada automáticamente.</p>
 		</div>
 
-		<!-- Category Filter -->
 		{#if urls.length > 0}
 			<div class="category-filter">
 				{#each categories as cat}
-					<button
-						class="btn-category"
-						class:active={filterCategory === cat.id}
-						on:click={() => (filterCategory = cat.id)}
-					>
+					<button class="btn-category" class:active={filterCategory === cat.id} on:click={() => (filterCategory = cat.id)}>
 						{cat.icon} {getCategoryLabel(cat.id)}
 					</button>
 				{/each}
 			</div>
 		{/if}
 
-		<!-- Search and Filter -->
 		<div class="filter-section">
-			<input
-				type="text"
-				bind:value={searchQuery}
-				placeholder="🔍 Buscar por alias o URL..."
-				class="input-search"
-			/>
+			<input type="text" bind:value={searchQuery} placeholder="🔍 Buscar por alias o URL..." class="input-search" />
 			<div class="sort-buttons">
-				<button
-					class="btn-sort"
-					class:active={sortBy === "date"}
-					on:click={() => (sortBy = "date")}
-				>
-					📅 Fecha
-				</button>
-				<button
-					class="btn-sort"
-					class:active={sortBy === "copies"}
-					on:click={() => (sortBy = "copies")}
-				>
-					📊 Copias
-				</button>
-				<button
-					class="btn-sort"
-					class:active={sortBy === "name"}
-					on:click={() => (sortBy = "name")}
-				>
-					🔤 Nombre
-				</button>
-				<button
-					class="btn-sort btn-view-toggle"
-					on:click={() => (viewMode = viewMode === 'list' ? 'grid' : 'list')}
-					title="Cambiar vista"
-				>
+				<button class="btn-sort" class:active={sortBy === "date"} on:click={() => (sortBy = "date")}>📅 Fecha</button>
+				<button class="btn-sort" class:active={sortBy === "copies"} on:click={() => (sortBy = "copies")}>📊 Copias</button>
+				<button class="btn-sort" class:active={sortBy === "name"} on:click={() => (sortBy = "name")}>🔤 Nombre</button>
+				<button class="btn-sort" on:click={() => (viewMode = viewMode === 'list' ? 'grid' : 'list')}>
 					{viewMode === 'list' ? '🔲 Grid' : '📋 Lista'}
 				</button>
 			</div>
 		</div>
 
-		<!-- Info Section -->
 		{#if urls.length === 0 && !searchQuery}
 			<div class="info-section">
 				<h3>¿Cómo funciona?</h3>
@@ -947,7 +593,7 @@ onDestroy(() => {
 						<span class="info-icon">📱</span>
 						<div>
 							<strong>Genera QR Codes</strong>
-							<p>Crea códigos QR al instante para compartir en físico</p>
+							<p>Crea códigos QR al instante para compartir</p>
 						</div>
 					</div>
 					<div class="info-item">
@@ -961,14 +607,13 @@ onDestroy(() => {
 						<span class="info-icon">💾</span>
 						<div>
 							<strong>Exporta todo</strong>
-							<p>Descarga o importa tu biblioteca completa como JSON</p>
+							<p>Descarga o importa tu biblioteca completa</p>
 						</div>
 					</div>
 				</div>
 			</div>
 		{/if}
 
-		<!-- URLs List -->
 		<div class="urls-list" class:view-grid={viewMode === 'grid'}>
 			{#if filteredUrls.length === 0}
 				<div class="empty-state">
@@ -984,39 +629,16 @@ onDestroy(() => {
 					<div class="url-card">
 						<div class="url-card-header">
 							{#if editingId === url.id}
-								<input
-									type="text"
-									bind:value={editingAlias}
-									class="input-edit-alias"
-									on:keydown={(e) => {
-										if (e.key === "Enter") saveEditAlias();
-										if (e.key === "Escape") cancelEditAlias();
-									}}
-									autofocus
-								/>
+								<input type="text" bind:value={editingAlias} class="input-edit-alias" on:keydown={(e) => { if (e.key === "Enter") saveEditAlias(); if (e.key === "Escape") cancelEditAlias(); }} autofocus />
 								<div class="edit-actions">
-									<button class="btn-icon btn-save" on:click={saveEditAlias}>
-										✓
-									</button>
-									<button class="btn-icon btn-cancel" on:click={cancelEditAlias}>
-										✕
-									</button>
+									<button class="btn-icon btn-save" on:click={saveEditAlias}>✓</button>
+									<button class="btn-icon btn-cancel" on:click={cancelEditAlias}>✕</button>
 								</div>
 							{:else}
 								<div class="url-alias-row">
+									<span class="url-favicon">{url.favicon ? '' : fallbackIcon}</span>
 									{#if url.favicon}
-										<div class="favicon-container">
-											<img 
-												src={url.favicon} 
-												alt="Favicon" 
-												data-url={url.originalUrl}
-												class="url-favicon" 
-												on:error={(e) => handleFaviconError(e, url.id)}
-												loading="lazy"
-												crossorigin="anonymous"
-												referrerpolicy="no-referrer"
-											/>
-										</div>
+										<img src={url.favicon} alt="" class="favicon-img" />
 									{/if}
 									<div class="url-alias">#{url.alias}</div>
 									<span class="url-category-badge">{categoryMap[url.category]?.icon || '🔗'}</span>
@@ -1027,56 +649,28 @@ onDestroy(() => {
 								</div>
 							{/if}
 						</div>
-						
-						<!-- URL acortada (principal) -->
 						<div class="short-url-display">
 							<span class="short-url-text">{url.shortUrl}</span>
 						</div>
-						
-						<!-- URL original (referencia) -->
 						<div class="original-url-ref">
 							<span class="text-xs opacity-60">Original: {url.originalUrl}</span>
 						</div>
-						
 						<div class="url-card-actions">
-							<button
-								class="btn-card-action btn-copy-main"
-								class:copied={copiedId === url.id}
-								on:click={() => copyUrl(url)}
-								title="Copiar URL acortada al portapapeles"
-							>
+							<button class="btn-card-action btn-copy-main" class:copied={copiedId === url.id} on:click={() => copyUrl(url)}>
 								{copiedId === url.id ? "✓ Copiado" : "📋 Copiar"}
 							</button>
-							<button
-								class="btn-card-action"
-								class:copied={copiedAliasId === url.id}
-								on:click={() => copyAlias(url)}
-								title="Copiar alias corto"
-							>
+							<button class="btn-card-action" class:copied={copiedAliasId === url.id} on:click={() => copyAlias(url)}>
 								{copiedAliasId === url.id ? "✓" : "🏷️"}
 							</button>
-							<button class="btn-card-action" on:click={() => showQRCode(url)}>
-								📱
-							</button>
-							<button
-								class="btn-card-action"
-								on:click={() => startEditAlias(url)}
-							>
-								✏️
-							</button>
-							<button
-								class="btn-card-action btn-delete"
-								on:click={() => deleteUrl(url.id)}
-							>
-								🗑️
-							</button>
+							<button class="btn-card-action" on:click={() => showQRCode(url)}>📱</button>
+							<button class="btn-card-action" on:click={() => startEditAlias(url)}>✏️</button>
+							<button class="btn-card-action btn-delete" on:click={() => deleteUrl(url.id)}>🗑️</button>
 						</div>
 					</div>
 				{/each}
 			{/if}
 		</div>
 
-		<!-- Footer -->
 		<div class="url-shortener-footer">
 			<div class="shortcuts-info">
 				<span><kbd>Ctrl+E</kbd> Exportar</span>
@@ -1091,7 +685,6 @@ onDestroy(() => {
 {/if}
 
 <style>
-	/* Base wrapper */
 	.url-shortener-wrapper {
 		display: flex;
 		flex-direction: column;
@@ -1102,18 +695,11 @@ onDestroy(() => {
 		font-family: inherit;
 	}
 
-	.url-shortener-wrapper input,
-	.url-shortener-wrapper button,
-	.url-shortener-wrapper select {
-		font-family: inherit;
-	}
-
 	:global(.dark) .url-shortener-wrapper,
 	.url-shortener-wrapper.dark {
 		color: #e2e8f0;
 	}
 
-	/* Header */
 	.url-shortener-header {
 		display: flex;
 		align-items: flex-start;
@@ -1125,11 +711,7 @@ onDestroy(() => {
 	.url-shortener-title {
 		font-size: 2rem;
 		font-weight: 700;
-		background: linear-gradient(
-			135deg,
-			oklch(0.7 0.14 var(--hue)),
-			oklch(0.65 0.16 calc(var(--hue) + 30))
-		);
+		background: linear-gradient(135deg, oklch(0.7 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30)));
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
 		background-clip: text;
@@ -1195,7 +777,6 @@ onDestroy(() => {
 		box-shadow: 0 4px 12px oklch(0.7 0.14 var(--hue) / 0.2);
 	}
 
-	/* Input Section */
 	.input-section {
 		background: rgba(255, 255, 255, 0.8);
 		backdrop-filter: blur(10px);
@@ -1266,11 +847,7 @@ onDestroy(() => {
 
 	.btn-add {
 		padding: 0.75rem 1.5rem;
-		background: linear-gradient(
-			135deg,
-			oklch(0.7 0.14 var(--hue)),
-			oklch(0.65 0.16 calc(var(--hue) + 30))
-		);
+		background: linear-gradient(135deg, oklch(0.7 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30)));
 		color: white;
 		border: none;
 		border-radius: 0.75rem;
@@ -1292,11 +869,6 @@ onDestroy(() => {
 		transform: none;
 	}
 
-	.btn-add:disabled:hover {
-		transform: none;
-		box-shadow: none;
-	}
-
 	.input-hint {
 		margin-top: 0.75rem;
 		font-size: 0.85rem;
@@ -1308,7 +880,6 @@ onDestroy(() => {
 		color: #94a3b8;
 	}
 
-	/* Category Filter */
 	.category-filter {
 		display: flex;
 		gap: 0.5rem;
@@ -1359,17 +930,12 @@ onDestroy(() => {
 	}
 
 	.btn-category.active {
-		background: linear-gradient(
-			135deg,
-			oklch(0.7 0.14 var(--hue)),
-			oklch(0.65 0.16 calc(var(--hue) + 30))
-		);
+		background: linear-gradient(135deg, oklch(0.7 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30)));
 		color: white;
 		border-color: transparent;
 		box-shadow: 0 4px 12px oklch(0.7 0.14 var(--hue) / 0.3);
 	}
 
-	/* Filter Section */
 	.filter-section {
 		display: flex;
 		gap: 1rem;
@@ -1451,7 +1017,6 @@ onDestroy(() => {
 		color: oklch(0.75 0.14 var(--hue));
 	}
 
-	/* URLs List */
 	.urls-list {
 		display: grid;
 		gap: 1rem;
@@ -1533,32 +1098,24 @@ onDestroy(() => {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-	}
-
-	.favicon-container {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 24px;
-		height: 24px;
-		border-radius: 0.25rem;
-		background: rgba(148, 163, 184, 0.1);
-		flex-shrink: 0;
-	}
-
-	:global(.dark) .favicon-container,
-	.dark .favicon-container {
-		background: rgba(94, 108, 132, 0.2);
+		position: relative;
 	}
 
 	.url-favicon {
+		font-size: 1.25rem;
+		width: 20px;
+		height: 20px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.favicon-img {
+		position: absolute;
+		left: 0;
 		width: 20px;
 		height: 20px;
 		object-fit: contain;
-		border-radius: 0.25rem;
-		flex-shrink: 0;
-		image-rendering: -webkit-optimize-contrast;
-		background-color: transparent;
 	}
 
 	.url-category-badge {
@@ -1661,7 +1218,6 @@ onDestroy(() => {
 		border-color: oklch(0.65 0.18 25);
 	}
 
-	/* Edit alias */
 	.input-edit-alias {
 		padding: 0.5rem 0.75rem;
 		border: 2px solid oklch(0.7 0.14 var(--hue));
@@ -1706,7 +1262,6 @@ onDestroy(() => {
 		color: #0f172a;
 	}
 
-	/* QR Modal */
 	.url-shortener-qr-overlay {
 		position: fixed;
 		inset: 0;
@@ -1790,7 +1345,6 @@ onDestroy(() => {
 		box-shadow: 0 8px 20px oklch(0.7 0.14 var(--hue) / 0.35);
 	}
 
-	/* Onboarding */
 	.url-shortener-onboarding-overlay {
 		position: fixed;
 		inset: 0;
@@ -1869,11 +1423,7 @@ onDestroy(() => {
 	}
 
 	.btn-onboarding {
-		background: linear-gradient(
-			135deg,
-			oklch(0.7 0.14 var(--hue)),
-			oklch(0.65 0.16 calc(var(--hue) + 30))
-		);
+		background: linear-gradient(135deg, oklch(0.7 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30)));
 		color: white;
 		border: none;
 		border-radius: 0.75rem;
@@ -1892,7 +1442,6 @@ onDestroy(() => {
 		box-shadow: 0 12px 28px oklch(0.7 0.14 var(--hue) / 0.45);
 	}
 
-	/* Footer */
 	.url-shortener-footer {
 		display: flex;
 		justify-content: space-between;
@@ -1951,7 +1500,6 @@ onDestroy(() => {
 		color: #34d399;
 	}
 
-	/* Animations */
 	@keyframes fadeIn {
 		from {
 			opacity: 0;
@@ -1983,6 +1531,23 @@ onDestroy(() => {
 		}
 	}
 
+	.toast-success {
+		position: fixed;
+		bottom: 2rem;
+		left: 50%;
+		transform: translateX(-50%);
+		background: linear-gradient(135deg, oklch(0.7 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30)));
+		color: white;
+		padding: 0.75rem 1.5rem;
+		border-radius: 999px;
+		font-weight: 600;
+		font-size: 0.95rem;
+		box-shadow: 0 8px 32px oklch(0.7 0.14 var(--hue) / 0.3);
+		z-index: 1000;
+		pointer-events: none;
+		animation: slideInUp 0.3s ease, fadeOut 0.3s ease 2.7s;
+	}
+
 	@keyframes slideInUp {
 		from {
 			transform: translateX(-50%) translateY(20px);
@@ -2003,34 +1568,8 @@ onDestroy(() => {
 		}
 	}
 
-	/* Toast notification */
-	.toast-success {
-		position: fixed;
-		bottom: 2rem;
-		left: 50%;
-		transform: translateX(-50%);
-		background: linear-gradient(
-			135deg,
-			oklch(0.7 0.14 var(--hue)),
-			oklch(0.65 0.16 calc(var(--hue) + 30))
-		);
-		color: white;
-		padding: 0.75rem 1.5rem;
-		border-radius: 999px;
-		font-weight: 600;
-		font-size: 0.95rem;
-		box-shadow: 0 8px 32px oklch(0.7 0.14 var(--hue) / 0.3);
-		z-index: 1000;
-		pointer-events: none;
-	}
-
-	/* Copy main button highlight */
 	.btn-copy-main {
-		background: linear-gradient(
-			135deg,
-			oklch(0.7 0.14 var(--hue)),
-			oklch(0.65 0.16 calc(var(--hue) + 30))
-		) !important;
+		background: linear-gradient(135deg, oklch(0.7 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30))) !important;
 		color: white !important;
 		font-weight: 600;
 	}
@@ -2044,15 +1583,10 @@ onDestroy(() => {
 		background: #10b981 !important;
 	}
 
-	/* Download QR button */
 	.btn-download-qr {
 		display: inline-block;
 		padding: 0.75rem 1.5rem;
-		background: linear-gradient(
-			135deg,
-			oklch(0.7 0.14 var(--hue)),
-			oklch(0.65 0.16 calc(var(--hue) + 30))
-		);
+		background: linear-gradient(135deg, oklch(0.7 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30)));
 		color: white;
 		border-radius: 0.75rem;
 		font-weight: 600;
@@ -2071,7 +1605,6 @@ onDestroy(() => {
 		justify-content: center;
 	}
 
-	/* Info section */
 	.info-section {
 		background: rgba(255, 255, 255, 0.8);
 		backdrop-filter: blur(10px);
@@ -2107,11 +1640,6 @@ onDestroy(() => {
 	@media (max-width: 768px) {
 		.info-grid {
 			grid-template-columns: 1fr;
-		}
-
-		.url-favicon {
-			width: 18px;
-			height: 18px;
 		}
 	}
 
