@@ -1117,80 +1117,92 @@ onDestroy(() => {
 		border-radius: 10px;
 		background: linear-gradient(
 			135deg,
-			hsla(var(--hue), 70%, 55%, 0.15),
-			hsla(var(--hue), 65%, 50%, 0.08)
+			hsla(var(--hue), 70%, 55%, 0.12),
+			hsla(var(--hue), 65%, 50%, 0.06)
 		);
 		backdrop-filter: blur(10px);
-		border: 1.5px solid hsla(var(--hue), 70%, 60%, 0.3);
+		border: 1.5px solid hsla(var(--hue), 70%, 60%, 0.25);
 		box-shadow: 
-			0 2px 8px hsla(var(--hue), 70%, 50%, 0.2),
-			inset 0 1px 0 hsla(var(--hue), 70%, 70%, 0.3);
+			0 2px 8px hsla(var(--hue), 70%, 50%, 0.15),
+			inset 0 1px 0 hsla(var(--hue), 70%, 70%, 0.2);
 		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 	}
 
 	.url-favicon-globe:hover {
-		transform: translateY(-2px);
+		transform: translateY(-2px) scale(1.05);
 		box-shadow: 
-			0 4px 16px hsla(var(--hue), 70%, 50%, 0.35),
-			inset 0 1px 0 hsla(var(--hue), 70%, 70%, 0.4);
-		border-color: hsla(var(--hue), 70%, 60%, 0.5);
+			0 4px 16px hsla(var(--hue), 70%, 50%, 0.3),
+			inset 0 1px 0 hsla(var(--hue), 70%, 70%, 0.35);
+		border-color: hsla(var(--hue), 70%, 60%, 0.4);
 	}
 
 	:global(.dark) .url-favicon-globe,
 	.dark .url-favicon-globe {
 		background: linear-gradient(
 			135deg,
-			hsla(var(--hue), 70%, 45%, 0.2),
-			hsla(var(--hue), 65%, 40%, 0.12)
+			hsla(var(--hue), 70%, 45%, 0.18),
+			hsla(var(--hue), 65%, 40%, 0.1)
 		);
-		border-color: hsla(var(--hue), 70%, 50%, 0.4);
+		border-color: hsla(var(--hue), 70%, 50%, 0.35);
 		box-shadow: 
-			0 2px 12px hsla(var(--hue), 70%, 40%, 0.3),
-			inset 0 1px 0 hsla(var(--hue), 70%, 60%, 0.2);
+			0 2px 12px hsla(var(--hue), 70%, 40%, 0.25),
+			inset 0 1px 0 hsla(var(--hue), 70%, 60%, 0.15);
 	}
 
 	:global(.dark) .url-favicon-globe:hover,
 	.dark .url-favicon-globe:hover {
 		box-shadow: 
-			0 4px 20px hsla(var(--hue), 70%, 40%, 0.5),
-			inset 0 1px 0 hsla(var(--hue), 70%, 60%, 0.3);
+			0 4px 20px hsla(var(--hue), 70%, 40%, 0.45),
+			inset 0 1px 0 hsla(var(--hue), 70%, 60%, 0.25);
 	}
 
 	.globe-icon {
 		width: 22px;
 		height: 22px;
-		color: hsl(var(--hue), 70%, 55%);
-		filter: drop-shadow(0 1px 2px hsla(var(--hue), 70%, 30%, 0.3));
+		color: hsl(var(--hue), 70%, 58%);
+		filter: drop-shadow(0 1px 3px hsla(var(--hue), 70%, 30%, 0.4));
+		animation: globeRotate 8s linear infinite;
 	}
 
 	:global(.dark) .globe-icon,
 	.dark .globe-icon {
-		color: hsl(var(--hue), 70%, 65%);
+		color: hsl(var(--hue), 75%, 68%);
+		filter: drop-shadow(0 1px 4px hsla(var(--hue), 70%, 30%, 0.5));
 	}
 
-	/* Animación premium: pulso suave del círculo */
+	/* Rotación suave continua del globo completo */
+	@keyframes globeRotate {
+		0% {
+			transform: rotate(0deg);
+		}
+		100% {
+			transform: rotate(360deg);
+		}
+	}
+
+	/* Círculo principal con pulso muy sutil */
 	.globe-circle {
-		animation: globeBreath 4s ease-in-out infinite;
-		transform-origin: center;
+		animation: circleGlow 3s ease-in-out infinite;
+		stroke-width: 1.5;
 	}
 
-	@keyframes globeBreath {
+	@keyframes circleGlow {
 		0%, 100% {
-			stroke-opacity: 0.9;
-			r: 10;
+			stroke-opacity: 0.85;
+			stroke-width: 1.5;
 		}
 		50% {
-			stroke-opacity: 0.6;
-			r: 10.3;
+			stroke-opacity: 0.55;
+			stroke-width: 1.3;
 		}
 	}
 
-	/* Animación premium: ondas expansivas desde el centro */
+	/* Líneas con efecto de onda expansiva elegante */
 	.globe-line {
-		stroke-dasharray: 60;
-		stroke-dashoffset: 60;
-		animation: rippleExpand 3s ease-in-out infinite;
-		opacity: 0.9;
+		stroke-dasharray: 70;
+		stroke-dashoffset: 70;
+		animation: waveExpand 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+		stroke-width: 1.5;
 	}
 
 	.globe-line-1 {
@@ -1198,23 +1210,31 @@ onDestroy(() => {
 	}
 
 	.globe-line-2 {
-		animation-delay: 1.5s;
+		animation-delay: 2s;
 	}
 
-	@keyframes rippleExpand {
+	@keyframes waveExpand {
 		0% {
-			stroke-dashoffset: 60;
-			opacity: 0;
+			stroke-dashoffset: 70;
+			stroke-opacity: 0;
+			stroke-width: 1.5;
 		}
-		20% {
-			opacity: 0.9;
+		15% {
+			stroke-opacity: 0.9;
 		}
-		80% {
-			opacity: 0.7;
+		50% {
+			stroke-dashoffset: 0;
+			stroke-opacity: 0.75;
+			stroke-width: 1.4;
+		}
+		85% {
+			stroke-opacity: 0.4;
+			stroke-width: 1.3;
 		}
 		100% {
-			stroke-dashoffset: 0;
-			opacity: 0;
+			stroke-dashoffset: -70;
+			stroke-opacity: 0;
+			stroke-width: 1.5;
 		}
 	}
 
