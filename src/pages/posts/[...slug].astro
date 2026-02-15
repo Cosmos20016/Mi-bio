@@ -150,7 +150,7 @@ const jsonLd = {
         </a>
     </div>
 
-    <!-- Giscus Comments - Lazy Load -->
+    <!-- Giscus Comments - Lazy Load con tema adaptativo -->
     <div id="giscus-container" class="mt-6 min-h-[200px]">
         <div class="flex items-center justify-center py-8 text-black/50 dark:text-white/50">
             <span class="text-sm">Cargando comentarios...</span>
@@ -161,9 +161,11 @@ const jsonLd = {
         let giscusLoaded = false;
         let themeObserver: MutationObserver | null = null;
         
+        // ✅ Función mejorada para detectar el tema actual
         function getCurrentTheme(): string {
             const isDark = document.documentElement.classList.contains('dark');
-            return isDark ? 'dark' : 'light';
+            // Usar temas específicos de Giscus que funcionan correctamente
+            return isDark ? 'transparent_dark' : 'light';
         }
         
         function loadGiscus() {
@@ -174,6 +176,8 @@ const jsonLd = {
             
             // Limpiar el mensaje de carga
             container.innerHTML = '';
+            
+            const currentTheme = getCurrentTheme();
             
             const script = document.createElement('script');
             script.src = 'https://giscus-personal-woft.vercel.app/es/client.js';
@@ -186,7 +190,7 @@ const jsonLd = {
             script.setAttribute('data-reactions-enabled', '1');
             script.setAttribute('data-emit-metadata', '0');
             script.setAttribute('data-input-position', 'bottom');
-            script.setAttribute('data-theme', getCurrentTheme()); // ✅ Tema correcto desde el inicio
+            script.setAttribute('data-theme', currentTheme); // ✅ Tema correcto desde el inicio
             script.setAttribute('data-lang', 'es');
             script.setAttribute('data-loading', 'lazy');
             script.crossOrigin = 'anonymous';
@@ -196,7 +200,7 @@ const jsonLd = {
             giscusLoaded = true;
             
             // Configurar observer de tema después de cargar
-            setTimeout(() => setupThemeObserver(), 1000);
+            setTimeout(() => setupThemeObserver(), 1500);
         }
         
         function setupThemeObserver() {
@@ -209,6 +213,7 @@ const jsonLd = {
                 if (iframe && iframe.contentWindow) {
                     const theme = getCurrentTheme();
                     
+                    // ✅ Enviar mensaje para cambiar tema dinámicamente
                     iframe.contentWindow.postMessage(
                         { giscus: { setConfig: { theme } } },
                         'https://giscus-personal-woft.vercel.app'
@@ -222,7 +227,7 @@ const jsonLd = {
             });
         }
         
-        // ✅ Lazy loading con Intersection Observer
+        // ✅ Lazy loading mejorado con Intersection Observer
         function initLazyLoad() {
             const container = document.getElementById('giscus-container');
             if (!container) return;
@@ -231,11 +236,12 @@ const jsonLd = {
                 entries.forEach(entry => {
                     if (entry.isIntersecting && !giscusLoaded) {
                         loadGiscus();
-                        observer.disconnect(); // Ya no necesitamos observar más
+                        observer.disconnect();
                     }
                 });
             }, {
-                rootMargin: '100px' // Cargar 100px antes de que sea visible
+                rootMargin: '200px', // ✅ Cargar 200px antes (mejor UX)
+                threshold: 0.1
             });
             
             observer.observe(container);
@@ -244,7 +250,7 @@ const jsonLd = {
         // Inicializar lazy loading
         initLazyLoad();
         
-        // Manejar navegación con Swup
+        // ✅ Manejar navegación con Swup
         if (window.swup) {
             window.swup.hooks.on('page:view', () => {
                 giscusLoaded = false;
@@ -274,9 +280,19 @@ const jsonLd = {
             max-width: 100%;
             overflow: hidden;
         }
+        
         #giscus-container :global(iframe.giscus-frame) {
             width: 100% !important;
             max-width: 100% !important;
+            border: none;
+        }
+        
+        /* ✅ Estilos responsivos para móvil y PC */
+        @media (max-width: 768px) {
+            #giscus-container {
+                padding: 0;
+                margin: 0 -1rem;
+            }
         }
     </style>
 
