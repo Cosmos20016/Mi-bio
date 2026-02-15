@@ -150,27 +150,34 @@ const jsonLd = {
         </a>
     </div>
 
-    <!-- Giscus Comments with lazy loading and dynamic theme -->
-    <div id="giscus-container" class="mt-6"></div>
+    <!-- Giscus Comments - Lazy Load -->
+    <div id="giscus-container" class="mt-6 min-h-[200px]">
+        <div class="flex items-center justify-center py-8 text-black/50 dark:text-white/50">
+            <span class="text-sm">Cargando comentarios...</span>
+        </div>
+    </div>
 
     <script>
-        // Variable global para el observer
+        let giscusLoaded = false;
         let themeObserver: MutationObserver | null = null;
         
+        function getCurrentTheme(): string {
+            const isDark = document.documentElement.classList.contains('dark');
+            return isDark ? 'dark' : 'light';
+        }
+        
         function loadGiscus() {
+            if (giscusLoaded) return;
+            
             const container = document.getElementById('giscus-container');
             if (!container) return;
             
-            // Verificar si ya existe el iframe cargado
-            const existingIframe = container.querySelector('iframe.giscus-frame');
-            if (existingIframe) return; // Ya está cargado, evitar recargas
-            
-            // Limpiar contenedor solo si necesario
+            // Limpiar el mensaje de carga
             container.innerHTML = '';
             
             const script = document.createElement('script');
             script.src = 'https://giscus-personal-woft.vercel.app/es/client.js';
-            script.setAttribute('data-repo', 'Cosmos20016/Gestion-de-comentarios'); // ✅ SIN .git
+            script.setAttribute('data-repo', 'Cosmos20016/Gestion-de-comentarios');
             script.setAttribute('data-repo-id', 'R_kgDOPSHLmA');
             script.setAttribute('data-category', 'Announcements');
             script.setAttribute('data-category-id', 'DIC_kwDOPSHLmM4CtXsZ');
@@ -179,32 +186,32 @@ const jsonLd = {
             script.setAttribute('data-reactions-enabled', '1');
             script.setAttribute('data-emit-metadata', '0');
             script.setAttribute('data-input-position', 'bottom');
-            script.setAttribute('data-theme', 'preferred_color_scheme'); // ✅ Tema automático
+            script.setAttribute('data-theme', getCurrentTheme()); // ✅ Tema correcto desde el inicio
             script.setAttribute('data-lang', 'es');
             script.setAttribute('data-loading', 'lazy');
             script.crossOrigin = 'anonymous';
             script.async = true;
             
             container.appendChild(script);
+            giscusLoaded = true;
+            
+            // Configurar observer de tema después de cargar
+            setTimeout(() => setupThemeObserver(), 1000);
         }
         
         function setupThemeObserver() {
-            // Desconectar observer anterior si existe
             if (themeObserver) {
                 themeObserver.disconnect();
             }
             
-            // Crear nuevo observer para cambios de tema
             themeObserver = new MutationObserver(() => {
                 const iframe = document.querySelector('iframe.giscus-frame') as HTMLIFrameElement;
                 if (iframe && iframe.contentWindow) {
-                    const isDark = document.documentElement.classList.contains('dark');
-                    const theme = isDark ? 'dark' : 'light'; // ✅ Temas estándar
+                    const theme = getCurrentTheme();
                     
-                    // Enviar mensaje para cambiar tema sin recargar
                     iframe.contentWindow.postMessage(
                         { giscus: { setConfig: { theme } } },
-                        'https://giscus-personal-woft.vercel.app' // ✅ URL correcta
+                        'https://giscus-personal-woft.vercel.app'
                     );
                 }
             });
@@ -215,21 +222,47 @@ const jsonLd = {
             });
         }
         
-        // Inicializar al cargar la página
-        loadGiscus();
-        setupThemeObserver();
+        // ✅ Lazy loading con Intersection Observer
+        function initLazyLoad() {
+            const container = document.getElementById('giscus-container');
+            if (!container) return;
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !giscusLoaded) {
+                        loadGiscus();
+                        observer.disconnect(); // Ya no necesitamos observar más
+                    }
+                });
+            }, {
+                rootMargin: '100px' // Cargar 100px antes de que sea visible
+            });
+            
+            observer.observe(container);
+        }
+        
+        // Inicializar lazy loading
+        initLazyLoad();
         
         // Manejar navegación con Swup
         if (window.swup) {
             window.swup.hooks.on('page:view', () => {
-                loadGiscus();
-                setupThemeObserver();
+                giscusLoaded = false;
+                if (themeObserver) {
+                    themeObserver.disconnect();
+                    themeObserver = null;
+                }
+                initLazyLoad();
             });
         } else {
             document.addEventListener('swup:enable', () => {
                 window.swup.hooks.on('page:view', () => {
-                    loadGiscus();
-                    setupThemeObserver();
+                    giscusLoaded = false;
+                    if (themeObserver) {
+                        themeObserver.disconnect();
+                        themeObserver = null;
+                    }
+                    initLazyLoad();
                 });
             });
         }
