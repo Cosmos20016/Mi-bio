@@ -641,9 +641,23 @@ onDestroy(() => {
 								<div class="url-alias-row">
 									<div class="url-favicon-globe" style="--hue: {url.domainHue || 200}">
 										<svg class="globe-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-											<circle class="globe-circle" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
-											<path class="globe-line globe-line-1" d="M2 12h20" stroke="currentColor" stroke-width="1.5"/>
-											<path class="globe-line globe-line-2" d="M12 2a8 8 0 0 1 0 20 8 8 0 0 1 0-20" stroke="currentColor" stroke-width="1.5"/>
+											<!-- Círculo externo principal -->
+											<circle class="globe-outer-ring" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+											
+											<!-- Líneas meridianas (verticales) -->
+											<path class="globe-meridian globe-m1" d="M12 2a8 8 0 0 1 0 20 8 8 0 0 1 0-20" stroke="currentColor" stroke-width="1.2"/>
+											<path class="globe-meridian globe-m2" d="M12 2a6 6 0 0 1 0 20 6 6 0 0 1 0-20" stroke="currentColor" stroke-width="1"/>
+											
+											<!-- Líneas de latitud (horizontales) -->
+											<path class="globe-latitude globe-lat1" d="M2 12h20" stroke="currentColor" stroke-width="1.2"/>
+											<path class="globe-latitude globe-lat2" d="M4 8h16" stroke="currentColor" stroke-width="1"/>
+											<path class="globe-latitude globe-lat3" d="M4 16h16" stroke="currentColor" stroke-width="1"/>
+											
+											<!-- Puntos de conexión animados -->
+											<circle class="globe-dot globe-dot1" cx="12" cy="4" r="1.2" fill="currentColor"/>
+											<circle class="globe-dot globe-dot2" cx="18" cy="12" r="1.2" fill="currentColor"/>
+											<circle class="globe-dot globe-dot3" cx="12" cy="20" r="1.2" fill="currentColor"/>
+											<circle class="globe-dot globe-dot4" cx="6" cy="12" r="1.2" fill="currentColor"/>
 										</svg>
 									</div>
 									<div class="url-alias">#{url.alias}</div>
@@ -1125,7 +1139,10 @@ onDestroy(() => {
 		box-shadow: 
 			0 2px 8px hsla(var(--hue), 70%, 50%, 0.15),
 			inset 0 1px 0 hsla(var(--hue), 70%, 70%, 0.2);
-		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+		            box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+		            border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		will-change: transform;
 	}
 
 	.url-favicon-globe:hover {
@@ -1161,7 +1178,8 @@ onDestroy(() => {
 		height: 22px;
 		color: hsl(var(--hue), 70%, 58%);
 		filter: drop-shadow(0 1px 3px hsla(var(--hue), 70%, 30%, 0.4));
-		animation: globeRotate 8s linear infinite;
+		animation: globeSpin 12s linear infinite;
+		will-change: transform;
 	}
 
 	:global(.dark) .globe-icon,
@@ -1170,71 +1188,118 @@ onDestroy(() => {
 		filter: drop-shadow(0 1px 4px hsla(var(--hue), 70%, 30%, 0.5));
 	}
 
-	/* Rotación suave continua del globo completo */
-	@keyframes globeRotate {
-		0% {
-			transform: rotate(0deg);
-		}
-		100% {
-			transform: rotate(360deg);
-		}
+	/* Rotación suave del globo completo - GPU optimizado */
+	@keyframes globeSpin {
+		from { transform: rotate(0deg); }
+		to { transform: rotate(360deg); }
 	}
 
-	/* Círculo principal con pulso muy sutil */
-	.globe-circle {
-		animation: circleGlow 3s ease-in-out infinite;
-		stroke-width: 1.5;
+	/* Anillo externo con pulso elegante */
+	.globe-outer-ring {
+		animation: ringPulse 4s ease-in-out infinite;
+		transform-origin: center;
+		will-change: stroke-opacity, stroke-width;
 	}
 
-	@keyframes circleGlow {
+	@keyframes ringPulse {
 		0%, 100% {
-			stroke-opacity: 0.85;
+			stroke-opacity: 0.8;
 			stroke-width: 1.5;
 		}
 		50% {
-			stroke-opacity: 0.55;
-			stroke-width: 1.3;
+			stroke-opacity: 0.4;
+			stroke-width: 1.2;
 		}
 	}
 
-	/* Líneas con efecto de onda expansiva elegante */
-	.globe-line {
-		stroke-dasharray: 70;
-		stroke-dashoffset: 70;
-		animation: waveExpand 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-		stroke-width: 1.5;
+	/* Meridianos con efecto de onda progresiva */
+	.globe-meridian {
+		stroke-dasharray: 80;
+		stroke-dashoffset: 80;
+		will-change: stroke-dashoffset, stroke-opacity;
 	}
 
-	.globe-line-1 {
-		animation-delay: 0s;
+	.globe-m1 {
+		animation: meridianFlow 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 	}
 
-	.globe-line-2 {
-		animation-delay: 2s;
+	.globe-m2 {
+		animation: meridianFlow 5s cubic-bezier(0.4, 0, 0.2, 1) infinite 1s;
 	}
 
-	@keyframes waveExpand {
+	@keyframes meridianFlow {
 		0% {
-			stroke-dashoffset: 70;
+			stroke-dashoffset: 80;
 			stroke-opacity: 0;
-			stroke-width: 1.5;
 		}
-		15% {
+		20% {
+			stroke-opacity: 0.85;
+		}
+		70% {
+			stroke-opacity: 0.6;
+		}
+		100% {
+			stroke-dashoffset: 0;
+			stroke-opacity: 0;
+		}
+	}
+
+	/* Latitudes con animación escalonada */
+	.globe-latitude {
+		stroke-dasharray: 60;
+		stroke-dashoffset: 60;
+		will-change: stroke-dashoffset, stroke-opacity;
+	}
+
+	.globe-lat1 {
+		animation: latitudeExpand 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+	}
+
+	.globe-lat2 {
+		animation: latitudeExpand 4s cubic-bezier(0.4, 0, 0.2, 1) infinite 0.8s;
+	}
+
+	.globe-lat3 {
+		animation: latitudeExpand 4s cubic-bezier(0.4, 0, 0.2, 1) infinite 1.6s;
+	}
+
+	@keyframes latitudeExpand {
+		0% {
+			stroke-dashoffset: 60;
+			stroke-opacity: 0;
+		}
+		25% {
 			stroke-opacity: 0.9;
 		}
-		50% {
-			stroke-dashoffset: 0;
-			stroke-opacity: 0.75;
-			stroke-width: 1.4;
-		}
-		85% {
-			stroke-opacity: 0.4;
-			stroke-width: 1.3;
+		75% {
+			stroke-opacity: 0.5;
 		}
 		100% {
-			stroke-dashoffset: -70;
+			stroke-dashoffset: -60;
 			stroke-opacity: 0;
-			stroke-width: 1.5;
+		}
+	}
+
+	/* Puntos de conexión con pulso sincronizado */
+	.globe-dot {
+		animation: dotPulse 3s ease-in-out infinite;
+		transform-origin: center;
+		will-change: opacity, transform;
+	}
+
+	.globe-dot1 { animation-delay: 0s; }
+	.globe-dot2 { animation-delay: 0.75s; }
+	.globe-dot3 { animation-delay: 1.5s; }
+	.globe-dot4 { animation-delay: 2.25s; }
+
+	@keyframes dotPulse {
+		0%, 100% {
+			opacity: 0.3;
+			transform: scale(1);
+		}
+		50% {
+			opacity: 1;
+			transform: scale(1.4);
 		}
 	}
 
