@@ -111,9 +111,10 @@ const isValidAlias = (alias: string): boolean => /^[a-zA-Z0-9-]{1,30}$/.test(ali
 
 const getFavicon = (url: string): string => {
 	try {
-		const domain = new URL(url).hostname;
-		// Usar DuckDuckGo que es más confiable y no requiere tamaño
-		return `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+		const parsed = new URL(url);
+		const domain = parsed.hostname;
+		// Usar el favicon directo del sitio como primera opción
+		return `${parsed.protocol}//${domain}/favicon.ico`;
 	} catch {
 		return "";
 	}
@@ -644,22 +645,36 @@ onDestroy(() => {
 												alt="" 
 												class="favicon-img"
 												on:error={(e) => {
-													// Intentar con Google como fallback
 													const target = e.currentTarget;
-													if (!target.src.includes('google.com')) {
-														try {
-															const domain = new URL(url.originalUrl).hostname;
-															target.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
-														} catch {
+													const currentSrc = target.src;
+													
+													try {
+														const domain = new URL(url.originalUrl).hostname;
+														
+														// Cascada de fallbacks
+														if (currentSrc.includes('/favicon.ico')) {
+															// Intentar con Google
+															target.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+														} else if (currentSrc.includes('google.com')) {
+															// Intentar con DuckDuckGo
+															target.src = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+														} else if (currentSrc.includes('duckduckgo.com')) {
+															// Intentar con Favicon.io
+															target.src = `https://api.faviconkit.com/${domain}/64`;
+														} else if (currentSrc.includes('faviconkit.com')) {
+															// Intentar con Clearbit
+															target.src = `https://logo.clearbit.com/${domain}`;
+														} else {
+															// Todos los servicios fallaron, ocultar imagen
 															target.style.display = 'none';
 														}
-													} else {
+													} catch {
 														target.style.display = 'none';
 													}
 												}}
 											/>
 										{/if}
-										{fallbackIcon}
+										<span class="favicon-fallback">{fallbackIcon}</span>
 									</span>
 									<div class="url-alias">#{url.alias}</div>
 									<span class="url-category-badge">{categoryMap[url.category]?.icon || '🔗'}</span>
@@ -1130,7 +1145,23 @@ onDestroy(() => {
 		justify-content: center;
 		position: relative;
 		flex-shrink: 0;
-		color: rgba(100, 116, 139, 0.5);
+	}
+
+	.favicon-fallback {
+		color: rgba(100, 116, 139, 0.4);
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 20px;
+		height: 20px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	:global(.dark) .favicon-fallback,
+	.dark .favicon-fallback {
+		color: rgba(148, 163, 184, 0.4);
 	}
 
 	.favicon-img {
@@ -1143,14 +1174,7 @@ onDestroy(() => {
 		background: white;
 		border-radius: 3px;
 		z-index: 1;
-		padding: 1px;
-	}
-
-	.favicon-img[src] {
-		/* Cuando la imagen tiene src, ocultar el emoji de fondo */
-		~ * {
-			opacity: 0;
-		}
+		padding: 2px;
 	}
 
 	:global(.dark) .favicon-img,
