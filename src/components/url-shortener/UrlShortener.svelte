@@ -63,10 +63,43 @@ const categories = [
 ];
 
 const categoryRules = {
-	social: ['youtube', 'tiktok', 'instagram', 'facebook', 'twitter', 'x.com', 'linkedin', 'threads', 'pinterest', 'reddit', 'twitch', 'discord', 'snapchat'],
-	dev: ['github', 'gitlab', 'stackoverflow', 'npmjs', 'vercel', 'netlify', 'codepen', 'codesandbox', 'replit'],
-	work: ['docs.google', 'notion', 'slack', 'trello', 'asana', 'jira', 'figma', 'zoom', 'teams.microsoft', 'meet.google'],
-	personal: ['blogspot', 'wordpress.com', 'medium', 'tumblr', 'wix', 'squarespace', 'spotify', 'soundcloud']
+	social: [
+		'youtube', 'youtu.be', 'tiktok', 'instagram', 'facebook', 'fb.com', 'twitter', 'x.com', 
+		'linkedin', 'threads', 'pinterest', 'reddit', 'twitch', 'discord', 'snapchat', 
+		'whatsapp', 'telegram', 'wechat', 'vk.com', 'mastodon', 'bluesky', 'vimeo',
+		'dailymotion', 'flickr', 'tumblr', 'medium.com', 'substack', 'patreon',
+		'ko-fi', 'linktree', 'beacons.ai', 'clubhouse', 'kick.com', 'rumble'
+	],
+	dev: [
+		'github', 'gitlab', 'bitbucket', 'stackoverflow', 'stackexchange', 'npmjs', 
+		'vercel', 'netlify', 'heroku', 'railway.app', 'render.com', 'codepen', 
+		'codesandbox', 'replit', 'glitch', 'jsfiddle', 'jsbin', 'observablehq',
+		'developer.mozilla', 'devdocs.io', 'devto', 'dev.to', 'hashnode', 'hackernoon',
+		'docker.com', 'kubernetes.io', 'aws.amazon', 'cloud.google', 'azure.microsoft',
+		'digitalocean', 'cloudflare', 'firebase.google', 'supabase', 'planetscale',
+		'mongodb.com', 'postgresql.org', 'redis.io', 'elastic.co', 'jenkins.io',
+		'travis-ci', 'circleci', 'postman.com', 'insomnia.rest', 'swagger.io'
+	],
+	work: [
+		'docs.google', 'drive.google', 'sheets.google', 'slides.google', 'forms.google',
+		'notion', 'slack', 'trello', 'asana', 'jira', 'atlassian', 'monday.com',
+		'clickup', 'airtable', 'coda.io', 'basecamp', 'todoist', 'evernote',
+		'onenote', 'confluence', 'miro', 'figma', 'sketch', 'invision', 'canva',
+		'zoom', 'teams.microsoft', 'meet.google', 'webex', 'goto', 'calendly',
+		'outlook', 'gmail', 'protonmail', 'dropbox', 'box.com', 'onedrive',
+		'sharepoint', 'salesforce', 'hubspot', 'mailchimp', 'sendgrid', 'intercom',
+		'zendesk', 'freshdesk', 'helpscout', 'crisp.chat', 'drift.com'
+	],
+	personal: [
+		'blogspot', 'wordpress.com', 'wix.com', 'squarespace', 'ghost.org',
+		'carrd.co', 'about.me', 'linktr.ee', 'spotify', 'soundcloud', 'bandcamp',
+		'apple.com/music', 'deezer', 'tidal', 'pandora', 'lastfm', 'genius.com',
+		'imdb', 'letterboxd', 'goodreads', 'yelp', 'tripadvisor', 'booking.com',
+		'airbnb', 'expedia', 'kayak', 'skyscanner', 'etsy', 'ebay', 'amazon',
+		'aliexpress', 'mercadolibre', 'shopify', 'gumroad', 'teachable', 'udemy',
+		'coursera', 'edx', 'skillshare', 'linkedin.com/learning', 'duolingo',
+		'memrise', 'anki', 'quizlet', 'strava', 'myfitnesspal', 'fitbit'
+	]
 };
 
 const adjectives = ["fast", "cool", "smart", "bold", "zen", "nova", "pro", "top", "max", "ace"];
