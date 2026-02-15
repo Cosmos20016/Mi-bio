@@ -72,8 +72,77 @@ const categoryRules = {
 const adjectives = ["fast", "cool", "smart", "bold", "zen", "nova", "pro", "top", "max", "ace"];
 const nouns = ["link", "go", "hub", "bit", "web", "net", "dot", "io", "app", "dev"];
 
+// Favicon mapping por dominio popular (sin necesidad de cargar recursos externos)
+const domainIcons: Record<string, string> = {
+	'youtube.com': '📺',
+	'youtu.be': '📺',
+	'facebook.com': '👤',
+	'fb.com': '👤',
+	'instagram.com': '📷',
+	'twitter.com': '🐦',
+	'x.com': '✖️',
+	'linkedin.com': '💼',
+	'github.com': '🐙',
+	'reddit.com': '🤖',
+	'tiktok.com': '🎵',
+	'pinterest.com': '📌',
+	'snapchat.com': '👻',
+	'whatsapp.com': '💬',
+	'telegram.org': '✈️',
+	'discord.com': '🎮',
+	'twitch.tv': '🎮',
+	'spotify.com': '🎵',
+	'soundcloud.com': '🔊',
+	'gmail.com': '📧',
+	'google.com': '🔍',
+	'drive.google.com': '📁',
+	'docs.google.com': '📄',
+	'amazon.com': '🛒',
+	'ebay.com': '🛍️',
+	'netflix.com': '🎬',
+	'hulu.com': '📺',
+	'zoom.us': '📹',
+	'slack.com': '💬',
+	'notion.so': '📝',
+	'trello.com': '📋',
+	'asana.com': '✅',
+	'figma.com': '🎨',
+	'canva.com': '🎨',
+	'medium.com': '📰',
+	'wordpress.com': '✍️',
+	'tumblr.com': '📝',
+	'blogger.com': '📝',
+	'wix.com': '🌐',
+	'squarespace.com': '🌐',
+	'shopify.com': '🛒',
+	'paypal.com': '💰',
+	'stripe.com': '💳',
+	'dropbox.com': '📦',
+	'icloud.com': '☁️',
+	'onedrive.com': '☁️',
+	'stackoverflow.com': '💻',
+	'stackexchange.com': '💻',
+	'npmjs.com': '📦',
+	'vercel.app': '▲',
+	'netlify.app': '🌐',
+	'heroku.com': '🟣',
+};
+
 // Simple fallback icon
 const fallbackIcon = "🔗";
+
+const getDomainIcon = (url: string): string => {
+	try {
+		const hostname = new URL(url).hostname.toLowerCase();
+		// Buscar coincidencia exacta
+		if (domainIcons[hostname]) return domainIcons[hostname];
+		// Buscar coincidencia parcial (ej: www.youtube.com -> youtube.com)
+		for (const [domain, icon] of Object.entries(domainIcons)) {
+			if (hostname.includes(domain)) return icon;
+		}
+	} catch {}
+	return fallbackIcon;
+};
 
 // Utility functions
 const categoryMap = categories.reduce((acc, cat) => { acc[cat.id] = cat; return acc; }, {} as Record<string, (typeof categories)[0]>);
@@ -108,16 +177,6 @@ const normalizeUrl = (url: string): string => {
 };
 
 const isValidAlias = (alias: string): boolean => /^[a-zA-Z0-9-]{1,30}$/.test(alias);
-
-const getFavicon = (url: string): string => {
-	try {
-		const domain = new URL(url).hostname;
-		// Google Favicons es el más confiable y rápido
-		return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
-	} catch {
-		return "";
-	}
-};
 
 const generateAlias = (url: string): string => {
 	try {
@@ -157,7 +216,7 @@ const loadUrls = () => {
 				...url,
 				shortUrl: url.shortUrl || url.originalUrl,
 				category: url.category || "other",
-				favicon: url.favicon || getFavicon(url.originalUrl),
+				favicon: getDomainIcon(url.originalUrl),
 			}));
 		}
 	} catch (e) {
@@ -282,7 +341,7 @@ const addUrl = async () => {
 			createdAt: new Date().toISOString(),
 			copyCount: 0,
 			category: inputCategory,
-			favicon: getFavicon(normalized),
+			favicon: getDomainIcon(normalized),
 		};
 		urls = [newUrl, ...urls];
 		saveUrls();
@@ -300,7 +359,7 @@ const addUrl = async () => {
 				createdAt: new Date().toISOString(),
 				copyCount: 0,
 				category: inputCategory,
-				favicon: getFavicon(normalized),
+				favicon: getDomainIcon(normalized),
 			};
 			urls = [newUrl, ...urls];
 			saveUrls();
@@ -637,46 +696,8 @@ onDestroy(() => {
 								</div>
 							{:else}
 								<div class="url-alias-row">
-									<span class="url-favicon">
-										{#if url.favicon}
-											<img 
-												src={url.favicon} 
-												alt="" 
-												class="favicon-img"
-												loading="eager"
-												on:load={(e) => {
-													// Cuando carga exitosamente, agregar clase
-													e.currentTarget.classList.add('favicon-loaded');
-												}}
-												on:error={(e) => {
-													const target = e.currentTarget;
-													const currentSrc = target.src;
-													
-													try {
-														const domain = new URL(url.originalUrl).hostname;
-														
-														// Intentar con diferentes servicios en orden
-														if (currentSrc.includes('google.com/s2/favicons')) {
-															// Si Google falla, intentar con DuckDuckGo
-															target.src = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
-														} else if (currentSrc.includes('duckduckgo.com')) {
-															// Si DuckDuckGo falla, intentar con Clearbit
-															target.src = `https://logo.clearbit.com/${domain}`;
-														} else if (currentSrc.includes('clearbit.com')) {
-															// Si Clearbit falla, intentar favicon directo
-															target.src = `https://${domain}/favicon.ico`;
-														} else {
-															// Si todo falla, ocultar la imagen
-															target.style.display = 'none';
-														}
-													} catch (err) {
-														console.warn('Favicon error:', err);
-														target.style.display = 'none';
-													}
-												}}
-											/>
-										{/if}
-										<span class="favicon-fallback">{fallbackIcon}</span>
+									<span class="url-favicon-emoji">
+										{url.favicon}
 									</span>
 									<div class="url-alias">#{url.alias}</div>
 									<span class="url-category-badge">{categoryMap[url.category]?.icon || '🔗'}</span>
@@ -1138,49 +1159,14 @@ onDestroy(() => {
 		gap: 0.5rem;
 	}
 
-	.url-favicon {
-		font-size: 1.25rem;
-		width: 20px;
-		height: 20px;
+	.url-favicon-emoji {
+		font-size: 1.4rem;
+		width: 24px;
+		height: 24px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		position: relative;
 		flex-shrink: 0;
-	}
-
-	.favicon-fallback {
-		color: rgba(100, 116, 139, 0.5);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: opacity 0.2s ease;
-	}
-
-	:global(.dark) .favicon-fallback,
-	.dark .favicon-fallback {
-		color: rgba(148, 163, 184, 0.5);
-	}
-
-	.favicon-img {
-		position: absolute;
-		left: 0;
-		top: 0;
-		width: 20px;
-		height: 20px;
-		object-fit: contain;
-		z-index: 1;
-		opacity: 0;
-		transition: opacity 0.2s ease;
-	}
-
-	.favicon-img.favicon-loaded {
-		opacity: 1;
-	}
-
-	/* Cuando la imagen está cargada, ocultar el fallback */
-	.url-favicon:has(.favicon-img.favicon-loaded) .favicon-fallback {
-		opacity: 0;
 	}
 
 	.url-category-badge {
