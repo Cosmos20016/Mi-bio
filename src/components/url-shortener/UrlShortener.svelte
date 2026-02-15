@@ -16,9 +16,7 @@ interface ShortenedUrl {
 	createdAt: string;
 	copyCount: number;
 	category: string;
-	favicon: string;
-	faviconUrl?: string;
-	domainColor?: { hue: number; initials: string };
+	domainHue?: number;
 }
 
 // Core state
@@ -75,43 +73,16 @@ const adjectives = ["fast", "cool", "smart", "bold", "zen", "nova", "pro", "top"
 const nouns = ["link", "go", "hub", "bit", "web", "net", "dot", "io", "app", "dev"];
 
 // Función para generar color único basado en el dominio
-const getDomainColor = (url: string): { hue: number; initials: string } => {
+const getDomainColor = (url: string): number => {
 	try {
 		const hostname = new URL(url).hostname.replace('www.', '');
-		const parts = hostname.split('.');
-		const domain = parts[0] || hostname;
-		
-		// Generar hash para color consistente
 		let hash = 0;
-		for (let i = 0; i < domain.length; i++) {
-			hash = domain.charCodeAt(i) + ((hash << 5) - hash);
+		for (let i = 0; i < hostname.length; i++) {
+			hash = hostname.charCodeAt(i) + ((hash << 5) - hash);
 		}
-		const hue = Math.abs(hash % 360);
-		
-		// Obtener iniciales (primeras 2 letras en mayúscula)
-		const initials = domain.substring(0, 2).toUpperCase();
-		
-		return { hue, initials };
+		return Math.abs(hash % 360);
 	} catch {
-		return { hue: 200, initials: 'URL' };
-	}
-};
-
-// Mantener emojis solo como referencia de categoría
-const domainIcons: Record<string, string> = {
-	'youtube.com': '▶️', 'github.com': '🐙', 'claude.ai': '🤖',
-	'google.com': '🔍', 'cloudflare.com': '☁️', 'netflix.com': '🎬',
-	// ... resto como fallback visual
-};
-
-const fallbackIcon = "🔗";
-
-const getDomainIcon = (url: string): string => {
-	try {
-		const hostname = new URL(url).hostname.toLowerCase().replace('www.', '');
-		return domainIcons[hostname] || fallbackIcon;
-	} catch {
-		return fallbackIcon;
+		return 200;
 	}
 };
 
@@ -187,8 +158,7 @@ const loadUrls = () => {
 				...url,
 				shortUrl: url.shortUrl || url.originalUrl,
 				category: url.category || "other",
-				favicon: getDomainIcon(url.originalUrl),
-				domainColor: getDomainColor(url.originalUrl),
+				domainHue: getDomainColor(url.originalUrl),
 			}));
 		}
 	} catch (e) {
@@ -314,8 +284,7 @@ const addUrl = async () => {
 			createdAt: new Date().toISOString(),
 			copyCount: 0,
 			category: inputCategory,
-			favicon: getDomainIcon(normalized),
-			domainColor: getDomainColor(normalized),
+			domainHue: getDomainColor(normalized),
 		};
 		urls = [newUrl, ...urls];
 		saveUrls();
@@ -333,8 +302,7 @@ const addUrl = async () => {
 				createdAt: new Date().toISOString(),
 				copyCount: 0,
 				category: inputCategory,
-				favicon: getDomainIcon(normalized),
-				domainColor: getDomainColor(normalized),
+				domainHue: getDomainColor(normalized),
 			};
 			urls = [newUrl, ...urls];
 			saveUrls();
@@ -671,9 +639,12 @@ onDestroy(() => {
 								</div>
 							{:else}
 								<div class="url-alias-row">
-									<div class="url-favicon-animated" style="--hue: {url.domainColor?.hue || 200}">
-										<div class="animated-gradient"></div>
-										<span class="animated-initials">{url.domainColor?.initials || 'URL'}</span>
+									<div class="url-favicon-globe" style="--hue: {url.domainHue || 200}">
+										<svg class="globe-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<circle class="globe-circle" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+											<path class="globe-line globe-line-1" d="M2 12h20" stroke="currentColor" stroke-width="1.5"/>
+											<path class="globe-line globe-line-2" d="M12 2a8 8 0 0 1 0 20 8 8 0 0 1 0-20" stroke="currentColor" stroke-width="1.5"/>
+										</svg>
 									</div>
 									<div class="url-alias">#{url.alias}</div>
 									<span class="url-category-badge">{categoryMap[url.category]?.icon || '🔗'}</span>
@@ -1135,7 +1106,7 @@ onDestroy(() => {
 		gap: 0.5rem;
 	}
 
-	.url-favicon-animated {
+	.url-favicon-globe {
 		position: relative;
 		width: 40px;
 		height: 40px;
@@ -1144,47 +1115,96 @@ onDestroy(() => {
 		justify-content: center;
 		flex-shrink: 0;
 		border-radius: 10px;
-		overflow: hidden;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-	}
-
-	:global(.dark) .url-favicon-animated,
-	.dark .url-favicon-animated {
-		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-	}
-
-	/* Gradiente animado de fondo */
-	.animated-gradient {
-		position: absolute;
-		inset: 0;
 		background: linear-gradient(
 			135deg,
-			hsl(var(--hue), 70%, 55%),
-			hsl(calc(var(--hue) + 40), 65%, 50%),
-			hsl(calc(var(--hue) + 80), 70%, 55%)
+			hsla(var(--hue), 70%, 55%, 0.15),
+			hsla(var(--hue), 65%, 50%, 0.08)
 		);
-		background-size: 200% 200%;
-		animation: gradientShift 4s ease infinite;
+		backdrop-filter: blur(10px);
+		border: 1.5px solid hsla(var(--hue), 70%, 60%, 0.3);
+		box-shadow: 
+			0 2px 8px hsla(var(--hue), 70%, 50%, 0.2),
+			inset 0 1px 0 hsla(var(--hue), 70%, 70%, 0.3);
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 	}
 
-	@keyframes gradientShift {
+	.url-favicon-globe:hover {
+		transform: translateY(-2px);
+		box-shadow: 
+			0 4px 16px hsla(var(--hue), 70%, 50%, 0.35),
+			inset 0 1px 0 hsla(var(--hue), 70%, 70%, 0.4);
+		border-color: hsla(var(--hue), 70%, 60%, 0.5);
+	}
+
+	:global(.dark) .url-favicon-globe,
+	.dark .url-favicon-globe {
+		background: linear-gradient(
+			135deg,
+			hsla(var(--hue), 70%, 45%, 0.2),
+			hsla(var(--hue), 65%, 40%, 0.12)
+		);
+		border-color: hsla(var(--hue), 70%, 50%, 0.4);
+		box-shadow: 
+			0 2px 12px hsla(var(--hue), 70%, 40%, 0.3),
+			inset 0 1px 0 hsla(var(--hue), 70%, 60%, 0.2);
+	}
+
+	:global(.dark) .url-favicon-globe:hover,
+	.dark .url-favicon-globe:hover {
+		box-shadow: 
+			0 4px 20px hsla(var(--hue), 70%, 40%, 0.5),
+			inset 0 1px 0 hsla(var(--hue), 70%, 60%, 0.3);
+	}
+
+	.globe-icon {
+		width: 22px;
+		height: 22px;
+		color: hsl(var(--hue), 70%, 55%);
+		filter: drop-shadow(0 1px 2px hsla(var(--hue), 70%, 30%, 0.3));
+	}
+
+	:global(.dark) .globe-icon,
+	.dark .globe-icon {
+		color: hsl(var(--hue), 70%, 65%);
+	}
+
+	/* Animación sutil del círculo principal */
+	.globe-circle {
+		animation: globePulse 3s ease-in-out infinite;
+		transform-origin: center;
+	}
+
+	@keyframes globePulse {
 		0%, 100% {
-			background-position: 0% 50%;
+			opacity: 1;
 		}
 		50% {
-			background-position: 100% 50%;
+			opacity: 0.7;
 		}
 	}
 
-	/* Iniciales en primer plano */
-	.animated-initials {
-		position: relative;
-		z-index: 1;
-		font-size: 1.1rem;
-		font-weight: 700;
-		color: white;
-		text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-		letter-spacing: 0.5px;
+	/* Animación de líneas del globo */
+	.globe-line {
+		animation: lineFloat 4s ease-in-out infinite;
+	}
+
+	.globe-line-1 {
+		animation-delay: 0s;
+	}
+
+	.globe-line-2 {
+		animation-delay: 0.5s;
+	}
+
+	@keyframes lineFloat {
+		0%, 100% {
+			opacity: 1;
+			stroke-dasharray: 0, 100;
+		}
+		50% {
+			opacity: 0.8;
+			stroke-dasharray: 10, 90;
+		}
 	}
 
 	.url-category-badge {
