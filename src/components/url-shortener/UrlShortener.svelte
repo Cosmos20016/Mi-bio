@@ -636,10 +636,12 @@ onDestroy(() => {
 								</div>
 							{:else}
 								<div class="url-alias-row">
-									<span class="url-favicon">{url.favicon ? '' : fallbackIcon}</span>
-									{#if url.favicon}
-										<img src={url.favicon} alt="" class="favicon-img" />
-									{/if}
+									<span class="url-favicon">
+										{#if url.favicon}
+											<img src={url.favicon} alt="" class="favicon-img" on:error={(e) => e.currentTarget.style.display = 'none'} />
+										{/if}
+										{fallbackIcon}
+									</span>
 									<div class="url-alias">#{url.alias}</div>
 									<span class="url-category-badge">{categoryMap[url.category]?.icon || '🔗'}</span>
 								</div>
@@ -1098,7 +1100,6 @@ onDestroy(() => {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		position: relative;
 	}
 
 	.url-favicon {
@@ -1108,14 +1109,25 @@ onDestroy(() => {
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		position: relative;
+		flex-shrink: 0;
 	}
 
 	.favicon-img {
 		position: absolute;
 		left: 0;
+		top: 0;
 		width: 20px;
 		height: 20px;
 		object-fit: contain;
+		background: white;
+		border-radius: 2px;
+		z-index: 1;
+	}
+
+	:global(.dark) .favicon-img,
+	.dark .favicon-img {
+		background: oklch(0.25 0.02 var(--hue));
 	}
 
 	.url-category-badge {
