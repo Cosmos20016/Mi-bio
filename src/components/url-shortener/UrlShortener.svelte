@@ -173,24 +173,21 @@ const domainIcons: Record<string, string> = {
 
 const fallbackIcon = "🔗";
 
+// Sistema mejorado de emojis como fallback
 const getDomainIcon = (url: string): string => {
 	try {
 		const hostname = new URL(url).hostname.toLowerCase();
-		// Remover www. para búsqueda
 		const cleanHostname = hostname.replace('www.', '');
 		
-		// Búsqueda exacta primero
 		if (domainIcons[cleanHostname]) return domainIcons[cleanHostname];
 		if (domainIcons[hostname]) return domainIcons[hostname];
 		
-		// Búsqueda por subdominios y dominios parciales
 		for (const [domain, icon] of Object.entries(domainIcons)) {
 			if (cleanHostname.includes(domain) || hostname.includes(domain)) {
 				return icon;
 			}
 		}
 		
-		// Detección por TLD y patrones
 		if (cleanHostname.endsWith('.dev') || cleanHostname.endsWith('.io')) return '💻';
 		if (cleanHostname.endsWith('.app')) return '📱';
 		if (cleanHostname.endsWith('.edu')) return '🎓';
@@ -199,6 +196,17 @@ const getDomainIcon = (url: string): string => {
 		
 	} catch {}
 	return fallbackIcon;
+};
+
+// ✅ Sistema de favicon real - El más confiable
+const getFaviconUrl = (url: string): string => {
+	try {
+		const hostname = new URL(url).hostname;
+		// Favicon.im - Servicio profesional con mejor uptime y cache
+		return `https://favicon.im/${hostname}?larger=true`;
+	} catch {
+		return "";
+	}
 };
 
 // Utility functions
@@ -274,8 +282,7 @@ const loadUrls = () => {
 				shortUrl: url.shortUrl || url.originalUrl,
 				category: url.category || "other",
 				favicon: getDomainIcon(url.originalUrl),
-				// Limpiar faviconUrl obsoleto
-				faviconUrl: undefined,
+				faviconUrl: getFaviconUrl(url.originalUrl),
 			}));
 		}
 	} catch (e) {
@@ -402,6 +409,7 @@ const addUrl = async () => {
 			copyCount: 0,
 			category: inputCategory,
 			favicon: getDomainIcon(normalized),
+			faviconUrl: getFaviconUrl(normalized),
 		};
 		urls = [newUrl, ...urls];
 		saveUrls();
@@ -420,6 +428,7 @@ const addUrl = async () => {
 				copyCount: 0,
 				category: inputCategory,
 				favicon: getDomainIcon(normalized),
+				faviconUrl: getFaviconUrl(normalized),
 			};
 			urls = [newUrl, ...urls];
 			saveUrls();
@@ -757,9 +766,23 @@ onDestroy(() => {
 							{:else}
 								<div class="url-alias-row">
 									<span class="url-favicon-container">
+										<!-- Emoji siempre visible como base -->
 										<span class="url-favicon-emoji">
 											{url.favicon}
 										</span>
+										<!-- Imagen real se carga encima -->
+										{#if url.faviconUrl}
+											<img 
+												src={url.faviconUrl} 
+												alt=""
+												class="favicon-img-real"
+												loading="lazy"
+												on:error={(e) => {
+													// Si falla, ocultar imagen y mostrar emoji
+													e.currentTarget.style.display = 'none';
+												}}
+											/>
+										{/if}
 									</span>
 									<div class="url-alias">#{url.alias}</div>
 									<span class="url-category-badge">{categoryMap[url.category]?.icon || '🔗'}</span>
@@ -1238,6 +1261,26 @@ onDestroy(() => {
 		justify-content: center;
 		line-height: 1;
 		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+	}
+
+	/* Imagen real se superpone sobre el emoji */
+	.favicon-img-real {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		transform: translate(-50%, -50%);
+		width: 20px;
+		height: 20px;
+		object-fit: contain;
+		border-radius: 3px;
+		background: white;
+		padding: 2px;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	}
+
+	:global(.dark) .favicon-img-real,
+	.dark .favicon-img-real {
+		background: oklch(0.2 0.02 var(--hue));
 	}
 
 	.url-category-badge {
