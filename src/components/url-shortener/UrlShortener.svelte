@@ -17,6 +17,7 @@ interface ShortenedUrl {
 	copyCount: number;
 	category: string;
 	favicon: string;
+	faviconUrl?: string; // URL opcional para favicon real
 }
 
 // Core state
@@ -72,60 +73,175 @@ const categoryRules = {
 const adjectives = ["fast", "cool", "smart", "bold", "zen", "nova", "pro", "top", "max", "ace"];
 const nouns = ["link", "go", "hub", "bit", "web", "net", "dot", "io", "app", "dev"];
 
-// Favicon mapping por dominio popular (sin necesidad de cargar recursos externos)
+// Favicon mapping por dominio popular - emojis más precisos y representativos
 const domainIcons: Record<string, string> = {
-	'youtube.com': '📺',
-	'youtu.be': '📺',
-	'facebook.com': '👤',
-	'fb.com': '👤',
-	'instagram.com': '📷',
+	// Redes Sociales
+	'youtube.com': '▶️',
+	'youtu.be': '▶️',
+	'facebook.com': '📘',
+	'fb.com': '📘',
+	'instagram.com': '📸',
 	'twitter.com': '🐦',
 	'x.com': '✖️',
 	'linkedin.com': '💼',
-	'github.com': '🐙',
 	'reddit.com': '🤖',
 	'tiktok.com': '🎵',
 	'pinterest.com': '📌',
 	'snapchat.com': '👻',
 	'whatsapp.com': '💬',
 	'telegram.org': '✈️',
-	'discord.com': '🎮',
-	'twitch.tv': '🎮',
-	'spotify.com': '🎵',
-	'soundcloud.com': '🔊',
-	'gmail.com': '📧',
+	'telegram.me': '✈️',
+	'discord.com': '💬',
+	'discord.gg': '💬',
+	'twitch.tv': '🟣',
+	'vimeo.com': '🎬',
+	
+	// Desarrollo & Tech
+	'github.com': '⚫',
+	'gitlab.com': '🦊',
+	'stackoverflow.com': '📚',
+	'stackexchange.com': '💡',
+	'npmjs.com': '📦',
+	'pypi.org': '🐍',
+	'vercel.app': '▲',
+	'vercel.com': '▲',
+	'netlify.app': '💚',
+	'netlify.com': '💚',
+	'heroku.com': '🟣',
+	'codepen.io': '✏️',
+	'codesandbox.io': '📦',
+	'replit.com': '🔄',
+	'glitch.com': '🎏',
+	
+	// Google Services
+	'gmail.com': '✉️',
 	'google.com': '🔍',
 	'drive.google.com': '📁',
 	'docs.google.com': '📄',
-	'amazon.com': '🛒',
-	'ebay.com': '🛍️',
-	'netflix.com': '🎬',
-	'hulu.com': '📺',
-	'zoom.us': '📹',
-	'slack.com': '💬',
+	'sheets.google.com': '📊',
+	'slides.google.com': '📽️',
+	'maps.google.com': '🗺️',
+	'calendar.google.com': '📅',
+	'meet.google.com': '📹',
+	'classroom.google.com': '🎓',
+	
+	// Microsoft
+	'outlook.com': '📧',
+	'hotmail.com': '📧',
+	'office.com': '📎',
+	'teams.microsoft.com': '👥',
+	'onedrive.com': '☁️',
+	'azure.com': '☁️',
+	
+	// Productividad
 	'notion.so': '📝',
 	'trello.com': '📋',
-	'asana.com': '✅',
+	'asana.com': '✓',
+	'monday.com': '📊',
+	'slack.com': '💬',
 	'figma.com': '🎨',
 	'canva.com': '🎨',
-	'medium.com': '📰',
-	'wordpress.com': '✍️',
-	'tumblr.com': '📝',
-	'blogger.com': '📝',
-	'wix.com': '🌐',
-	'squarespace.com': '🌐',
+	'miro.com': '🖼️',
+	'airtable.com': '📊',
+	'clickup.com': '✓',
+	
+	// E-commerce
+	'amazon.com': '📦',
+	'ebay.com': '🛍️',
+	'aliexpress.com': '🛒',
+	'mercadolibre.com': '🛒',
+	'etsy.com': '🎨',
 	'shopify.com': '🛒',
+	'woocommerce.com': '🛒',
+	
+	// Streaming & Entertainment
+	'netflix.com': '🎬',
+	'hulu.com': '📺',
+	'disneyplus.com': '🏰',
+	'primevideo.com': '🎬',
+	'hbomax.com': '🎭',
+	'spotify.com': '🎵',
+	'soundcloud.com': '🔊',
+	'apple.com/music': '🍎',
+	'deezer.com': '🎵',
+	
+	// Comunicación & Video
+	'zoom.us': '📹',
+	'skype.com': '📞',
+	'webex.com': '📹',
+	'gotomeeting.com': '📹',
+	
+	// Cloud & Storage
+	'dropbox.com': '📦',
+	'box.com': '📦',
+	'icloud.com': '☁️',
+	'mega.nz': '☁️',
+	'mediafire.com': '🔥',
+	
+	// Finanzas & Pagos
 	'paypal.com': '💰',
 	'stripe.com': '💳',
-	'dropbox.com': '📦',
-	'icloud.com': '☁️',
-	'onedrive.com': '☁️',
-	'stackoverflow.com': '💻',
-	'stackexchange.com': '💻',
-	'npmjs.com': '📦',
-	'vercel.app': '▲',
-	'netlify.app': '🌐',
-	'heroku.com': '🟣',
+	'venmo.com': '💸',
+	'cashapp.com': '💵',
+	'wise.com': '💱',
+	'revolut.com': '💳',
+	
+	// Educación
+	'coursera.org': '🎓',
+	'udemy.com': '📚',
+	'edx.org': '🎓',
+	'khanacademy.org': '📖',
+	'duolingo.com': '🦉',
+	'skillshare.com': '🎨',
+	
+	// Blogs & CMS
+	'medium.com': '✍️',
+	'wordpress.com': '✍️',
+	'wordpress.org': '✍️',
+	'tumblr.com': '📝',
+	'blogger.com': '📝',
+	'substack.com': '📰',
+	'ghost.org': '👻',
+	
+	// Website Builders
+	'wix.com': '🌐',
+	'squarespace.com': '■',
+	'webflow.com': '🌊',
+	'carrd.co': '🌐',
+	
+	// News & Media
+	'nytimes.com': '📰',
+	'cnn.com': '📺',
+	'bbc.com': '📻',
+	'theguardian.com': '📰',
+	'washingtonpost.com': '📰',
+	
+	// Gaming
+	'steam.com': '🎮',
+	'epicgames.com': '🎮',
+	'playstation.com': '🎮',
+	'xbox.com': '🎮',
+	'nintendo.com': '🎮',
+	
+	// Travel
+	'airbnb.com': '🏠',
+	'booking.com': '🏨',
+	'expedia.com': '✈️',
+	'tripadvisor.com': '🦉',
+	
+	// Food
+	'ubereats.com': '🍔',
+	'doordash.com': '🚪',
+	'grubhub.com': '🍕',
+	'rappi.com': '🛵',
+	
+	// Otros populares
+	'wikipedia.org': '📚',
+	'reddit.com': '🤖',
+	'quora.com': '❓',
+	'yelp.com': '⭐',
+	'imdb.com': '🎬',
+	'weather.com': '🌤️',
 };
 
 // Simple fallback icon
@@ -142,6 +258,17 @@ const getDomainIcon = (url: string): string => {
 		}
 	} catch {}
 	return fallbackIcon;
+};
+
+// Función para obtener URL de favicon real (opcional, con emoji como fallback)
+const getFaviconUrl = (url: string): string => {
+	try {
+		const hostname = new URL(url).hostname;
+		// Usar Icon Horse - servicio gratuito con CORS habilitado
+		return `https://icon.horse/icon/${hostname}`;
+	} catch {
+		return "";
+	}
 };
 
 // Utility functions
@@ -217,6 +344,7 @@ const loadUrls = () => {
 				shortUrl: url.shortUrl || url.originalUrl,
 				category: url.category || "other",
 				favicon: getDomainIcon(url.originalUrl),
+				faviconUrl: getFaviconUrl(url.originalUrl),
 			}));
 		}
 	} catch (e) {
@@ -342,6 +470,7 @@ const addUrl = async () => {
 			copyCount: 0,
 			category: inputCategory,
 			favicon: getDomainIcon(normalized),
+			faviconUrl: getFaviconUrl(normalized),
 		};
 		urls = [newUrl, ...urls];
 		saveUrls();
@@ -360,6 +489,7 @@ const addUrl = async () => {
 				copyCount: 0,
 				category: inputCategory,
 				favicon: getDomainIcon(normalized),
+				faviconUrl: getFaviconUrl(normalized),
 			};
 			urls = [newUrl, ...urls];
 			saveUrls();
@@ -696,8 +826,28 @@ onDestroy(() => {
 								</div>
 							{:else}
 								<div class="url-alias-row">
-									<span class="url-favicon-emoji">
-										{url.favicon}
+									<span class="url-favicon-container">
+										{#if url.faviconUrl}
+											<img 
+												src={url.faviconUrl} 
+												alt="" 
+												class="favicon-img-real"
+												on:error={(e) => {
+													// Si falla, ocultar imagen y mostrar emoji
+													e.currentTarget.style.display = 'none';
+													const emoji = e.currentTarget.nextElementSibling;
+													if (emoji) emoji.style.display = 'flex';
+												}}
+												on:load={(e) => {
+													// Si carga, ocultar emoji
+													const emoji = e.currentTarget.nextElementSibling;
+													if (emoji) emoji.style.display = 'none';
+												}}
+											/>
+										{/if}
+										<span class="url-favicon-emoji" style={url.faviconUrl ? 'display: flex;' : ''}>
+											{url.favicon}
+										</span>
 									</span>
 									<div class="url-alias">#{url.alias}</div>
 									<span class="url-category-badge">{categoryMap[url.category]?.icon || '🔗'}</span>
@@ -1159,6 +1309,16 @@ onDestroy(() => {
 		gap: 0.5rem;
 	}
 
+	.url-favicon-container {
+		position: relative;
+		width: 24px;
+		height: 24px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
+
 	.url-favicon-emoji {
 		font-size: 1.4rem;
 		width: 24px;
@@ -1167,6 +1327,17 @@ onDestroy(() => {
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
+	}
+
+	.favicon-img-real {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 24px;
+		height: 24px;
+		object-fit: contain;
+		z-index: 1;
+		border-radius: 4px;
 	}
 
 	.url-category-badge {
