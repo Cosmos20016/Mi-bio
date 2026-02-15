@@ -1043,6 +1043,7 @@ const closeOnboarding = () => {
                         <div class="url-alias">#{url.alias}</div>
                         <span class="url-category-badge">{categoryMap[url.category]?.icon || '🔗'}</span>
                     </div>
+                    {/if}
                     <div class="url-meta">
                         <span>{formatDate(url.createdAt)}</span>
                         <span class="copy-count">{url.copyCount} copias</span>
