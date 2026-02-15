@@ -15,11 +15,11 @@ import { profileConfig, siteConfig } from "../../config";
 import { formatDateToYYYYMMDD } from "../../utils/date-utils";
 
 export async function getStaticPaths() {
-	const blogEntries = await getSortedPosts();
-	return blogEntries.map((entry) => ({
-		params: { slug: entry.slug },
-		props: { entry },
-	}));
+    const blogEntries = await getSortedPosts();
+    return blogEntries.map((entry) => ({
+        params: { slug: entry.slug },
+        props: { entry },
+    }));
 }
 
 const { entry } = Astro.props;
@@ -28,40 +28,40 @@ const { Content, headings } = await entry.render();
 const { remarkPluginFrontmatter } = await entry.render();
 
 const jsonLd = {
-	"@context": "https://schema.org",
-	"@type": "BlogPosting",
-	headline: entry.data.title,
-	description: entry.data.description || entry.data.title,
-	keywords: entry.data.tags,
-	image: entry.data.image
-		? new URL(
-				entry.data.image.startsWith("/")
-					? entry.data.image
-					: `/${entry.data.image}`,
-				Astro.site,
-			).href
-		: new URL("/og-default.png", Astro.site).href,
-	author: {
-		"@type": "Person",
-		name: profileConfig.name,
-		url: Astro.site?.toString(),
-	},
-	publisher: {
-		"@type": "Person",
-		name: profileConfig.name,
-		url: Astro.site?.toString(),
-	},
-	datePublished: formatDateToYYYYMMDD(entry.data.published),
-	dateModified: entry.data.updated
-		? formatDateToYYYYMMDD(entry.data.updated)
-		: formatDateToYYYYMMDD(entry.data.published),
-	mainEntityOfPage: {
-		"@type": "WebPage",
-		"@id": new URL(`/posts/${entry.slug}/`, Astro.site).href,
-	},
-	inLanguage: entry.data.lang
-		? entry.data.lang.replace("_", "-")
-		: siteConfig.lang.replace("_", "-"),
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: entry.data.title,
+    description: entry.data.description || entry.data.title,
+    keywords: entry.data.tags,
+    image: entry.data.image
+        ? new URL(
+                entry.data.image.startsWith("/")
+                    ? entry.data.image
+                    : `/${entry.data.image}`,
+                Astro.site,
+            ).href
+        : new URL("/og-default.png", Astro.site).href,
+    author: {
+        "@type": "Person",
+        name: profileConfig.name,
+        url: Astro.site?.toString(),
+    },
+    publisher: {
+        "@type": "Person",
+        name: profileConfig.name,
+        url: Astro.site?.toString(),
+    },
+    datePublished: formatDateToYYYYMMDD(entry.data.published),
+    dateModified: entry.data.updated
+        ? formatDateToYYYYMMDD(entry.data.updated)
+        : formatDateToYYYYMMDD(entry.data.published),
+    mainEntityOfPage: {
+        "@type": "WebPage",
+        "@id": new URL(`/posts/${entry.slug}/`, Astro.site).href,
+    },
+    inLanguage: entry.data.lang
+        ? entry.data.lang.replace("_", "-")
+        : siteConfig.lang.replace("_", "-"),
 };
 ---
 <MainGridLayout banner={entry.data.image} title={entry.data.title} description={entry.data.description} lang={entry.data.lang} setOGTypeArticle={true} headings={headings}>
@@ -154,19 +154,23 @@ const jsonLd = {
     <div id="giscus-container" class="mt-6"></div>
 
     <script>
+        // Variable global para el observer
+        let themeObserver: MutationObserver | null = null;
+        
         function loadGiscus() {
             const container = document.getElementById('giscus-container');
             if (!container) return;
             
-            // Limpiar contenedor anterior
-            container.innerHTML = '';
+            // Verificar si ya existe el iframe cargado
+            const existingIframe = container.querySelector('iframe.giscus-frame');
+            if (existingIframe) return; // Ya está cargado, evitar recargas
             
-            const isDark = document.documentElement.classList.contains('dark');
-            const theme = isDark ? 'noborder_dark' : 'noborder_light';
+            // Limpiar contenedor solo si necesario
+            container.innerHTML = '';
             
             const script = document.createElement('script');
             script.src = 'https://giscus-personal-woft.vercel.app/es/client.js';
-            script.setAttribute('data-repo', 'Cosmos20016/Gesti-n-de-comentarios');
+            script.setAttribute('data-repo', 'Cosmos20016/Gestion-de-comentarios'); // ✅ SIN .git
             script.setAttribute('data-repo-id', 'R_kgDOPSHLmA');
             script.setAttribute('data-category', 'Announcements');
             script.setAttribute('data-category-id', 'DIC_kwDOPSHLmM4CtXsZ');
@@ -175,7 +179,7 @@ const jsonLd = {
             script.setAttribute('data-reactions-enabled', '1');
             script.setAttribute('data-emit-metadata', '0');
             script.setAttribute('data-input-position', 'bottom');
-            script.setAttribute('data-theme', theme);
+            script.setAttribute('data-theme', 'preferred_color_scheme'); // ✅ Tema automático
             script.setAttribute('data-lang', 'es');
             script.setAttribute('data-loading', 'lazy');
             script.crossOrigin = 'anonymous';
@@ -184,33 +188,49 @@ const jsonLd = {
             container.appendChild(script);
         }
         
-        // Cargar al iniciar
-        loadGiscus();
-        
-        // Recargar cuando cambie el tema (observar cambios en class de html)
-        const observer = new MutationObserver((mutations) => {
-            for (const mutation of mutations) {
-                if (mutation.attributeName === 'class') {
-                    const iframe = document.querySelector('iframe.giscus-frame') as HTMLIFrameElement;
-                    if (iframe && iframe.contentWindow) {
-                        const isDark = document.documentElement.classList.contains('dark');
-                        const theme = isDark ? 'noborder_dark' : 'noborder_light';
-                        iframe.contentWindow.postMessage(
-                            { giscus: { setConfig: { theme } } },
-                            'https://giscus-personal-woft.vercel.app'
-                        );
-                    }
-                }
+        function setupThemeObserver() {
+            // Desconectar observer anterior si existe
+            if (themeObserver) {
+                themeObserver.disconnect();
             }
-        });
-        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+            
+            // Crear nuevo observer para cambios de tema
+            themeObserver = new MutationObserver(() => {
+                const iframe = document.querySelector('iframe.giscus-frame') as HTMLIFrameElement;
+                if (iframe && iframe.contentWindow) {
+                    const isDark = document.documentElement.classList.contains('dark');
+                    const theme = isDark ? 'dark' : 'light'; // ✅ Temas estándar
+                    
+                    // Enviar mensaje para cambiar tema sin recargar
+                    iframe.contentWindow.postMessage(
+                        { giscus: { setConfig: { theme } } },
+                        'https://giscus-personal-woft.vercel.app' // ✅ URL correcta
+                    );
+                }
+            });
+            
+            themeObserver.observe(document.documentElement, { 
+                attributes: true, 
+                attributeFilter: ['class'] 
+            });
+        }
         
-        // Recargar con swup
+        // Inicializar al cargar la página
+        loadGiscus();
+        setupThemeObserver();
+        
+        // Manejar navegación con Swup
         if (window.swup) {
-            window.swup.hooks.on('page:view', loadGiscus);
+            window.swup.hooks.on('page:view', () => {
+                loadGiscus();
+                setupThemeObserver();
+            });
         } else {
             document.addEventListener('swup:enable', () => {
-                window.swup.hooks.on('page:view', loadGiscus);
+                window.swup.hooks.on('page:view', () => {
+                    loadGiscus();
+                    setupThemeObserver();
+                });
             });
         }
     </script>
