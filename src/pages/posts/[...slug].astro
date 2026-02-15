@@ -150,8 +150,8 @@ const jsonLd = {
         </a>
     </div>
 
-    <!-- Giscus Comments - Con fondo adaptativo -->
-    <div id="giscus-container" class="mt-6 min-h-[200px] giscus-wrapper">
+    <!-- Giscus Comments -->
+    <div id="giscus-container" class="mt-6 min-h-[200px]">
         <div class="flex items-center justify-center py-8 text-black/50 dark:text-white/50">
             <span class="text-sm">Cargando comentarios...</span>
         </div>
@@ -163,6 +163,7 @@ const jsonLd = {
         
         function getCurrentTheme(): string {
             const isDark = document.documentElement.classList.contains('dark');
+            // ✅ Usar temas que realmente funcionan
             return isDark ? 'transparent_dark' : 'light';
         }
         
@@ -196,7 +197,33 @@ const jsonLd = {
             container.appendChild(script);
             giscusLoaded = true;
             
-            setTimeout(() => setupThemeObserver(), 1500);
+            // ✅ Forzar estilos después de cargar
+            setTimeout(() => {
+                setupThemeObserver();
+                forceGiscusStyles();
+            }, 2000);
+        }
+        
+        // ✅ Función para forzar los estilos correctos
+        function forceGiscusStyles() {
+            const iframe = document.querySelector('iframe.giscus-frame') as HTMLIFrameElement;
+            if (iframe) {
+                try {
+                    // Intentar acceder al contenido del iframe
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+                    if (iframeDoc) {
+                        const style = iframeDoc.createElement('style');
+                        style.textContent = `
+                            body { background: transparent !important; }
+                            .giscus { background: transparent !important; }
+                        `;
+                        iframeDoc.head.appendChild(style);
+                    }
+                } catch (e) {
+                    // Si no podemos acceder (CORS), usar CSS externo
+                    console.log('Usando estilos externos para Giscus');
+                }
+            }
         }
         
         function setupThemeObserver() {
@@ -213,6 +240,9 @@ const jsonLd = {
                         { giscus: { setConfig: { theme } } },
                         'https://giscus-personal-woft.vercel.app'
                     );
+                    
+                    // ✅ Re-forzar estilos al cambiar tema
+                    setTimeout(() => forceGiscusStyles(), 500);
                 }
             });
             
@@ -267,59 +297,86 @@ const jsonLd = {
     </script>
 
     <style>
-        /* ✅ Contenedor con fondo adaptativo */
+        /* ✅ Forzar fondo transparente en contenedor principal */
         #giscus-container {
             width: 100%;
             max-width: 100%;
-            overflow: hidden;
-            background: transparent; /* ✅ Fondo transparente */
-            transition: background-color 0.3s ease;
+            overflow: visible !important;
+            background: transparent !important;
+            transition: all 0.3s ease;
         }
         
-        /* ✅ Fondo blanco en modo claro */
-        :global(:not(.dark)) #giscus-container {
-            background-color: transparent;
-        }
-        
-        /* ✅ Fondo oscuro en modo oscuro */
-        :global(.dark) #giscus-container {
-            background-color: transparent;
-        }
-        
-        /* ✅ Iframe sin bordes y con fondo transparente */
+        /* ✅ Estilos para el iframe */
         #giscus-container :global(iframe.giscus-frame) {
             width: 100% !important;
             max-width: 100% !important;
             border: none !important;
             background: transparent !important;
+            color-scheme: light dark;
         }
         
-        /* ✅ Responsive - Móviles */
+        /* ✅ Forzar todos los elementos internos de Giscus a ser transparentes */
+        #giscus-container :global(.giscus),
+        #giscus-container :global(.giscus-frame) {
+            background: transparent !important;
+        }
+        
+        /* ✅ Tema claro - Fondo blanco forzado */
+        :global(:not(.dark)) #giscus-container {
+            background-color: white !important;
+        }
+        
+        :global(:not(.dark)) #giscus-container :global(iframe.giscus-frame) {
+            background-color: white !important;
+            color-scheme: light;
+        }
+        
+        /* ✅ Tema oscuro - Fondo transparente */
+        :global(.dark) #giscus-container {
+            background-color: transparent !important;
+        }
+        
+        :global(.dark) #giscus-container :global(iframe.giscus-frame) {
+            background-color: transparent !important;
+            color-scheme: dark;
+        }
+        
+        /* ✅ Responsive para móviles - 100% adaptado */
         @media (max-width: 768px) {
             #giscus-container {
-                padding: 0;
-                margin-left: -1rem;
-                margin-right: -1rem;
-                width: calc(100% + 2rem);
+                padding: 0 !important;
+                margin-left: -1.5rem;
+                margin-right: -1.5rem;
+                width: calc(100% + 3rem);
+                border-radius: 0;
             }
             
             #giscus-container :global(iframe.giscus-frame) {
                 padding: 0 1rem;
+                min-height: 300px;
             }
         }
         
-        /* ✅ Responsive - Tablets */
+        /* ✅ Tablets */
         @media (min-width: 769px) and (max-width: 1024px) {
             #giscus-container {
-                padding: 0 0.5rem;
+                padding: 0;
+                margin: 0 auto;
+                max-width: 95%;
             }
         }
         
-        /* ✅ Responsive - Desktop grande */
+        /* ✅ Desktop */
         @media (min-width: 1025px) {
             #giscus-container {
                 max-width: 100%;
+                padding: 0;
             }
+        }
+        
+        /* ✅ Override de estilos inline de Giscus */
+        #giscus-container :global([style*="background"]) {
+            background: transparent !important;
         }
     </style>
 
