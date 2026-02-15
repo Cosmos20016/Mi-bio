@@ -17,7 +17,18 @@ interface ShortenedUrl {
 	copyCount: number;
 	category: string;
 	favicon: string;
+    faviconUrl: string;
 }
+
+// Función para obtener la URL del favicon usando Google API
+const getFaviconUrl = (originalUrl: string): string => {
+    try {
+        const domain = new URL(originalUrl).origin; // Extrae el dominio (ej. https://www.youtube.com)
+        return `https://www.google.com/s2/favicons?sz=32&domain_url=${domain}`;
+    } catch (e) {
+        return ''; // Si falla, no mostrar icono (evita errores)
+    }
+};
 
 // Core state
 let urls: ShortenedUrl[] = [];
@@ -444,6 +455,7 @@ const addUrl = async () => {
 			copyCount: 0,
 			category: inputCategory,
 			favicon: getFavicon(normalized),
+            faviconUrl,
 		};
 		urls = [newUrl, ...urls];
 		saveUrls();
@@ -1034,6 +1046,9 @@ const closeOnboarding = () => {
 								<div class="url-meta">
 									<span>{formatDate(url.createdAt)}</span>
 									<span class="copy-count">{url.copyCount} copias</span>
+                                    <span class="url-alias">{url.alias}</span>
+                                    {#if url.faviconUrl}
+                                    <img src={url.faviconUrl} alt="Icono del sitio" width="16" height="16" class="favicon-icon" />
 								</div>
 							{/if}
 						</div>
@@ -2146,4 +2161,10 @@ const closeOnboarding = () => {
 	.dark .info-item p {
 		color: #94a3b8;
 	}
+
+.favicon-icon {
+    margin-right: 8px;
+    border-radius: 2px;
+    vertical-align: middle;
+}
 </style>2
