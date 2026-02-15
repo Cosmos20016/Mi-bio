@@ -1007,51 +1007,55 @@ const closeOnboarding = () => {
 					{/if}
 				</div>
 			{:else}
-				{#each filteredUrls as url (url.id)}
-					<div class="url-card">
-						<div class="url-card-header">
-							{#if editingId === url.id}
-								<input
-									type="text"
-									bind:value={editingAlias}
-									class="input-edit-alias"
-									on:keydown={(e) => {
-										if (e.key === "Enter") saveEditAlias();
-										if (e.key === "Escape") cancelEditAlias();
-									}}
-									autofocus
-								/>
-								<div class="edit-actions">
-									<button class="btn-icon btn-save" on:click={saveEditAlias}>
-										✓
-									</button>
-									<button class="btn-icon btn-cancel" on:click={cancelEditAlias}>
-										✕
-									</button>
-								</div>
-							{:else}
-								<div class="url-alias-row">
-									{#if url.favicon}
-										<img 
-											src={url.favicon} 
-											alt="" 
-											data-url={url.originalUrl}
-											class="url-favicon" 
-											on:error={(e) => handleFaviconError(e, url.id)}
-										/>
-									{/if}
-									<div class="url-alias">#{url.alias}</div>
-									<span class="url-category-badge">{categoryMap[url.category]?.icon || '🔗'}</span>
-								</div>
-								<div class="url-meta">
-									<span>{formatDate(url.createdAt)}</span>
-									<span class="copy-count">{url.copyCount} copias</span>
-                                    <span class="url-alias">{url.alias}</span>
-                                    {#if url.faviconUrl}
-                                    <img src={url.faviconUrl} alt="Icono del sitio" width="16" height="16" class="favicon-icon" />
-								</div>
-							{/if}
-						</div>
+    {#each filteredUrls as url (url.id)}
+        <div class="url-card">
+            <div class="url-card-header">
+                {#if editingId === url.id}
+                    <input
+                        type="text"
+                        bind:value={editingAlias}
+                        class="input-edit-alias"
+                        on:keydown={(e) => {
+                            if (e.key === "Enter") saveEditAlias();
+                            if (e.key === "Escape") cancelEditAlias();
+                        }}
+                        autofocus
+                    />
+                    <div class="edit-actions">
+                        <button class="btn-icon btn-save" on:click={saveEditAlias}>
+                            ✓
+                        </button>
+                        <button class="btn-icon btn-cancel" on:click={cancelEditAlias}>
+                            ✕
+                        </button>
+                    </div>
+                {:else}
+                    <div class="url-alias-row">
+                        {#if url.favicon}
+                            <img 
+                                src={url.favicon} 
+                                alt="" 
+                                data-url={url.originalUrl}
+                                class="url-favicon" 
+                                on:error={(e) => handleFaviconError(e, url.id)}
+                            />
+                        {/if}
+                        <div class="url-alias">#{url.alias}</div>
+                        <span class="url-category-badge">{categoryMap[url.category]?.icon || '🔗'}</span>
+                    </div>
+                    <div class="url-meta">
+                        <span>{formatDate(url.createdAt)}</span>
+                        <span class="copy-count">{url.copyCount} copias</span>
+                        <span class="url-alias">{url.alias}</span>
+                        {#if url.faviconUrl}
+                            <img src={url.faviconUrl} alt="Icono del sitio" width="16" height="16" class="favicon-icon" />
+                        {/if}
+                    </div>
+                {/if}
+            </div>
+        </div>
+    {/each}
+{/if}
 						<!-- URL acortada (principal) -->
 						<div class="short-url-display">
 							<span class="short-url-text">{url.shortUrl}</span>
