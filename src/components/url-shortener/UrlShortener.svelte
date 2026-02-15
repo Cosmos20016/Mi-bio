@@ -18,6 +18,7 @@ interface ShortenedUrl {
 	category: string;
 	favicon: string;
 	faviconUrl?: string;
+	domainColor?: { hue: number; initials: string };
 }
 
 // Core state
@@ -73,139 +74,44 @@ const categoryRules = {
 const adjectives = ["fast", "cool", "smart", "bold", "zen", "nova", "pro", "top", "max", "ace"];
 const nouns = ["link", "go", "hub", "bit", "web", "net", "dot", "io", "app", "dev"];
 
-// Favicon mapping por dominio popular - emojis de ALTA CALIDAD y precisos
+// Función para generar color único basado en el dominio
+const getDomainColor = (url: string): { hue: number; initials: string } => {
+	try {
+		const hostname = new URL(url).hostname.replace('www.', '');
+		const parts = hostname.split('.');
+		const domain = parts[0] || hostname;
+		
+		// Generar hash para color consistente
+		let hash = 0;
+		for (let i = 0; i < domain.length; i++) {
+			hash = domain.charCodeAt(i) + ((hash << 5) - hash);
+		}
+		const hue = Math.abs(hash % 360);
+		
+		// Obtener iniciales (primeras 2 letras en mayúscula)
+		const initials = domain.substring(0, 2).toUpperCase();
+		
+		return { hue, initials };
+	} catch {
+		return { hue: 200, initials: 'URL' };
+	}
+};
+
+// Mantener emojis solo como referencia de categoría
 const domainIcons: Record<string, string> = {
-	// Redes Sociales
-	'youtube.com': '▶️', 'youtu.be': '▶️',
-	'facebook.com': '👤', 'fb.com': '👤',
-	'instagram.com': '📷', 
-	'twitter.com': '🐦', 'x.com': '✖️',
-	'linkedin.com': '💼',
-	'reddit.com': '🟠',
-	'tiktok.com': '🎵',
-	'pinterest.com': '📍',
-	'snapchat.com': '👻',
-	'whatsapp.com': '💬',
-	'telegram.org': '✈️', 'telegram.me': '✈️',
-	'discord.com': '💬', 'discord.gg': '💬',
-	'twitch.tv': '🟣',
-	'vimeo.com': '▶️',
-	
-	// Desarrollo & Tech
-	'github.com': '🐙',
-	'gitlab.com': '🦊',
-	'stackoverflow.com': '📚',
-	'stackexchange.com': '💭',
-	'npmjs.com': '📦',
-	'pypi.org': '🐍',
-	'vercel.app': '▲', 'vercel.com': '▲',
-	'netlify.app': '💚', 'netlify.com': '💚',
-	'heroku.com': '🟣',
-	'codepen.io': '✏️',
-	'codesandbox.io': '📦',
-	'replit.com': '🔄',
-	'glitch.com': '🎏',
-	
-	// Google Services
-	'gmail.com': '✉️',
-	'google.com': '🔍',
-	'drive.google.com': '💾',
-	'docs.google.com': '📄',
-	'sheets.google.com': '📊',
-	'slides.google.com': '📽️',
-	'maps.google.com': '🗺️',
-	'calendar.google.com': '📅',
-	'meet.google.com': '📹',
-	'classroom.google.com': '🎓',
-	
-	// Microsoft
-	'outlook.com': '📧', 'hotmail.com': '📧',
-	'office.com': '📎',
-	'teams.microsoft.com': '👥',
-	'onedrive.com': '☁️',
-	'azure.com': '☁️',
-	
-	// AI & Productivity
-	'claude.ai': '🤖',
-	'anthropic.com': '🤖',
-	'openai.com': '🤖',
-	'chatgpt.com': '💬',
-	'notion.so': '📝',
-	'trello.com': '📋',
-	'asana.com': '✅',
-	'monday.com': '📊',
-	'slack.com': '💬',
-	'figma.com': '🎨',
-	'canva.com': '🎨',
-	'miro.com': '🖼️',
-	'airtable.com': '📊',
-	'clickup.com': '✅',
-	
-	// E-commerce
-	'amazon.com': '📦',
-	'ebay.com': '🛍️',
-	'aliexpress.com': '🛒',
-	'mercadolibre.com': '🛒',
-	'etsy.com': '🎨',
-	'shopify.com': '🛒',
-	
-	// Streaming
-	'netflix.com': '🎬',
-	'hulu.com': '📺',
-	'disneyplus.com': '🏰',
-	'primevideo.com': '▶️',
-	'hbomax.com': '🎭',
-	'spotify.com': '🎵',
-	'soundcloud.com': '🔊',
-	'apple.com': '🍎',
-	'deezer.com': '🎵',
-	
-	// Cloud
-	'cloudflare.com': '☁️',
-	'dash.cloudflare.com': '⚡',
-	'dropbox.com': '📦',
-	'box.com': '📦',
-	'icloud.com': '☁️',
-	
-	// Dominios personales comunes
-	'kevinborja.com': '👨‍💻',
+	'youtube.com': '▶️', 'github.com': '🐙', 'claude.ai': '🤖',
+	'google.com': '🔍', 'cloudflare.com': '☁️', 'netflix.com': '🎬',
+	// ... resto como fallback visual
 };
 
 const fallbackIcon = "🔗";
 
-// Sistema de emojis como fallback
 const getDomainIcon = (url: string): string => {
 	try {
-		const hostname = new URL(url).hostname.toLowerCase();
-		const cleanHostname = hostname.replace('www.', '');
-		
-		if (domainIcons[cleanHostname]) return domainIcons[cleanHostname];
-		if (domainIcons[hostname]) return domainIcons[hostname];
-		
-		for (const [domain, icon] of Object.entries(domainIcons)) {
-			if (cleanHostname.includes(domain) || hostname.includes(domain)) {
-				return icon;
-			}
-		}
-		
-		if (cleanHostname.endsWith('.dev') || cleanHostname.endsWith('.io')) return '💻';
-		if (cleanHostname.endsWith('.app')) return '📱';
-		if (cleanHostname.endsWith('.edu')) return '🎓';
-		if (cleanHostname.endsWith('.gov')) return '🏛️';
-		if (cleanHostname.endsWith('.org')) return '🌐';
-		
-	} catch {}
-	return fallbackIcon;
-};
-
-// ✅ SOLUCIÓN SIMPLE: Favicon directo del sitio web
-const getFaviconUrl = (url: string): string => {
-	try {
-		const parsed = new URL(url);
-		// Intentar directamente desde el dominio
-		return `${parsed.protocol}//${parsed.hostname}/favicon.ico`;
+		const hostname = new URL(url).hostname.toLowerCase().replace('www.', '');
+		return domainIcons[hostname] || fallbackIcon;
 	} catch {
-		return "";
+		return fallbackIcon;
 	}
 };
 
@@ -282,7 +188,7 @@ const loadUrls = () => {
 				shortUrl: url.shortUrl || url.originalUrl,
 				category: url.category || "other",
 				favicon: getDomainIcon(url.originalUrl),
-				faviconUrl: getFaviconUrl(url.originalUrl),
+				domainColor: getDomainColor(url.originalUrl),
 			}));
 		}
 	} catch (e) {
@@ -409,7 +315,7 @@ const addUrl = async () => {
 			copyCount: 0,
 			category: inputCategory,
 			favicon: getDomainIcon(normalized),
-			faviconUrl: getFaviconUrl(normalized),
+			domainColor: getDomainColor(normalized),
 		};
 		urls = [newUrl, ...urls];
 		saveUrls();
@@ -428,7 +334,7 @@ const addUrl = async () => {
 				copyCount: 0,
 				category: inputCategory,
 				favicon: getDomainIcon(normalized),
-				faviconUrl: getFaviconUrl(normalized),
+				domainColor: getDomainColor(normalized),
 			};
 			urls = [newUrl, ...urls];
 			saveUrls();
@@ -765,21 +671,10 @@ onDestroy(() => {
 								</div>
 							{:else}
 								<div class="url-alias-row">
-									<span class="url-favicon-container">
-										<!-- Emoji siempre visible -->
-										<span class="url-favicon-emoji">
-											{url.favicon}
-										</span>
-										<!-- Favicon directo del sitio, se muestra encima si funciona -->
-										{#if url.faviconUrl}
-											<img 
-												src={url.faviconUrl} 
-												alt=""
-												class="favicon-img-direct"
-												on:error={(e) => e.currentTarget.style.display = 'none'}
-											/>
-										{/if}
-									</span>
+									<div class="url-favicon-animated" style="--hue: {url.domainColor?.hue || 200}">
+										<div class="animated-gradient"></div>
+										<span class="animated-initials">{url.domainColor?.initials || 'URL'}</span>
+									</div>
 									<div class="url-alias">#{url.alias}</div>
 									<span class="url-category-badge">{categoryMap[url.category]?.icon || '🔗'}</span>
 								</div>
@@ -1240,35 +1135,56 @@ onDestroy(() => {
 		gap: 0.5rem;
 	}
 
-	.url-favicon-container {
+	.url-favicon-animated {
 		position: relative;
-		width: 28px;
-		height: 28px;
+		width: 40px;
+		height: 40px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
+		border-radius: 10px;
+		overflow: hidden;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 	}
 
-	/* Emoji siempre visible como base */
-	.url-favicon-emoji {
-		font-size: 1.5rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		line-height: 1;
+	:global(.dark) .url-favicon-animated,
+	.dark .url-favicon-animated {
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 	}
 
-	/* Favicon directo del sitio - se muestra encima si carga */
-	.favicon-img-direct {
+	/* Gradiente animado de fondo */
+	.animated-gradient {
 		position: absolute;
-		left: 50%;
-		top: 50%;
-		transform: translate(-50%, -50%);
-		width: 20px;
-		height: 20px;
-		object-fit: contain;
-		border-radius: 3px;
+		inset: 0;
+		background: linear-gradient(
+			135deg,
+			hsl(var(--hue), 70%, 55%),
+			hsl(calc(var(--hue) + 40), 65%, 50%),
+			hsl(calc(var(--hue) + 80), 70%, 55%)
+		);
+		background-size: 200% 200%;
+		animation: gradientShift 4s ease infinite;
+	}
+
+	@keyframes gradientShift {
+		0%, 100% {
+			background-position: 0% 50%;
+		}
+		50% {
+			background-position: 100% 50%;
+		}
+	}
+
+	/* Iniciales en primer plano */
+	.animated-initials {
+		position: relative;
+		z-index: 1;
+		font-size: 1.1rem;
+		font-weight: 700;
+		color: white;
+		text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+		letter-spacing: 0.5px;
 	}
 
 	.url-category-badge {
