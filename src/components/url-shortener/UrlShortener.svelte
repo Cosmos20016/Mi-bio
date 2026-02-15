@@ -222,16 +222,28 @@ const getDomainIcon = (url: string): string => {
 	return fallbackIcon;
 };
 
-// ✅ SOLUCIÓN ROBUSTA: Sistema con múltiples servicios de favicon
-const getFaviconUrl = (url: string): string => {
+// ✅ SOLUCIÓN DEFINITIVA: Sistema multi-servicio con fallback inteligente
+const getFaviconUrls = (url: string): string[] => {
 	try {
 		const hostname = new URL(url).hostname;
-		// Estrategia: Usar DuckDuckGo (más confiable que Google para GitHub y otros)
-		// Ventajas: Sin CORS, mejor calidad, y funciona con más dominios
-		return `https://icons.duckduckgo.com/ip3/${hostname}.ico`;
+		const cleanHostname = hostname.replace('www.', '');
+		
+		// Array de servicios en orden de prioridad
+		return [
+			`https://www.google.com/s2/favicons?domain=${cleanHostname}&sz=64`,
+			`https://icons.duckduckgo.com/ip3/${cleanHostname}.ico`,
+			`https://favicons.githubusercontent.com/${cleanHostname}`,
+			`https://${cleanHostname}/favicon.ico`,
+		];
 	} catch {
-		return "";
+		return [];
 	}
+};
+
+// Función auxiliar para obtener la primera URL
+const getFaviconUrl = (url: string): string => {
+	const urls = getFaviconUrls(url);
+	return urls[0] || "";
 };
 
 // Utility functions
@@ -795,14 +807,29 @@ onDestroy(() => {
 												src={url.faviconUrl} 
 												alt="favicon" 
 												class="favicon-img-real"
+												data-url={url.originalUrl}
+												data-fallback-index="0"
 												on:error={(e) => {
-													e.currentTarget.style.display = 'none';
+													const img = e.currentTarget;
+													const originalUrl = img.getAttribute('data-url');
+													const currentIndex = parseInt(img.getAttribute('data-fallback-index') || '0');
+													const fallbackUrls = getFaviconUrls(originalUrl);
+													
+													// Intentar con el siguiente servicio
+													if (currentIndex < fallbackUrls.length - 1) {
+														img.setAttribute('data-fallback-index', String(currentIndex + 1));
+														img.src = fallbackUrls[currentIndex + 1];
+													} else {
+														// Todos los servicios fallaron, ocultar imagen
+														img.style.display = 'none';
+													}
 												}}
 												on:load={(e) => {
-													// Validar si la imagen es real (no placeholder vacío)
 													const img = e.currentTarget;
-													if (img.naturalWidth === 0 || img.naturalWidth < 8) {
-														img.style.display = 'none';
+													// Validar si la imagen es real (no placeholder vacío o muy pequeña)
+													if (img.naturalWidth === 0 || img.naturalWidth < 8 || img.naturalHeight === 0 || img.naturalHeight < 8) {
+														// Trigger error handler para probar siguiente servicio
+														img.dispatchEvent(new Event('error'));
 													}
 												}}
 											/>
