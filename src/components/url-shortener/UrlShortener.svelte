@@ -111,10 +111,9 @@ const isValidAlias = (alias: string): boolean => /^[a-zA-Z0-9-]{1,30}$/.test(ali
 
 const getFavicon = (url: string): string => {
 	try {
-		const parsed = new URL(url);
-		const domain = parsed.hostname;
-		// Usar el favicon directo del sitio como primera opción
-		return `${parsed.protocol}//${domain}/favicon.ico`;
+		const domain = new URL(url).hostname;
+		// Google Favicons es el más confiable y rápido
+		return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
 	} catch {
 		return "";
 	}
@@ -644,6 +643,11 @@ onDestroy(() => {
 												src={url.favicon} 
 												alt="" 
 												class="favicon-img"
+												loading="eager"
+												on:load={(e) => {
+													// Cuando carga exitosamente, agregar clase
+													e.currentTarget.classList.add('favicon-loaded');
+												}}
 												on:error={(e) => {
 													const target = e.currentTarget;
 													const currentSrc = target.src;
@@ -651,24 +655,22 @@ onDestroy(() => {
 													try {
 														const domain = new URL(url.originalUrl).hostname;
 														
-														// Cascada de fallbacks
-														if (currentSrc.includes('/favicon.ico')) {
-															// Intentar con Google
-															target.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
-														} else if (currentSrc.includes('google.com')) {
-															// Intentar con DuckDuckGo
+														// Intentar con diferentes servicios en orden
+														if (currentSrc.includes('google.com/s2/favicons')) {
+															// Si Google falla, intentar con DuckDuckGo
 															target.src = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
 														} else if (currentSrc.includes('duckduckgo.com')) {
-															// Intentar con Favicon.io
-															target.src = `https://api.faviconkit.com/${domain}/64`;
-														} else if (currentSrc.includes('faviconkit.com')) {
-															// Intentar con Clearbit
+															// Si DuckDuckGo falla, intentar con Clearbit
 															target.src = `https://logo.clearbit.com/${domain}`;
+														} else if (currentSrc.includes('clearbit.com')) {
+															// Si Clearbit falla, intentar favicon directo
+															target.src = `https://${domain}/favicon.ico`;
 														} else {
-															// Todos los servicios fallaron, ocultar imagen
+															// Si todo falla, ocultar la imagen
 															target.style.display = 'none';
 														}
-													} catch {
+													} catch (err) {
+														console.warn('Favicon error:', err);
 														target.style.display = 'none';
 													}
 												}}
@@ -1148,20 +1150,16 @@ onDestroy(() => {
 	}
 
 	.favicon-fallback {
-		color: rgba(100, 116, 139, 0.4);
-		position: absolute;
-		left: 0;
-		top: 0;
-		width: 20px;
-		height: 20px;
+		color: rgba(100, 116, 139, 0.5);
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		transition: opacity 0.2s ease;
 	}
 
 	:global(.dark) .favicon-fallback,
 	.dark .favicon-fallback {
-		color: rgba(148, 163, 184, 0.4);
+		color: rgba(148, 163, 184, 0.5);
 	}
 
 	.favicon-img {
@@ -1171,15 +1169,18 @@ onDestroy(() => {
 		width: 20px;
 		height: 20px;
 		object-fit: contain;
-		background: white;
-		border-radius: 3px;
 		z-index: 1;
-		padding: 2px;
+		opacity: 0;
+		transition: opacity 0.2s ease;
 	}
 
-	:global(.dark) .favicon-img,
-	.dark .favicon-img {
-		background: oklch(0.25 0.02 var(--hue));
+	.favicon-img.favicon-loaded {
+		opacity: 1;
+	}
+
+	/* Cuando la imagen está cargada, ocultar el fallback */
+	.url-favicon:has(.favicon-img.favicon-loaded) .favicon-fallback {
+		opacity: 0;
 	}
 
 	.url-category-badge {
