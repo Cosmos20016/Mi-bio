@@ -128,19 +128,17 @@ const nouns = [
 	"code", "data", "page", "site", "path", "way", "fox", "owl", "bee", "cat",
 ];
 
-// Fallback SVG icon
+// Fallback SVG icon with better styling
 const fallbackIconSvg = `data:image/svg+xml,${encodeURIComponent(`
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%2364748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="12" cy="12" r="10" fill="%23e2e8f0" stroke="%2394a3b8"/>
+  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="%233b82f6"/>
+  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="%233b82f6"/>
 </svg>
 `)}`;
 
-// ============================================================================
-// UTILITY FUNCTIONS
-// ============================================================================
-
-// Category utilities
+// Track which favicons failed to load
+let failedFavicons = new Set<string>();
 const categoryMap = categories.reduce(
 	(acc, cat) => {
 		acc[cat.id] = cat;
@@ -192,8 +190,11 @@ const isValidAlias = (alias: string): boolean => {
 // Favicon utilities
 const getFavicon = (url: string): string => {
 	try {
-		const domain = new URL(url).hostname;
-		const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+		const urlObj = new URL(url);
+		const domain = urlObj.hostname;
+		
+		// Use icon.horse - a reliable, privacy-focused favicon service
+		const faviconUrl = `https://icon.horse/icon/${domain}`;
 		console.log(`🎨 Favicon generado para ${domain}: ${faviconUrl}`);
 		return faviconUrl;
 	} catch (e) {
@@ -205,36 +206,37 @@ const getFavicon = (url: string): string => {
 const handleFaviconError = (event: Event, urlId: string) => {
 	const img = event.currentTarget as HTMLImageElement;
 	const originalUrl = img.dataset.url;
+	const currentSrc = img.src;
 
-	console.warn(`⚠️ Favicon falló para URL ID: ${urlId}, URL original: ${originalUrl}`);
+	console.warn(`⚠️ Favicon falló para URL ID: ${urlId}, URL: ${originalUrl}`);
 
 	if (!originalUrl) {
-		console.log('❌ No hay URL original, usando fallback SVG');
 		img.src = fallbackIconSvg;
 		return;
 	}
 
-	const failureCount = failedFavicons.has(urlId) ? 1 : 0;
-	failedFavicons.add(urlId);
-
 	try {
-		const domain = new URL(originalUrl).hostname;
+		const urlObj = new URL(originalUrl);
+		const domain = urlObj.hostname;
 		
-		// Try different favicon services in order
-		if (failureCount === 0) {
-			// First fallback: DuckDuckGo
-			const fallbackUrl = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
-			console.log(`🔄 Intentando fallback 1 (DuckDuckGo): ${fallbackUrl}`);
-			img.src = fallbackUrl;
-		} else if (failureCount === 1) {
-			// Second fallback: Favicon.io
-			const fallbackUrl = `https://favicons.githubusercontent.com/${domain}`;
-			console.log(`🔄 Intentando fallback 2 (GitHub): ${fallbackUrl}`);
-			img.src = fallbackUrl;
+		// Cascade of fallback services
+		if (currentSrc.includes('icon.horse')) {
+			// Try Google as first fallback
+			img.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+			console.log(`🔄 Fallback 1: Google S2`);
+		} else if (currentSrc.includes('google.com')) {
+			// Try DuckDuckGo as second fallback  
+			img.src = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+			console.log(`🔄 Fallback 2: DuckDuckGo`);
+		} else if (currentSrc.includes('duckduckgo.com')) {
+			// Try direct favicon.ico as third fallback
+			img.src = `${urlObj.protocol}//${domain}/favicon.ico`;
+			console.log(`🔄 Fallback 3: Direct favicon.ico`);
 		} else {
-			// Final fallback: SVG icon
-			console.log('🔄 Usando fallback final: SVG genérico');
+			// All services failed, use SVG
 			img.src = fallbackIconSvg;
+			console.log(`🔄 Fallback final: SVG`);
+			failedFavicons.add(urlId);
 		}
 	} catch (e) {
 		console.error('❌ Error en handleFaviconError:', e);
@@ -1011,6 +1013,8 @@ onDestroy(() => {
 												class="url-favicon" 
 												on:error={(e) => handleFaviconError(e, url.id)}
 												loading="lazy"
+												crossorigin="anonymous"
+												referrerpolicy="no-referrer"
 											/>
 										</div>
 									{/if}
@@ -1535,29 +1539,26 @@ onDestroy(() => {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 28px;
-		height: 28px;
-		border-radius: 0.375rem;
-		background: rgba(255, 255, 255, 0.5);
-		border: 1px solid rgba(0, 0, 0, 0.05);
+		width: 24px;
+		height: 24px;
+		border-radius: 0.25rem;
+		background: rgba(148, 163, 184, 0.1);
 		flex-shrink: 0;
 	}
 
 	:global(.dark) .favicon-container,
 	.dark .favicon-container {
-		background: rgba(15, 23, 42, 0.5);
-		border-color: rgba(255, 255, 255, 0.05);
+		background: rgba(94, 108, 132, 0.2);
 	}
 
 	.url-favicon {
-		width: 24px;
-		height: 24px;
+		width: 20px;
+		height: 20px;
 		object-fit: contain;
-		border-radius: 0.3rem;
+		border-radius: 0.25rem;
 		flex-shrink: 0;
 		image-rendering: -webkit-optimize-contrast;
-		background-color: rgba(148, 163, 184, 0.1);
-		padding: 2px;
+		background-color: transparent;
 	}
 
 	.url-category-badge {
@@ -2141,4 +2142,4 @@ onDestroy(() => {
 	.dark .info-item p {
 		color: #94a3b8;
 	}
-</style>s
+</style>
