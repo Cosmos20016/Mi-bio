@@ -1168,24 +1168,29 @@ onDestroy(() => {
 		color: hsl(var(--hue), 70%, 65%);
 	}
 
-	/* Animación sutil del círculo principal */
+	/* Animación premium: pulso suave del círculo */
 	.globe-circle {
-		animation: globePulse 3s ease-in-out infinite;
+		animation: globeBreath 4s ease-in-out infinite;
 		transform-origin: center;
 	}
 
-	@keyframes globePulse {
+	@keyframes globeBreath {
 		0%, 100% {
-			opacity: 1;
+			stroke-opacity: 0.9;
+			r: 10;
 		}
 		50% {
-			opacity: 0.7;
+			stroke-opacity: 0.6;
+			r: 10.3;
 		}
 	}
 
-	/* Animación de líneas del globo */
+	/* Animación premium: ondas expansivas desde el centro */
 	.globe-line {
-		animation: lineFloat 4s ease-in-out infinite;
+		stroke-dasharray: 60;
+		stroke-dashoffset: 60;
+		animation: rippleExpand 3s ease-in-out infinite;
+		opacity: 0.9;
 	}
 
 	.globe-line-1 {
@@ -1193,17 +1198,23 @@ onDestroy(() => {
 	}
 
 	.globe-line-2 {
-		animation-delay: 0.5s;
+		animation-delay: 1.5s;
 	}
 
-	@keyframes lineFloat {
-		0%, 100% {
-			opacity: 1;
-			stroke-dasharray: 0, 100;
+	@keyframes rippleExpand {
+		0% {
+			stroke-dashoffset: 60;
+			opacity: 0;
 		}
-		50% {
-			opacity: 0.8;
-			stroke-dasharray: 10, 90;
+		20% {
+			opacity: 0.9;
+		}
+		80% {
+			opacity: 0.7;
+		}
+		100% {
+			stroke-dashoffset: 0;
+			opacity: 0;
 		}
 	}
 
