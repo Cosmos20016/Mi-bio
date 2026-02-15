@@ -782,10 +782,13 @@ onDestroy(() => {
 		font-weight: 600;
 		font-size: 0.9rem;
 		cursor: pointer;
-		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-		backdrop-filter: blur(10px);
+		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+		            box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+		            border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 		position: relative;
 		overflow: hidden;
+		backface-visibility: hidden;
+		-webkit-font-smoothing: subpixel-antialiased;
 	}
 
 	:global(.dark) .btn-action,
@@ -1037,10 +1040,15 @@ onDestroy(() => {
 		font-size: 0.9rem;
 		font-weight: 600;
 		cursor: pointer;
-		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-		backdrop-filter: blur(10px);
+		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+		            background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+		            border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+		            box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+		            color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 		position: relative;
 		overflow: hidden;
+		backface-visibility: hidden;
+		-webkit-font-smoothing: subpixel-antialiased;
 	}
 
 	:global(.dark) .btn-category,
@@ -1137,9 +1145,14 @@ onDestroy(() => {
 		font-size: 0.9rem;
 		font-weight: 600;
 		cursor: pointer;
-		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-		backdrop-filter: blur(10px);
+		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+		            background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+		            border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+		            box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+		            color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 		position: relative;
+		backface-visibility: hidden;
+		-webkit-font-smoothing: subpixel-antialiased;
 	}
 
 	:global(.dark) .btn-sort,
@@ -1997,4 +2010,4 @@ onDestroy(() => {
 	.dark .info-item p {
 		color: #94a3b8;
 	}
-</style>2
+</style>
