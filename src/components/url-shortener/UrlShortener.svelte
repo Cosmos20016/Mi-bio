@@ -173,7 +173,7 @@ const domainIcons: Record<string, string> = {
 
 const fallbackIcon = "🔗";
 
-// Sistema mejorado de emojis como fallback
+// Sistema de emojis como fallback
 const getDomainIcon = (url: string): string => {
 	try {
 		const hostname = new URL(url).hostname.toLowerCase();
@@ -198,12 +198,12 @@ const getDomainIcon = (url: string): string => {
 	return fallbackIcon;
 };
 
-// ✅ Sistema de favicon real - El más confiable
+// ✅ SOLUCIÓN SIMPLE: Favicon directo del sitio web
 const getFaviconUrl = (url: string): string => {
 	try {
-		const hostname = new URL(url).hostname;
-		// Favicon.im - Servicio profesional con mejor uptime y cache
-		return `https://favicon.im/${hostname}?larger=true`;
+		const parsed = new URL(url);
+		// Intentar directamente desde el dominio
+		return `${parsed.protocol}//${parsed.hostname}/favicon.ico`;
 	} catch {
 		return "";
 	}
@@ -766,21 +766,17 @@ onDestroy(() => {
 							{:else}
 								<div class="url-alias-row">
 									<span class="url-favicon-container">
-										<!-- Emoji siempre visible como base -->
+										<!-- Emoji siempre visible -->
 										<span class="url-favicon-emoji">
 											{url.favicon}
 										</span>
-										<!-- Imagen real se carga encima -->
+										<!-- Favicon directo del sitio, se muestra encima si funciona -->
 										{#if url.faviconUrl}
 											<img 
 												src={url.faviconUrl} 
 												alt=""
-												class="favicon-img-real"
-												loading="lazy"
-												on:error={(e) => {
-													// Si falla, ocultar imagen y mostrar emoji
-													e.currentTarget.style.display = 'none';
-												}}
+												class="favicon-img-direct"
+												on:error={(e) => e.currentTarget.style.display = 'none'}
 											/>
 										{/if}
 									</span>
@@ -1254,17 +1250,17 @@ onDestroy(() => {
 		flex-shrink: 0;
 	}
 
+	/* Emoji siempre visible como base */
 	.url-favicon-emoji {
 		font-size: 1.5rem;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		line-height: 1;
-		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
 	}
 
-	/* Imagen real se superpone sobre el emoji */
-	.favicon-img-real {
+	/* Favicon directo del sitio - se muestra encima si carga */
+	.favicon-img-direct {
 		position: absolute;
 		left: 50%;
 		top: 50%;
@@ -1273,14 +1269,6 @@ onDestroy(() => {
 		height: 20px;
 		object-fit: contain;
 		border-radius: 3px;
-		background: white;
-		padding: 2px;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-	}
-
-	:global(.dark) .favicon-img-real,
-	.dark .favicon-img-real {
-		background: oklch(0.2 0.02 var(--hue));
 	}
 
 	.url-category-badge {
