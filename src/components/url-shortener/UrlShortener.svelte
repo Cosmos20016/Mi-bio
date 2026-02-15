@@ -775,26 +775,53 @@ onDestroy(() => {
 
 	.btn-action {
 		padding: 0.5rem 1rem;
-		background: oklch(0.95 0.02 var(--hue));
-		color: oklch(0.5 0.12 var(--hue));
-		border: 1px solid oklch(0.85 0.05 var(--hue));
+		background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+		color: oklch(0.7 0.14 var(--hue));
+		border: 1.5px solid oklch(0.7 0.1 var(--hue) / 0.25);
 		border-radius: 0.75rem;
 		font-weight: 600;
 		font-size: 0.9rem;
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		backdrop-filter: blur(10px);
+		position: relative;
+		overflow: hidden;
 	}
 
 	:global(.dark) .btn-action,
 	.dark .btn-action {
-		background: oklch(0.3 0.03 var(--hue));
+		background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
 		color: oklch(0.75 0.14 var(--hue));
-		border-color: oklch(0.4 0.05 var(--hue));
+		border-color: oklch(0.65 0.12 var(--hue) / 0.3);
+	}
+
+	.btn-action::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(135deg, oklch(0.7 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30)));
+		opacity: 0;
+		transition: opacity 0.3s ease;
+	}
+
+	.btn-action:hover::before {
+		opacity: 0.12;
 	}
 
 	.btn-action:hover {
-		transform: translateY(-1px);
-		box-shadow: 0 4px 12px oklch(0.7 0.14 var(--hue) / 0.2);
+		transform: translateY(-2px);
+		box-shadow: 0 4px 16px oklch(0.7 0.14 var(--hue) / 0.25);
+		border-color: oklch(0.7 0.12 var(--hue) / 0.4);
+	}
+
+	:global(.dark) .btn-action:hover,
+	.dark .btn-action:hover {
+		box-shadow: 0 4px 20px oklch(0.7 0.14 var(--hue) / 0.3);
+		border-color: oklch(0.65 0.14 var(--hue) / 0.5);
+	}
+
+	.btn-action:active {
+		transform: translateY(0);
 	}
 
 	.input-section {
@@ -822,6 +849,56 @@ onDestroy(() => {
 	@media (max-width: 768px) {
 		.input-row {
 			grid-template-columns: 1fr;
+		}
+
+		.btn-add {
+			width: 100%;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.btn-category,
+		.btn-sort,
+		.btn-action {
+			padding: 0.45rem 0.85rem;
+			font-size: 0.85rem;
+		}
+
+		.header-actions {
+			width: 100%;
+		}
+
+		.header-actions .btn-action {
+			flex: 1;
+		}
+
+		.category-filter {
+			gap: 0.4rem;
+		}
+
+		.sort-buttons {
+			flex-wrap: wrap;
+			gap: 0.4rem;
+		}
+
+		.filter-section {
+			flex-direction: column;
+			gap: 0.75rem;
+		}
+
+		.input-search {
+			width: 100%;
+		}
+
+		.sort-buttons {
+			width: 100%;
+			justify-content: space-between;
+		}
+
+		.btn-sort {
+			flex: 1;
+			min-width: 0;
+			padding: 0.45rem 0.5rem;
 		}
 	}
 
@@ -874,19 +951,54 @@ onDestroy(() => {
 		font-weight: 700;
 		font-size: 1rem;
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 		white-space: nowrap;
+		position: relative;
+		overflow: hidden;
+		box-shadow: 0 4px 12px oklch(0.7 0.14 var(--hue) / 0.3);
+	}
+
+	.btn-add::before {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 0;
+		height: 0;
+		border-radius: 50%;
+		background: rgba(255, 255, 255, 0.2);
+		transform: translate(-50%, -50%);
+		transition: width 0.6s ease, height 0.6s ease;
+	}
+
+	.btn-add:hover::before {
+		width: 300px;
+		height: 300px;
 	}
 
 	.btn-add:hover {
 		transform: translateY(-2px);
-		box-shadow: 0 8px 20px oklch(0.7 0.14 var(--hue) / 0.35);
+		box-shadow: 0 8px 20px oklch(0.7 0.14 var(--hue) / 0.4);
+	}
+
+	.btn-add:active {
+		transform: translateY(0);
 	}
 
 	.btn-add:disabled {
 		opacity: 0.6;
 		cursor: not-allowed;
 		transform: none;
+		animation: pulse 2s ease-in-out infinite;
+	}
+
+	@keyframes pulse {
+		0%, 100% {
+			box-shadow: 0 4px 12px oklch(0.7 0.14 var(--hue) / 0.3);
+		}
+		50% {
+			box-shadow: 0 4px 16px oklch(0.7 0.14 var(--hue) / 0.5);
+		}
 	}
 
 	.input-hint {
@@ -918,42 +1030,65 @@ onDestroy(() => {
 
 	.btn-category {
 		padding: 0.5rem 1rem;
-		background: white;
-		color: #475569;
-		border: 1px solid #e2e8f0;
-		border-radius: 0.5rem;
+		background: rgba(255, 255, 255, 0.05);
+		color: #cbd5e1;
+		border: 1.5px solid rgba(255, 255, 255, 0.1);
+		border-radius: 0.75rem;
 		font-size: 0.9rem;
-		font-weight: 500;
+		font-weight: 600;
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		backdrop-filter: blur(10px);
+		position: relative;
+		overflow: hidden;
 	}
 
 	:global(.dark) .btn-category,
 	.dark .btn-category {
-		background: oklch(0.25 0.02 var(--hue));
+		background: rgba(255, 255, 255, 0.03);
 		color: #cbd5e1;
-		border-color: oklch(0.35 0.03 var(--hue));
+		border-color: rgba(255, 255, 255, 0.08);
+	}
+
+	.btn-category::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(135deg, oklch(0.7 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30)));
+		opacity: 0;
+		transition: opacity 0.3s ease;
+	}
+
+	.btn-category:hover::before {
+		opacity: 0.1;
 	}
 
 	.btn-category:hover {
-		background: oklch(0.95 0.02 var(--hue));
-		border-color: oklch(0.8 0.06 var(--hue));
-		color: oklch(0.5 0.12 var(--hue));
+		background: rgba(255, 255, 255, 0.08);
+		border-color: oklch(0.7 0.1 var(--hue) / 0.3);
+		color: oklch(0.75 0.14 var(--hue));
 		transform: translateY(-1px);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 	}
 
 	:global(.dark) .btn-category:hover,
 	.dark .btn-category:hover {
-		background: oklch(0.3 0.03 var(--hue));
-		border-color: oklch(0.45 0.08 var(--hue));
+		background: rgba(255, 255, 255, 0.06);
+		border-color: oklch(0.6 0.12 var(--hue) / 0.4);
 		color: oklch(0.75 0.14 var(--hue));
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 	}
 
 	.btn-category.active {
 		background: linear-gradient(135deg, oklch(0.7 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30)));
 		color: white;
 		border-color: transparent;
-		box-shadow: 0 4px 12px oklch(0.7 0.14 var(--hue) / 0.3);
+		box-shadow: 0 4px 12px oklch(0.7 0.14 var(--hue) / 0.35);
+		transform: translateY(-1px);
+	}
+
+	.btn-category.active::before {
+		opacity: 0;
 	}
 
 	.filter-section {
@@ -995,46 +1130,53 @@ onDestroy(() => {
 
 	.btn-sort {
 		padding: 0.5rem 1rem;
-		background: transparent;
-		color: #475569;
-		border: 1px solid #cbd5e1;
-		border-radius: 0.5rem;
+		background: rgba(255, 255, 255, 0.03);
+		color: #cbd5e1;
+		border: 1.5px solid rgba(255, 255, 255, 0.08);
+		border-radius: 0.625rem;
 		font-size: 0.9rem;
-		font-weight: 500;
+		font-weight: 600;
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		backdrop-filter: blur(10px);
+		position: relative;
 	}
 
 	:global(.dark) .btn-sort,
 	.dark .btn-sort {
 		color: #cbd5e1;
-		border-color: #475569;
+		border-color: rgba(255, 255, 255, 0.06);
 	}
 
 	.btn-sort:hover {
-		background: oklch(0.95 0.02 var(--hue));
-		border-color: oklch(0.8 0.06 var(--hue));
-		color: oklch(0.5 0.12 var(--hue));
+		background: rgba(255, 255, 255, 0.08);
+		border-color: oklch(0.7 0.1 var(--hue) / 0.25);
+		color: oklch(0.75 0.14 var(--hue));
+		transform: translateY(-1px);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 	}
 
 	:global(.dark) .btn-sort:hover,
 	.dark .btn-sort:hover {
-		background: oklch(0.25 0.03 var(--hue));
-		border-color: oklch(0.45 0.08 var(--hue));
+		background: rgba(255, 255, 255, 0.06);
+		border-color: oklch(0.6 0.12 var(--hue) / 0.3);
 		color: oklch(0.75 0.14 var(--hue));
+		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
 	}
 
 	.btn-sort.active {
-		background: oklch(0.92 0.04 var(--hue));
-		border-color: oklch(0.75 0.1 var(--hue));
-		color: oklch(0.55 0.14 var(--hue));
+		background: linear-gradient(135deg, oklch(0.7 0.14 var(--hue) / 0.15), oklch(0.65 0.16 calc(var(--hue) + 30) / 0.1));
+		border-color: oklch(0.7 0.12 var(--hue) / 0.4);
+		color: oklch(0.7 0.14 var(--hue));
+		box-shadow: 0 2px 8px oklch(0.7 0.14 var(--hue) / 0.2);
 	}
 
 	:global(.dark) .btn-sort.active,
 	.dark .btn-sort.active {
-		background: oklch(0.28 0.04 var(--hue));
-		border-color: oklch(0.5 0.1 var(--hue));
+		background: linear-gradient(135deg, oklch(0.7 0.14 var(--hue) / 0.2), oklch(0.65 0.16 calc(var(--hue) + 30) / 0.12));
+		border-color: oklch(0.65 0.14 var(--hue) / 0.5);
 		color: oklch(0.75 0.14 var(--hue));
+		box-shadow: 0 2px 12px oklch(0.7 0.14 var(--hue) / 0.25);
 	}
 
 	.urls-list {
@@ -1855,4 +1997,4 @@ onDestroy(() => {
 	.dark .info-item p {
 		color: #94a3b8;
 	}
-</style>
+</style>2
