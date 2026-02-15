@@ -222,12 +222,13 @@ const getDomainIcon = (url: string): string => {
 	return fallbackIcon;
 };
 
-// ✅ SOLUCIÓN: Múltiples servicios de favicon con fallback automático
+// ✅ SOLUCIÓN ROBUSTA: Sistema con múltiples servicios de favicon
 const getFaviconUrl = (url: string): string => {
 	try {
 		const hostname = new URL(url).hostname;
-		// Google Favicon Service - El más confiable, rápido y sin problemas de CORS
-		return `https://www.google.com/s2/favicons?domain=${hostname}&sz=128`;
+		// Estrategia: Usar DuckDuckGo (más confiable que Google para GitHub y otros)
+		// Ventajas: Sin CORS, mejor calidad, y funciona con más dominios
+		return `https://icons.duckduckgo.com/ip3/${hostname}.ico`;
 	} catch {
 		return "";
 	}
@@ -797,9 +798,16 @@ onDestroy(() => {
 												on:error={(e) => {
 													e.currentTarget.style.display = 'none';
 												}}
+												on:load={(e) => {
+													// Validar si la imagen es real (no placeholder vacío)
+													const img = e.currentTarget;
+													if (img.naturalWidth === 0 || img.naturalWidth < 8) {
+														img.style.display = 'none';
+													}
+												}}
 											/>
 										{/if}
-										<span class="url-favicon-emoji" style={url.faviconUrl ? '' : 'display: flex;'}>
+										<span class="url-favicon-emoji">
 											{url.favicon}
 										</span>
 									</span>
@@ -1273,7 +1281,7 @@ onDestroy(() => {
 		flex-shrink: 0;
 	}
 
-	/* ✅ CLAVE: Mostrar emoji por defecto, imagen real lo reemplaza si carga */
+	/* ✅ CLAVE: Emoji siempre visible como fallback, imagen real lo tapa si carga */
 	.url-favicon-emoji {
 		font-size: 1.4rem;
 		width: 24px;
@@ -1282,6 +1290,8 @@ onDestroy(() => {
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
+		position: relative;
+		z-index: 1;
 	}
 
 	.favicon-img-real {
