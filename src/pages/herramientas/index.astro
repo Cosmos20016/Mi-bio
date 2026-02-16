@@ -43,20 +43,16 @@ const tools = [
             </filter>
           </defs>
           
-          <!-- Hexágono simple y limpio -->
           <polygon points="50,15 75,28 75,54 50,67 25,54 25,28" 
                    fill="none" stroke="url(#headerGrad)" stroke-width="2" 
                    opacity="0.5" class="hex-outline"/>
           
-          <!-- Cristal central minimalista -->
           <circle cx="50" cy="41" r="12" fill="url(#headerGrad)" 
                   filter="url(#glow)" opacity="0.7" class="center-glow"/>
           
-          <!-- Estrella simple -->
           <path d="M 50 33 L 52 38 L 57 39 L 53 43 L 54 48 L 50 45 L 46 48 L 47 43 L 43 39 L 48 38 Z" 
                 fill="white" opacity="0.9" class="star"/>
           
-          <!-- Puntos minimalistas -->
           <circle cx="35" cy="30" r="2" fill="url(#headerGrad)" class="dot d1" opacity="0.6"/>
           <circle cx="65" cy="30" r="2" fill="url(#headerGrad)" class="dot d2" opacity="0.6"/>
           <circle cx="35" cy="52" r="2" fill="url(#headerGrad)" class="dot d3" opacity="0.6"/>
@@ -103,15 +99,12 @@ const tools = [
                   </filter>
                 </defs>
                 
-                <!-- Monitor limpio y moderno -->
                 <rect x="15" y="18" width="50" height="34" rx="3" 
                       fill="url(#teleGrad)" opacity="0.9" filter="url(#softGlow)"/>
                 
-                <!-- Pantalla -->
                 <rect x="18" y="21" width="44" height="28" rx="2" 
                       fill="oklch(0.12 0.04 var(--hue))"/>
                 
-                <!-- SOLO 3 LÍNEAS DE TEXTO - MINIMALISTA -->
                 <g class="text-lines">
                   <rect x="22" y="27" width="28" height="2" rx="1" 
                         fill="oklch(0.8 0.15 var(--hue))" opacity="0.7" class="line l1"/>
@@ -121,7 +114,6 @@ const tools = [
                         fill="oklch(0.8 0.15 var(--hue))" opacity="0.5" class="line l3"/>
                 </g>
                 
-                <!-- FLECHA ÚNICA Y CLARA -->
                 <g class="arrow-up">
                   <path d="M 40 30 L 43 27 L 46 30" 
                         stroke="oklch(0.8 0.18 var(--hue))" stroke-width="2" 
@@ -131,10 +123,8 @@ const tools = [
                         stroke-linecap="round"/>
                 </g>
                 
-                <!-- REC minimalista -->
                 <circle cx="58" cy="25" r="2" fill="oklch(0.7 0.3 20)" class="rec-dot" opacity="0.8"/>
                 
-                <!-- Base simple -->
                 <rect x="35" y="52" width="10" height="2" rx="1" fill="url(#teleGrad)" opacity="0.8"/>
                 <rect x="30" y="54" width="20" height="2" rx="1" fill="url(#teleGrad)" opacity="0.7"/>
               </svg>
@@ -148,7 +138,7 @@ const tools = [
                     <stop offset="100%" style="stop-color:oklch(0.55 0.22 calc(var(--hue) + 40));stop-opacity:1" />
                   </linearGradient>
                   <filter id="linkGlow">
-                    <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+                    <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
                     <feMerge>
                       <feMergeNode in="coloredBlur"/>
                       <feMergeNode in="SourceGraphic"/>
@@ -156,55 +146,73 @@ const tools = [
                   </filter>
                 </defs>
                 
-                <!-- BARRA LARGA ARRIBA -->
-                <rect x="12" y="20" width="56" height="8" rx="4" 
-                      fill="oklch(0.25 0.06 var(--hue))" opacity="0.7" class="long-bar"/>
-                
-                <!-- Línea larga -->
-                <line x1="16" y1="24" x2="60" y2="24" 
-                      stroke="oklch(0.5 0.12 var(--hue))" stroke-width="2" 
-                      stroke-linecap="round" opacity="0.5"/>
-                
-                <!-- TIJERA SIMPLE Y ELEGANTE -->
-                <g class="scissors-simple" filter="url(#linkGlow)">
-                  <!-- Anillos -->
-                  <circle cx="35" cy="40" r="4" fill="none" 
-                          stroke="url(#linkGrad)" stroke-width="2"/>
-                  <circle cx="45" cy="40" r="4" fill="none" 
-                          stroke="url(#linkGrad)" stroke-width="2"/>
-                  
-                  <!-- Hojas -->
-                  <line x1="35" y1="40" x2="30" y2="32" 
-                        stroke="url(#linkGrad)" stroke-width="2.5" stroke-linecap="round"/>
-                  <line x1="45" y1="40" x2="50" y2="32" 
-                        stroke="url(#linkGrad)" stroke-width="2.5" stroke-linecap="round"/>
-                  
-                  <!-- Punto central -->
-                  <circle cx="40" cy="40" r="2" fill="oklch(0.85 0.12 var(--hue))"/>
+                <!-- URL LARGA - parte izquierda -->
+                <g class="url-left">
+                  <rect x="10" y="28" width="25" height="8" rx="4" 
+                        fill="oklch(0.3 0.06 var(--hue))" opacity="0.8"/>
+                  <line x1="14" y1="32" x2="30" y2="32" 
+                        stroke="oklch(0.55 0.12 var(--hue))" stroke-width="2" 
+                        stroke-linecap="round" opacity="0.6"/>
                 </g>
                 
-                <!-- BARRA CORTA ABAJO - DESTACADA -->
-                <rect x="25" y="52" width="30" height="10" rx="5" 
-                      fill="url(#linkGrad)" filter="url(#linkGlow)" 
-                      class="short-bar" opacity="0.9"/>
+                <!-- URL LARGA - parte derecha -->
+                <g class="url-right">
+                  <rect x="45" y="28" width="25" height="8" rx="4" 
+                        fill="oklch(0.3 0.06 var(--hue))" opacity="0.8"/>
+                  <line x1="50" y1="32" x2="66" y2="32" 
+                        stroke="oklch(0.55 0.12 var(--hue))" stroke-width="2" 
+                        stroke-linecap="round" opacity="0.6"/>
+                </g>
                 
-                <!-- Texto -->
-                <text x="40" y="58.5" 
-                      font-family="monospace" font-size="6" font-weight="bold" 
-                      fill="white" text-anchor="middle">bit.ly</text>
+                <!-- TIJERA - ELEMENTO PRINCIPAL -->
+                <g class="scissors-cutting" filter="url(#linkGlow)">
+                  <!-- Anillo izquierdo -->
+                  <circle cx="32" cy="32" r="5" fill="none" 
+                          stroke="url(#linkGrad)" stroke-width="2.5" class="ring-left"/>
+                  
+                  <!-- Anillo derecho -->
+                  <circle cx="48" cy="32" r="5" fill="none" 
+                          stroke="url(#linkGrad)" stroke-width="2.5" class="ring-right"/>
+                  
+                  <!-- Hoja izquierda -->
+                  <path d="M 32 32 L 26 22" 
+                        stroke="url(#linkGrad)" stroke-width="3" 
+                        stroke-linecap="round" class="blade-left"/>
+                  
+                  <!-- Hoja derecha -->
+                  <path d="M 48 32 L 54 22" 
+                        stroke="url(#linkGrad)" stroke-width="3" 
+                        stroke-linecap="round" class="blade-right"/>
+                  
+                  <!-- Punto de unión -->
+                  <circle cx="40" cy="32" r="2.5" fill="oklch(0.85 0.12 var(--hue))"/>
+                  
+                  <!-- Líneas de corte animadas -->
+                  <line x1="36" y1="28" x2="36" y2="36" 
+                        stroke="oklch(0.8 0.2 var(--hue))" stroke-width="1.5" 
+                        stroke-dasharray="2 2" opacity="0.6" class="cut-line cl1"/>
+                  <line x1="44" y1="28" x2="44" y2="36" 
+                        stroke="oklch(0.8 0.2 var(--hue))" stroke-width="1.5" 
+                        stroke-dasharray="2 2" opacity="0.6" class="cut-line cl2"/>
+                </g>
                 
-                <!-- QR CODE LIMPIO -->
-                <g class="qr-minimal" transform="translate(58, 50)">
-                  <rect x="0" y="0" width="16" height="16" rx="2" 
-                        fill="white" stroke="url(#linkGrad)" stroke-width="1.5"/>
+                <!-- URL CORTA - RESULTADO -->
+                <g class="url-short">
+                  <rect x="25" y="48" width="30" height="12" rx="6" 
+                        fill="url(#linkGrad)" filter="url(#linkGlow)" 
+                        opacity="0.95"/>
                   
-                  <!-- Esquinas -->
-                  <rect x="2" y="2" width="4" height="4" rx="0.5" fill="url(#linkGrad)"/>
-                  <rect x="10" y="2" width="4" height="4" rx="0.5" fill="url(#linkGrad)"/>
-                  <rect x="2" y="10" width="4" height="4" rx="0.5" fill="url(#linkGrad)"/>
+                  <text x="40" y="56" 
+                        font-family="monospace" font-size="7" font-weight="bold" 
+                        fill="white" text-anchor="middle">bit.ly</text>
                   
-                  <!-- Centro -->
-                  <rect x="7" y="7" width="4" height="4" rx="0.5" fill="url(#linkGrad)" opacity="0.8"/>
+                  <!-- Check mark sutil -->
+                  <g transform="translate(52, 52)">
+                    <circle cx="0" cy="0" r="4" fill="oklch(0.65 0.2 140)" opacity="0.9"/>
+                    <path d="M -1.5 0 L -0.5 1 L 1.5 -1" 
+                          stroke="white" stroke-width="1.2" 
+                          fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  </g>
                 </g>
               </svg>
             )}
@@ -548,7 +556,7 @@ const tools = [
     height: 100%;
   }
 
-  /* TELEPROMPTER - MINIMALISTA */
+  /* TELEPROMPTER */
   .text-lines .line {
     animation: lineFlow 2.5s ease-in-out infinite;
   }
@@ -580,41 +588,92 @@ const tools = [
     50% { opacity: 0.3; }
   }
 
-  /* LINK SHORTENER - MINIMALISTA */
-  .long-bar {
-    animation: longFade 2s ease-in-out infinite;
+  /* LINK SHORTENER - ENFOQUE EN TIJERA CORTANDO */
+  .url-left {
+    animation: urlShrinkLeft 2s ease-in-out infinite;
   }
 
-  @keyframes longFade {
-    0%, 100% { opacity: 0.7; }
-    50% { opacity: 0.5; }
+  @keyframes urlShrinkLeft {
+    0%, 100% { transform: translateX(0); opacity: 0.8; }
+    50% { transform: translateX(-3px); opacity: 0.5; }
   }
 
-  .scissors-simple {
-    animation: scissorsCut 2s ease-in-out infinite;
+  .url-right {
+    animation: urlShrinkRight 2s ease-in-out infinite;
   }
 
-  @keyframes scissorsCut {
+  @keyframes urlShrinkRight {
+    0%, 100% { transform: translateX(0); opacity: 0.8; }
+    50% { transform: translateX(3px); opacity: 0.5; }
+  }
+
+  .scissors-cutting {
+    animation: scissorsOpen 1.8s ease-in-out infinite;
+    transform-origin: 40px 32px;
+  }
+
+  @keyframes scissorsOpen {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  .ring-left {
+    animation: ringPulseLeft 1.8s ease-in-out infinite;
+    transform-origin: 32px 32px;
+  }
+
+  @keyframes ringPulseLeft {
     0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(-3deg); }
+    50% { transform: rotate(-8deg); }
   }
 
-  .short-bar {
+  .ring-right {
+    animation: ringPulseRight 1.8s ease-in-out infinite;
+    transform-origin: 48px 32px;
+  }
+
+  @keyframes ringPulseRight {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(8deg); }
+  }
+
+  .blade-left {
+    animation: bladeLeft 1.8s ease-in-out infinite;
+  }
+
+  @keyframes bladeLeft {
+    0%, 100% { transform: rotate(0deg); opacity: 1; }
+    50% { transform: rotate(-5deg); opacity: 0.8; }
+  }
+
+  .blade-right {
+    animation: bladeRight 1.8s ease-in-out infinite;
+  }
+
+  @keyframes bladeRight {
+    0%, 100% { transform: rotate(0deg); opacity: 1; }
+    50% { transform: rotate(5deg); opacity: 0.8; }
+  }
+
+  .cut-line {
+    animation: cutFlash 2s ease-in-out infinite;
+  }
+
+  .cl1 { animation-delay: 0s; }
+  .cl2 { animation-delay: 0.3s; }
+
+  @keyframes cutFlash {
+    0%, 100% { opacity: 0.6; stroke-dashoffset: 0; }
+    50% { opacity: 0.2; stroke-dashoffset: 4; }
+  }
+
+  .url-short {
     animation: shortGlow 2s ease-in-out infinite;
   }
 
   @keyframes shortGlow {
-    0%, 100% { opacity: 0.9; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.03); }
-  }
-
-  .qr-minimal {
-    animation: qrFloat 3s ease-in-out infinite;
-  }
-
-  @keyframes qrFloat {
-    0%, 100% { transform: translate(58px, 50px); }
-    50% { transform: translate(58px, 48px); }
+    0%, 100% { opacity: 0.95; transform: scale(1) translateY(0); }
+    50% { opacity: 1; transform: scale(1.03) translateY(-1px); }
   }
 
   .tool-card:hover .tool-svg {
