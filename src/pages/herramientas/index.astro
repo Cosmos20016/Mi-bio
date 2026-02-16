@@ -1,6 +1,8 @@
 ---
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { url } from "@utils/url-utils";
+import TeleprompterIcon from "./components/TeleprompterIcon.astro";
+import UrlShortenerIcon from "./components/UrlShortenerIcon.astro";
 
 const tools = [
 	{
@@ -25,1155 +27,175 @@ const tools = [
 ---
 
 <MainGridLayout title="Herramientas" description="Herramientas premium para creadores">
-  <section class="tools-hub">
-    <header class="tools-header">
-      <div class="tools-header-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="header-svg">
-          <defs>
-            <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" style="stop-color:oklch(0.7 0.2 var(--hue));stop-opacity:1" />
-              <stop offset="100%" style="stop-color:oklch(0.6 0.22 calc(var(--hue) + 40));stop-opacity:1" />
-            </linearGradient>
-            <filter id="headerGlow">
-              <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-              <feMerge>
-                <feMergeNode in="coloredBlur"/>
-                <feMergeNode in="SourceGraphic"/>
-              </feMerge>
-            </filter>
-          </defs>
-          
-          <polygon points="50,15 75,28 75,54 50,67 25,54 25,28" 
-                   fill="none" stroke="url(#headerGrad)" stroke-width="2" 
-                   opacity="0.5" class="hex-outline"/>
-          
-          <circle cx="50" cy="41" r="12" fill="url(#headerGrad)" 
-                  filter="url(#headerGlow)" opacity="0.7" class="center-glow"/>
-          
-          <path d="M 50 33 L 52 38 L 57 39 L 53 43 L 54 48 L 50 45 L 46 48 L 47 43 L 43 39 L 48 38 Z" 
-                fill="white" opacity="0.9" class="star"/>
-          
-          <circle cx="35" cy="30" r="2" fill="url(#headerGrad)" class="dot d1" opacity="0.6"/>
-          <circle cx="65" cy="30" r="2" fill="url(#headerGrad)" class="dot d2" opacity="0.6"/>
-          <circle cx="35" cy="52" r="2" fill="url(#headerGrad)" class="dot d3" opacity="0.6"/>
-          <circle cx="65" cy="52" r="2" fill="url(#headerGrad)" class="dot d4" opacity="0.6"/>
-        </svg>
-      </div>
-
-      <h1 class="tools-title">Herramientas</h1>
-      <p class="tools-subtitle">
-        Suite exclusiva de herramientas profesionales para potenciar tu contenido y creatividad.
-      </p>
-      <div class="tools-stats">
-        <span class="tools-stat">{tools.length} herramientas</span>
-        <span class="tools-stat-divider">·</span>
-        <span class="tools-stat">100% gratuitas</span>
-        <span class="tools-stat-divider">·</span>
-        <span class="tools-stat">Sin publicidad</span>
-      </div>
-    </header>
-
-    <div class="tools-grid">
-      {tools.map((tool, i) => (
-        <a
-          class="tool-card"
-          href={tool.href}
-          style={`--card-index: ${i}; animation-delay: calc(var(--content-delay, 0ms) + ${i * 100}ms)`}
-          aria-label={`Abrir ${tool.name}: ${tool.description}`}
-          data-tool-card
-        >
-          <div class="tool-badge">{tool.badge}</div>
-
-          <div class="tool-icon-wrapper">
-            {tool.iconType === "teleprompter" && (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" class="tool-svg teleprompter-icon" data-icon-svg>
-                <defs>
-                  <linearGradient id={`teleGrad-${i}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:oklch(0.7 0.2 var(--hue));stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:oklch(0.55 0.22 calc(var(--hue) + 40));stop-opacity:1" />
-                  </linearGradient>
-                  <filter id={`teleGlow-${i}`}>
-                    <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
-                    <feMerge>
-                      <feMergeNode in="coloredBlur"/>
-                      <feMergeNode in="SourceGraphic"/>
-                    </feMerge>
-                  </filter>
-                </defs>
-                
-                <rect x="15" y="18" width="50" height="34" rx="3" 
-                      fill={`url(#teleGrad-${i})`} opacity="0.9" filter={`url(#teleGlow-${i})`}/>
-                
-                <rect x="18" y="21" width="44" height="28" rx="2" 
-                      fill="oklch(0.12 0.04 var(--hue))"/>
-                
-                <g class="text-lines">
-                  <rect x="22" y="27" width="28" height="2" rx="1" 
-                        fill="oklch(0.8 0.15 var(--hue))" opacity="0.7" class="line l1"/>
-                  <rect x="22" y="33" width="36" height="2" rx="1" 
-                        fill="oklch(0.8 0.15 var(--hue))" opacity="0.6" class="line l2"/>
-                  <rect x="22" y="39" width="32" height="2" rx="1" 
-                        fill="oklch(0.8 0.15 var(--hue))" opacity="0.5" class="line l3"/>
-                </g>
-                
-                <g class="arrow-up">
-                  <path d="M 40 30 L 43 27 L 46 30" 
-                        stroke="oklch(0.8 0.18 var(--hue))" stroke-width="2" 
-                        fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                  <line x1="43" y1="27" x2="43" y2="38" 
-                        stroke="oklch(0.8 0.18 var(--hue))" stroke-width="2" 
-                        stroke-linecap="round"/>
-                </g>
-                
-                <circle cx="58" cy="25" r="2" fill="oklch(0.7 0.3 20)" class="rec-dot" opacity="0.8"/>
-                
-                <rect x="35" y="52" width="10" height="2" rx="1" fill={`url(#teleGrad-${i})`} opacity="0.8"/>
-                <rect x="30" y="54" width="20" height="2" rx="1" fill={`url(#teleGrad-${i})`} opacity="0.7"/>
-              </svg>
-            )}
+  <main id="main-tools">
+    <section class="tools-hub" aria-labelledby="tools-title">
+      <header class="tools-header">
+        <div class="tools-header-icon" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="header-svg">
+            <defs>
+              <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:oklch(0.7 0.2 var(--hue));stop-opacity:1" />
+                <stop offset="100%" style="stop-color:oklch(0.6 0.22 calc(var(--hue) + 40));stop-opacity:1" />
+              </linearGradient>
+              <filter id="headerGlow">
+                <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                <feMerge>
+                  <feMergeNode in="coloredBlur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
             
-            {tool.iconType === "link" && (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="tool-svg url-icon" data-icon-svg>
-                <defs>
-                  <linearGradient id={`urlGrad-${i}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:oklch(0.72 0.22 var(--hue));stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:oklch(0.58 0.24 calc(var(--hue) + 45));stop-opacity:1" />
-                  </linearGradient>
-                  
-                  <radialGradient id={`particleGrad-${i}`} cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" style="stop-color:oklch(0.85 0.2 var(--hue));stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:oklch(0.7 0.22 calc(var(--hue) + 30));stop-opacity:0" />
-                  </radialGradient>
-                  
-                  <filter id={`glow-${i}`} x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
-                    <feMerge>
-                      <feMergeNode in="coloredBlur"/>
-                      <feMergeNode in="SourceGraphic"/>
-                    </feMerge>
-                  </filter>
-                  
-                  <filter id={`softGlow-${i}`} x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation="2.5" result="blur"/>
-                    <feMerge>
-                      <feMergeNode in="blur"/>
-                      <feMergeNode in="SourceGraphic"/>
-                    </feMerge>
-                  </filter>
-                </defs>
-                
-                <g class="particles">
-                  <circle cx="30" cy="35" r="2" fill={`url(#particleGrad-${i})`} class="particle p1" opacity="0"/>
-                  <circle cx="45" cy="32" r="1.8" fill={`url(#particleGrad-${i})`} class="particle p2" opacity="0"/>
-                  <circle cx="55" cy="38" r="1.5" fill={`url(#particleGrad-${i})`} class="particle p3" opacity="0"/>
-                  <circle cx="70" cy="35" r="2.2" fill={`url(#particleGrad-${i})`} class="particle p4" opacity="0"/>
-                  <circle cx="38" cy="42" r="1.6" fill={`url(#particleGrad-${i})`} class="particle p5" opacity="0"/>
-                  <circle cx="62" cy="40" r="1.9" fill={`url(#particleGrad-${i})`} class="particle p6" opacity="0"/>
-                </g>
-                
-                <g class="long-url-container">
-                  <rect x="20" y="28" width="60" height="8" rx="4" 
-                        fill={`url(#urlGrad-${i})`} opacity="0.92" 
-                        filter={`url(#softGlow-${i})`} class="long-url-bar"/>
-                  
-                  <g class="text-flow">
-                    <rect x="24" y="31" width="8" height="2" rx="1" fill="white" opacity="0" class="text-bit tb1"/>
-                    <rect x="34" y="31" width="10" height="2" rx="1" fill="white" opacity="0" class="text-bit tb2"/>
-                    <rect x="46" y="31" width="7" height="2" rx="1" fill="white" opacity="0" class="text-bit tb3"/>
-                    <rect x="55" y="31" width="9" height="2" rx="1" fill="white" opacity="0" class="text-bit tb4"/>
-                    <rect x="66" y="31" width="10" height="2" rx="1" fill="white" opacity="0" class="text-bit tb5"/>
-                  </g>
-                  
-                  <rect x="22" y="28.5" width="56" height="3" rx="1.5" 
-                        fill="white" opacity="0.25" class="shine-top"/>
-                </g>
-                
-                <g class="vortex-center">
-                  <circle cx="50" cy="50" r="8" fill="none" stroke={`url(#urlGrad-${i})`} 
-                          stroke-width="1.5" opacity="0" class="ring ring1"/>
-                  <circle cx="50" cy="50" r="6" fill="none" stroke={`url(#urlGrad-${i})`} 
-                          stroke-width="1.2" opacity="0" class="ring ring2"/>
-                  <circle cx="50" cy="50" r="4" fill="none" stroke={`url(#urlGrad-${i})`} 
-                          stroke-width="1" opacity="0" class="ring ring3"/>
-                  
-                  <circle cx="50" cy="50" r="5" fill={`url(#urlGrad-${i})`} 
-                          opacity="0" filter={`url(#glow-${i})`} class="core"/>
-                  
-                  <circle cx="50" cy="42" r="1.5" fill="oklch(0.85 0.2 var(--hue))" 
-                          opacity="0" class="orbital orb1"/>
-                  <circle cx="58" cy="50" r="1.5" fill="oklch(0.85 0.2 var(--hue))" 
-                          opacity="0" class="orbital orb2"/>
-                  <circle cx="50" cy="58" r="1.5" fill="oklch(0.85 0.2 var(--hue))" 
-                          opacity="0" class="orbital orb3"/>
-                  <circle cx="42" cy="50" r="1.5" fill="oklch(0.85 0.2 var(--hue))" 
-                          opacity="0" class="orbital orb4"/>
-                </g>
-                
-                <g class="short-url-container">
-                  <rect x="32" y="64" width="36" height="8" rx="4" 
-                        fill={`url(#urlGrad-${i})`} opacity="0" 
-                        filter={`url(#softGlow-${i})`} class="short-url-bar"/>
-                  
-                  <g class="link-icon" opacity="0">
-                    <circle cx="38" cy="68" r="2" fill="none" stroke="white" stroke-width="1.3"/>
-                    <circle cx="44" cy="68" r="2" fill="none" stroke="white" stroke-width="1.3"/>
-                    <line x1="39.5" y1="68" x2="42.5" y2="68" stroke="white" stroke-width="1.3"/>
-                  </g>
-                  
-                  <text x="54" y="69.5" font-family="system-ui, -apple-system" 
-                        font-size="5.5" font-weight="700" fill="white" 
-                        opacity="0" class="short-text">bit.ly/x</text>
-                  
-                  <rect x="34" y="64.5" width="32" height="2.5" rx="1.25" 
-                        fill="white" opacity="0" class="shine-bottom"/>
-                </g>
-                
-                <g class="energy-waves">
-                  <path d="M 25 50 Q 30 48, 35 50 T 45 50" 
-                        stroke={`url(#urlGrad-${i})`} stroke-width="1.5" 
-                        fill="none" opacity="0" class="wave w1"/>
-                  <path d="M 55 50 Q 60 48, 65 50 T 75 50" 
-                        stroke={`url(#urlGrad-${i})`} stroke-width="1.5" 
-                        fill="none" opacity="0" class="wave w2"/>
-                </g>
-              </svg>
-            )}
-          </div>
+            <polygon points="50,15 75,28 75,54 50,67 25,54 25,28" 
+                     fill="none" stroke="url(#headerGrad)" stroke-width="2" 
+                     opacity="0.5" class="hex-outline"/>
+            
+            <circle cx="50" cy="41" r="12" fill="url(#headerGrad)" 
+                    filter="url(#headerGlow)" opacity="0.7" class="center-glow"/>
+            
+            <path d="M 50 33 L 52 38 L 57 39 L 53 43 L 54 48 L 50 45 L 46 48 L 47 43 L 43 39 L 48 38 Z" 
+                  fill="white" opacity="0.9" class="star"/>
+            
+            <circle cx="35" cy="30" r="2" fill="url(#headerGrad)" class="dot d1" opacity="0.6"/>
+            <circle cx="65" cy="30" r="2" fill="url(#headerGrad)" class="dot d2" opacity="0.6"/>
+            <circle cx="35" cy="52" r="2" fill="url(#headerGrad)" class="dot d3" opacity="0.6"/>
+            <circle cx="65" cy="52" r="2" fill="url(#headerGrad)" class="dot d4" opacity="0.6"/>
+          </svg>
+        </div>
 
-          <div class="tool-content">
-            <h2 class="tool-name">{tool.name}</h2>
-            <p class="tool-description">{tool.description}</p>
-          </div>
+        <h1 id="tools-title" class="tools-title">Herramientas</h1>
+        <p class="tools-subtitle">
+          Suite exclusiva de herramientas profesionales para potenciar tu contenido y creatividad.
+        </p>
+        <div class="tools-stats" role="status" aria-live="polite">
+          <span class="tools-stat">{tools.length} herramientas</span>
+          <span class="tools-stat-divider" aria-hidden="true">·</span>
+          <span class="tools-stat">100% gratuitas</span>
+          <span class="tools-stat-divider" aria-hidden="true">·</span>
+          <span class="tools-stat">Sin publicidad</span>
+        </div>
+      </header>
 
-          <div class="tool-features">
-            {tool.features.map((feature) => (
-              <span class="tool-feature-tag">{feature}</span>
-            ))}
-          </div>
+      <div class="tools-grid" role="list">
+        {tools.map((tool, i) => (
+          <article
+            class="tool-card"
+            role="listitem"
+            style={`--card-index: ${i};`}
+            data-tool-card
+          >
+            <a
+              href={tool.href}
+              class="tool-card-link"
+              aria-label={`Abrir ${tool.name}: ${tool.description}`}
+            >
+              <div class="tool-badge" aria-label={`Etiqueta: ${tool.badge}`}>{tool.badge}</div>
 
-          <div class="tool-cta">
-            <span>Abrir herramienta</span>
-            <span class="tool-cta-arrow">→</span>
-          </div>
-        </a>
-      ))}
-    </div>
+              <div class="tool-icon-wrapper" aria-hidden="true">
+                {tool.iconType === "teleprompter" && <TeleprompterIcon index={i} />}
+                {tool.iconType === "link" && <UrlShortenerIcon index={i} />}
+              </div>
 
-    <div class="tools-footer">
-      <p>
-        🔒 Todas las herramientas funcionan en tu navegador. Tus datos nunca salen de tu dispositivo.
-      </p>
-    </div>
-  </section>
+              <div class="tool-content">
+                <h2 class="tool-name">{tool.name}</h2>
+                <p class="tool-description">{tool.description}</p>
+              </div>
+
+              <div class="tool-features" role="list">
+                {tool.features.map((feature) => (
+                  <span class="tool-feature-tag" role="listitem">{feature}</span>
+                ))}
+              </div>
+
+              <div class="tool-cta" aria-hidden="true">
+                <span>Abrir herramienta</span>
+                <span class="tool-cta-arrow">→</span>
+              </div>
+            </a>
+          </article>
+        ))}
+      </div>
+
+      <footer class="tools-footer">
+        <p>
+          🔒 Todas las herramientas funcionan en tu navegador. Tus datos nunca salen de tu dispositivo.
+        </p>
+      </footer>
+    </section>
+  </main>
 </MainGridLayout>
 
 <script>
   // ============================================
-  // OPTIMIZACIÓN: Lazy-load de animaciones SVG
+  // OPTIMIZACIÓN ULTRA: Animations Performance Manager
   // ============================================
   
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   
   if (!prefersReducedMotion) {
-    // Intersection Observer para activar animaciones solo cuando son visibles
+    // Passive event listeners para mejor scroll performance
+    const observerOptions = {
+      rootMargin: '100px', // Más margen para pre-cargar
+      threshold: [0, 0.25, 0.5, 0.75, 1], // Múltiples umbrales para transiciones suaves
+    };
+    
+    // RequestIdleCallback para operaciones no críticas
+    const scheduleAnimation = (callback: () => void) => {
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(callback, { timeout: 300 });
+      } else {
+        requestAnimationFrame(callback);
+      }
+    };
+    
+    // Intersection Observer optimizado
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           const svg = entry.target.querySelector('[data-icon-svg]');
           if (!svg) return;
           
-          if (entry.isIntersecting) {
-            // Activar animaciones cuando la card es visible
-            svg.classList.add('animate-active');
-          } else {
-            // Pausar animaciones cuando la card no es visible (ahorro de CPU/GPU)
-            svg.classList.remove('animate-active');
-          }
+          // Usar requestAnimationFrame para cambios de DOM
+          requestAnimationFrame(() => {
+            if (entry.isIntersecting) {
+              // Progressive enhancement: activar por niveles
+              svg.classList.add('animate-active');
+              
+              // Pre-warm GPU para animaciones complejas
+              if (entry.intersectionRatio > 0.5) {
+                svg.style.willChange = 'transform, opacity';
+                
+                // Limpiar will-change después de iniciar
+                scheduleAnimation(() => {
+                  svg.style.willChange = 'auto';
+                });
+              }
+            } else {
+              // Pausar animaciones fuera de vista (ahorro batería)
+              svg.classList.remove('animate-active');
+            }
+          });
         });
       },
-      {
-        // Iniciar animación un poco antes de que sea visible
-        rootMargin: '50px',
-        threshold: 0.1
-      }
+      observerOptions
     );
     
-    // Observar todas las tool cards
-    document.querySelectorAll('[data-tool-card]').forEach((card) => {
-      observer.observe(card);
+    // Observar todas las cards
+    const cards = document.querySelectorAll('[data-tool-card]');
+    cards.forEach((card) => observer.observe(card));
+    
+    // Cleanup al cambiar de página (SPA)
+    document.addEventListener('astro:before-preparation', () => {
+      observer.disconnect();
     });
   }
 </script>
 
 <style>
-  /* ============================================
-     VARIABLES CSS OPTIMIZADAS
-     ============================================ */
-  
-  :root {
-    /* Animaciones */
-    --float-amount-header: -8px;
-    --float-amount-arrow: -3px;
-    --anim-duration-fast: 2s;
-    --anim-duration-normal: 3s;
-    --anim-duration-slow: 4s;
-    --anim-duration-very-slow: 12s;
-    
-    /* Espaciado */
-    --gap-xs: 0.4rem;
-    --gap-sm: 0.5rem;
-    --gap-md: 0.875rem;
-    --gap-lg: 1rem;
-    
-    /* Colores del tema */
-    --color-text-primary: #1e293b;
-    --color-text-secondary: #64748b;
-    --color-text-tertiary: #475569;
-    --color-border: #e2e8f0;
-    --color-bg-tag: #f1f5f9;
-  }
-  
-  :global(.dark) {
-    --color-text-primary: #f1f5f9;
-    --color-text-secondary: #94a3b8;
-    --color-text-tertiary: #94a3b8;
-    --color-border: #334155;
-    --color-bg-tag: #1e293b;
-  }
-  
-  /* ============================================
-     BASE
-     ============================================ */
-  
-  .tool-name::selection,
-  .tool-description::selection,
-  .tool-feature-tag::selection {
-    background: oklch(0.7 0.2 var(--hue) / 0.3);
-    color: oklch(0.2 0.1 var(--hue));
-  }
-
-  :global(.dark) .tool-name::selection,
-  :global(.dark) .tool-description::selection,
-  :global(.dark) .tool-feature-tag::selection {
-    background: oklch(0.7 0.2 var(--hue) / 0.4);
-    color: var(--color-text-primary);
-  }
-
-  .tools-hub {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-
-  @media (min-width: 768px) {
-    .tools-hub {
-      gap: 2rem;
-    }
-  }
-
-  /* ============================================
-     HEADER
-     ============================================ */
-  .tools-header {
-    text-align: center;
-    padding: 0.75rem 0 0.5rem;
-  }
-
-  @media (min-width: 768px) {
-    .tools-header {
-      padding: 1rem 0 0.5rem;
-    }
-  }
-
-  .tools-header-icon {
-    margin-bottom: 0.5rem;
-    display: inline-block;
-    animation: float var(--anim-duration-slow) ease-in-out infinite;
-  }
-
-  @media (min-width: 768px) {
-    .tools-header-icon {
-      margin-bottom: 0.75rem;
-    }
-  }
-
-  .header-svg {
-    width: 70px;
-    height: 70px;
-    filter: drop-shadow(0 6px 20px oklch(0.7 0.18 var(--hue) / 0.3));
-  }
-
-  @media (min-width: 768px) {
-    .header-svg {
-      width: 80px;
-      height: 80px;
-    }
-  }
-
-  @media (max-width: 767px) {
-    .header-svg {
-      filter: drop-shadow(0 4px 12px oklch(0.7 0.18 var(--hue) / 0.2));
-    }
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(var(--float-amount-header, -8px)); }
-  }
-
-  .hex-outline {
-    animation: hexBreath var(--anim-duration-slow) ease-in-out infinite;
-    transform-origin: 50px 41px;
-  }
-
-  @keyframes hexBreath {
-    0%, 100% { transform: scale(1); opacity: 0.5; }
-    50% { transform: scale(1.05); opacity: 0.7; }
-  }
-
-  .center-glow {
-    animation: glowPulse var(--anim-duration-normal) ease-in-out infinite;
-  }
-
-  @keyframes glowPulse {
-    0%, 100% { transform: scale(1); opacity: 0.7; }
-    50% { transform: scale(1.1); opacity: 0.9; }
-  }
-
-  .star {
-    animation: starSpin var(--anim-duration-very-slow) linear infinite;
-    transform-origin: 50px 41px;
-  }
-
-  @keyframes starSpin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-
-  .dot {
-    animation: dotPulse var(--anim-duration-normal) ease-in-out infinite;
-  }
-
-  .d1 { animation-delay: 0s; }
-  .d2 { animation-delay: 0.75s; }
-  .d3 { animation-delay: 1.5s; }
-  .d4 { animation-delay: 2.25s; }
-
-  @keyframes dotPulse {
-    0%, 100% { opacity: 0.6; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.3); }
-  }
-
-  .tools-title {
-    font-size: 2rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    background: linear-gradient(
-      135deg,
-      oklch(0.7 0.2 var(--hue)),
-      oklch(0.6 0.22 calc(var(--hue) + 40)),
-      oklch(0.7 0.2 var(--hue))
-    );
-    background-size: 200% 100%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 0.5rem;
-    line-height: 1.2;
-    animation: titleShimmer var(--anim-duration-slow) ease-in-out infinite, titleFade 0.6s ease-out;
-  }
-
-  @media (min-width: 768px) {
-    .tools-title {
-      font-size: 2.5rem;
-    }
-  }
-
-  @keyframes titleShimmer {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-  }
-
-  @keyframes titleFade {
-    from { opacity: 0; transform: translateY(-15px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  :global(.dark) .tools-title {
-    background: linear-gradient(
-      135deg,
-      oklch(0.8 0.18 var(--hue)),
-      oklch(0.7 0.2 calc(var(--hue) + 40)),
-      oklch(0.8 0.18 var(--hue))
-    );
-    background-size: 200% 100%;
-    -webkit-background-clip: text;
-    background-clip: text;
-  }
-
-  .tools-subtitle {
-    color: var(--color-text-tertiary);
-    font-size: 0.95rem;
-    line-height: 1.5;
-    max-width: 32rem;
-    margin: 0 auto 0.75rem;
-    animation: subtitleFade 0.6s ease-out 0.15s both;
-    padding: 0 1rem;
-  }
-
-  @media (min-width: 768px) {
-    .tools-subtitle {
-      font-size: 1.05rem;
-      padding: 0;
-    }
-  }
-
-  @keyframes subtitleFade {
-    from { opacity: 0; transform: translateY(-8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .tools-stats {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--gap-xs);
-    font-size: 0.8rem;
-    font-weight: 600;
-    animation: statsFade 0.6s ease-out 0.3s both;
-    flex-wrap: wrap;
-  }
-
-  @media (min-width: 768px) {
-    .tools-stats {
-      gap: var(--gap-sm);
-      font-size: 0.85rem;
-    }
-  }
-
-  @keyframes statsFade {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .tools-stat {
-    color: oklch(0.55 0.14 var(--hue));
-  }
-
-  :global(.dark) .tools-stat {
-    color: oklch(0.72 0.14 var(--hue));
-  }
-
-  .tools-stat-divider {
-    color: #cbd5e1;
-  }
-
-  :global(.dark) .tools-stat-divider {
-    color: #475569;
-  }
-
-  /* ============================================
-     GRID Y CARDS
-     ============================================ */
-  .tools-grid {
-    display: grid;
-    gap: var(--gap-lg);
-    grid-template-columns: 1fr;
-  }
-
-  @media (min-width: 768px) {
-    .tools-grid {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1.25rem;
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .tools-grid {
-      gap: 1.5rem;
-    }
-  }
-
-  .tool-card {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: var(--gap-md);
-    padding: 1.5rem;
-    background: var(--card-bg);
-    border-radius: var(--radius-large);
-    border: 1px solid rgba(0, 0, 0, 0.06);
-    text-decoration: none;
-    color: inherit;
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    overflow: hidden;
-    animation: cardFade 0.5s ease-out both;
-    contain: layout style paint;
-    /* GPU acceleration */
-    transform: translateZ(0);
-    backface-visibility: hidden;
-  }
-
-  @media (min-width: 768px) {
-    .tool-card {
-      padding: 2rem;
-      gap: var(--gap-lg);
-    }
-  }
-
-  @keyframes cardFade {
-    from { opacity: 0; transform: translateY(20px) translateZ(0); }
-    to { opacity: 1; transform: translateY(0) translateZ(0); }
-  }
-
-  .tool-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(
-      135deg,
-      oklch(0.7 0.18 var(--hue) / 0.05),
-      transparent
-    );
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-  }
-
-  .tool-card:hover::before {
-    opacity: 1;
-  }
-
-  .tool-card:hover {
-    transform: translateY(-4px) translateZ(0);
-    border-color: oklch(0.7 0.15 var(--hue) / 0.2);
-    box-shadow: 
-      0 12px 28px oklch(0.5 0.1 var(--hue) / 0.12),
-      0 4px 12px oklch(0.5 0.1 var(--hue) / 0.08);
-  }
-
-  .tool-card:focus-visible {
-    outline: 3px solid oklch(0.7 0.2 var(--hue));
-    outline-offset: 4px;
-    transform: translateY(-4px) translateZ(0);
-  }
-
-  :global(.dark) .tool-card {
-    border-color: rgba(255, 255, 255, 0.08);
-  }
-
-  :global(.dark) .tool-card:hover,
-  :global(.dark) .tool-card:focus-visible {
-    border-color: oklch(0.7 0.15 var(--hue) / 0.3);
-  }
-
-  .tool-badge {
-    position: absolute;
-    top: 0.875rem;
-    right: 0.875rem;
-    padding: 0.35rem 0.75rem;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-    background: oklch(0.7 0.18 var(--hue) / 0.12);
-    color: oklch(0.55 0.2 var(--hue));
-    border-radius: var(--radius-medium);
-    backdrop-filter: blur(8px);
-  }
-
-  @media (min-width: 768px) {
-    .tool-badge {
-      top: 1rem;
-      right: 1rem;
-    }
-  }
-
-  @media (max-width: 767px) {
-    .tool-badge {
-      backdrop-filter: none;
-      background: oklch(0.7 0.18 var(--hue) / 0.18);
-    }
-  }
-
-  :global(.dark) .tool-badge {
-    background: oklch(0.7 0.18 var(--hue) / 0.2);
-    color: oklch(0.75 0.18 var(--hue));
-  }
-
-  .tool-icon-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100px;
-    margin-bottom: 0.25rem;
-  }
-
-  @media (min-width: 768px) {
-    .tool-icon-wrapper {
-      height: 110px;
-      margin-bottom: 0.5rem;
-    }
-  }
-
-  .tool-svg {
-    width: 85px;
-    height: 85px;
-    transition: transform 0.3s ease;
-    will-change: transform;
-    /* GPU acceleration */
-    transform: translateZ(0);
-  }
-
-  @media (min-width: 768px) {
-    .tool-svg {
-      width: 95px;
-      height: 95px;
-    }
-  }
-
-  .tool-card:hover .tool-svg {
-    transform: scale(1.05) translateZ(0);
-  }
-
-  .tool-content {
-    flex: 1;
-  }
-
-  .tool-name {
-    font-size: 1.25rem;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    color: var(--color-text-primary);
-    margin-bottom: 0.4rem;
-    line-height: 1.3;
-  }
-
-  @media (min-width: 768px) {
-    .tool-name {
-      font-size: 1.4rem;
-      margin-bottom: 0.5rem;
-    }
-  }
-
-  .tool-description {
-    font-size: 0.9rem;
-    line-height: 1.5;
-    color: var(--color-text-secondary);
-  }
-
-  @media (min-width: 768px) {
-    .tool-description {
-      font-size: 0.95rem;
-      line-height: 1.6;
-    }
-  }
-
-  .tool-features {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--gap-xs);
-  }
-
-  @media (min-width: 768px) {
-    .tool-features {
-      gap: var(--gap-sm);
-    }
-  }
-
-  .tool-feature-tag {
-    padding: 0.3rem 0.6rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    background: var(--color-bg-tag);
-    color: var(--color-text-tertiary);
-    border-radius: var(--radius-small);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-  }
-
-  @media (min-width: 768px) {
-    .tool-feature-tag {
-      padding: 0.35rem 0.65rem;
-      font-size: 0.8rem;
-    }
-  }
-
-  .tool-cta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-top: 0.625rem;
-    margin-top: 0.625rem;
-    border-top: 1px solid var(--color-border);
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: oklch(0.55 0.18 var(--hue));
-  }
-
-  @media (min-width: 768px) {
-    .tool-cta {
-      padding-top: 0.75rem;
-      margin-top: 0.75rem;
-      font-size: 0.95rem;
-    }
-  }
-
-  :global(.dark) .tool-cta {
-    color: oklch(0.72 0.16 var(--hue));
-  }
-
-  .tool-cta-arrow {
-    transition: transform 0.3s ease;
-  }
-
-  .tool-card:hover .tool-cta-arrow {
-    transform: translateX(4px);
-  }
-
-  .tools-footer {
-    text-align: center;
-    padding: 1.5rem 1rem;
-    color: var(--color-text-secondary);
-    font-size: 0.85rem;
-  }
-
-  @media (min-width: 768px) {
-    .tools-footer {
-      padding: 1.5rem 0;
-      font-size: 0.9rem;
-    }
-  }
-
-  /* ============================================
-     TELEPROMPTER ICON
-     ============================================ */
-  
-  /* Solo animar cuando .animate-active está presente */
-  .animate-active .text-lines rect {
-    animation: textScroll var(--anim-duration-normal) ease-in-out infinite;
-  }
-
-  .l1 { animation-delay: 0s; }
-  .l2 { animation-delay: 0.3s; }
-  .l3 { animation-delay: 0.6s; }
-
-  @keyframes textScroll {
-    0%, 100% { opacity: 0.7; transform: translateY(0); }
-    50% { opacity: 0.4; transform: translateY(3px); }
-  }
-
-  .animate-active .arrow-up {
-    animation: float var(--anim-duration-fast) ease-in-out infinite;
-    --float-amount-header: var(--float-amount-arrow);
-  }
-
-  .animate-active .rec-dot {
-    animation: recBlink var(--anim-duration-fast) ease-in-out infinite;
-  }
-
-  @keyframes recBlink {
-    0%, 100% { opacity: 0.8; }
-    50% { opacity: 0.3; }
-  }
-
-  /* ============================================
-     URL SHORTENER ICON - ULTRA OPTIMIZADO
-     ============================================ */
-  
-  @media (min-width: 768px) {
-    .animate-active .particle {
-      animation: particleFlow var(--anim-duration-slow) ease-in-out infinite;
-    }
-
-    .p1 { animation-delay: 0s; }
-    .p2 { animation-delay: 0.3s; }
-    .p3 { animation-delay: 0.6s; }
-    .p4 { animation-delay: 0.9s; }
-    .p5 { animation-delay: 1.2s; }
-    .p6 { animation-delay: 1.5s; }
-  }
-
-  @keyframes particleFlow {
-    0% {
-      opacity: 0;
-      transform: translate(0, 0) scale(0.5);
-    }
-    15% {
-      opacity: 0.8;
-      transform: translate(5px, -10px) scale(1);
-    }
-    35% {
-      opacity: 0.6;
-      transform: translate(15px, 5px) scale(0.9);
-    }
-    50% {
-      opacity: 0.4;
-      transform: translate(20px, 15px) scale(0.7);
-    }
-    65%, 100% {
-      opacity: 0;
-      transform: translate(20px, 30px) scale(0.3);
-    }
-  }
-
-  .animate-active .long-url-bar {
-    animation: longPulse var(--anim-duration-slow) ease-in-out infinite;
-  }
-
-  @keyframes longPulse {
-    0%, 100% {
-      opacity: 0.92;
-      transform: scaleX(1);
-    }
-    20%, 80% {
-      opacity: 1;
-      transform: scaleX(1.01);
-    }
-  }
-
-  .animate-active .text-bit {
-    animation: textFlow var(--anim-duration-slow) ease-in-out infinite;
-  }
-
-  .tb1 { animation-delay: 0s; }
-  .tb2 { animation-delay: 0.15s; }
-  .tb3 { animation-delay: 0.3s; }
-  .tb4 { animation-delay: 0.45s; }
-  .tb5 { animation-delay: 0.6s; }
-
-  @keyframes textFlow {
-    0%, 10% {
-      opacity: 0;
-      transform: translateX(-5px);
-    }
-    15%, 45% {
-      opacity: 0.85;
-      transform: translateX(0);
-    }
-    50% {
-      opacity: 0.6;
-      transform: translateX(2px);
-    }
-    55%, 100% {
-      opacity: 0;
-      transform: translateX(5px);
-    }
-  }
-
-  .animate-active .ring {
-    animation: ringExpand var(--anim-duration-fast) ease-out infinite;
-    transform-origin: 50px 50px;
-    will-change: transform;
-  }
-
-  .ring1 { animation-delay: 0s; }
-  .ring2 { animation-delay: 0.3s; }
-  .ring3 { animation-delay: 0.6s; }
-
-  @keyframes ringExpand {
-    0% {
-      opacity: 0;
-      transform: scale(0.3);
-    }
-    30% {
-      opacity: 0.7;
-    }
-    70% {
-      opacity: 0.3;
-    }
-    100% {
-      opacity: 0;
-      transform: scale(1.8);
-    }
-  }
-
-  .animate-active .core {
-    animation: corePulse var(--anim-duration-fast) ease-in-out infinite;
-    will-change: transform;
-  }
-
-  @keyframes corePulse {
-    0%, 100% {
-      opacity: 0.7;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 1;
-      transform: scale(1.2);
-    }
-  }
-
-  .animate-active .orbital {
-    animation: orbit var(--anim-duration-normal) linear infinite;
-    transform-origin: 50px 50px;
-  }
-
-  .orb1 { animation-delay: 0s; }
-  .orb2 { animation-delay: 0.75s; }
-  .orb3 { animation-delay: 1.5s; }
-  .orb4 { animation-delay: 2.25s; }
-
-  @keyframes orbit {
-    0% {
-      opacity: 0;
-      transform: rotate(0deg) translateX(8px) scale(0.5);
-    }
-    20% {
-      opacity: 0.9;
-      transform: rotate(72deg) translateX(8px) scale(1);
-    }
-    40% {
-      opacity: 0.8;
-      transform: rotate(144deg) translateX(8px) scale(0.9);
-    }
-    60% {
-      opacity: 0.7;
-      transform: rotate(216deg) translateX(8px) scale(0.8);
-    }
-    80% {
-      opacity: 0.6;
-      transform: rotate(288deg) translateX(8px) scale(0.7);
-    }
-    100% {
-      opacity: 0;
-      transform: rotate(360deg) translateX(8px) scale(0.5);
-    }
-  }
-
-  .animate-active .wave {
-    animation: waveFlow var(--anim-duration-normal) ease-in-out infinite;
-  }
-
-  .w1 { animation-delay: 1.2s; }
-  .w2 { animation-delay: 1.5s; }
-
-  @keyframes waveFlow {
-    0%, 30% {
-      opacity: 0;
-      stroke-dasharray: 0 100;
-    }
-    40% {
-      opacity: 0.6;
-      stroke-dasharray: 20 100;
-    }
-    60% {
-      opacity: 0.4;
-      stroke-dasharray: 60 100;
-    }
-    70%, 100% {
-      opacity: 0;
-      stroke-dasharray: 100 100;
-    }
-  }
-
-  .animate-active .short-url-bar {
-    animation: shortAppear var(--anim-duration-slow) ease-in-out infinite;
-  }
-
-  @keyframes shortAppear {
-    0%, 60% {
-      opacity: 0;
-      transform: scale(0.85) translateY(-5px);
-    }
-    70% {
-      opacity: 0.3;
-      transform: scale(0.92) translateY(-2px);
-    }
-    80%, 100% {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-    }
-  }
-
-  .animate-active .link-icon,
-  .animate-active .short-text {
-    animation: contentFade var(--anim-duration-slow) ease-in-out infinite;
-  }
-
-  .short-text {
-    animation-delay: 0.1s;
-  }
-
-  @keyframes contentFade {
-    0%, 70% {
-      opacity: 0;
-    }
-    80%, 100% {
-      opacity: 1;
-    }
-  }
-
-  .animate-active .shine-top {
-    animation: shineFlow var(--anim-duration-slow) ease-in-out infinite;
-  }
-
-  .animate-active .shine-bottom {
-    animation: shineFlow var(--anim-duration-slow) ease-in-out infinite;
-    animation-delay: 2.5s;
-  }
-
-  @keyframes shineFlow {
-    0%, 15% {
-      opacity: 0.15;
-      transform: translateX(-10px);
-    }
-    20%, 80% {
-      opacity: 0.25;
-      transform: translateX(0);
-    }
-    85%, 100% {
-      opacity: 0.15;
-      transform: translateX(10px);
-    }
-  }
-
-  /* Valores finales para elementos sin animación */
-  .long-url-bar { opacity: 0.92; }
-  .short-url-bar,
-  .link-icon,
-  .short-text,
-  .shine-bottom { opacity: 1; }
-
-  /* ============================================
-     ACCESIBILIDAD - REDUCED MOTION
-     ============================================ */
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-    }
-    
-    .tool-card {
-      animation: none;
-      opacity: 1;
-      transform: translateY(0) translateZ(0);
-    }
-  }
-
-  /* ============================================
-     RESPONSIVE - PANTALLAS PEQUEÑAS
-     ============================================ */
-  @media (max-width: 374px) {
-    .tool-svg {
-      width: 70px;
-      height: 70px;
-    }
-    
-    .tool-icon-wrapper {
-      height: 85px;
-    }
-    
-    .tools-title {
-      font-size: 1.75rem;
-    }
-  }
+  @import './styles/tools-variables.css';
+  @import './styles/tools-base.css';
+  @import './styles/tools-header.css';
+  @import './styles/tools-cards.css';
+  @import './styles/tools-animations.css';
+  @import './styles/tools-responsive.css';
 </style>
