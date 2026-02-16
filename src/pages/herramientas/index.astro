@@ -137,12 +137,8 @@ const tools = [
                     <stop offset="0%" style="stop-color:oklch(0.7 0.2 var(--hue));stop-opacity:1" />
                     <stop offset="100%" style="stop-color:oklch(0.55 0.22 calc(var(--hue) + 40));stop-opacity:1" />
                   </linearGradient>
-                  <linearGradient id="linkGlow" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" style="stop-color:oklch(0.8 0.18 var(--hue));stop-opacity:0.8" />
-                    <stop offset="100%" style="stop-color:oklch(0.6 0.2 calc(var(--hue) + 30));stop-opacity:0.4" />
-                  </linearGradient>
                   <filter id="premiumGlow">
-                    <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                    <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
                     <feMerge>
                       <feMergeNode in="coloredBlur"/>
                       <feMergeNode in="SourceGraphic"/>
@@ -150,59 +146,61 @@ const tools = [
                   </filter>
                 </defs>
                 
-                <!-- DISEÑO PREMIUM: Rayo/Trueno comprimiendo -->
-                <g class="compression-icon">
-                  <!-- Barra larga superior con efecto fluido -->
-                  <g class="long-bar">
-                    <rect x="15" y="20" width="50" height="6" rx="3" 
-                          fill="url(#linkGrad)" opacity="0.3" class="bar-bg"/>
-                    <rect x="18" y="21.5" width="44" height="3" rx="1.5" 
-                          fill="url(#linkGlow)" opacity="0.6" class="bar-line"/>
+                <!-- DISEÑO PREMIUM SIMPLIFICADO -->
+                <g class="url-shortener">
+                  <!-- Barra larga superior (URL original) -->
+                  <rect x="16" y="22" width="48" height="8" rx="4" 
+                        fill="url(#linkGrad)" opacity="0.85" 
+                        filter="url(#premiumGlow)" class="long-url"/>
+                  
+                  <!-- Texto simulado en la barra larga -->
+                  <rect x="20" y="25.5" width="3" height="1" rx="0.5" fill="white" opacity="0.6"/>
+                  <rect x="24" y="25.5" width="3" height="1" rx="0.5" fill="white" opacity="0.6"/>
+                  <rect x="28" y="25.5" width="3" height="1" rx="0.5" fill="white" opacity="0.6"/>
+                  <rect x="32" y="25.5" width="3" height="1" rx="0.5" fill="white" opacity="0.6"/>
+                  <rect x="36" y="25.5" width="3" height="1" rx="0.5" fill="white" opacity="0.5"/>
+                  <rect x="40" y="25.5" width="3" height="1" rx="0.5" fill="white" opacity="0.5"/>
+                  <rect x="44" y="25.5" width="3" height="1" rx="0.5" fill="white" opacity="0.4"/>
+                  <rect x="48" y="25.5" width="3" height="1" rx="0.5" fill="white" opacity="0.4"/>
+                  <rect x="52" y="25.5" width="3" height="1" rx="0.5" fill="white" opacity="0.3"/>
+                  <rect x="56" y="25.5" width="3" height="1" rx="0.5" fill="white" opacity="0.3"/>
+                  
+                  <!-- Flechas de compresión -->
+                  <g class="compress-arrows">
+                    <path d="M 26 38 L 29 40 L 26 42" 
+                          stroke="url(#linkGrad)" stroke-width="2" 
+                          fill="none" stroke-linecap="round" stroke-linejoin="round" 
+                          opacity="0.7" class="arrow-left"/>
+                    <path d="M 54 38 L 51 40 L 54 42" 
+                          stroke="url(#linkGrad)" stroke-width="2" 
+                          fill="none" stroke-linecap="round" stroke-linejoin="round" 
+                          opacity="0.7" class="arrow-right"/>
                   </g>
                   
-                  <!-- RAYO CENTRAL - Símbolo de velocidad/compresión -->
-                  <g class="lightning-bolt" filter="url(#premiumGlow)">
-                    <path d="M 45 32 L 35 40 L 40 40 L 35 48 L 45 40 L 40 40 Z" 
-                          fill="url(#linkGrad)" opacity="0.9" class="bolt"/>
-                    
-                    <!-- Partículas de energía alrededor -->
-                    <circle cx="32" cy="36" r="1.5" fill="oklch(0.8 0.18 var(--hue))" 
-                            class="spark s1" opacity="0.7"/>
-                    <circle cx="48" cy="36" r="1.5" fill="oklch(0.8 0.18 var(--hue))" 
-                            class="spark s2" opacity="0.7"/>
-                    <circle cx="32" cy="44" r="1.2" fill="oklch(0.8 0.18 var(--hue))" 
-                            class="spark s3" opacity="0.6"/>
-                    <circle cx="48" cy="44" r="1.2" fill="oklch(0.8 0.18 var(--hue))" 
-                            class="spark s4" opacity="0.6"/>
+                  <!-- Partículas de velocidad -->
+                  <g class="speed-particles">
+                    <circle cx="22" cy="40" r="1.5" fill="url(#linkGrad)" class="particle p1" opacity="0.6"/>
+                    <circle cx="34" cy="40" r="1.2" fill="url(#linkGrad)" class="particle p2" opacity="0.5"/>
+                    <circle cx="46" cy="40" r="1" fill="url(#linkGrad)" class="particle p3" opacity="0.4"/>
+                    <circle cx="58" cy="40" r="0.8" fill="url(#linkGrad)" class="particle p4" opacity="0.3"/>
                   </g>
                   
-                  <!-- Barra corta inferior - resultado comprimido -->
-                  <g class="short-result">
-                    <rect x="28" y="54" width="24" height="10" rx="5" 
-                          fill="url(#linkGrad)" filter="url(#premiumGlow)" 
-                          opacity="0.95" class="result-bg"/>
-                    
-                    <text x="40" y="60.5" 
-                          font-family="monospace" font-size="5.5" font-weight="bold" 
-                          fill="white" text-anchor="middle" opacity="0.95">bit.ly</text>
-                    
-                    <!-- Mini check elegante -->
-                    <g transform="translate(50, 57.5)">
-                      <circle cx="0" cy="0" r="3" fill="oklch(0.7 0.22 140)" opacity="0.9"/>
-                      <path d="M -1.2 -0.2 L -0.4 0.6 L 1.2 -0.8" 
-                            stroke="white" stroke-width="0.9" 
-                            fill="none" stroke-linecap="round"/>
-                    </g>
-                  </g>
+                  <!-- Barra corta inferior (URL acortada) -->
+                  <rect x="30" y="50" width="20" height="8" rx="4" 
+                        fill="url(#linkGrad)" opacity="0.95" 
+                        filter="url(#premiumGlow)" class="short-url"/>
                   
-                  <!-- Flechas de compresión sutiles -->
-                  <g class="compress-arrows" opacity="0.5">
-                    <path d="M 25 28 L 28 31 L 25 34" 
-                          stroke="url(#linkGrad)" stroke-width="1.5" 
-                          fill="none" stroke-linecap="round" class="arrow-left"/>
-                    <path d="M 55 28 L 52 31 L 55 34" 
-                          stroke="url(#linkGrad)" stroke-width="1.5" 
-                          fill="none" stroke-linecap="round" class="arrow-right"/>
+                  <!-- Texto en la barra corta -->
+                  <rect x="34" y="53.5" width="3" height="1" rx="0.5" fill="white" opacity="0.7"/>
+                  <rect x="38" y="53.5" width="3" height="1" rx="0.5" fill="white" opacity="0.7"/>
+                  <rect x="42" y="53.5" width="3" height="1" rx="0.5" fill="white" opacity="0.7"/>
+                  
+                  <!-- Check mark de éxito -->
+                  <g class="check-mark" transform="translate(52, 52)">
+                    <circle cx="0" cy="2" r="3" fill="oklch(0.7 0.22 140)" opacity="0.9"/>
+                    <path d="M -1.3 1.7 L -0.3 2.7 L 1.3 0.7" 
+                          stroke="white" stroke-width="1" 
+                          fill="none" stroke-linecap="round" stroke-linejoin="round"/>
                   </g>
                 </g>
               </svg>
@@ -547,7 +545,7 @@ const tools = [
     height: 100%;
   }
 
-  /* TELEPROMPTER */
+  /* ===== ANIMACIONES TELEPROMPTER ===== */
   .text-lines .line {
     animation: lineFlow 2.5s ease-in-out infinite;
   }
@@ -579,69 +577,102 @@ const tools = [
     50% { opacity: 0.3; }
   }
 
-  /* LINK SHORTENER - NUEVO DISEÑO PREMIUM */
-  .long-bar {
-    animation: barShrink 2s ease-in-out infinite;
+  /* ===== ANIMACIONES URL SHORTENER (MEJORADAS) ===== */
+  .long-url {
+    animation: longUrlPulse 2.5s ease-in-out infinite;
+    transform-origin: center;
   }
 
-  @keyframes barShrink {
-    0%, 100% { opacity: 0.6; transform: scaleX(1); }
-    50% { opacity: 0.3; transform: scaleX(0.95); }
+  @keyframes longUrlPulse {
+    0%, 100% { 
+      opacity: 0.85; 
+      transform: scaleX(1);
+    }
+    50% { 
+      opacity: 0.95; 
+      transform: scaleX(0.98);
+    }
   }
 
-  .lightning-bolt {
-    animation: boltPulse 1.5s ease-in-out infinite;
-    transform-origin: 40px 40px;
+  .compress-arrows {
+    animation: arrowsCompress 2s ease-in-out infinite;
   }
 
-  @keyframes boltPulse {
-    0%, 100% { transform: scale(1); opacity: 0.9; }
-    50% { transform: scale(1.1); opacity: 1; }
+  @keyframes arrowsCompress {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
   }
 
-  .bolt {
-    animation: boltShine 2s ease-in-out infinite;
+  .arrow-left {
+    animation: arrowMoveLeft 2s ease-in-out infinite;
   }
 
-  @keyframes boltShine {
-    0%, 100% { opacity: 0.9; }
-    50% { opacity: 1; filter: brightness(1.2); }
+  @keyframes arrowMoveLeft {
+    0%, 100% { transform: translateX(0); opacity: 0.7; }
+    50% { transform: translateX(3px); opacity: 1; }
   }
 
-  .spark {
-    animation: sparkTwinkle 1.5s ease-in-out infinite;
+  .arrow-right {
+    animation: arrowMoveRight 2s ease-in-out infinite;
   }
 
-  .s1 { animation-delay: 0s; }
-  .s2 { animation-delay: 0.3s; }
-  .s3 { animation-delay: 0.6s; }
-  .s4 { animation-delay: 0.9s; }
-
-  @keyframes sparkTwinkle {
-    0%, 100% { opacity: 0.7; transform: scale(1); }
-    50% { opacity: 0.2; transform: scale(0.6); }
+  @keyframes arrowMoveRight {
+    0%, 100% { transform: translateX(0); opacity: 0.7; }
+    50% { transform: translateX(-3px); opacity: 1; }
   }
 
-  .short-result {
-    animation: resultGlow 2s ease-in-out infinite;
+  .speed-particles .particle {
+    animation: particleFloat 2s ease-in-out infinite;
   }
 
-  @keyframes resultGlow {
-    0%, 100% { opacity: 0.95; transform: translateY(0); }
-    50% { opacity: 1; transform: translateY(-1px); }
+  .p1 { animation-delay: 0s; }
+  .p2 { animation-delay: 0.3s; }
+  .p3 { animation-delay: 0.6s; }
+  .p4 { animation-delay: 0.9s; }
+
+  @keyframes particleFloat {
+    0%, 100% { 
+      opacity: 0.6; 
+      transform: translateY(0) scale(1); 
+    }
+    50% { 
+      opacity: 0.2; 
+      transform: translateY(-2px) scale(0.7); 
+    }
   }
 
-  .compress-arrows .arrow-left {
-    animation: arrowCompress 2s ease-in-out infinite;
+  .short-url {
+    animation: shortUrlGlow 2s ease-in-out infinite;
   }
 
-  .compress-arrows .arrow-right {
-    animation: arrowCompress 2s ease-in-out infinite;
+  @keyframes shortUrlGlow {
+    0%, 100% { 
+      opacity: 0.95; 
+      transform: translateY(0);
+    }
+    50% { 
+      opacity: 1; 
+      transform: translateY(-1px);
+    }
   }
 
-  @keyframes arrowCompress {
-    0%, 100% { opacity: 0.5; transform: translateX(0); }
-    50% { opacity: 0.8; transform: translateX(2px); }
+  .check-mark {
+    animation: checkAppear 2s ease-in-out infinite;
+  }
+
+  @keyframes checkAppear {
+    0%, 40% { 
+      opacity: 0; 
+      transform: translate(52px, 52px) scale(0.5) rotate(-45deg); 
+    }
+    50%, 90% { 
+      opacity: 0.9; 
+      transform: translate(52px, 52px) scale(1) rotate(0deg); 
+    }
+    100% { 
+      opacity: 0; 
+      transform: translate(52px, 52px) scale(0.5) rotate(-45deg); 
+    }
   }
 
   .tool-card:hover .tool-svg {
@@ -650,7 +681,7 @@ const tools = [
 
   @keyframes svgHover {
     0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
+    50% { transform: scale(1.05); }
     100% { transform: scale(1); }
   }
 
