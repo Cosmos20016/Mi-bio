@@ -8,7 +8,7 @@ const tools = [
 		description:
 			"Tu estudio profesional de lectura en pantalla. Velocidad precisa, espejo, focus mode, atajos de teclado y countdown.",
 		href: url("/herramientas/teleprompter/"),
-		icon: "📺",
+		iconType: "teleprompter",
 		badge: "Pro",
 		features: ["Modo espejo", "Focus mode", "Atajos de teclado", "Countdown"],
 	},
@@ -17,7 +17,7 @@ const tools = [
 		description:
 			"Acorta, organiza y gestiona tus enlaces. QR codes al instante, historial con estadísticas y exportación.",
 		href: url("/herramientas/acortador/"),
-		icon: "🔗",
+		iconType: "link",
 		badge: "Sin publicidad",
 		features: ["QR Codes", "Categorías", "Sin publicidad", "Exportar JSON"],
 	},
@@ -28,7 +28,29 @@ const tools = [
   <section class="tools-hub">
     <!-- Header con gradiente del tema -->
     <header class="tools-header">
-      <div class="tools-header-icon">🛠️</div>
+      <!-- SVG Premium del Header -->
+      <div class="tools-header-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="header-svg">
+          <defs>
+            <linearGradient id="toolGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:oklch(0.65 0.16 var(--hue));stop-opacity:1" />
+              <stop offset="100%" style="stop-color:oklch(0.6 0.18 calc(var(--hue) + 40));stop-opacity:1" />
+            </linearGradient>
+          </defs>
+          <!-- Llave inglesa -->
+          <path class="tool-wrench" d="M65 25 L75 15 L85 25 L75 35 Z" fill="url(#toolGradient)" />
+          <rect class="tool-wrench" x="55" y="35" width="8" height="35" rx="2" transform="rotate(-45 59 52.5)" fill="url(#toolGradient)" />
+          <!-- Destornillador -->
+          <rect class="tool-screwdriver" x="30" y="15" width="6" height="30" rx="1" fill="url(#toolGradient)" />
+          <path class="tool-screwdriver" d="M27 45 L33 35 L39 45 Z" fill="url(#toolGradient)" />
+          <circle class="tool-screwdriver" cx="33" cy="12" r="4" fill="url(#toolGradient)" />
+          <!-- Chispas decorativas -->
+          <circle class="spark spark-1" cx="20" cy="30" r="2" fill="oklch(0.7 0.14 var(--hue))" opacity="0.6" />
+          <circle class="spark spark-2" cx="80" cy="50" r="2" fill="oklch(0.7 0.14 var(--hue))" opacity="0.6" />
+          <circle class="spark spark-3" cx="50" cy="70" r="2" fill="oklch(0.7 0.14 var(--hue))" opacity="0.6" />
+        </svg>
+      </div>
+
       <h1 class="tools-title">Herramientas</h1>
       <p class="tools-subtitle">
         Suite exclusiva de herramientas profesionales para potenciar tu contenido y creatividad.
@@ -53,9 +75,51 @@ const tools = [
           <!-- Badge -->
           <div class="tool-badge">{tool.badge}</div>
 
-          <!-- Icono -->
+          <!-- Icono SVG Premium -->
           <div class="tool-icon-wrapper">
-            <span class="tool-icon">{tool.icon}</span>
+            {tool.iconType === "teleprompter" && (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="tool-svg">
+                <defs>
+                  <linearGradient id="teleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:oklch(0.6 0.16 var(--hue));stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:oklch(0.55 0.18 calc(var(--hue) + 30));stop-opacity:1" />
+                  </linearGradient>
+                </defs>
+                <!-- Monitor/Pantalla -->
+                <rect x="8" y="12" width="48" height="32" rx="4" fill="url(#teleGradient)" class="tele-screen" />
+                <rect x="12" y="16" width="40" height="24" rx="2" fill="oklch(0.2 0.02 var(--hue))" opacity="0.3" />
+                <!-- Líneas de texto animadas -->
+                <line x1="16" y1="22" x2="36" y2="22" stroke="oklch(0.8 0.1 var(--hue))" stroke-width="1.5" class="tele-line line-1" />
+                <line x1="16" y1="27" x2="44" y2="27" stroke="oklch(0.8 0.1 var(--hue))" stroke-width="1.5" class="tele-line line-2" />
+                <line x1="16" y1="32" x2="38" y2="32" stroke="oklch(0.8 0.1 var(--hue))" stroke-width="1.5" class="tele-line line-3" />
+                <!-- Soporte -->
+                <rect x="28" y="44" width="8" height="6" rx="1" fill="url(#teleGradient)" />
+                <rect x="20" y="50" width="24" height="3" rx="1.5" fill="url(#teleGradient)" />
+                <!-- Indicador de reproducción -->
+                <circle cx="48" cy="20" r="3" fill="oklch(0.8 0.14 var(--hue))" class="tele-indicator" />
+              </svg>
+            )}
+            {tool.iconType === "link" && (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="tool-svg">
+                <defs>
+                  <linearGradient id="linkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:oklch(0.6 0.16 var(--hue));stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:oklch(0.55 0.18 calc(var(--hue) + 30));stop-opacity:1" />
+                  </linearGradient>
+                </defs>
+                <!-- Eslabón izquierdo -->
+                <path class="link-part link-left" d="M 18 24 Q 12 24 12 32 Q 12 40 18 40 L 28 40 Q 34 40 34 32" 
+                      stroke="url(#linkGradient)" stroke-width="6" fill="none" stroke-linecap="round" />
+                <!-- Eslabón derecho -->
+                <path class="link-part link-right" d="M 46 24 Q 52 24 52 32 Q 52 40 46 40 L 36 40 Q 30 40 30 32" 
+                      stroke="url(#linkGradient)" stroke-width="6" fill="none" stroke-linecap="round" />
+                <!-- QR decorativo -->
+                <rect x="20" y="48" width="3" height="3" fill="url(#linkGradient)" class="qr-dot qr-1" />
+                <rect x="25" y="48" width="3" height="3" fill="url(#linkGradient)" class="qr-dot qr-2" />
+                <rect x="20" y="53" width="3" height="3" fill="url(#linkGradient)" class="qr-dot qr-3" />
+                <rect x="25" y="53" width="3" height="3" fill="url(#linkGradient)" class="qr-dot qr-4" />
+              </svg>
+            )}
           </div>
 
           <!-- Contenido -->
@@ -103,25 +167,80 @@ const tools = [
     padding: 1rem 0 0.5rem;
   }
 
-  /* 🎨 ANIMACIÓN PREMIUM: Icono del header con flotación suave */
+  /* 🎨 SVG del Header Premium */
   .tools-header-icon {
-    font-size: 3rem;
     margin-bottom: 0.75rem;
-    filter: drop-shadow(0 4px 12px oklch(0.7 0.14 var(--hue) / 0.3));
-    animation: floatIcon 3s ease-in-out infinite;
     display: inline-block;
+    animation: floatIcon 3s ease-in-out infinite;
   }
+
+  .header-svg {
+    width: 80px;
+    height: 80px;
+    filter: drop-shadow(0 4px 16px oklch(0.7 0.14 var(--hue) / 0.3));
+  }
+
+  /* Animación de las herramientas del header */
+  .tool-wrench {
+    animation: wrenchRotate 4s ease-in-out infinite;
+    transform-origin: center;
+  }
+
+  .tool-screwdriver {
+    animation: screwdriverShake 3s ease-in-out infinite;
+    transform-origin: center;
+  }
+
+  .spark {
+    animation: sparkPulse 2s ease-in-out infinite;
+  }
+
+  .spark-1 { animation-delay: 0s; }
+  .spark-2 { animation-delay: 0.6s; }
+  .spark-3 { animation-delay: 1.2s; }
 
   @keyframes floatIcon {
     0%, 100% {
-      transform: translateY(0px) rotate(0deg);
+      transform: translateY(0px);
     }
     50% {
-      transform: translateY(-8px) rotate(5deg);
+      transform: translateY(-10px);
     }
   }
 
-  /* 🎨 ANIMACIÓN PREMIUM: Título con gradiente animado */
+  @keyframes wrenchRotate {
+    0%, 100% {
+      transform: rotate(0deg);
+    }
+    50% {
+      transform: rotate(15deg);
+    }
+  }
+
+  @keyframes screwdriverShake {
+    0%, 100% {
+      transform: rotate(0deg) translateX(0);
+    }
+    25% {
+      transform: rotate(-5deg) translateX(-2px);
+    }
+    75% {
+      transform: rotate(5deg) translateX(2px);
+    }
+  }
+
+  @keyframes sparkPulse {
+    0%, 100% {
+      opacity: 0.6;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.5);
+    }
+  }
+
+  /* 🎨 Título con gradiente animado */
   .tools-title {
     font-size: 2.5rem;
     font-weight: 800;
@@ -268,7 +387,6 @@ const tools = [
     border-color: rgba(255, 255, 255, 0.08);
   }
 
-  /* 🎨 EFECTO PREMIUM: Resplandor sutil en el borde superior */
   .tool-card::before {
     content: "";
     position: absolute;
@@ -297,7 +415,6 @@ const tools = [
     }
   }
 
-  /* 🎨 EFECTO PREMIUM: Brillo sutil de fondo */
   .tool-card::after {
     content: "";
     position: absolute;
@@ -307,7 +424,7 @@ const tools = [
     height: 200%;
     background: radial-gradient(
       circle,
-      oklch(0.7 0.14 var(--hue) / 0.03) 0%,
+      oklch(0.7 0.14 var(--hue) / 0.04) 0%,
       transparent 70%
     );
     opacity: 0;
@@ -371,7 +488,7 @@ const tools = [
     color: oklch(0.78 0.12 var(--hue));
   }
 
-  /* 🎨 ANIMACIÓN PREMIUM: Icono con rotación y escala suave */
+  /* 🎨 Wrapper del icono SVG */
   .tool-icon-wrapper {
     width: 3.5rem;
     height: 3.5rem;
@@ -385,7 +502,6 @@ const tools = [
     overflow: hidden;
   }
 
-  /* 🎨 Brillo interno en el icono */
   .tool-icon-wrapper::before {
     content: "";
     position: absolute;
@@ -417,14 +533,74 @@ const tools = [
     background: oklch(0.35 0.06 var(--hue));
   }
 
-  .tool-icon {
-    font-size: 1.75rem;
+  /* 🎨 SVG de las herramientas */
+  .tool-svg {
+    width: 32px;
+    height: 32px;
     position: relative;
     z-index: 1;
-    animation: iconBounce 2s ease-in-out infinite;
   }
 
-  @keyframes iconBounce {
+  /* Animaciones específicas del Teleprompter */
+  .tele-line {
+    animation: textScroll 3s ease-in-out infinite;
+  }
+
+  .line-1 { animation-delay: 0s; }
+  .line-2 { animation-delay: 0.3s; }
+  .line-3 { animation-delay: 0.6s; }
+
+  @keyframes textScroll {
+    0%, 100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    50% {
+      opacity: 0.5;
+      transform: translateY(-2px);
+    }
+  }
+
+  .tele-indicator {
+    animation: recordPulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes recordPulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.3;
+    }
+  }
+
+  .tele-screen {
+    animation: screenGlow 2s ease-in-out infinite;
+  }
+
+  @keyframes screenGlow {
+    0%, 100% {
+      filter: brightness(1);
+    }
+    50% {
+      filter: brightness(1.1);
+    }
+  }
+
+  /* Animaciones del acortador de links */
+  .link-part {
+    animation: linkFloat 2s ease-in-out infinite;
+  }
+
+  .link-left {
+    animation-delay: 0s;
+  }
+
+  .link-right {
+    animation-delay: 0.5s;
+  }
+
+  @keyframes linkFloat {
     0%, 100% {
       transform: translateY(0);
     }
@@ -433,20 +609,38 @@ const tools = [
     }
   }
 
-  /* 🎨 Al hacer hover, el icono gira sutilmente */
-  .tool-card:hover .tool-icon {
-    animation: iconSpin 0.6s ease-out;
+  .qr-dot {
+    animation: qrBlink 1.5s ease-in-out infinite;
   }
 
-  @keyframes iconSpin {
-    0% {
-      transform: rotate(0deg) scale(1);
+  .qr-1 { animation-delay: 0s; }
+  .qr-2 { animation-delay: 0.2s; }
+  .qr-3 { animation-delay: 0.4s; }
+  .qr-4 { animation-delay: 0.6s; }
+
+  @keyframes qrBlink {
+    0%, 100% {
+      opacity: 1;
     }
     50% {
-      transform: rotate(10deg) scale(1.1);
+      opacity: 0.3;
+    }
+  }
+
+  /* Efecto hover en SVG */
+  .tool-card:hover .tool-svg {
+    animation: svgBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes svgBounce {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.15) rotate(5deg);
     }
     100% {
-      transform: rotate(0deg) scale(1);
+      transform: scale(1);
     }
   }
 
@@ -506,7 +700,6 @@ const tools = [
     border-color: oklch(0.32 0.03 var(--hue));
   }
 
-  /* 🎨 Efecto hover en las etiquetas */
   .tool-card:hover .tool-feature-tag {
     transform: translateY(-1px);
     border-color: oklch(0.8 0.06 var(--hue));
@@ -538,7 +731,6 @@ const tools = [
     display: inline-block;
   }
 
-  /* 🎨 Flecha con animación de rebote */
   .tool-card:hover .tool-cta-arrow {
     transform: translateX(6px);
     animation: arrowBounce 0.6s ease-in-out;
@@ -615,8 +807,9 @@ const tools = [
       font-size: 2rem;
     }
 
-    .tools-header-icon {
-      font-size: 2.5rem;
+    .header-svg {
+      width: 60px;
+      height: 60px;
     }
 
     .tool-card {
@@ -628,12 +821,13 @@ const tools = [
       height: 3rem;
     }
 
-    .tool-icon {
-      font-size: 1.5rem;
+    .tool-svg {
+      width: 28px;
+      height: 28px;
     }
   }
 
-  /* 🎨 OPTIMIZACIÓN: Usar will-change solo durante interacciones */
+  /* Optimización de rendimiento */
   .tool-card:hover {
     will-change: transform;
   }
@@ -642,7 +836,7 @@ const tools = [
     will-change: transform;
   }
 
-  /* 🎨 Reducir animaciones si el usuario prefiere menos movimiento */
+  /* Accesibilidad - Reducir movimiento */
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -656,11 +850,8 @@ const tools = [
       transform: translateY(-2px);
     }
     
-    .tool-icon-wrapper {
-      animation: none;
-    }
-    
-    .tools-header-icon {
+    .tool-svg,
+    .header-svg {
       animation: none;
     }
   }
