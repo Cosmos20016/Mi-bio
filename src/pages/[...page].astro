@@ -1,3 +1,4 @@
+---
 import type { GetStaticPaths, Page } from "astro";
 import Pagination from "../components/control/Pagination.astro";
 import PostPage from "../components/PostPage.astro";
@@ -23,6 +24,9 @@ const isHomePage = page.currentPage === 1;
 // URL base para construcción de enlaces
 const baseUrl = Astro.site?.toString() ?? siteConfig.url;
 
+// Construcción de la URL de búsqueda escapando las llaves
+const searchUrlTemplate = `${baseUrl}?q={search_term_string}`;
+
 // JSON-LD solo para la página principal
 const jsonLd = isHomePage
 	? {
@@ -34,7 +38,7 @@ const jsonLd = isHomePage
 			author: {
 				"@type": "Person",
 				name: profileConfig.name,
-				url: new URL("/about/", baseUrl).href,
+				url: `${baseUrl}/about/`,
 				sameAs: [
 					"https://www.youtube.com/@kevinborjayt",
 					"https://www.facebook.com/share/16n7f7zdYQ/",
@@ -44,7 +48,7 @@ const jsonLd = isHomePage
 				"@type": "SearchAction",
 				target: {
 					"@type": "EntryPoint",
-					urlTemplate: new URL("?q={search_term_string}", baseUrl).href,
+					urlTemplate: searchUrlTemplate,
 				},
 				"query-input": "required name=search_term_string",
 			},
