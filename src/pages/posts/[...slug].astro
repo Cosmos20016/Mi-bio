@@ -2,6 +2,7 @@
 import path from "node:path";
 import License from "@components/misc/License.astro";
 import Markdown from "@components/misc/Markdown.astro";
+import ShareButtons from "@components/ShareButtons.svelte";
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
@@ -24,6 +25,9 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { Content, headings } = await entry.render();
+
+// Get the current post URL for sharing
+const currentUrl = new URL(Astro.url.pathname, Astro.site).href;
 
 const { remarkPluginFrontmatter } = await entry.render();
 
@@ -122,6 +126,15 @@ const jsonLd = {
             <Markdown class="mb-6 markdown-content onload-animation">
                 <Content />
             </Markdown>
+
+            <!-- Social Media Share Buttons -->
+            <div class="mb-6 onload-animation">
+                <ShareButtons 
+                    title={entry.data.title} 
+                    url={currentUrl}
+                    client:load
+                />
+            </div>
 
             {licenseConfig.enable && <License title={entry.data.title} slug={entry.slug} pubDate={entry.data.published} class="mb-6 rounded-xl license-container onload-animation"></License>}
 
