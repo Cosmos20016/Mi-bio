@@ -5,10 +5,48 @@ import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { getSortedPosts } from "../utils/content-utils";
 
-const sortedPosts = await getSortedPosts();
+const allPosts = await getSortedPosts();
+
+// Serializar posts para Svelte (solo datos necesarios)
+const sortedPosts = allPosts.map((post) => ({
+	id: post.id,
+	slug: post.slug,
+	data: {
+		title: post.data.title,
+		published: post.data.published,
+		draft: post.data.draft,
+		description: post.data.description,
+		image: post.data.image,
+		tags: post.data.tags,
+		category: post.data.category,
+	},
+}));
+
+// Metadata para SEO
+const pageTitle = i18n(I18nKey.archive);
+const pageDescription = i18n(I18nKey.archive) + " - " + sortedPosts.length + " posts";
+
+// JSON-LD para archivo
+const jsonLd = {
+	"@context": "https://schema.org",
+	"@type": "CollectionPage",
+	name: pageTitle,
+	description: pageDescription,
+	url: new URL("/archive/", Astro.site || Astro.url.origin).href,
+	numberOfItems: sortedPosts.length,
+};
 ---
 
-<MainGridLayout title={i18n(I18nKey.archive)}>
-    <ArchivePanel sortedPosts={sortedPosts} client:only="svelte"></ArchivePanel>
+<MainGridLayout title={pageTitle} description={pageDescription}>
+	<script
+		is:inline
+		slot="head"
+		type="application/ld+json"
+		set:html={JSON.stringify(jsonLd)}
+	/>
+	
+	<ArchivePanel 
+		sortedPosts={sortedPosts} 
+		client:load
+	/>
 </MainGridLayout>
-
