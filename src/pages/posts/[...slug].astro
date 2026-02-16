@@ -245,15 +245,22 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         class="card-base rounded-[var(--radius-large)] px-6 md:px-9 py-6 mt-6"
         aria-label="Comentarios del artículo"
     >
-        <div class="flex items-center justify-center py-8 text-black/50 dark:text-white/50">
+        <div class="flex flex-col items-center justify-center py-8 gap-3 text-black/50 dark:text-white/50">
             <span class="text-sm" role="status" aria-live="polite">Cargando comentarios...</span>
+            <button 
+                id="giscus-manual-load" 
+                class="hidden text-xs px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:opacity-80 transition-opacity"
+                aria-label="Cargar comentarios manualmente"
+            >
+                Cargar comentarios
+            </button>
         </div>
     </section>
 
     <script>
         // ============================================
-        // GISCUS COMMENTS INTEGRATION - OPTIMIZED
-        // 100% funcional en móvil, tablet y desktop
+        // GISCUS COMMENTS - ULTRA OPTIMIZADO MÓVIL
+        // 100% funcional mobile-first con fallbacks
         // ============================================
 
         interface GiscusMessage {
@@ -269,14 +276,20 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         let themeObserver: MutationObserver | null = null;
         let intersectionObserver: IntersectionObserver | null = null;
         let loadAttempts = 0;
+        let fallbackTimer: number | null = null;
         const MAX_LOAD_ATTEMPTS = 3;
+        const FALLBACK_TIMEOUT = 3000; // 3 segundos de fallback en móvil
         
         /**
          * Detecta si estamos en dispositivo móvil
          */
         function isMobileDevice(): boolean {
-            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-                   window.innerWidth < 768;
+            const ua = navigator.userAgent.toLowerCase();
+            const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua);
+            const isSmallScreen = window.innerWidth < 768;
+            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            
+            return isMobileUA || (isSmallScreen && isTouchDevice);
         }
         
         /**
@@ -291,7 +304,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         /**
          * Actualiza el estado de carga en el contenedor
          */
-        function updateLoadingState(message: string, isError = false): void {
+        function updateLoadingState(message: string, isError = false, showButton = false): void {
             const container = document.getElementById('giscus-container');
             if (!container) return;
             
@@ -299,10 +312,22 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                 ? 'text-red-500 dark:text-red-400' 
                 : 'text-black/50 dark:text-white/50';
             
+            const buttonHtml = showButton 
+                ? `<button 
+                    id="giscus-manual-load" 
+                    class="text-xs px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:opacity-80 transition-opacity active:scale-95"
+                    aria-label="Cargar comentarios manualmente"
+                    onclick="window.__loadGiscusManually()"
+                >
+                    Cargar comentarios
+                </button>` 
+                : '';
+            
             container.innerHTML = `
                 <div class="flex flex-col items-center justify-center py-8 gap-3 ${colorClass}">
                     <span class="text-sm text-center px-4" role="status" aria-live="polite">${message}</span>
-                    ${isError ? '<button onclick="location.reload()" class="text-xs underline hover:no-underline">Recargar página</button>' : ''}
+                    ${buttonHtml}
+                    ${isError ? '<button onclick="location.reload()" class="text-xs underline hover:no-underline mt-2">Recargar página</button>' : ''}
                 </div>
             `;
         }
@@ -310,7 +335,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         /**
          * Espera a que el iframe de Giscus esté completamente cargado
          */
-        function waitForGiscusIframe(maxAttempts = 20): Promise<HTMLIFrameElement | null> {
+        function waitForGiscusIframe(maxAttempts = 30): Promise<HTMLIFrameElement | null> {
             return new Promise((resolve) => {
                 let attempts = 0;
                 
@@ -318,19 +343,19 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                     const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
                     
                     if (iframe && iframe.contentWindow) {
-                        console.log('[Giscus] Iframe found and ready');
+                        console.log('[Giscus] ✓ Iframe loaded successfully');
                         resolve(iframe);
                         return;
                     }
                     
                     attempts++;
                     if (attempts >= maxAttempts) {
-                        console.warn('[Giscus] Iframe not loaded after max attempts');
+                        console.warn('[Giscus] ⚠ Iframe timeout after', maxAttempts, 'attempts');
                         resolve(null);
                         return;
                     }
                     
-                    setTimeout(checkIframe, 250);
+                    setTimeout(checkIframe, 200);
                 };
                 
                 checkIframe();
@@ -352,14 +377,20 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                 return;
             }
             
+            // Cancelar timer de fallback si existe
+            if (fallbackTimer) {
+                clearTimeout(fallbackTimer);
+                fallbackTimer = null;
+            }
+            
             loadAttempts++;
-            console.log(`[Giscus] Loading comments (attempt ${loadAttempts}/${MAX_LOAD_ATTEMPTS})`);
+            const isMobile = isMobileDevice();
+            console.log(`[Giscus] 🚀 Loading (attempt ${loadAttempts}/${MAX_LOAD_ATTEMPTS}) on ${isMobile ? 'MOBILE' : 'DESKTOP'}`);
             
             // Limpiar contenido previo
             container.innerHTML = '';
             
             const currentTheme = getCurrentTheme();
-            const isMobile = isMobileDevice();
             
             // Crear script de Giscus
             const script = document.createElement('script');
@@ -381,14 +412,15 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             
             // Manejo de errores
             script.onerror = () => {
-                console.error('[Giscus] Failed to load script');
+                console.error('[Giscus] ❌ Script load failed');
                 
                 if (loadAttempts < MAX_LOAD_ATTEMPTS) {
                     updateLoadingState('Reintentando cargar comentarios...');
                     setTimeout(() => loadGiscus(), 2000);
                 } else {
                     updateLoadingState(
-                        'No se pudieron cargar los comentarios. Verifica tu conexión a internet.',
+                        'No se pudieron cargar los comentarios.',
+                        true,
                         true
                     );
                 }
@@ -396,7 +428,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             
             // Callback de éxito
             script.onload = async () => {
-                console.log('[Giscus] Script loaded successfully');
+                console.log('[Giscus] ✓ Script loaded');
                 giscusLoaded = true;
                 
                 // Esperar a que el iframe esté listo
@@ -407,17 +439,15 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                     setupThemeObserver();
                     
                     // Aplicar estilos personalizados
-                    setTimeout(() => applyGiscusStyles(), 500);
+                    setTimeout(() => applyGiscusStyles(), 300);
                     
-                    console.log('[Giscus] Fully initialized');
+                    console.log('[Giscus] ✓ Fully initialized');
                 } else {
-                    console.warn('[Giscus] Iframe not available, theme sync may not work');
+                    console.warn('[Giscus] ⚠ Iframe not available, basic functionality only');
                 }
             };
             
             container.appendChild(script);
-            
-            console.log(`[Giscus] Loading on ${isMobile ? 'mobile' : 'desktop'} device`);
         }
         
         /**
@@ -443,13 +473,17 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                             body {
                                 font-size: 13px !important;
                             }
+                            button, a {
+                                min-height: 44px !important;
+                                min-width: 44px !important;
+                            }
                         }
                     `;
                     iframeDoc.head.appendChild(style);
-                    console.log('[Giscus] Custom styles applied');
+                    console.log('[Giscus] ✓ Custom styles applied');
                 }
             } catch (e) {
-                // CORS restriction - esperado en producción
+                // CORS restriction - normal en producción
                 console.log('[Giscus] Using external styles (CORS)');
             }
         }
@@ -482,10 +516,10 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                         message,
                         'https://giscus-personal-woft.vercel.app'
                     );
-                    console.log(`[Giscus] Theme changed to: ${theme}`);
+                    console.log(`[Giscus] ✓ Theme changed to: ${theme}`);
                     
                     // Reaplicar estilos
-                    setTimeout(() => applyGiscusStyles(), 300);
+                    setTimeout(() => applyGiscusStyles(), 200);
                 } catch (e) {
                     console.error('[Giscus] Error sending theme message:', e);
                 }
@@ -496,33 +530,63 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                 attributeFilter: ['class']
             });
             
-            console.log('[Giscus] Theme observer active');
+            console.log('[Giscus] ✓ Theme observer active');
         }
         
         /**
-         * Inicializa la carga lazy de Giscus
-         * Optimizado para móvil con rootMargin adaptativo
+         * Verifica si el contenedor ya es visible
          */
-        function initLazyLoad(): void {
+        function isContainerVisible(): boolean {
+            const container = document.getElementById('giscus-container');
+            if (!container) return false;
+            
+            const rect = container.getBoundingClientRect();
+            const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+            
+            // Considerar visible si está en viewport o muy cerca
+            return rect.top < windowHeight + 300;
+        }
+        
+        /**
+         * Inicializa la carga con estrategia dual: IntersectionObserver + Fallback Timer
+         */
+        function initGiscusLoad(): void {
             const container = document.getElementById('giscus-container');
             if (!container) {
                 console.warn('[Giscus] Container not found');
                 return;
             }
             
+            const isMobile = isMobileDevice();
+            console.log(`[Giscus] Initializing on ${isMobile ? 'MOBILE' : 'DESKTOP'} device`);
+            
+            // ESTRATEGIA 1: Si ya es visible, cargar inmediatamente
+            if (isContainerVisible()) {
+                console.log('[Giscus] Container already visible, loading immediately');
+                loadGiscus();
+                return;
+            }
+            
+            // ESTRATEGIA 2: IntersectionObserver (primaria)
             if (intersectionObserver) {
                 intersectionObserver.disconnect();
             }
             
-            // rootMargin adaptativo: menor en móvil para mejor performance
-            const isMobile = isMobileDevice();
-            const rootMargin = isMobile ? '100px' : '200px';
+            // rootMargin más agresivo en móvil para mejor UX
+            const rootMargin = isMobile ? '150px' : '250px';
             
             intersectionObserver = new IntersectionObserver(
                 (entries) => {
                     entries.forEach(entry => {
                         if (entry.isIntersecting && !giscusLoaded) {
-                            console.log('[Giscus] Container visible, loading...');
+                            console.log('[Giscus] ✓ Container intersecting, loading via observer');
+                            
+                            // Cancelar timer de fallback
+                            if (fallbackTimer) {
+                                clearTimeout(fallbackTimer);
+                                fallbackTimer = null;
+                            }
+                            
                             loadGiscus();
                             intersectionObserver?.disconnect();
                         }
@@ -530,13 +594,49 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                 }, 
                 {
                     rootMargin,
-                    threshold: 0.01 // Cargar apenas sea visible
+                    threshold: 0.01
                 }
             );
             
             intersectionObserver.observe(container);
-            console.log(`[Giscus] Lazy load initialized (rootMargin: ${rootMargin})`);
+            console.log(`[Giscus] ✓ Observer active (rootMargin: ${rootMargin})`);
+            
+            // ESTRATEGIA 3: Fallback Timer (secundaria, crítica para móvil)
+            // Si el observer no se activa en X segundos, forzar carga
+            fallbackTimer = window.setTimeout(() => {
+                if (!giscusLoaded) {
+                    console.log('[Giscus] ⚠ Fallback timer triggered, forcing load');
+                    updateLoadingState('Preparando comentarios...', false, true);
+                    
+                    // En móvil, mostrar botón manual después del timeout
+                    if (isMobile) {
+                        const button = document.getElementById('giscus-manual-load');
+                        if (button) {
+                            button.classList.remove('hidden');
+                        }
+                    } else {
+                        // En desktop, cargar automáticamente
+                        loadGiscus();
+                    }
+                }
+            }, FALLBACK_TIMEOUT);
         }
+        
+        /**
+         * Carga manual de Giscus (llamada desde botón)
+         */
+        function loadGiscusManually(): void {
+            console.log('[Giscus] Manual load triggered');
+            const button = document.getElementById('giscus-manual-load');
+            if (button) {
+                button.textContent = 'Cargando...';
+                button.setAttribute('disabled', 'true');
+            }
+            loadGiscus();
+        }
+        
+        // Exportar para uso en botón
+        (window as any).__loadGiscusManually = loadGiscusManually;
         
         /**
          * Limpia todos los recursos
@@ -546,6 +646,11 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             
             giscusLoaded = false;
             loadAttempts = 0;
+            
+            if (fallbackTimer) {
+                clearTimeout(fallbackTimer);
+                fallbackTimer = null;
+            }
             
             if (themeObserver) {
                 themeObserver.disconnect();
@@ -564,10 +669,10 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         function handlePageChange(): void {
             cleanup();
             
-            // Pequeño delay para asegurar que el DOM esté listo
+            // Delay para asegurar que el DOM esté listo
             setTimeout(() => {
-                initLazyLoad();
-            }, 100);
+                initGiscusLoad();
+            }, 150);
         }
         
         /**
@@ -578,12 +683,12 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             
             if (window.swup?.hooks) {
                 window.swup.hooks.on('page:view', handlePageChange);
-                console.log('[Giscus] Swup integration ready');
+                console.log('[Giscus] ✓ Swup integration ready');
             } else {
                 document.addEventListener('swup:enable', () => {
                     if (window.swup?.hooks) {
                         window.swup.hooks.on('page:view', handlePageChange);
-                        console.log('[Giscus] Swup integration ready (delayed)');
+                        console.log('[Giscus] ✓ Swup integration ready (delayed)');
                     }
                 }, { once: true });
             }
@@ -596,40 +701,55 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         // Asegurar que el DOM esté listo
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
-                initLazyLoad();
+                console.log('[Giscus] DOM ready');
+                initGiscusLoad();
                 initSwupIntegration();
             });
         } else {
-            initLazyLoad();
+            console.log('[Giscus] DOM already ready');
+            initGiscusLoad();
             initSwupIntegration();
         }
         
-        // Cleanup
+        // Cleanup en descarga de página
         window.addEventListener('beforeunload', cleanup);
         
-        console.log('[Giscus] Module initialized');
+        // Re-check en resize (útil en móvil al rotar)
+        let resizeTimer: number;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = window.setTimeout(() => {
+                if (!giscusLoaded && isContainerVisible()) {
+                    console.log('[Giscus] Container visible after resize');
+                    loadGiscus();
+                }
+            }, 500);
+        });
+        
+        console.log('[Giscus] ✓ Module initialized');
     </script>
 
     <style>
         /* ============================================
            GISCUS COMMENTS STYLES
-           Optimizado para móvil, tablet y desktop
+           Mobile-first con optimizaciones táctiles
            ============================================ */
         
-        /* --- Container Base (sin full-width hack) --- */
+        /* --- Container Base --- */
         #giscus-container {
             width: 100%;
             max-width: 100%;
             background: transparent !important;
             contain: layout;
-            overflow: hidden; /* Previene scroll horizontal */
+            overflow: hidden;
+            min-height: 200px; /* Prevenir colapso en carga */
         }
         
         /* --- Iframe Responsive --- */
         #giscus-container :global(iframe.giscus-frame) {
             width: 100% !important;
             max-width: 100% !important;
-            min-height: 200px;
+            min-height: 250px;
             border: none !important;
             background: transparent !important;
             display: block;
@@ -662,7 +782,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             }
             
             #giscus-container :global(iframe.giscus-frame) {
-                min-height: 280px;
+                min-height: 300px;
             }
         }
         
@@ -673,30 +793,40 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             }
             
             #giscus-container :global(iframe.giscus-frame) {
-                min-height: 300px;
+                min-height: 320px;
             }
         }
         
         /* --- Desktop (> 1024px) --- */
         @media (min-width: 1025px) {
             #giscus-container :global(iframe.giscus-frame) {
-                min-height: 320px;
+                min-height: 350px;
             }
         }
         
-        /* --- Touch Optimizations --- */
+        /* --- Touch Optimizations (CRÍTICO PARA MÓVIL) --- */
         @media (hover: none) and (pointer: coarse) {
+            /* Áreas táctiles mínimas de 44x44px (WCAG) */
             #giscus-container :global(button),
-            #giscus-container :global(a) {
+            #giscus-container :global(a),
+            #giscus-container :global(input),
+            #giscus-container :global(textarea) {
                 min-height: 44px;
                 min-width: 44px;
-                padding: 0.5rem;
+                padding: 0.75rem;
             }
             
             /* Mejor scrolling en móvil */
             #giscus-container {
                 -webkit-overflow-scrolling: touch;
                 scroll-behavior: smooth;
+                overscroll-behavior: contain;
+            }
+            
+            /* Prevenir zoom en inputs */
+            #giscus-container :global(input),
+            #giscus-container :global(textarea) {
+                font-size: 16px !important; /* Previene auto-zoom en iOS */
             }
         }
         
@@ -717,10 +847,42 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             }
         }
         
-        /* --- Prevenir overflow en todos los dispositivos --- */
+        /* --- Prevenir overflow --- */
         #giscus-container :global(*) {
             max-width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* --- Loading Animation --- */
+        #giscus-container [role="status"] {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* --- Manual Load Button --- */
+        #giscus-manual-load {
+            font-family: inherit;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        #giscus-manual-load:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        /* --- Mejoras táctiles para el botón --- */
+        @media (hover: none) and (pointer: coarse) {
+            #giscus-manual-load {
+                min-height: 48px;
+                font-size: 16px;
+            }
         }
     </style>
 
-</MainGridLayout>
+</MainGridLayout>2
