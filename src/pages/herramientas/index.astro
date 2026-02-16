@@ -131,142 +131,130 @@ const tools = [
             )}
             
             {tool.iconType === "link" && (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" class="tool-svg url-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="tool-svg url-icon">
                 <defs>
-                  <linearGradient id="urlMainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:oklch(0.72 0.2 var(--hue));stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:oklch(0.6 0.22 calc(var(--hue) + 35));stop-opacity:1" />
+                  <linearGradient id="urlGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:oklch(0.72 0.22 var(--hue));stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:oklch(0.58 0.24 calc(var(--hue) + 45));stop-opacity:1" />
                   </linearGradient>
-                  <linearGradient id="urlShineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" style="stop-color:oklch(0.88 0.18 var(--hue));stop-opacity:0.7" />
-                    <stop offset="100%" style="stop-color:oklch(0.72 0.2 calc(var(--hue) + 25));stop-opacity:0.2" />
-                  </linearGradient>
-                  <linearGradient id="urlBoltGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:oklch(0.82 0.22 var(--hue));stop-opacity:1" />
-                    <stop offset="50%" style="stop-color:oklch(0.76 0.24 calc(var(--hue) + 18));stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:oklch(0.68 0.22 calc(var(--hue) + 35));stop-opacity:1" />
-                  </linearGradient>
-                  <filter id="urlMainGlow">
-                    <feGaussianBlur stdDeviation="1.8" result="coloredBlur"/>
+                  
+                  <radialGradient id="particleGrad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" style="stop-color:oklch(0.85 0.2 var(--hue));stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:oklch(0.7 0.22 calc(var(--hue) + 30));stop-opacity:0" />
+                  </radialGradient>
+                  
+                  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
                     <feMerge>
                       <feMergeNode in="coloredBlur"/>
                       <feMergeNode in="SourceGraphic"/>
                     </feMerge>
                   </filter>
-                  <filter id="urlLightGlow">
-                    <feGaussianBlur stdDeviation="0.8" result="coloredBlur"/>
+                  
+                  <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="2.5" result="blur"/>
                     <feMerge>
-                      <feMergeNode in="coloredBlur"/>
+                      <feMergeNode in="blur"/>
                       <feMergeNode in="SourceGraphic"/>
                     </feMerge>
                   </filter>
                 </defs>
                 
-                <!-- CONTENEDOR CON CLIP PARA EVITAR DESBORDAMIENTO -->
-                <clipPath id="urlClip">
-                  <rect x="0" y="0" width="80" height="80"/>
-                </clipPath>
+                <!-- Partículas flotantes -->
+                <g class="particles">
+                  <circle cx="30" cy="35" r="2" fill="url(#particleGrad)" class="particle p1" opacity="0"/>
+                  <circle cx="45" cy="32" r="1.8" fill="url(#particleGrad)" class="particle p2" opacity="0"/>
+                  <circle cx="55" cy="38" r="1.5" fill="url(#particleGrad)" class="particle p3" opacity="0"/>
+                  <circle cx="70" cy="35" r="2.2" fill="url(#particleGrad)" class="particle p4" opacity="0"/>
+                  <circle cx="38" cy="42" r="1.6" fill="url(#particleGrad)" class="particle p5" opacity="0"/>
+                  <circle cx="62" cy="40" r="1.9" fill="url(#particleGrad)" class="particle p6" opacity="0"/>
+                </g>
                 
-                <g clip-path="url(#urlClip)" class="url-shortener-container">
+                <!-- URL Larga (top) -->
+                <g class="long-url-container">
+                  <rect x="20" y="28" width="60" height="8" rx="4" 
+                        fill="url(#urlGrad)" opacity="0.92" 
+                        filter="url(#softGlow)" class="long-url-bar"/>
                   
-                  <!-- URL LARGA - Barra superior -->
-                  <g class="long-url-group">
-                    <rect x="18" y="23" width="44" height="7" rx="3.5" 
-                          fill="url(#urlMainGrad)" opacity="0.9" 
-                          filter="url(#urlLightGlow)" class="url-long-bar"/>
-                    
-                    <!-- Segmentos de texto -->
-                    <g class="text-segs">
-                      <rect x="21" y="25.5" width="3.5" height="2" rx="1" fill="white" opacity="0.7" class="tseg ts1"/>
-                      <rect x="25.5" y="25.5" width="4.5" height="2" rx="1" fill="white" opacity="0.68" class="tseg ts2"/>
-                      <rect x="31" y="25.5" width="3" height="2" rx="1" fill="white" opacity="0.66" class="tseg ts3"/>
-                      <rect x="35" y="25.5" width="5" height="2" rx="1" fill="white" opacity="0.64" class="tseg ts4"/>
-                      <rect x="41" y="25.5" width="3.5" height="2" rx="1" fill="white" opacity="0.62" class="tseg ts5"/>
-                      <rect x="45.5" y="25.5" width="4" height="2" rx="1" fill="white" opacity="0.6" class="tseg ts6"/>
-                      <rect x="50.5" y="25.5" width="3" height="2" rx="1" fill="white" opacity="0.58" class="tseg ts7"/>
-                      <rect x="54.5" y="25.5" width="4" height="2" rx="1" fill="white" opacity="0.56" class="tseg ts8"/>
-                    </g>
-                    
-                    <!-- Brillo superior -->
-                    <rect x="19" y="23.5" width="42" height="2.5" rx="1.5" 
-                          fill="url(#urlShineGrad)" opacity="0.35" class="url-shine"/>
+                  <!-- Líneas de texto animadas -->
+                  <g class="text-flow">
+                    <rect x="24" y="31" width="8" height="2" rx="1" fill="white" opacity="0" class="text-bit tb1"/>
+                    <rect x="34" y="31" width="10" height="2" rx="1" fill="white" opacity="0" class="text-bit tb2"/>
+                    <rect x="46" y="31" width="7" height="2" rx="1" fill="white" opacity="0" class="text-bit tb3"/>
+                    <rect x="55" y="31" width="9" height="2" rx="1" fill="white" opacity="0" class="text-bit tb4"/>
+                    <rect x="66" y="31" width="10" height="2" rx="1" fill="white" opacity="0" class="text-bit tb5"/>
                   </g>
                   
-                  <!-- RAYO CENTRAL - Compresión -->
-                  <g class="bolt-group">
-                    <!-- Rayo principal -->
-                    <path d="M 42 38 L 37 42 L 40 42 L 37 46 L 43 42 L 40 42 Z" 
-                          fill="url(#urlBoltGrad)" opacity="0.92" 
-                          filter="url(#urlMainGlow)" class="main-bolt"/>
-                    
-                    <!-- Líneas laterales de energía -->
-                    <g class="energy-side-lines">
-                      <line x1="35" y1="41" x2="32" y2="41" stroke="url(#urlBoltGrad)" 
-                            stroke-width="1.8" stroke-linecap="round" opacity="0.68" class="energy-l1"/>
-                      <line x1="45" y1="41" x2="48" y2="41" stroke="url(#urlBoltGrad)" 
-                            stroke-width="1.8" stroke-linecap="round" opacity="0.68" class="energy-l2"/>
-                    </g>
-                    
-                    <!-- Chispas pequeñas -->
-                    <g class="spark-dots">
-                      <circle cx="35" cy="40" r="1" fill="url(#urlBoltGrad)" opacity="0.75" class="spark-d sd1"/>
-                      <circle cx="45" cy="40" r="1" fill="url(#urlBoltGrad)" opacity="0.75" class="spark-d sd2"/>
-                      <circle cx="35" cy="44" r="0.9" fill="url(#urlBoltGrad)" opacity="0.7" class="spark-d sd3"/>
-                      <circle cx="45" cy="44" r="0.9" fill="url(#urlBoltGrad)" opacity="0.7" class="spark-d sd4"/>
-                    </g>
+                  <!-- Brillo superior -->
+                  <rect x="22" y="28.5" width="56" height="3" rx="1.5" 
+                        fill="white" opacity="0.25" class="shine-top"/>
+                </g>
+                
+                <!-- Centro: Vórtice/Procesamiento -->
+                <g class="vortex-center">
+                  <!-- Anillos concéntricos -->
+                  <circle cx="50" cy="50" r="8" fill="none" stroke="url(#urlGrad)" 
+                          stroke-width="1.5" opacity="0" class="ring ring1"/>
+                  <circle cx="50" cy="50" r="6" fill="none" stroke="url(#urlGrad)" 
+                          stroke-width="1.2" opacity="0" class="ring ring2"/>
+                  <circle cx="50" cy="50" r="4" fill="none" stroke="url(#urlGrad)" 
+                          stroke-width="1" opacity="0" class="ring ring3"/>
+                  
+                  <!-- Núcleo central -->
+                  <circle cx="50" cy="50" r="5" fill="url(#urlGrad)" 
+                          opacity="0" filter="url(#glow)" class="core"/>
+                  
+                  <!-- Chispas orbitales -->
+                  <circle cx="50" cy="42" r="1.5" fill="oklch(0.85 0.2 var(--hue))" 
+                          opacity="0" class="orbital orb1"/>
+                  <circle cx="58" cy="50" r="1.5" fill="oklch(0.85 0.2 var(--hue))" 
+                          opacity="0" class="orbital orb2"/>
+                  <circle cx="50" cy="58" r="1.5" fill="oklch(0.85 0.2 var(--hue))" 
+                          opacity="0" class="orbital orb3"/>
+                  <circle cx="42" cy="50" r="1.5" fill="oklch(0.85 0.2 var(--hue))" 
+                          opacity="0" class="orbital orb4"/>
+                </g>
+                
+                <!-- URL Corta (bottom) -->
+                <g class="short-url-container">
+                  <rect x="32" y="64" width="36" height="8" rx="4" 
+                        fill="url(#urlGrad)" opacity="0" 
+                        filter="url(#softGlow)" class="short-url-bar"/>
+                  
+                  <!-- Icono de enlace -->
+                  <g class="link-icon" opacity="0">
+                    <circle cx="38" cy="68" r="2" fill="none" stroke="white" stroke-width="1.3"/>
+                    <circle cx="44" cy="68" r="2" fill="none" stroke="white" stroke-width="1.3"/>
+                    <line x1="39.5" y1="68" x2="42.5" y2="68" stroke="white" stroke-width="1.3"/>
                   </g>
                   
-                  <!-- URL CORTA - Resultado -->
-                  <g class="short-url-group">
-                    <!-- Cápsula -->
-                    <rect x="28" y="55" width="24" height="9" rx="4.5" 
-                          fill="url(#urlMainGrad)" opacity="0.94" 
-                          filter="url(#urlMainGlow)" class="url-short-capsule"/>
-                    
-                    <!-- Brillo interno -->
-                    <rect x="29" y="56" width="22" height="3.5" rx="1.75" 
-                          fill="url(#urlShineGrad)" opacity="0.32" class="capsule-inner-shine"/>
-                    
-                    <!-- Icono de enlace -->
-                    <g transform="translate(31, 58.5)" class="link-icon-group">
-                      <circle cx="1.8" cy="0.8" r="1.6" fill="none" stroke="white" 
-                              stroke-width="1.1" opacity="0.88"/>
-                      <circle cx="5.2" cy="0.8" r="1.6" fill="none" stroke="white" 
-                              stroke-width="1.1" opacity="0.88"/>
-                      <line x1="2.8" y1="0.8" x2="4.2" y2="0.8" stroke="white" 
-                            stroke-width="1.1" opacity="0.88"/>
-                    </g>
-                    
-                    <!-- Texto -->
-                    <text x="43" y="61" font-family="system-ui, -apple-system" 
-                          font-size="5" font-weight="700" 
-                          fill="white" text-anchor="middle" opacity="0.93">bit.ly</text>
-                    
-                    <!-- Check de éxito -->
-                    <g class="check-success-group">
-                      <circle cx="54" cy="59.5" r="3" fill="oklch(0.73 0.22 140)" 
-                              opacity="0.93" class="check-circle-bg"/>
-                      <circle cx="54" cy="59.5" r="2.2" fill="oklch(0.8 0.18 140)" 
-                              opacity="0.45" class="check-circle-pulse"/>
-                      <path d="M 52.5 59.2 L 53.5 60.2 L 55.5 58.5" 
-                            stroke="white" stroke-width="1.3" 
-                            fill="none" stroke-linecap="round" stroke-linejoin="round" 
-                            opacity="0.92" class="check-path"/>
-                    </g>
+                  <!-- Texto -->
+                  <text x="54" y="69.5" font-family="system-ui, -apple-system" 
+                        font-size="5.5" font-weight="700" fill="white" 
+                        opacity="0" class="short-text">bit.ly/x</text>
+                  
+                  <!-- Check de éxito -->
+                  <g class="success-check" opacity="0">
+                    <circle cx="64" cy="68" r="3" fill="oklch(0.7 0.22 150)" opacity="0.3"/>
+                    <circle cx="64" cy="68" r="2.2" fill="oklch(0.75 0.2 150)"/>
+                    <path d="M 62.8 67.8 L 63.6 68.6 L 65.2 67" 
+                          stroke="white" stroke-width="1.4" fill="none" 
+                          stroke-linecap="round" stroke-linejoin="round"/>
                   </g>
                   
-                  <!-- Flechas laterales -->
-                  <g class="side-arrows-group">
-                    <path d="M 24 42 L 27 42 M 26 40.7 L 27 42 L 26 43.3" 
-                          stroke="url(#urlMainGrad)" stroke-width="1.6" 
-                          fill="none" stroke-linecap="round" stroke-linejoin="round" 
-                          opacity="0.68" class="side-arrow arrow-l"/>
-                    <path d="M 56 42 L 53 42 M 54 40.7 L 53 42 L 54 43.3" 
-                          stroke="url(#urlMainGrad)" stroke-width="1.6" 
-                          fill="none" stroke-linecap="round" stroke-linejoin="round" 
-                          opacity="0.68" class="side-arrow arrow-r"/>
-                  </g>
-                  
+                  <!-- Brillo inferior -->
+                  <rect x="34" y="64.5" width="32" height="2.5" rx="1.25" 
+                        fill="white" opacity="0" class="shine-bottom"/>
+                </g>
+                
+                <!-- Ondas de energía -->
+                <g class="energy-waves">
+                  <path d="M 25 50 Q 30 48, 35 50 T 45 50" 
+                        stroke="url(#urlGrad)" stroke-width="1.5" 
+                        fill="none" opacity="0" class="wave w1"/>
+                  <path d="M 55 50 Q 60 48, 65 50 T 75 50" 
+                        stroke="url(#urlGrad)" stroke-width="1.5" 
+                        fill="none" opacity="0" class="wave w2"/>
                 </g>
               </svg>
             )}
@@ -503,504 +491,102 @@ const tools = [
     to { opacity: 1; transform: translateY(0); }
   }
 
-  :global(.dark) .tool-card {
-    border-color: rgba(255, 255, 255, 0.08);
-  }
-
   .tool-card::before {
-    content: "";
+    content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    height: 2px;
+    bottom: 0;
     background: linear-gradient(
-      90deg,
-      transparent,
-      oklch(0.7 0.2 var(--hue)),
+      135deg,
+      oklch(0.7 0.18 var(--hue) / 0.05),
       transparent
     );
     opacity: 0;
-    transition: opacity 0.4s ease;
-  }
-
-  .tool-card::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(
-      circle at 50% 50%,
-      oklch(0.7 0.2 var(--hue) / 0.05) 0%,
-      transparent 70%
-    );
-    opacity: 0;
-    transition: opacity 0.4s ease;
+    transition: opacity 0.3s ease;
     pointer-events: none;
   }
 
+  .tool-card:hover::before {
+    opacity: 1;
+  }
+
   .tool-card:hover {
-    transform: translateY(-6px);
+    transform: translateY(-4px);
+    border-color: oklch(0.7 0.15 var(--hue) / 0.2);
     box-shadow: 
-      0 20px 40px oklch(0.7 0.2 var(--hue) / 0.2),
-      0 8px 16px rgba(0, 0, 0, 0.08);
-    border-color: oklch(0.75 0.12 var(--hue));
+      0 12px 28px oklch(0.5 0.1 var(--hue) / 0.12),
+      0 4px 12px oklch(0.5 0.1 var(--hue) / 0.08);
+  }
+
+  :global(.dark) .tool-card {
+    border-color: rgba(255, 255, 255, 0.08);
   }
 
   :global(.dark) .tool-card:hover {
-    box-shadow: 
-      0 20px 40px oklch(0.5 0.16 var(--hue) / 0.3),
-      0 8px 16px rgba(0, 0, 0, 0.4);
-    border-color: oklch(0.5 0.12 var(--hue));
-  }
-
-  .tool-card:hover::before,
-  .tool-card:hover::after {
-    opacity: 1;
+    border-color: oklch(0.7 0.15 var(--hue) / 0.3);
   }
 
   .tool-badge {
     position: absolute;
     top: 1rem;
     right: 1rem;
-    font-size: 0.7rem;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.75rem;
     font-weight: 700;
+    letter-spacing: 0.02em;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 0.3rem 0.65rem;
-    border-radius: 9999px;
-    background: linear-gradient(135deg, oklch(0.95 0.06 var(--hue)), oklch(0.92 0.08 calc(var(--hue) + 15)));
-    color: oklch(0.5 0.16 var(--hue));
-    box-shadow: 0 2px 8px oklch(0.7 0.14 var(--hue) / 0.25);
-    z-index: 1;
+    background: oklch(0.7 0.18 var(--hue) / 0.12);
+    color: oklch(0.55 0.2 var(--hue));
+    border-radius: var(--radius-medium);
+    backdrop-filter: blur(8px);
   }
 
   :global(.dark) .tool-badge {
-    background: linear-gradient(135deg, oklch(0.35 0.08 var(--hue)), oklch(0.32 0.1 calc(var(--hue) + 15)));
-    color: oklch(0.8 0.14 var(--hue));
+    background: oklch(0.7 0.18 var(--hue) / 0.2);
+    color: oklch(0.75 0.18 var(--hue));
   }
 
-  /* ============================================
-     ICONOS
-     ============================================ */
   .tool-icon-wrapper {
-    width: 4.5rem;
-    height: 4.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 1.25rem;
-    background: linear-gradient(135deg, oklch(0.97 0.05 var(--hue)), oklch(0.95 0.07 calc(var(--hue) + 15)));
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    position: relative;
-    box-shadow: 
-      0 6px 12px oklch(0.7 0.14 var(--hue) / 0.15),
-      inset 0 1px 0 rgba(255, 255, 255, 0.5);
-    will-change: transform;
-    overflow: hidden;
-  }
-
-  :global(.dark) .tool-icon-wrapper {
-    background: linear-gradient(135deg, oklch(0.3 0.07 var(--hue)), oklch(0.27 0.09 calc(var(--hue) + 15)));
-    box-shadow: 
-      0 6px 12px oklch(0.3 0.1 var(--hue) / 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  }
-
-  .tool-card:hover .tool-icon-wrapper {
-    transform: scale(1.1) rotate(3deg);
-    box-shadow: 
-      0 10px 20px oklch(0.7 0.18 var(--hue) / 0.25),
-      inset 0 1px 0 rgba(255, 255, 255, 0.7);
-  }
-
-  :global(.dark) .tool-card:hover .tool-icon-wrapper {
-    box-shadow: 
-      0 10px 20px oklch(0.5 0.14 var(--hue) / 0.4),
-      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    height: 120px;
+    margin-bottom: 0.5rem;
   }
 
   .tool-svg {
-    width: 100%;
-    height: 100%;
+    width: 100px;
+    height: 100px;
+    transition: transform 0.3s ease;
   }
 
   .tool-card:hover .tool-svg {
-    animation: svgHover 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform: scale(1.05);
   }
 
-  @keyframes svgHover {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
+  .tool-content {
+    flex: 1;
   }
 
-  /* ============================================
-     ANIMACIONES TELEPROMPTER
-     ============================================ */
-  .teleprompter-icon .text-lines .line {
-    animation: lineFlow 2.5s ease-in-out infinite;
-  }
-
-  .teleprompter-icon .l1 { animation-delay: 0s; }
-  .teleprompter-icon .l2 { animation-delay: 0.4s; }
-  .teleprompter-icon .l3 { animation-delay: 0.8s; }
-
-  @keyframes lineFlow {
-    0%, 100% { opacity: 0.7; transform: translateY(0); }
-    50% { opacity: 0.3; transform: translateY(-3px); }
-  }
-
-  .teleprompter-icon .arrow-up {
-    animation: arrowFloat 1.5s ease-in-out infinite;
-  }
-
-  @keyframes arrowFloat {
-    0%, 100% { transform: translateY(0); opacity: 0.9; }
-    50% { transform: translateY(-3px); opacity: 1; }
-  }
-
-  .teleprompter-icon .rec-dot {
-    animation: recPulse 1.5s ease-in-out infinite;
-  }
-
-  @keyframes recPulse {
-    0%, 100% { opacity: 0.8; }
-    50% { opacity: 0.3; }
-  }
-
-  /* ============================================
-     ANIMACIONES URL SHORTENER (SUTIL & PREMIUM)
-     ============================================ */
-  
-  /* Animación ambient continua - siempre presente, nunca intrusiva */
-  
-  /* URL Larga - Breathing sutil */
-  .url-icon .url-long-bar {
-    animation: urlAmbient 4s ease-in-out infinite;
-  }
-
-  @keyframes urlAmbient {
-    0%, 100% { 
-      opacity: 0.88; 
-      transform: translateY(0); 
-    }
-    50% { 
-      opacity: 0.96; 
-      transform: translateY(-0.5px); 
-    }
-  }
-
-  /* Segmentos de texto - Pulso de datos muy sutil */
-  .url-icon .tseg {
-    animation: dataFlow 5s ease-in-out infinite;
-  }
-
-  .url-icon .ts1 { animation-delay: 0s; }
-  .url-icon .ts2 { animation-delay: 0.15s; }
-  .url-icon .ts3 { animation-delay: 0.3s; }
-  .url-icon .ts4 { animation-delay: 0.45s; }
-  .url-icon .ts5 { animation-delay: 0.6s; }
-  .url-icon .ts6 { animation-delay: 0.75s; }
-  .url-icon .ts7 { animation-delay: 0.9s; }
-  .url-icon .ts8 { animation-delay: 1.05s; }
-
-  @keyframes dataFlow {
-    0%, 100% { 
-      opacity: 0.68; 
-    }
-    50% { 
-      opacity: 0.42; 
-    }
-  }
-
-  /* Brillo superior - Shimmer elegante */
-  .url-icon .url-shine {
-    animation: gentleShimmer 6s ease-in-out infinite;
-  }
-
-  @keyframes gentleShimmer {
-    0%, 100% { 
-      opacity: 0.32; 
-      transform: translateX(-1px); 
-    }
-    50% { 
-      opacity: 0.48; 
-      transform: translateX(1px); 
-    }
-  }
-
-  /* Rayo - Pulso de energía contenida */
-  .url-icon .main-bolt {
-    animation: energyPulse 3.5s ease-in-out infinite;
-    transform-origin: 40px 42px;
-  }
-
-  @keyframes energyPulse {
-    0%, 100% { 
-      opacity: 0.88; 
-      transform: scale(1); 
-    }
-    50% { 
-      opacity: 0.96; 
-      transform: scale(1.02); 
-    }
-  }
-
-  /* Líneas de energía - Flujo constante */
-  .url-icon .energy-side-lines line {
-    animation: energyStream 3s ease-in-out infinite;
-  }
-
-  .url-icon .energy-l1 { animation-delay: 0s; }
-  .url-icon .energy-l2 { animation-delay: 0.1s; }
-
-  @keyframes energyStream {
-    0%, 100% { 
-      opacity: 0.62; 
-      transform: scaleX(0.98); 
-    }
-    50% { 
-      opacity: 0.72; 
-      transform: scaleX(1); 
-    }
-  }
-
-  /* Chispas - Micro destellos sutiles */
-  .url-icon .spark-d {
-    animation: microSparkle 4s ease-in-out infinite;
-  }
-
-  .url-icon .sd1 { animation-delay: 0s; }
-  .url-icon .sd2 { animation-delay: 1s; }
-  .url-icon .sd3 { animation-delay: 2s; }
-  .url-icon .sd4 { animation-delay: 3s; }
-
-  @keyframes microSparkle {
-    0%, 90%, 100% { 
-      opacity: 0.68; 
-      transform: scale(1); 
-    }
-    95% { 
-      opacity: 0.88; 
-      transform: scale(1.15); 
-    }
-  }
-
-  /* URL Corta - Breathing sincronizado */
-  .url-icon .url-short-capsule {
-    animation: resultAmbient 4s ease-in-out infinite;
-  }
-
-  @keyframes resultAmbient {
-    0%, 100% { 
-      opacity: 0.92; 
-      transform: translateY(0); 
-    }
-    50% { 
-      opacity: 0.98; 
-      transform: translateY(-0.5px); 
-    }
-  }
-
-  /* Brillo interno - Glow sutil */
-  .url-icon .capsule-inner-shine {
-    animation: innerGlow 5s ease-in-out infinite;
-  }
-
-  @keyframes innerGlow {
-    0%, 100% { 
-      opacity: 0.28; 
-    }
-    50% { 
-      opacity: 0.42; 
-    }
-  }
-
-  /* Icono de enlace - Micro rotación */
-  .url-icon .link-icon-group {
-    animation: linkFloat 6s ease-in-out infinite;
-  }
-
-  @keyframes linkFloat {
-    0%, 100% { 
-      opacity: 0.86; 
-      transform: rotate(0deg); 
-    }
-    50% { 
-      opacity: 0.92; 
-      transform: rotate(1deg); 
-    }
-  }
-
-  /* Check - Pulso de confianza */
-  .url-icon .check-success-group {
-    animation: confidencePulse 3s ease-in-out infinite;
-  }
-
-  @keyframes confidencePulse {
-    0%, 100% { 
-      opacity: 0.9; 
-      transform: scale(1); 
-    }
-    50% { 
-      opacity: 0.96; 
-      transform: scale(1.03); 
-    }
-  }
-
-  /* Pulso del check - Onda tranquila */
-  .url-icon .check-circle-pulse {
-    animation: gentleRipple 2.5s ease-in-out infinite;
-  }
-
-  @keyframes gentleRipple {
-    0%, 100% { 
-      opacity: 0.42; 
-      transform: scale(1); 
-    }
-    50% { 
-      opacity: 0.12; 
-      transform: scale(1.18); 
-    }
-  }
-
-  /* Flechas laterales - Micro movimiento */
-  .url-icon .side-arrow {
-    animation: subtleIndicate 4s ease-in-out infinite;
-  }
-
-  .url-icon .arrow-l { animation-delay: 0s; }
-  .url-icon .arrow-r { animation-delay: 0.08s; }
-
-  @keyframes subtleIndicate {
-    0%, 100% { 
-      opacity: 0.64; 
-      transform: translateX(0); 
-    }
-    50% { 
-      opacity: 0.76; 
-      transform: translateX(0.5px); 
-    }
-  }
-
-  /* === MICRO-INTERACCIONES HOVER === */
-  /* Cuando el usuario hace hover, la animación cobra vida sutilmente */
-  
-  .tool-card:hover .url-icon .url-long-bar {
-    animation: urlHoverActive 2s ease-in-out infinite;
-  }
-
-  @keyframes urlHoverActive {
-    0%, 100% { 
-      opacity: 0.92; 
-      transform: translateY(0) scaleX(1); 
-    }
-    50% { 
-      opacity: 1; 
-      transform: translateY(-1px) scaleX(0.99); 
-    }
-  }
-
-  .tool-card:hover .url-icon .main-bolt {
-    animation: energyHoverPulse 1.8s ease-in-out infinite;
-    transform-origin: 40px 42px;
-  }
-
-  @keyframes energyHoverPulse {
-    0%, 100% { 
-      opacity: 0.9; 
-      transform: scale(1); 
-    }
-    50% { 
-      opacity: 1; 
-      transform: scale(1.05); 
-    }
-  }
-
-  .tool-card:hover .url-icon .spark-d {
-    animation: sparkHoverActive 1.5s ease-in-out infinite;
-  }
-
-  .url-icon .sd1 { animation-delay: 0s; }
-  .url-icon .sd2 { animation-delay: 0.3s; }
-  .url-icon .sd3 { animation-delay: 0.6s; }
-  .url-icon .sd4 { animation-delay: 0.9s; }
-
-  @keyframes sparkHoverActive {
-    0%, 80%, 100% { 
-      opacity: 0.72; 
-      transform: scale(1); 
-    }
-    90% { 
-      opacity: 0.95; 
-      transform: scale(1.25); 
-    }
-  }
-
-  .tool-card:hover .url-icon .url-short-capsule {
-    animation: resultHoverGlow 2s ease-in-out infinite;
-  }
-
-  @keyframes resultHoverGlow {
-    0%, 100% { 
-      opacity: 0.96; 
-      transform: translateY(0); 
-    }
-    50% { 
-      opacity: 1; 
-      transform: translateY(-1px); 
-    }
-  }
-
-  .tool-card:hover .url-icon .check-success-group {
-    animation: checkHoverConfident 1.5s ease-in-out infinite;
-  }
-
-  @keyframes checkHoverConfident {
-    0%, 100% { 
-      opacity: 0.94; 
-      transform: scale(1); 
-    }
-    50% { 
-      opacity: 1; 
-      transform: scale(1.06); 
-    }
-  }
-
-  /* === TRANSICIONES SUAVES === */
-  .url-icon * {
-    transition: opacity 0.3s ease, transform 0.3s ease;
-  }
-
-  /* ============================================
-     CONTENIDO DE CARDS
-     ============================================ */
   .tool-name {
-    font-size: 1.35rem;
+    font-size: 1.4rem;
     font-weight: 700;
-    color: #0f172a;
-    margin-bottom: 0.35rem;
+    letter-spacing: -0.01em;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
     line-height: 1.3;
-    transition: all 0.3s ease;
   }
 
   :global(.dark) .tool-name {
     color: #f1f5f9;
   }
 
-  .tool-card:hover .tool-name {
-    color: oklch(0.55 0.16 var(--hue));
-    transform: translateX(2px);
-  }
-
-  :global(.dark) .tool-card:hover .tool-name {
-    color: oklch(0.75 0.16 var(--hue));
-  }
-
   .tool-description {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
     color: #64748b;
-    line-height: 1.55;
   }
 
   :global(.dark) .tool-description {
@@ -1010,133 +596,400 @@ const tools = [
   .tool-features {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem;
+    gap: 0.5rem;
   }
 
   .tool-feature-tag {
-    font-size: 0.75rem;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.8rem;
     font-weight: 600;
-    padding: 0.25rem 0.6rem;
-    border-radius: 0.4rem;
-    background: oklch(0.97 0.025 var(--hue));
+    background: #f1f5f9;
     color: #475569;
-    border: 1px solid oklch(0.93 0.03 var(--hue));
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border-radius: var(--radius-small);
+    white-space: nowrap;
   }
 
   :global(.dark) .tool-feature-tag {
-    background: oklch(0.23 0.03 var(--hue));
+    background: #1e293b;
     color: #94a3b8;
-    border-color: oklch(0.32 0.04 var(--hue));
-  }
-
-  .tool-card:hover .tool-feature-tag {
-    transform: translateY(-1px);
-    border-color: oklch(0.82 0.08 var(--hue));
   }
 
   .tool-cta {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.85rem;
+    justify-content: space-between;
+    padding-top: 0.75rem;
+    margin-top: 0.75rem;
+    border-top: 1px solid #e2e8f0;
     font-weight: 600;
-    color: oklch(0.55 0.16 var(--hue));
-    margin-top: 0.25rem;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    font-size: 0.95rem;
+    color: oklch(0.55 0.18 var(--hue));
   }
 
   :global(.dark) .tool-cta {
+    border-top-color: #334155;
     color: oklch(0.72 0.16 var(--hue));
   }
 
   .tool-cta-arrow {
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    font-size: 1rem;
-    display: inline-block;
+    transition: transform 0.3s ease;
   }
 
   .tool-card:hover .tool-cta-arrow {
-    transform: translateX(6px);
+    transform: translateX(4px);
   }
 
-  .tool-card:hover .tool-cta {
-    color: oklch(0.6 0.18 var(--hue));
-  }
-
-  :global(.dark) .tool-card:hover .tool-cta {
-    color: oklch(0.78 0.18 var(--hue));
-  }
-
-  /* ============================================
-     FOOTER
-     ============================================ */
   .tools-footer {
     text-align: center;
-    padding: 1rem 1.5rem;
-    border-radius: var(--radius-large);
-    background: oklch(0.97 0.015 var(--hue));
-    border: 1px dashed oklch(0.89 0.04 var(--hue));
-    animation: footerFade 0.6s ease-out 0.5s both;
-  }
-
-  @keyframes footerFade {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
+    padding: 1.5rem 0;
+    color: #64748b;
+    font-size: 0.9rem;
   }
 
   :global(.dark) .tools-footer {
-    background: oklch(0.21 0.025 var(--hue));
-    border-color: oklch(0.32 0.04 var(--hue));
-  }
-
-  .tools-footer p {
-    font-size: 0.8rem;
-    color: #64748b;
-    margin: 0;
-  }
-
-  :global(.dark) .tools-footer p {
     color: #94a3b8;
   }
 
   /* ============================================
-     RESPONSIVE
+     URL SHORTENER PREMIUM ANIMATION
+     Inspirado en "thinking animation"
      ============================================ */
-  @media (max-width: 640px) {
-    .tools-title {
-      font-size: 2rem;
-    }
+  
+  /* Partículas flotantes */
+  .particle {
+    animation: particleFlow 4s ease-in-out infinite;
+  }
 
-    .header-svg {
-      width: 65px;
-      height: 65px;
-    }
+  .p1 { animation-delay: 0s; }
+  .p2 { animation-delay: 0.3s; }
+  .p3 { animation-delay: 0.6s; }
+  .p4 { animation-delay: 0.9s; }
+  .p5 { animation-delay: 1.2s; }
+  .p6 { animation-delay: 1.5s; }
 
-    .tool-card {
-      padding: 1.5rem;
+  @keyframes particleFlow {
+    0% {
+      opacity: 0;
+      transform: translate(0, 0) scale(0.5);
     }
+    15% {
+      opacity: 0.8;
+      transform: translate(5px, -10px) scale(1);
+    }
+    35% {
+      opacity: 0.6;
+      transform: translate(15px, 5px) scale(0.9);
+    }
+    50% {
+      opacity: 0.4;
+      transform: translate(20px, 15px) scale(0.7);
+    }
+    65%, 100% {
+      opacity: 0;
+      transform: translate(20px, 30px) scale(0.3);
+    }
+  }
 
-    .tool-icon-wrapper {
-      width: 4rem;
-      height: 4rem;
+  /* URL larga - pulso suave */
+  .long-url-bar {
+    animation: longPulse 4s ease-in-out infinite;
+  }
+
+  @keyframes longPulse {
+    0%, 100% {
+      opacity: 0.92;
+      transform: scaleX(1);
     }
+    20%, 80% {
+      opacity: 1;
+      transform: scaleX(1.01);
+    }
+  }
+
+  /* Bits de texto fluyendo */
+  .text-bit {
+    animation: textFlow 4s ease-in-out infinite;
+  }
+
+  .tb1 { animation-delay: 0s; }
+  .tb2 { animation-delay: 0.15s; }
+  .tb3 { animation-delay: 0.3s; }
+  .tb4 { animation-delay: 0.45s; }
+  .tb5 { animation-delay: 0.6s; }
+
+  @keyframes textFlow {
+    0%, 10% {
+      opacity: 0;
+      transform: translateX(-5px);
+    }
+    15%, 45% {
+      opacity: 0.85;
+      transform: translateX(0);
+    }
+    50% {
+      opacity: 0.6;
+      transform: translateX(2px);
+    }
+    55%, 100% {
+      opacity: 0;
+      transform: translateX(5px);
+    }
+  }
+
+  /* Vórtice central - anillos expansivos */
+  .ring {
+    animation: ringExpand 2s ease-out infinite;
+    transform-origin: 50px 50px;
+  }
+
+  .ring1 { animation-delay: 0s; }
+  .ring2 { animation-delay: 0.3s; }
+  .ring3 { animation-delay: 0.6s; }
+
+  @keyframes ringExpand {
+    0% {
+      opacity: 0;
+      transform: scale(0.3);
+    }
+    30% {
+      opacity: 0.7;
+    }
+    70% {
+      opacity: 0.3;
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.8);
+    }
+  }
+
+  /* Núcleo central */
+  .core {
+    animation: corePulse 2s ease-in-out infinite;
+  }
+
+  @keyframes corePulse {
+    0%, 100% {
+      opacity: 0.7;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.2);
+    }
+  }
+
+  /* Orbitales giratorios */
+  .orbital {
+    animation: orbit 3s linear infinite;
+    transform-origin: 50px 50px;
+  }
+
+  .orb1 { animation-delay: 0s; }
+  .orb2 { animation-delay: 0.75s; }
+  .orb3 { animation-delay: 1.5s; }
+  .orb4 { animation-delay: 2.25s; }
+
+  @keyframes orbit {
+    0% {
+      opacity: 0;
+      transform: rotate(0deg) translateX(8px) scale(0.5);
+    }
+    20% {
+      opacity: 0.9;
+      transform: rotate(72deg) translateX(8px) scale(1);
+    }
+    40% {
+      opacity: 0.8;
+      transform: rotate(144deg) translateX(8px) scale(0.9);
+    }
+    60% {
+      opacity: 0.7;
+      transform: rotate(216deg) translateX(8px) scale(0.8);
+    }
+    80% {
+      opacity: 0.6;
+      transform: rotate(288deg) translateX(8px) scale(0.7);
+    }
+    100% {
+      opacity: 0;
+      transform: rotate(360deg) translateX(8px) scale(0.5);
+    }
+  }
+
+  /* Ondas de energía */
+  .wave {
+    animation: waveFlow 3s ease-in-out infinite;
+  }
+
+  .w1 { animation-delay: 1.2s; }
+  .w2 { animation-delay: 1.5s; }
+
+  @keyframes waveFlow {
+    0%, 30% {
+      opacity: 0;
+      stroke-dasharray: 0 100;
+    }
+    40% {
+      opacity: 0.6;
+      stroke-dasharray: 20 100;
+    }
+    60% {
+      opacity: 0.4;
+      stroke-dasharray: 60 100;
+    }
+    70%, 100% {
+      opacity: 0;
+      stroke-dasharray: 100 100;
+    }
+  }
+
+  /* URL corta - aparición */
+  .short-url-bar {
+    animation: shortAppear 4s ease-in-out infinite;
+  }
+
+  @keyframes shortAppear {
+    0%, 60% {
+      opacity: 0;
+      transform: scale(0.85) translateY(-5px);
+    }
+    70% {
+      opacity: 0.3;
+      transform: scale(0.92) translateY(-2px);
+    }
+    80%, 100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  /* Icono y texto */
+  .link-icon,
+  .short-text {
+    animation: contentFade 4s ease-in-out infinite;
+  }
+
+  .short-text {
+    animation-delay: 0.1s;
+  }
+
+  @keyframes contentFade {
+    0%, 70% {
+      opacity: 0;
+    }
+    80%, 100% {
+      opacity: 1;
+    }
+  }
+
+  /* Check de éxito */
+  .success-check {
+    animation: checkBounce 4s ease-in-out infinite;
+  }
+
+  @keyframes checkBounce {
+    0%, 75% {
+      opacity: 0;
+      transform: scale(0.5) rotate(-15deg);
+    }
+    82% {
+      opacity: 1;
+      transform: scale(1.15) rotate(5deg);
+    }
+    88% {
+      transform: scale(0.95) rotate(-2deg);
+    }
+    92%, 100% {
+      opacity: 1;
+      transform: scale(1) rotate(0deg);
+    }
+  }
+
+  /* Brillos */
+  .shine-top {
+    animation: shineFlow 4s ease-in-out infinite;
+  }
+
+  .shine-bottom {
+    animation: shineFlow 4s ease-in-out infinite;
+    animation-delay: 2.5s;
+  }
+
+  @keyframes shineFlow {
+    0%, 15% {
+      opacity: 0.15;
+      transform: translateX(-10px);
+    }
+    20%, 80% {
+      opacity: 0.25;
+      transform: translateX(0);
+    }
+    85%, 100% {
+      opacity: 0.15;
+      transform: translateX(10px);
+    }
+  }
+
+  /* Performance optimizations */
+  .particle, .text-bit, .ring, .core, .orbital, .wave,
+  .long-url-bar, .short-url-bar, .link-icon, .short-text,
+  .success-check, .shine-top, .shine-bottom {
+    will-change: transform, opacity;
+  }
+
+  /* Pausa al hover */
+  .tool-card:hover .url-icon * {
+    animation-play-state: paused;
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .particle, .text-bit, .ring, .core, .orbital, .wave,
+    .long-url-bar, .short-url-bar, .link-icon, .short-text,
+    .success-check, .shine-top, .shine-bottom {
+      animation: none !important;
+    }
+    
+    .long-url-bar { opacity: 0.92; }
+    .short-url-bar,
+    .link-icon,
+    .short-text,
+    .success-check,
+    .shine-bottom { opacity: 1; }
   }
 
   /* ============================================
-     PERFORMANCE Y ACCESIBILIDAD
+     TELEPROMPTER ANIMATIONS
      ============================================ */
-  .tool-card:hover {
-    will-change: transform;
+  .text-lines rect {
+    animation: textScroll 3s ease-in-out infinite;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-    }
+  .l1 { animation-delay: 0s; }
+  .l2 { animation-delay: 0.3s; }
+  .l3 { animation-delay: 0.6s; }
+
+  @keyframes textScroll {
+    0%, 100% { opacity: 0.7; transform: translateY(0); }
+    50% { opacity: 0.4; transform: translateY(3px); }
+  }
+
+  .arrow-up {
+    animation: arrowBounce 2s ease-in-out infinite;
+  }
+
+  @keyframes arrowBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
+
+  .rec-dot {
+    animation: recBlink 2s ease-in-out infinite;
+  }
+
+  @keyframes recBlink {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 0.3; }
   }
 </style>
