@@ -233,15 +233,6 @@ const tools = [
                         font-size="5.5" font-weight="700" fill="white" 
                         opacity="0" class="short-text">bit.ly/x</text>
                   
-                  <!-- Check de éxito -->
-                  <g class="success-check" opacity="0">
-                    <circle cx="64" cy="68" r="3" fill="oklch(0.7 0.22 150)" opacity="0.3"/>
-                    <circle cx="64" cy="68" r="2.2" fill="oklch(0.75 0.2 150)"/>
-                    <path d="M 62.8 67.8 L 63.6 68.6 L 65.2 67" 
-                          stroke="white" stroke-width="1.4" fill="none" 
-                          stroke-linecap="round" stroke-linejoin="round"/>
-                  </g>
-                  
                   <!-- Brillo inferior -->
                   <rect x="34" y="64.5" width="32" height="2.5" rx="1.25" 
                         fill="white" opacity="0" class="shine-bottom"/>
@@ -651,8 +642,41 @@ const tools = [
   }
 
   /* ============================================
-     URL SHORTENER PREMIUM ANIMATION
-     Inspirado en "thinking animation"
+     TELEPROMPTER ICON (ORIGINAL - SIN CAMBIOS)
+     ============================================ */
+  .text-lines rect {
+    animation: textScroll 3s ease-in-out infinite;
+  }
+
+  .l1 { animation-delay: 0s; }
+  .l2 { animation-delay: 0.3s; }
+  .l3 { animation-delay: 0.6s; }
+
+  @keyframes textScroll {
+    0%, 100% { opacity: 0.7; transform: translateY(0); }
+    50% { opacity: 0.4; transform: translateY(3px); }
+  }
+
+  .arrow-up {
+    animation: arrowBounce 2s ease-in-out infinite;
+  }
+
+  @keyframes arrowBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
+
+  .rec-dot {
+    animation: recBlink 2s ease-in-out infinite;
+  }
+
+  @keyframes recBlink {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ============================================
+     URL SHORTENER - NUEVA ANIMACIÓN PREMIUM
      ============================================ */
   
   /* Partículas flotantes */
@@ -883,29 +907,6 @@ const tools = [
     }
   }
 
-  /* Check de éxito */
-  .success-check {
-    animation: checkBounce 4s ease-in-out infinite;
-  }
-
-  @keyframes checkBounce {
-    0%, 75% {
-      opacity: 0;
-      transform: scale(0.5) rotate(-15deg);
-    }
-    82% {
-      opacity: 1;
-      transform: scale(1.15) rotate(5deg);
-    }
-    88% {
-      transform: scale(0.95) rotate(-2deg);
-    }
-    92%, 100% {
-      opacity: 1;
-      transform: scale(1) rotate(0deg);
-    }
-  }
-
   /* Brillos */
   .shine-top {
     animation: shineFlow 4s ease-in-out infinite;
@@ -934,20 +935,15 @@ const tools = [
   /* Performance optimizations */
   .particle, .text-bit, .ring, .core, .orbital, .wave,
   .long-url-bar, .short-url-bar, .link-icon, .short-text,
-  .success-check, .shine-top, .shine-bottom {
+  .shine-top, .shine-bottom {
     will-change: transform, opacity;
-  }
-
-  /* Pausa al hover */
-  .tool-card:hover .url-icon * {
-    animation-play-state: paused;
   }
 
   /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
     .particle, .text-bit, .ring, .core, .orbital, .wave,
     .long-url-bar, .short-url-bar, .link-icon, .short-text,
-    .success-check, .shine-top, .shine-bottom {
+    .shine-top, .shine-bottom {
       animation: none !important;
     }
     
@@ -955,41 +951,6 @@ const tools = [
     .short-url-bar,
     .link-icon,
     .short-text,
-    .success-check,
     .shine-bottom { opacity: 1; }
-  }
-
-  /* ============================================
-     TELEPROMPTER ANIMATIONS
-     ============================================ */
-  .text-lines rect {
-    animation: textScroll 3s ease-in-out infinite;
-  }
-
-  .l1 { animation-delay: 0s; }
-  .l2 { animation-delay: 0.3s; }
-  .l3 { animation-delay: 0.6s; }
-
-  @keyframes textScroll {
-    0%, 100% { opacity: 0.7; transform: translateY(0); }
-    50% { opacity: 0.4; transform: translateY(3px); }
-  }
-
-  .arrow-up {
-    animation: arrowBounce 2s ease-in-out infinite;
-  }
-
-  @keyframes arrowBounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-3px); }
-  }
-
-  .rec-dot {
-    animation: recBlink 2s ease-in-out infinite;
-  }
-
-  @keyframes recBlink {
-    0%, 100% { opacity: 0.8; }
-    50% { opacity: 0.3; }
   }
 </style>
