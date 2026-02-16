@@ -261,6 +261,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         // ============================================
         // GISCUS COMMENTS - ULTRA OPTIMIZADO MÓVIL
         // 100% funcional mobile-first con fallbacks
+        // FIX ANDROID: scroll y touch mejorados
         // ============================================
 
         interface GiscusMessage {
@@ -278,7 +279,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         let loadAttempts = 0;
         let fallbackTimer: number | null = null;
         const MAX_LOAD_ATTEMPTS = 3;
-        const FALLBACK_TIMEOUT = 3000; // 3 segundos de fallback en móvil
+        const FALLBACK_TIMEOUT = 8000; // 8 segundos para Android (redes lentas)
         
         /**
          * Detecta si estamos en dispositivo móvil
@@ -452,10 +453,16 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         
         /**
          * Aplica estilos personalizados al iframe de Giscus
+         * MEJORADO: Fix específico para Android
          */
         function applyGiscusStyles(): void {
             const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
             if (!iframe) return;
+            
+            // FIX CRÍTICO PARA ANDROID: Configurar iframe directamente
+            iframe.style.pointerEvents = 'auto';
+            iframe.style.touchAction = 'pan-y pan-x';
+            iframe.style.webkitOverflowScrolling = 'touch';
             
             try {
                 const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
@@ -465,9 +472,15 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                         body { 
                             background: transparent !important;
                             font-size: 14px !important;
+                            touch-action: pan-y pan-x !important;
+                            -webkit-overflow-scrolling: touch;
                         }
                         .giscus { 
-                            background: transparent !important; 
+                            background: transparent !important;
+                            touch-action: pan-y pan-x !important;
+                        }
+                        * {
+                            touch-action: manipulation !important;
                         }
                         @media (max-width: 768px) {
                             body {
@@ -485,6 +498,16 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             } catch (e) {
                 // CORS restriction - normal en producción
                 console.log('[Giscus] Using external styles (CORS)');
+            }
+            
+            // FIX ADICIONAL: Forzar reflow para Android
+            if (isMobileDevice()) {
+                setTimeout(() => {
+                    iframe.style.display = 'none';
+                    void iframe.offsetHeight; // Forzar reflow
+                    iframe.style.display = 'block';
+                    console.log('[Giscus] ✓ Android reflow applied');
+                }, 100);
             }
         }
         
@@ -733,6 +756,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         /* ============================================
            GISCUS COMMENTS STYLES
            Mobile-first con optimizaciones táctiles
+           FIX ANDROID: overflow y touch-action
            ============================================ */
         
         /* --- Container Base --- */
@@ -741,8 +765,8 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             max-width: 100%;
             background: transparent !important;
             contain: layout;
-            overflow: hidden;
-            min-height: 200px; /* Prevenir colapso en carga */
+            overflow: visible; /* FIX: de hidden a visible */
+            min-height: 200px;
         }
         
         /* --- Iframe Responsive --- */
@@ -754,6 +778,11 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             background: transparent !important;
             display: block;
             contain: layout style paint;
+            
+            /* CRÍTICO PARA ANDROID - Permitir eventos táctiles */
+            pointer-events: auto !important;
+            touch-action: pan-y pan-x !important;
+            -webkit-overflow-scrolling: touch;
         }
         
         /* --- Light Theme --- */
@@ -779,10 +808,15 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             #giscus-container {
                 padding: 1rem;
                 border-radius: var(--radius-large);
+                overflow: visible; /* IMPORTANTE */
             }
             
             #giscus-container :global(iframe.giscus-frame) {
                 min-height: 300px;
+                /* ANDROID FIX - Asegurar scroll funcional */
+                position: relative;
+                z-index: 1;
+                isolation: isolate;
             }
         }
         
@@ -806,7 +840,6 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         
         /* --- Touch Optimizations (CRÍTICO PARA MÓVIL) --- */
         @media (hover: none) and (pointer: coarse) {
-            /* Áreas táctiles mínimas de 44x44px (WCAG) */
             #giscus-container :global(button),
             #giscus-container :global(a),
             #giscus-container :global(input),
@@ -826,7 +859,15 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             /* Prevenir zoom en inputs */
             #giscus-container :global(input),
             #giscus-container :global(textarea) {
-                font-size: 16px !important; /* Previene auto-zoom en iOS */
+                font-size: 16px !important;
+            }
+            
+            /* NUEVO: Fix específico para Android */
+            #giscus-container :global(iframe.giscus-frame) {
+                /* Permitir propagación de eventos táctiles */
+                touch-action: manipulation !important;
+                user-select: text;
+                -webkit-user-select: text;
             }
         }
         
@@ -873,7 +914,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         
         #giscus-manual-load:disabled {
             opacity: 0.6;
-            cursor: not-allowed;
+            cursor: not allowed;
         }
         
         /* --- Mejoras táctiles para el botón --- */
@@ -885,4 +926,4 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         }
     </style>
 
-</MainGridLayout>2
+</MainGridLayout>
