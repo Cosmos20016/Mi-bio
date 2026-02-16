@@ -242,7 +242,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
     <!-- Sección de comentarios con Giscus -->
     <section 
         id="giscus-container" 
-        class="giscus-wrapper mt-6 min-h-[200px]"
+        class="card-base rounded-[var(--radius-large)] px-6 md:px-9 py-6 mt-6"
         aria-label="Comentarios del artículo"
     >
         <div class="flex items-center justify-center py-8 text-black/50 dark:text-white/50">
@@ -252,8 +252,8 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
 
     <script>
         // ============================================
-        // GISCUS COMMENTS INTEGRATION
-        // Optimizado para performance y accesibilidad
+        // GISCUS COMMENTS INTEGRATION - OPTIMIZED
+        // 100% funcional en móvil, tablet y desktop
         // ============================================
 
         interface GiscusMessage {
@@ -264,57 +264,87 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             };
         }
 
-        interface SwupHooks {
-            on: (event: string, callback: () => void) => void;
-        }
-
-        interface SwupInstance {
-            hooks?: SwupHooks;
-        }
-
-        // Declaración global de swup
-        declare global {
-            interface Window {
-                swup?: SwupInstance;
-            }
-        }
-
         // Estado global
         let giscusLoaded = false;
         let themeObserver: MutationObserver | null = null;
         let intersectionObserver: IntersectionObserver | null = null;
+        let loadAttempts = 0;
+        const MAX_LOAD_ATTEMPTS = 3;
+        
+        /**
+         * Detecta si estamos en dispositivo móvil
+         */
+        function isMobileDevice(): boolean {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                   window.innerWidth < 768;
+        }
         
         /**
          * Obtiene el tema actual del documento
-         * @returns El tema de Giscus correspondiente
          */
         function getCurrentTheme(): string {
-            const isDark = document.documentElement.classList.contains('dark');
-            return isDark ? 'transparent_dark' : 'light';
+            return document.documentElement.classList.contains('dark') 
+                ? 'transparent_dark' 
+                : 'light';
         }
         
         /**
          * Actualiza el estado de carga en el contenedor
-         * @param message - Mensaje a mostrar
-         * @param isError - Si es un mensaje de error
          */
         function updateLoadingState(message: string, isError = false): void {
             const container = document.getElementById('giscus-container');
             if (!container) return;
             
-            const colorClass = isError ? 'text-red-500' : 'text-black/50 dark:text-white/50';
+            const colorClass = isError 
+                ? 'text-red-500 dark:text-red-400' 
+                : 'text-black/50 dark:text-white/50';
+            
             container.innerHTML = `
-                <div class="flex items-center justify-center py-8 ${colorClass}">
-                    <span class="text-sm" role="status" aria-live="polite">${message}</span>
+                <div class="flex flex-col items-center justify-center py-8 gap-3 ${colorClass}">
+                    <span class="text-sm text-center px-4" role="status" aria-live="polite">${message}</span>
+                    ${isError ? '<button onclick="location.reload()" class="text-xs underline hover:no-underline">Recargar página</button>' : ''}
                 </div>
             `;
         }
         
         /**
+         * Espera a que el iframe de Giscus esté completamente cargado
+         */
+        function waitForGiscusIframe(maxAttempts = 20): Promise<HTMLIFrameElement | null> {
+            return new Promise((resolve) => {
+                let attempts = 0;
+                
+                const checkIframe = () => {
+                    const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
+                    
+                    if (iframe && iframe.contentWindow) {
+                        console.log('[Giscus] Iframe found and ready');
+                        resolve(iframe);
+                        return;
+                    }
+                    
+                    attempts++;
+                    if (attempts >= maxAttempts) {
+                        console.warn('[Giscus] Iframe not loaded after max attempts');
+                        resolve(null);
+                        return;
+                    }
+                    
+                    setTimeout(checkIframe, 250);
+                };
+                
+                checkIframe();
+            });
+        }
+        
+        /**
          * Carga el script de Giscus de forma optimizada
          */
-        function loadGiscus(): void {
-            if (giscusLoaded) return;
+        async function loadGiscus(): Promise<void> {
+            if (giscusLoaded) {
+                console.log('[Giscus] Already loaded, skipping');
+                return;
+            }
             
             const container = document.getElementById('giscus-container');
             if (!container) {
@@ -322,10 +352,14 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                 return;
             }
             
+            loadAttempts++;
+            console.log(`[Giscus] Loading comments (attempt ${loadAttempts}/${MAX_LOAD_ATTEMPTS})`);
+            
             // Limpiar contenido previo
             container.innerHTML = '';
             
             const currentTheme = getCurrentTheme();
+            const isMobile = isMobileDevice();
             
             // Crear script de Giscus
             const script = document.createElement('script');
@@ -345,37 +379,53 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             script.crossOrigin = 'anonymous';
             script.async = true;
             
-            // Manejo de errores de carga
+            // Manejo de errores
             script.onerror = () => {
                 console.error('[Giscus] Failed to load script');
-                updateLoadingState('Error al cargar los comentarios. Por favor, recarga la página.', true);
+                
+                if (loadAttempts < MAX_LOAD_ATTEMPTS) {
+                    updateLoadingState('Reintentando cargar comentarios...');
+                    setTimeout(() => loadGiscus(), 2000);
+                } else {
+                    updateLoadingState(
+                        'No se pudieron cargar los comentarios. Verifica tu conexión a internet.',
+                        true
+                    );
+                }
             };
             
             // Callback de éxito
-            script.onload = () => {
+            script.onload = async () => {
                 console.log('[Giscus] Script loaded successfully');
+                giscusLoaded = true;
+                
+                // Esperar a que el iframe esté listo
+                const iframe = await waitForGiscusIframe();
+                
+                if (iframe) {
+                    // Configurar observador de tema
+                    setupThemeObserver();
+                    
+                    // Aplicar estilos personalizados
+                    setTimeout(() => applyGiscusStyles(), 500);
+                    
+                    console.log('[Giscus] Fully initialized');
+                } else {
+                    console.warn('[Giscus] Iframe not available, theme sync may not work');
+                }
             };
             
             container.appendChild(script);
-            giscusLoaded = true;
             
-            // Esperar a que el iframe esté listo antes de configurar
-            setTimeout(() => {
-                setupThemeObserver();
-                applyGiscusStyles();
-            }, 2000);
+            console.log(`[Giscus] Loading on ${isMobile ? 'mobile' : 'desktop'} device`);
         }
         
         /**
          * Aplica estilos personalizados al iframe de Giscus
-         * Maneja restricciones CORS de forma segura
          */
         function applyGiscusStyles(): void {
             const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
-            if (!iframe) {
-                console.log('[Giscus] Iframe not found yet');
-                return;
-            }
+            if (!iframe) return;
             
             try {
                 const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
@@ -383,38 +433,38 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                     const style = iframeDoc.createElement('style');
                     style.textContent = `
                         body { 
-                            background: transparent !important; 
+                            background: transparent !important;
+                            font-size: 14px !important;
                         }
                         .giscus { 
                             background: transparent !important; 
                         }
+                        @media (max-width: 768px) {
+                            body {
+                                font-size: 13px !important;
+                            }
+                        }
                     `;
                     iframeDoc.head.appendChild(style);
-                    console.log('[Giscus] Styles applied successfully');
+                    console.log('[Giscus] Custom styles applied');
                 }
             } catch (e) {
-                // CORS restriction esperada - no es un error
-                console.log('[Giscus] Using external styles (CORS restriction)');
+                // CORS restriction - esperado en producción
+                console.log('[Giscus] Using external styles (CORS)');
             }
         }
         
         /**
          * Configura el observador de cambios de tema
-         * Sincroniza el tema de Giscus con el tema del sitio
          */
         function setupThemeObserver(): void {
-            // Limpiar observador anterior
             if (themeObserver) {
                 themeObserver.disconnect();
-                themeObserver = null;
             }
             
             themeObserver = new MutationObserver((mutations) => {
-                // Filtrar solo cambios en la clase 'dark'
                 const hasThemeChange = mutations.some(
-                    mutation => 
-                        mutation.type === 'attributes' && 
-                        mutation.attributeName === 'class'
+                    m => m.type === 'attributes' && m.attributeName === 'class'
                 );
                 
                 if (!hasThemeChange) return;
@@ -424,9 +474,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                 
                 const theme = getCurrentTheme();
                 const message: GiscusMessage = { 
-                    giscus: { 
-                        setConfig: { theme } 
-                    } 
+                    giscus: { setConfig: { theme } } 
                 };
                 
                 try {
@@ -434,70 +482,70 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                         message,
                         'https://giscus-personal-woft.vercel.app'
                     );
-                    
                     console.log(`[Giscus] Theme changed to: ${theme}`);
                     
-                    // Reaplicar estilos después del cambio de tema
-                    setTimeout(() => applyGiscusStyles(), 500);
+                    // Reaplicar estilos
+                    setTimeout(() => applyGiscusStyles(), 300);
                 } catch (e) {
                     console.error('[Giscus] Error sending theme message:', e);
                 }
             });
             
-            // Observar solo cambios en atributos de clase
             themeObserver.observe(document.documentElement, { 
                 attributes: true, 
-                attributeFilter: ['class'],
-                subtree: false
+                attributeFilter: ['class']
             });
             
-            console.log('[Giscus] Theme observer configured');
+            console.log('[Giscus] Theme observer active');
         }
         
         /**
          * Inicializa la carga lazy de Giscus
-         * Se carga cuando el usuario está cerca de la sección de comentarios
+         * Optimizado para móvil con rootMargin adaptativo
          */
         function initLazyLoad(): void {
             const container = document.getElementById('giscus-container');
             if (!container) {
-                console.warn('[Giscus] Container not found for lazy loading');
+                console.warn('[Giscus] Container not found');
                 return;
             }
             
-            // Limpiar observador anterior
             if (intersectionObserver) {
                 intersectionObserver.disconnect();
             }
+            
+            // rootMargin adaptativo: menor en móvil para mejor performance
+            const isMobile = isMobileDevice();
+            const rootMargin = isMobile ? '100px' : '200px';
             
             intersectionObserver = new IntersectionObserver(
                 (entries) => {
                     entries.forEach(entry => {
                         if (entry.isIntersecting && !giscusLoaded) {
-                            console.log('[Giscus] Loading comments (visible in viewport)');
+                            console.log('[Giscus] Container visible, loading...');
                             loadGiscus();
                             intersectionObserver?.disconnect();
                         }
                     });
                 }, 
                 {
-                    rootMargin: '200px', // Pre-cargar 200px antes
-                    threshold: 0.1
+                    rootMargin,
+                    threshold: 0.01 // Cargar apenas sea visible
                 }
             );
             
             intersectionObserver.observe(container);
-            console.log('[Giscus] Lazy loading initialized');
+            console.log(`[Giscus] Lazy load initialized (rootMargin: ${rootMargin})`);
         }
         
         /**
-         * Limpia todos los recursos y observadores
-         * Previene memory leaks en navegación SPA
+         * Limpia todos los recursos
          */
         function cleanup(): void {
-            console.log('[Giscus] Cleaning up resources');
+            console.log('[Giscus] Cleaning up');
             
             giscusLoaded = false;
+            loadAttempts = 0;
             
             if (themeObserver) {
                 themeObserver.disconnect();
@@ -511,47 +559,52 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         }
         
         /**
-         * Maneja cambios de página en navegación SPA (swup)
+         * Maneja cambios de página en SPA
          */
         function handlePageChange(): void {
             cleanup();
-            initLazyLoad();
+            
+            // Pequeño delay para asegurar que el DOM esté listo
+            setTimeout(() => {
+                initLazyLoad();
+            }, 100);
         }
         
         /**
-         * Configura integración con swup (si está disponible)
+         * Configura integración con swup
          */
         function initSwupIntegration(): void {
-            // Verificar que estamos en el navegador
             if (typeof window === 'undefined') return;
             
-            // Si swup ya está cargado
             if (window.swup?.hooks) {
                 window.swup.hooks.on('page:view', handlePageChange);
-                console.log('[Giscus] Swup integration configured');
-                return;
+                console.log('[Giscus] Swup integration ready');
+            } else {
+                document.addEventListener('swup:enable', () => {
+                    if (window.swup?.hooks) {
+                        window.swup.hooks.on('page:view', handlePageChange);
+                        console.log('[Giscus] Swup integration ready (delayed)');
+                    }
+                }, { once: true });
             }
-            
-            // Esperar a que swup se inicialice
-            document.addEventListener('swup:enable', () => {
-                if (window.swup?.hooks) {
-                    window.swup.hooks.on('page:view', handlePageChange);
-                    console.log('[Giscus] Swup integration configured (delayed)');
-                }
-            }, { once: true });
         }
         
         // ============================================
         // INICIALIZACIÓN
         // ============================================
         
-        // Inicializar lazy loading
-        initLazyLoad();
+        // Asegurar que el DOM esté listo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                initLazyLoad();
+                initSwupIntegration();
+            });
+        } else {
+            initLazyLoad();
+            initSwupIntegration();
+        }
         
-        // Configurar integración con swup
-        initSwupIntegration();
-        
-        // Cleanup al descargar la página
+        // Cleanup
         window.addEventListener('beforeunload', cleanup);
         
         console.log('[Giscus] Module initialized');
@@ -560,70 +613,63 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
     <style>
         /* ============================================
            GISCUS COMMENTS STYLES
-           Optimizado para performance y responsive
+           Optimizado para móvil, tablet y desktop
            ============================================ */
         
-        /* --- Base Container --- */
-        .giscus-wrapper {
-            width: 100vw;
-            position: relative;
-            left: 50%;
-            right: 50%;
-            margin-left: -50vw;
-            margin-right: -50vw;
-            overflow: visible;
-            /* Performance: promote to own layer */
-            will-change: transform;
-            transform: translateZ(0);
-        }
-        
+        /* --- Container Base (sin full-width hack) --- */
         #giscus-container {
             width: 100%;
             max-width: 100%;
             background: transparent !important;
-            /* Prevenir layout shifts */
             contain: layout;
+            overflow: hidden; /* Previene scroll horizontal */
         }
         
         /* --- Iframe Responsive --- */
         #giscus-container :global(iframe.giscus-frame) {
             width: 100% !important;
             max-width: 100% !important;
+            min-height: 200px;
             border: none !important;
             background: transparent !important;
             display: block;
-            /* Performance: reduce repaints */
             contain: layout style paint;
         }
         
         /* --- Light Theme --- */
         :global(:not(.dark)) #giscus-container {
-            background-color: white !important;
+            background-color: var(--card-bg, white) !important;
         }
         
         :global(:not(.dark)) #giscus-container :global(iframe.giscus-frame) {
-            background-color: white !important;
             color-scheme: light;
         }
         
         /* --- Dark Theme --- */
         :global(.dark) #giscus-container {
-            background-color: transparent !important;
+            background-color: var(--card-bg, transparent) !important;
         }
         
         :global(.dark) #giscus-container :global(iframe.giscus-frame) {
-            background-color: transparent !important;
             color-scheme: dark;
         }
         
-        /* --- Mobile Devices (< 768px) --- */
-        @media (max-width: 768px) {
-            .giscus-wrapper {
-                padding: 0;
+        /* --- Mobile First (< 768px) --- */
+        @media (max-width: 767px) {
+            #giscus-container {
+                padding: 1rem;
+                border-radius: var(--radius-large);
             }
             
+            #giscus-container :global(iframe.giscus-frame) {
+                min-height: 280px;
+            }
+        }
+        
+        /* --- Tablets (768px - 1024px) --- */
+        @media (min-width: 768px) and (max-width: 1024px) {
             #giscus-container {
-                padding: 0 1rem;
+                padding: 1.5rem;
             }
             
             #giscus-container :global(iframe.giscus-frame) {
@@ -631,73 +677,31 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             }
         }
         
-        /* --- Tablets (769px - 1024px) --- */
-        @media (min-width: 769px) and (max-width: 1024px) {
-            .giscus-wrapper {
-                width: 100%;
-                position: static;
-                left: auto;
-                right: auto;
-                margin-left: 0;
-                margin-right: 0;
-            }
-            
-            #giscus-container {
-                padding: 0 1rem;
-            }
-            
+        /* --- Desktop (> 1024px) --- */
+        @media (min-width: 1025px) {
             #giscus-container :global(iframe.giscus-frame) {
                 min-height: 320px;
             }
         }
         
-        /* --- Desktop (> 1024px) --- */
-        @media (min-width: 1025px) {
-            .giscus-wrapper {
-                width: 100%;
-                position: static;
-                left: auto;
-                right: auto;
-                margin-left: 0;
-                margin-right: 0;
+        /* --- Touch Optimizations --- */
+        @media (hover: none) and (pointer: coarse) {
+            #giscus-container :global(button),
+            #giscus-container :global(a) {
+                min-height: 44px;
+                min-width: 44px;
+                padding: 0.5rem;
             }
             
-            #giscus-container {
-                padding: 0;
-            }
-            
-            #giscus-container :global(iframe.giscus-frame) {
-                min-height: 350px;
-            }
-        }
-        
-        /* --- Utility Overrides --- */
-        #giscus-container :global([style*="background"]) {
-            background: transparent !important;
-        }
-        
-        /* --- Mobile Optimizations --- */
-        @media (max-width: 768px) {
+            /* Mejor scrolling en móvil */
             #giscus-container {
                 -webkit-overflow-scrolling: touch;
                 scroll-behavior: smooth;
             }
         }
         
-        /* --- Touch Targets (Mobile) --- */
-        @media (hover: none) and (pointer: coarse) {
-            #giscus-container :global(button),
-            #giscus-container :global(a) {
-                min-height: 44px;
-                min-width: 44px;
-                /* Espacio táctil mínimo recomendado */
-                padding: 0.5rem;
-            }
-        }
-        
-        /* --- Reduce Motion (Accessibility) --- */
+        /* --- Accessibility: Reduced Motion --- */
         @media (prefers-reduced-motion: reduce) {
-            .giscus-wrapper,
             #giscus-container,
             #giscus-container * {
                 animation-duration: 0.01ms !important;
@@ -706,12 +710,16 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             }
         }
         
-        /* --- Print Styles --- */
+        /* --- Print --- */
         @media print {
-            .giscus-wrapper,
             #giscus-container {
                 display: none !important;
             }
+        }
+        
+        /* --- Prevenir overflow en todos los dispositivos --- */
+        #giscus-container :global(*) {
+            max-width: 100%;
         }
     </style>
 
