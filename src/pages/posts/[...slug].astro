@@ -23,10 +23,13 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-const { Content, headings } = await entry.render();
 
-const { remarkPluginFrontmatter } = await entry.render();
+// Render una sola vez para máxima eficiencia
+const renderResult = await entry.render();
+const { Content, headings } = renderResult;
+const { remarkPluginFrontmatter } = renderResult;
 
+// JSON-LD optimizado para SEO
 const jsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
@@ -63,33 +66,73 @@ const jsonLd = {
         ? entry.data.lang.replace("_", "-")
         : siteConfig.lang.replace("_", "-"),
 };
+
+// Calcular URLs de navegación una sola vez
+const nextUrl = entry.data.nextSlug ? getPostUrlBySlug(entry.data.nextSlug) : null;
+const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : null;
 ---
-<MainGridLayout banner={entry.data.image} title={entry.data.title} description={entry.data.description} lang={entry.data.lang} setOGTypeArticle={true} headings={headings}>
+<MainGridLayout 
+    banner={entry.data.image} 
+    title={entry.data.title} 
+    description={entry.data.description} 
+    lang={entry.data.lang} 
+    setOGTypeArticle={true} 
+    headings={headings}
+>
+    <!-- JSON-LD para SEO -->
     <script is:inline slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>
-    <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative mb-4">
-        <div id="post-container" class:list={["card-base z-10 px-6 md:px-9 pt-6 pb-4 relative w-full ", {}]}>
-            <!-- word count and reading time -->
-            <div class="flex flex-row text-black/30 dark:text-white/30 gap-5 mb-3 transition onload-animation">
+    
+    <!-- Artículo principal -->
+    <article 
+        class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative mb-4"
+        itemscope 
+        itemtype="https://schema.org/BlogPosting"
+    >
+        <div 
+            id="post-container" 
+            class:list={["card-base z-10 px-6 md:px-9 pt-6 pb-4 relative w-full", {}]}
+        >
+            <!-- Metadatos del post (word count y tiempo de lectura) -->
+            <div 
+                class="flex flex-row text-black/30 dark:text-white/30 gap-5 mb-3 transition onload-animation"
+                role="complementary"
+                aria-label="Información del artículo"
+            >
                 <div class="flex flex-row items-center">
-                    <div class="transition h-6 w-6 rounded-md bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50 flex items-center justify-center mr-2">
+                    <div 
+                        class="transition h-6 w-6 rounded-md bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50 flex items-center justify-center mr-2"
+                        aria-hidden="true"
+                    >
                         <Icon name="material-symbols:notes-rounded"></Icon>
                     </div>
-                    <div class="text-sm">{remarkPluginFrontmatter.words} {" " + i18n(I18nKey.wordsCount)}</div>
+                    <div class="text-sm">
+                        <span itemprop="wordCount">{remarkPluginFrontmatter.words}</span>
+                        {" " + i18n(I18nKey.wordsCount)}
+                    </div>
                 </div>
                 <div class="flex flex-row items-center">
-                    <div class="transition h-6 w-6 rounded-md bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50 flex items-center justify-center mr-2">
+                    <div 
+                        class="transition h-6 w-6 rounded-md bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50 flex items-center justify-center mr-2"
+                        aria-hidden="true"
+                    >
                         <Icon name="material-symbols:schedule-outline-rounded"></Icon>
                     </div>
                     <div class="text-sm">
-                        {remarkPluginFrontmatter.minutes} {" " + i18n(remarkPluginFrontmatter.minutes === 1 ? I18nKey.minuteCount : I18nKey.minutesCount)}
+                        <span itemprop="timeRequired" content={`PT${remarkPluginFrontmatter.minutes}M`}>
+                            {remarkPluginFrontmatter.minutes}
+                        </span>
+                        {" " + i18n(remarkPluginFrontmatter.minutes === 1 ? I18nKey.minuteCount : I18nKey.minutesCount)}
                     </div>
                 </div>
             </div>
 
-            <!-- title -->
-            <div class="relative onload-animation">
-                <div
-                    data-pagefind-body data-pagefind-weight="10" data-pagefind-meta="title"
+            <!-- Título del post -->
+            <header class="relative onload-animation">
+                <h1
+                    data-pagefind-body 
+                    data-pagefind-weight="10" 
+                    data-pagefind-meta="title"
+                    itemprop="headline"
                     class="transition w-full block font-bold mb-3
                     text-3xl md:text-[2.25rem]/[2.75rem]
                     text-black/90 dark:text-white/90
@@ -97,85 +140,194 @@ const jsonLd = {
                     before:absolute before:top-[0.75rem] before:left-[-1.125rem]
                 ">
                     {entry.data.title}
-                </div>
-            </div>
+                </h1>
+            </header>
 
-            <!-- metadata -->
+            <!-- Metadata (fecha, tags, categoría) -->
             <div class="onload-animation">
                 <PostMetadata
-                        class="mb-5"
-                        published={entry.data.published}
-                        updated={entry.data.updated}
-                        tags={entry.data.tags}
-                        category={entry.data.category}
+                    class="mb-5"
+                    published={entry.data.published}
+                    updated={entry.data.updated}
+                    tags={entry.data.tags}
+                    category={entry.data.category}
                 ></PostMetadata>
-                {!entry.data.image && <div class="border-[var(--line-divider)] border-dashed border-b-[1px] mb-5"></div>}
+                {!entry.data.image && (
+                    <div class="border-[var(--line-divider)] border-dashed border-b-[1px] mb-5"></div>
+                )}
             </div>
 
-            <!-- always show cover as long as it has one -->
+            <!-- Imagen de portada -->
+            {entry.data.image && (
+                <ImageWrapper 
+                    id="post-cover" 
+                    src={entry.data.image} 
+                    basePath={path.join("content/posts/", getDir(entry.id))} 
+                    class="mb-8 rounded-xl banner-container onload-animation"
+                    itemprop="image"
+                />
+            )}
 
-            {entry.data.image &&
-                <ImageWrapper id="post-cover" src={entry.data.image} basePath={path.join("content/posts/", getDir(entry.id))} class="mb-8 rounded-xl banner-container onload-animation"/>
-            }
+            <!-- Contenido del artículo -->
+            <div itemprop="articleBody">
+                <Markdown class="mb-6 markdown-content onload-animation">
+                    <Content />
+                </Markdown>
+            </div>
 
-
-            <Markdown class="mb-6 markdown-content onload-animation">
-                <Content />
-            </Markdown>
-
-            {licenseConfig.enable && <License title={entry.data.title} slug={entry.slug} pubDate={entry.data.published} class="mb-6 rounded-xl license-container onload-animation"></License>}
-
+            <!-- Licencia -->
+            {licenseConfig.enable && (
+                <License 
+                    title={entry.data.title} 
+                    slug={entry.slug} 
+                    pubDate={entry.data.published} 
+                    class="mb-6 rounded-xl license-container onload-animation"
+                ></License>
+            )}
         </div>
-    </div>
+    </article>
 
-    <div class="flex flex-col md:flex-row justify-between mb-4 gap-4 overflow-hidden w-full">
-        <a href={entry.data.nextSlug ? getPostUrlBySlug(entry.data.nextSlug) : "#"}
-           class:list={["w-full font-bold overflow-hidden active:scale-95", {"pointer-events-none": !entry.data.nextSlug}]}>
-            {entry.data.nextSlug && <div class="btn-card rounded-2xl w-full h-[3.75rem] max-w-full px-4 flex items-center !justify-start gap-4" >
-                <Icon name="material-symbols:chevron-left-rounded" class="text-[2rem] text-[var(--primary)]" />
-                <div class="overflow-hidden transition overflow-ellipsis whitespace-nowrap max-w-[calc(100%_-_3rem)] text-black/75 dark:text-white/75">
-                    {entry.data.nextTitle}
+    <!-- Navegación entre posts -->
+    <nav 
+        class="flex flex-col md:flex-row justify-between mb-4 gap-4 overflow-hidden w-full"
+        aria-label="Navegación entre artículos"
+    >
+        <!-- Post anterior -->
+        {nextUrl ? (
+            <a 
+                href={nextUrl}
+                class="w-full font-bold overflow-hidden active:scale-95 transition-transform"
+                aria-label={`Anterior: ${entry.data.nextTitle}`}
+                rel="prev"
+            >
+                <div class="btn-card rounded-2xl w-full h-[3.75rem] max-w-full px-4 flex items-center !justify-start gap-4">
+                    <Icon 
+                        name="material-symbols:chevron-left-rounded" 
+                        class="text-[2rem] text-[var(--primary)] flex-shrink-0" 
+                        aria-hidden="true"
+                    />
+                    <span class="overflow-hidden transition overflow-ellipsis whitespace-nowrap max-w-[calc(100%_-_3rem)] text-black/75 dark:text-white/75">
+                        {entry.data.nextTitle}
+                    </span>
                 </div>
-            </div>}
-        </a>
+            </a>
+        ) : (
+            <div class="w-full" aria-hidden="true"></div>
+        )}
 
-        <a href={entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : "#"}
-           class:list={["w-full font-bold overflow-hidden active:scale-95", {"pointer-events-none": !entry.data.prevSlug}]}>
-            {entry.data.prevSlug && <div class="btn-card rounded-2xl w-full h-[3.75rem] max-w-full px-4 flex items-center !justify-end gap-4">
-                <div class="overflow-hidden transition overflow-ellipsis whitespace-nowrap max-w-[calc(100%_-_3rem)] text-black/75 dark:text-white/75">
-                    {entry.data.prevTitle}
+        <!-- Post siguiente -->
+        {prevUrl ? (
+            <a 
+                href={prevUrl}
+                class="w-full font-bold overflow-hidden active:scale-95 transition-transform"
+                aria-label={`Siguiente: ${entry.data.prevTitle}`}
+                rel="next"
+            >
+                <div class="btn-card rounded-2xl w-full h-[3.75rem] max-w-full px-4 flex items-center !justify-end gap-4">
+                    <span class="overflow-hidden transition overflow-ellipsis whitespace-nowrap max-w-[calc(100%_-_3rem)] text-black/75 dark:text-white/75">
+                        {entry.data.prevTitle}
+                    </span>
+                    <Icon 
+                        name="material-symbols:chevron-right-rounded" 
+                        class="text-[2rem] text-[var(--primary)] flex-shrink-0" 
+                        aria-hidden="true"
+                    />
                 </div>
-                <Icon name="material-symbols:chevron-right-rounded" class="text-[2rem] text-[var(--primary)]" />
-            </div>}
-        </a>
-    </div>
+            </a>
+        ) : (
+            <div class="w-full" aria-hidden="true"></div>
+        )}
+    </nav>
 
-    <!-- Giscus Comments - Ancho completo en móviles -->
-    <div id="giscus-container" class="giscus-wrapper mt-6 min-h-[200px]">
+    <!-- Sección de comentarios con Giscus -->
+    <section 
+        id="giscus-container" 
+        class="giscus-wrapper mt-6 min-h-[200px]"
+        aria-label="Comentarios del artículo"
+    >
         <div class="flex items-center justify-center py-8 text-black/50 dark:text-white/50">
-            <span class="text-sm">Cargando comentarios...</span>
+            <span class="text-sm" role="status" aria-live="polite">Cargando comentarios...</span>
         </div>
-    </div>
+    </section>
 
     <script>
+        // ============================================
+        // GISCUS COMMENTS INTEGRATION
+        // Optimizado para performance y accesibilidad
+        // ============================================
+
+        interface GiscusMessage {
+            giscus: {
+                setConfig: {
+                    theme: string;
+                };
+            };
+        }
+
+        interface SwupHooks {
+            on: (event: string, callback: () => void) => void;
+        }
+
+        interface SwupInstance {
+            hooks?: SwupHooks;
+        }
+
+        // Declaración global de swup
+        declare global {
+            interface Window {
+                swup?: SwupInstance;
+            }
+        }
+
+        // Estado global
         let giscusLoaded = false;
         let themeObserver: MutationObserver | null = null;
+        let intersectionObserver: IntersectionObserver | null = null;
         
+        /**
+         * Obtiene el tema actual del documento
+         * @returns El tema de Giscus correspondiente
+         */
         function getCurrentTheme(): string {
             const isDark = document.documentElement.classList.contains('dark');
             return isDark ? 'transparent_dark' : 'light';
         }
         
-        function loadGiscus() {
-            if (giscusLoaded) return;
-            
+        /**
+         * Actualiza el estado de carga en el contenedor
+         * @param message - Mensaje a mostrar
+         * @param isError - Si es un mensaje de error
+         */
+        function updateLoadingState(message: string, isError = false): void {
             const container = document.getElementById('giscus-container');
             if (!container) return;
             
+            const colorClass = isError ? 'text-red-500' : 'text-black/50 dark:text-white/50';
+            container.innerHTML = `
+                <div class="flex items-center justify-center py-8 ${colorClass}">
+                    <span class="text-sm" role="status" aria-live="polite">${message}</span>
+                </div>
+            `;
+        }
+        
+        /**
+         * Carga el script de Giscus de forma optimizada
+         */
+        function loadGiscus(): void {
+            if (giscusLoaded) return;
+            
+            const container = document.getElementById('giscus-container');
+            if (!container) {
+                console.warn('[Giscus] Container not found');
+                return;
+            }
+            
+            // Limpiar contenido previo
             container.innerHTML = '';
             
             const currentTheme = getCurrentTheme();
             
+            // Crear script de Giscus
             const script = document.createElement('script');
             script.src = 'https://giscus-personal-woft.vercel.app/es/client.js';
             script.setAttribute('data-repo', 'Cosmos20016/Gestion-de-comentarios');
@@ -193,105 +345,225 @@ const jsonLd = {
             script.crossOrigin = 'anonymous';
             script.async = true;
             
+            // Manejo de errores de carga
+            script.onerror = () => {
+                console.error('[Giscus] Failed to load script');
+                updateLoadingState('Error al cargar los comentarios. Por favor, recarga la página.', true);
+            };
+            
+            // Callback de éxito
+            script.onload = () => {
+                console.log('[Giscus] Script loaded successfully');
+            };
+            
             container.appendChild(script);
             giscusLoaded = true;
             
+            // Esperar a que el iframe esté listo antes de configurar
             setTimeout(() => {
                 setupThemeObserver();
-                forceGiscusStyles();
+                applyGiscusStyles();
             }, 2000);
         }
         
-        function forceGiscusStyles() {
-            const iframe = document.querySelector('iframe.giscus-frame') as HTMLIFrameElement;
-            if (iframe) {
-                try {
-                    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-                    if (iframeDoc) {
-                        const style = iframeDoc.createElement('style');
-                        style.textContent = `
-                            body { background: transparent !important; }
-                            .giscus { background: transparent !important; }
-                        `;
-                        iframeDoc.head.appendChild(style);
-                    }
-                } catch (e) {
-                    console.log('Usando estilos externos para Giscus');
+        /**
+         * Aplica estilos personalizados al iframe de Giscus
+         * Maneja restricciones CORS de forma segura
+         */
+        function applyGiscusStyles(): void {
+            const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
+            if (!iframe) {
+                console.log('[Giscus] Iframe not found yet');
+                return;
+            }
+            
+            try {
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+                if (iframeDoc) {
+                    const style = iframeDoc.createElement('style');
+                    style.textContent = `
+                        body { 
+                            background: transparent !important; 
+                        }
+                        .giscus { 
+                            background: transparent !important; 
+                        }
+                    `;
+                    iframeDoc.head.appendChild(style);
+                    console.log('[Giscus] Styles applied successfully');
                 }
+            } catch (e) {
+                // CORS restriction esperada - no es un error
+                console.log('[Giscus] Using external styles (CORS restriction)');
             }
         }
         
-        function setupThemeObserver() {
+        /**
+         * Configura el observador de cambios de tema
+         * Sincroniza el tema de Giscus con el tema del sitio
+         */
+        function setupThemeObserver(): void {
+            // Limpiar observador anterior
             if (themeObserver) {
                 themeObserver.disconnect();
+                themeObserver = null;
             }
             
-            themeObserver = new MutationObserver(() => {
-                const iframe = document.querySelector('iframe.giscus-frame') as HTMLIFrameElement;
-                if (iframe && iframe.contentWindow) {
-                    const theme = getCurrentTheme();
-                    
+            themeObserver = new MutationObserver((mutations) => {
+                // Filtrar solo cambios en la clase 'dark'
+                const hasThemeChange = mutations.some(
+                    mutation => 
+                        mutation.type === 'attributes' && 
+                        mutation.attributeName === 'class'
+                );
+                
+                if (!hasThemeChange) return;
+                
+                const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
+                if (!iframe?.contentWindow) return;
+                
+                const theme = getCurrentTheme();
+                const message: GiscusMessage = { 
+                    giscus: { 
+                        setConfig: { theme } 
+                    } 
+                };
+                
+                try {
                     iframe.contentWindow.postMessage(
-                        { giscus: { setConfig: { theme } } },
+                        message,
                         'https://giscus-personal-woft.vercel.app'
                     );
                     
-                    setTimeout(() => forceGiscusStyles(), 500);
+                    console.log(`[Giscus] Theme changed to: ${theme}`);
+                    
+                    // Reaplicar estilos después del cambio de tema
+                    setTimeout(() => applyGiscusStyles(), 500);
+                } catch (e) {
+                    console.error('[Giscus] Error sending theme message:', e);
                 }
             });
             
+            // Observar solo cambios en atributos de clase
             themeObserver.observe(document.documentElement, { 
                 attributes: true, 
-                attributeFilter: ['class'] 
+                attributeFilter: ['class'],
+                subtree: false
             });
+            
+            console.log('[Giscus] Theme observer configured');
         }
         
-        function initLazyLoad() {
+        /**
+         * Inicializa la carga lazy de Giscus
+         * Se carga cuando el usuario está cerca de la sección de comentarios
+         */
+        function initLazyLoad(): void {
             const container = document.getElementById('giscus-container');
-            if (!container) return;
+            if (!container) {
+                console.warn('[Giscus] Container not found for lazy loading');
+                return;
+            }
             
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting && !giscusLoaded) {
-                        loadGiscus();
-                        observer.disconnect();
-                    }
-                });
-            }, {
-                rootMargin: '200px',
-                threshold: 0.1
-            });
+            // Limpiar observador anterior
+            if (intersectionObserver) {
+                intersectionObserver.disconnect();
+            }
             
-            observer.observe(container);
+            intersectionObserver = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting && !giscusLoaded) {
+                            console.log('[Giscus] Loading comments (visible in viewport)');
+                            loadGiscus();
+                            intersectionObserver?.disconnect();
+                        }
+                    });
+                }, 
+                {
+                    rootMargin: '200px', // Pre-cargar 200px antes
+                    threshold: 0.1
+                }
+            );
+            
+            intersectionObserver.observe(container);
+            console.log('[Giscus] Lazy loading initialized');
         }
         
+        /**
+         * Limpia todos los recursos y observadores
+         * Previene memory leaks en navegación SPA
+         */
+        function cleanup(): void {
+            console.log('[Giscus] Cleaning up resources');
+            
+            giscusLoaded = false;
+            
+            if (themeObserver) {
+                themeObserver.disconnect();
+                themeObserver = null;
+            }
+            
+            if (intersectionObserver) {
+                intersectionObserver.disconnect();
+                intersectionObserver = null;
+            }
+        }
+        
+        /**
+         * Maneja cambios de página en navegación SPA (swup)
+         */
+        function handlePageChange(): void {
+            cleanup();
+            initLazyLoad();
+        }
+        
+        /**
+         * Configura integración con swup (si está disponible)
+         */
+        function initSwupIntegration(): void {
+            // Verificar que estamos en el navegador
+            if (typeof window === 'undefined') return;
+            
+            // Si swup ya está cargado
+            if (window.swup?.hooks) {
+                window.swup.hooks.on('page:view', handlePageChange);
+                console.log('[Giscus] Swup integration configured');
+                return;
+            }
+            
+            // Esperar a que swup se inicialice
+            document.addEventListener('swup:enable', () => {
+                if (window.swup?.hooks) {
+                    window.swup.hooks.on('page:view', handlePageChange);
+                    console.log('[Giscus] Swup integration configured (delayed)');
+                }
+            }, { once: true });
+        }
+        
+        // ============================================
+        // INICIALIZACIÓN
+        // ============================================
+        
+        // Inicializar lazy loading
         initLazyLoad();
         
-        if (window.swup) {
-            window.swup.hooks.on('page:view', () => {
-                giscusLoaded = false;
-                if (themeObserver) {
-                    themeObserver.disconnect();
-                    themeObserver = null;
-                }
-                initLazyLoad();
-            });
-        } else {
-            document.addEventListener('swup:enable', () => {
-                window.swup.hooks.on('page:view', () => {
-                    giscusLoaded = false;
-                    if (themeObserver) {
-                        themeObserver.disconnect();
-                        themeObserver = null;
-                    }
-                    initLazyLoad();
-                });
-            });
-        }
+        // Configurar integración con swup
+        initSwupIntegration();
+        
+        // Cleanup al descargar la página
+        window.addEventListener('beforeunload', cleanup);
+        
+        console.log('[Giscus] Module initialized');
     </script>
 
     <style>
-        /* ✅ Base container - CRÍTICO: Ancho completo sin restricciones */
+        /* ============================================
+           GISCUS COMMENTS STYLES
+           Optimizado para performance y responsive
+           ============================================ */
+        
+        /* --- Base Container --- */
         .giscus-wrapper {
             width: 100vw;
             position: relative;
@@ -300,24 +572,31 @@ const jsonLd = {
             margin-left: -50vw;
             margin-right: -50vw;
             overflow: visible;
+            /* Performance: promote to own layer */
+            will-change: transform;
+            transform: translateZ(0);
         }
         
         #giscus-container {
             width: 100%;
             max-width: 100%;
             background: transparent !important;
+            /* Prevenir layout shifts */
+            contain: layout;
         }
         
-        /* ✅ Iframe responsivo */
+        /* --- Iframe Responsive --- */
         #giscus-container :global(iframe.giscus-frame) {
             width: 100% !important;
             max-width: 100% !important;
             border: none !important;
             background: transparent !important;
             display: block;
+            /* Performance: reduce repaints */
+            contain: layout style paint;
         }
         
-        /* ✅ Tema claro */
+        /* --- Light Theme --- */
         :global(:not(.dark)) #giscus-container {
             background-color: white !important;
         }
@@ -327,7 +606,7 @@ const jsonLd = {
             color-scheme: light;
         }
         
-        /* ✅ Tema oscuro */
+        /* --- Dark Theme --- */
         :global(.dark) #giscus-container {
             background-color: transparent !important;
         }
@@ -337,7 +616,7 @@ const jsonLd = {
             color-scheme: dark;
         }
         
-        /* 📱 MÓVILES - Ancho completo de viewport */
+        /* --- Mobile Devices (< 768px) --- */
         @media (max-width: 768px) {
             .giscus-wrapper {
                 padding: 0;
@@ -352,7 +631,7 @@ const jsonLd = {
             }
         }
         
-        /* 📱 TABLETS */
+        /* --- Tablets (769px - 1024px) --- */
         @media (min-width: 769px) and (max-width: 1024px) {
             .giscus-wrapper {
                 width: 100%;
@@ -372,7 +651,7 @@ const jsonLd = {
             }
         }
         
-        /* 💻 DESKTOP */
+        /* --- Desktop (> 1024px) --- */
         @media (min-width: 1025px) {
             .giscus-wrapper {
                 width: 100%;
@@ -392,12 +671,12 @@ const jsonLd = {
             }
         }
         
-        /* ✅ Override estilos inline */
+        /* --- Utility Overrides --- */
         #giscus-container :global([style*="background"]) {
             background: transparent !important;
         }
         
-        /* ✅ Smooth scrolling */
+        /* --- Mobile Optimizations --- */
         @media (max-width: 768px) {
             #giscus-container {
                 -webkit-overflow-scrolling: touch;
@@ -405,12 +684,33 @@ const jsonLd = {
             }
         }
         
-        /* ✅ Botones táctiles */
+        /* --- Touch Targets (Mobile) --- */
         @media (hover: none) and (pointer: coarse) {
             #giscus-container :global(button),
             #giscus-container :global(a) {
                 min-height: 44px;
                 min-width: 44px;
+                /* Espacio táctil mínimo recomendado */
+                padding: 0.5rem;
+            }
+        }
+        
+        /* --- Reduce Motion (Accessibility) --- */
+        @media (prefers-reduced-motion: reduce) {
+            .giscus-wrapper,
+            #giscus-container,
+            #giscus-container * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+        
+        /* --- Print Styles --- */
+        @media print {
+            .giscus-wrapper,
+            #giscus-container {
+                display: none !important;
             }
         }
     </style>
