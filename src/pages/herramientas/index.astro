@@ -282,10 +282,32 @@ const tools = [
   /* ============================================
      BASE
      ============================================ */
+  
+  /* Text selection con color del tema */
+  .tool-name::selection,
+  .tool-description::selection,
+  .tool-feature-tag::selection {
+    background: oklch(0.7 0.2 var(--hue) / 0.3);
+    color: oklch(0.2 0.1 var(--hue));
+  }
+
+  :global(.dark) .tool-name::selection,
+  :global(.dark) .tool-description::selection,
+  :global(.dark) .tool-feature-tag::selection {
+    background: oklch(0.7 0.2 var(--hue) / 0.4);
+    color: #f1f5f9;
+  }
+
   .tools-hub {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .tools-hub {
+      gap: 2rem;
+    }
   }
 
   /* ============================================
@@ -293,19 +315,38 @@ const tools = [
      ============================================ */
   .tools-header {
     text-align: center;
-    padding: 1rem 0 0.5rem;
+    padding: 0.75rem 0 0.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .tools-header {
+      padding: 1rem 0 0.5rem;
+    }
   }
 
   .tools-header-icon {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
     display: inline-block;
     animation: headerFloat 4s ease-in-out infinite;
   }
 
+  @media (min-width: 768px) {
+    .tools-header-icon {
+      margin-bottom: 0.75rem;
+    }
+  }
+
   .header-svg {
-    width: 80px;
-    height: 80px;
+    width: 70px;
+    height: 70px;
     filter: drop-shadow(0 6px 20px oklch(0.7 0.18 var(--hue) / 0.3));
+  }
+
+  @media (min-width: 768px) {
+    .header-svg {
+      width: 80px;
+      height: 80px;
+    }
   }
 
   @keyframes headerFloat {
@@ -357,7 +398,7 @@ const tools = [
   }
 
   .tools-title {
-    font-size: 2.5rem;
+    font-size: 2rem;
     font-weight: 800;
     letter-spacing: -0.02em;
     background: linear-gradient(
@@ -373,6 +414,12 @@ const tools = [
     margin-bottom: 0.5rem;
     line-height: 1.2;
     animation: titleShimmer 4s ease-in-out infinite, titleFade 0.6s ease-out;
+  }
+
+  @media (min-width: 768px) {
+    .tools-title {
+      font-size: 2.5rem;
+    }
   }
 
   @keyframes titleShimmer {
@@ -399,11 +446,19 @@ const tools = [
 
   .tools-subtitle {
     color: #475569;
-    font-size: 1.05rem;
+    font-size: 0.95rem;
     line-height: 1.5;
     max-width: 32rem;
     margin: 0 auto 0.75rem;
     animation: subtitleFade 0.6s ease-out 0.15s both;
+    padding: 0 1rem;
+  }
+
+  @media (min-width: 768px) {
+    .tools-subtitle {
+      font-size: 1.05rem;
+      padding: 0;
+    }
   }
 
   @keyframes subtitleFade {
@@ -419,10 +474,18 @@ const tools = [
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    font-size: 0.85rem;
+    gap: 0.4rem;
+    font-size: 0.8rem;
     font-weight: 600;
     animation: statsFade 0.6s ease-out 0.3s both;
+    flex-wrap: wrap;
+  }
+
+  @media (min-width: 768px) {
+    .tools-stats {
+      gap: 0.5rem;
+      font-size: 0.85rem;
+    }
   }
 
   @keyframes statsFade {
@@ -451,13 +514,20 @@ const tools = [
      ============================================ */
   .tools-grid {
     display: grid;
-    gap: 1.25rem;
+    gap: 1rem;
     grid-template-columns: 1fr;
   }
 
   @media (min-width: 768px) {
     .tools-grid {
       grid-template-columns: repeat(2, 1fr);
+      gap: 1.25rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .tools-grid {
+      gap: 1.5rem;
     }
   }
 
@@ -465,8 +535,8 @@ const tools = [
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    padding: 1.75rem;
+    gap: 0.875rem;
+    padding: 1.5rem;
     background: var(--card-bg);
     border-radius: var(--radius-large);
     border: 1px solid rgba(0, 0, 0, 0.06);
@@ -475,6 +545,13 @@ const tools = [
     transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     overflow: hidden;
     animation: cardFade 0.5s ease-out both;
+  }
+
+  @media (min-width: 768px) {
+    .tool-card {
+      padding: 2rem;
+      gap: 1rem;
+    }
   }
 
   @keyframes cardFade {
@@ -521,8 +598,8 @@ const tools = [
 
   .tool-badge {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
+    top: 0.875rem;
+    right: 0.875rem;
     padding: 0.35rem 0.75rem;
     font-size: 0.75rem;
     font-weight: 700;
@@ -534,6 +611,13 @@ const tools = [
     backdrop-filter: blur(8px);
   }
 
+  @media (min-width: 768px) {
+    .tool-badge {
+      top: 1rem;
+      right: 1rem;
+    }
+  }
+
   :global(.dark) .tool-badge {
     background: oklch(0.7 0.18 var(--hue) / 0.2);
     color: oklch(0.75 0.18 var(--hue));
@@ -543,14 +627,28 @@ const tools = [
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 120px;
-    margin-bottom: 0.5rem;
+    height: 100px;
+    margin-bottom: 0.25rem;
+  }
+
+  @media (min-width: 768px) {
+    .tool-icon-wrapper {
+      height: 110px;
+      margin-bottom: 0.5rem;
+    }
   }
 
   .tool-svg {
-    width: 100px;
-    height: 100px;
+    width: 85px;
+    height: 85px;
     transition: transform 0.3s ease;
+  }
+
+  @media (min-width: 768px) {
+    .tool-svg {
+      width: 95px;
+      height: 95px;
+    }
   }
 
   .tool-card:hover .tool-svg {
@@ -562,12 +660,19 @@ const tools = [
   }
 
   .tool-name {
-    font-size: 1.4rem;
+    font-size: 1.25rem;
     font-weight: 700;
     letter-spacing: -0.01em;
     color: #1e293b;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
     line-height: 1.3;
+  }
+
+  @media (min-width: 768px) {
+    .tool-name {
+      font-size: 1.4rem;
+      margin-bottom: 0.5rem;
+    }
   }
 
   :global(.dark) .tool-name {
@@ -575,9 +680,16 @@ const tools = [
   }
 
   .tool-description {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     line-height: 1.5;
     color: #64748b;
+  }
+
+  @media (min-width: 768px) {
+    .tool-description {
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
   }
 
   :global(.dark) .tool-description {
@@ -587,17 +699,30 @@ const tools = [
   .tool-features {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.4rem;
+  }
+
+  @media (min-width: 768px) {
+    .tool-features {
+      gap: 0.5rem;
+    }
   }
 
   .tool-feature-tag {
-    padding: 0.35rem 0.65rem;
-    font-size: 0.8rem;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
     font-weight: 600;
     background: #f1f5f9;
     color: #475569;
     border-radius: var(--radius-small);
     white-space: nowrap;
+  }
+
+  @media (min-width: 768px) {
+    .tool-feature-tag {
+      padding: 0.35rem 0.65rem;
+      font-size: 0.8rem;
+    }
   }
 
   :global(.dark) .tool-feature-tag {
@@ -609,12 +734,20 @@ const tools = [
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-top: 0.75rem;
-    margin-top: 0.75rem;
+    padding-top: 0.625rem;
+    margin-top: 0.625rem;
     border-top: 1px solid #e2e8f0;
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: oklch(0.55 0.18 var(--hue));
+  }
+
+  @media (min-width: 768px) {
+    .tool-cta {
+      padding-top: 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.95rem;
+    }
   }
 
   :global(.dark) .tool-cta {
@@ -632,9 +765,16 @@ const tools = [
 
   .tools-footer {
     text-align: center;
-    padding: 1.5rem 0;
+    padding: 1.5rem 1rem;
     color: #64748b;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+  }
+
+  @media (min-width: 768px) {
+    .tools-footer {
+      padding: 1.5rem 0;
+      font-size: 0.9rem;
+    }
   }
 
   :global(.dark) .tools-footer {
