@@ -26,28 +26,57 @@ const tools = [
 
 <MainGridLayout title="Herramientas" description="Herramientas premium para creadores">
   <section class="tools-hub">
-    <!-- Header con gradiente del tema -->
+    <!-- Header con icono premium -->
     <header class="tools-header">
-      <!-- SVG Premium del Header -->
       <div class="tools-header-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="header-svg">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" class="header-svg">
           <defs>
-            <linearGradient id="toolGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" style="stop-color:oklch(0.65 0.16 var(--hue));stop-opacity:1" />
-              <stop offset="100%" style="stop-color:oklch(0.6 0.18 calc(var(--hue) + 40));stop-opacity:1" />
+            <linearGradient id="headerGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:oklch(0.7 0.18 var(--hue));stop-opacity:1" />
+              <stop offset="50%" style="stop-color:oklch(0.65 0.2 calc(var(--hue) + 30));stop-opacity:1" />
+              <stop offset="100%" style="stop-color:oklch(0.6 0.18 calc(var(--hue) + 60));stop-opacity:1" />
             </linearGradient>
+            <linearGradient id="headerGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:oklch(0.75 0.16 calc(var(--hue) + 20));stop-opacity:1" />
+              <stop offset="100%" style="stop-color:oklch(0.65 0.18 var(--hue));stop-opacity:1" />
+            </linearGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+              <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
           </defs>
-          <!-- Llave inglesa -->
-          <path class="tool-wrench" d="M65 25 L75 15 L85 25 L75 35 Z" fill="url(#toolGradient)" />
-          <rect class="tool-wrench" x="55" y="35" width="8" height="35" rx="2" transform="rotate(-45 59 52.5)" fill="url(#toolGradient)" />
-          <!-- Destornillador -->
-          <rect class="tool-screwdriver" x="30" y="15" width="6" height="30" rx="1" fill="url(#toolGradient)" />
-          <path class="tool-screwdriver" d="M27 45 L33 35 L39 45 Z" fill="url(#toolGradient)" />
-          <circle class="tool-screwdriver" cx="33" cy="12" r="4" fill="url(#toolGradient)" />
-          <!-- Chispas decorativas -->
-          <circle class="spark spark-1" cx="20" cy="30" r="2" fill="oklch(0.7 0.14 var(--hue))" opacity="0.6" />
-          <circle class="spark spark-2" cx="80" cy="50" r="2" fill="oklch(0.7 0.14 var(--hue))" opacity="0.6" />
-          <circle class="spark spark-3" cx="50" cy="70" r="2" fill="oklch(0.7 0.14 var(--hue))" opacity="0.6" />
+          
+          <!-- Hexágono de fondo con efecto de profundidad -->
+          <polygon points="60,15 85,30 85,60 60,75 35,60 35,30" 
+                   fill="url(#headerGrad1)" opacity="0.15" class="hex-bg"/>
+          
+          <!-- Forma geométrica central estilizada -->
+          <g class="center-shape">
+            <!-- Triángulo superior -->
+            <path d="M 60 25 L 70 40 L 50 40 Z" fill="url(#headerGrad1)" filter="url(#glow)"/>
+            <!-- Rombo central -->
+            <path d="M 60 42 L 72 52 L 60 62 L 48 52 Z" fill="url(#headerGrad2)" filter="url(#glow)"/>
+            <!-- Líneas de conexión -->
+            <line x1="60" y1="40" x2="60" y2="42" stroke="url(#headerGrad1)" stroke-width="2" class="connect-line"/>
+            <line x1="60" y1="62" x2="60" y2="70" stroke="url(#headerGrad2)" stroke-width="2" class="connect-line"/>
+          </g>
+          
+          <!-- Órbitas decorativas -->
+          <g class="orbits">
+            <circle cx="60" cy="45" r="25" fill="none" stroke="url(#headerGrad1)" 
+                    stroke-width="1" opacity="0.3" class="orbit orbit-1"/>
+            <circle cx="60" cy="45" r="32" fill="none" stroke="url(#headerGrad2)" 
+                    stroke-width="0.5" opacity="0.2" class="orbit orbit-2"/>
+          </g>
+          
+          <!-- Partículas flotantes -->
+          <circle cx="35" cy="35" r="2.5" fill="url(#headerGrad1)" class="particle p-1" opacity="0.8"/>
+          <circle cx="85" cy="40" r="2" fill="url(#headerGrad2)" class="particle p-2" opacity="0.7"/>
+          <circle cx="40" cy="65" r="1.5" fill="url(#headerGrad1)" class="particle p-3" opacity="0.6"/>
+          <circle cx="80" cy="70" r="2" fill="url(#headerGrad2)" class="particle p-4" opacity="0.7"/>
         </svg>
       </div>
 
@@ -75,49 +104,151 @@ const tools = [
           <!-- Badge -->
           <div class="tool-badge">{tool.badge}</div>
 
-          <!-- Icono SVG Premium -->
+          <!-- Icono SVG Ultra Premium -->
           <div class="tool-icon-wrapper">
             {tool.iconType === "teleprompter" && (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="tool-svg">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" class="tool-svg">
                 <defs>
-                  <linearGradient id="teleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:oklch(0.6 0.16 var(--hue));stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:oklch(0.55 0.18 calc(var(--hue) + 30));stop-opacity:1" />
+                  <linearGradient id="teleGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:oklch(0.65 0.18 var(--hue));stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:oklch(0.55 0.2 calc(var(--hue) + 40));stop-opacity:1" />
                   </linearGradient>
+                  <linearGradient id="teleGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:oklch(0.7 0.16 calc(var(--hue) + 20));stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:oklch(0.6 0.18 var(--hue));stop-opacity:1" />
+                  </linearGradient>
+                  <filter id="teleGlow">
+                    <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+                    <feMerge>
+                      <feMergeNode in="coloredBlur"/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
+                  <clipPath id="screenClip">
+                    <rect x="15" y="18" width="50" height="34" rx="3"/>
+                  </clipPath>
                 </defs>
-                <!-- Monitor/Pantalla -->
-                <rect x="8" y="12" width="48" height="32" rx="4" fill="url(#teleGradient)" class="tele-screen" />
-                <rect x="12" y="16" width="40" height="24" rx="2" fill="oklch(0.2 0.02 var(--hue))" opacity="0.3" />
-                <!-- Líneas de texto animadas -->
-                <line x1="16" y1="22" x2="36" y2="22" stroke="oklch(0.8 0.1 var(--hue))" stroke-width="1.5" class="tele-line line-1" />
-                <line x1="16" y1="27" x2="44" y2="27" stroke="oklch(0.8 0.1 var(--hue))" stroke-width="1.5" class="tele-line line-2" />
-                <line x1="16" y1="32" x2="38" y2="32" stroke="oklch(0.8 0.1 var(--hue))" stroke-width="1.5" class="tele-line line-3" />
-                <!-- Soporte -->
-                <rect x="28" y="44" width="8" height="6" rx="1" fill="url(#teleGradient)" />
-                <rect x="20" y="50" width="24" height="3" rx="1.5" fill="url(#teleGradient)" />
-                <!-- Indicador de reproducción -->
-                <circle cx="48" cy="20" r="3" fill="oklch(0.8 0.14 var(--hue))" class="tele-indicator" />
+                
+                <!-- Marco del monitor con diseño moderno -->
+                <rect x="12" y="15" width="56" height="40" rx="4" 
+                      fill="url(#teleGrad1)" filter="url(#teleGlow)" class="tele-frame"/>
+                
+                <!-- Pantalla interior oscura -->
+                <rect x="15" y="18" width="50" height="34" rx="3" 
+                      fill="oklch(0.15 0.03 var(--hue))" opacity="0.9"/>
+                
+                <!-- Contenido de la pantalla -->
+                <g clip-path="url(#screenClip)">
+                  <!-- Barras de texto animadas con diseño moderno -->
+                  <g class="text-bars">
+                    <rect x="20" y="24" width="30" height="2.5" rx="1.25" 
+                          fill="url(#teleGrad2)" opacity="0.8" class="bar bar-1"/>
+                    <rect x="20" y="30" width="40" height="2.5" rx="1.25" 
+                          fill="url(#teleGrad2)" opacity="0.6" class="bar bar-2"/>
+                    <rect x="20" y="36" width="35" height="2.5" rx="1.25" 
+                          fill="url(#teleGrad2)" opacity="0.7" class="bar bar-3"/>
+                    <rect x="20" y="42" width="28" height="2.5" rx="1.25" 
+                          fill="url(#teleGrad2)" opacity="0.5" class="bar bar-4"/>
+                  </g>
+                  
+                  <!-- Indicador de reproducción moderno -->
+                  <g class="play-indicator">
+                    <circle cx="58" cy="25" r="4" fill="url(#teleGrad2)" opacity="0.3"/>
+                    <circle cx="58" cy="25" r="2.5" fill="oklch(0.75 0.18 var(--hue))" class="pulse-dot"/>
+                  </g>
+                </g>
+                
+                <!-- Reflejos de cristal en el monitor -->
+                <rect x="16" y="19" width="20" height="15" rx="2" 
+                      fill="white" opacity="0.08" class="glass-shine"/>
+                
+                <!-- Base moderna del soporte -->
+                <path d="M 35 56 L 38 62 L 42 62 L 45 56 Z" 
+                      fill="url(#teleGrad1)" opacity="0.9"/>
+                <rect x="30" y="62" width="20" height="4" rx="2" 
+                      fill="url(#teleGrad1)"/>
+                
+                <!-- Detalles decorativos -->
+                <circle cx="40" cy="58" r="1.5" fill="url(#teleGrad2)" opacity="0.6" class="detail-dot"/>
               </svg>
             )}
+            
             {tool.iconType === "link" && (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="tool-svg">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" class="tool-svg">
                 <defs>
-                  <linearGradient id="linkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:oklch(0.6 0.16 var(--hue));stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:oklch(0.55 0.18 calc(var(--hue) + 30));stop-opacity:1" />
+                  <linearGradient id="linkGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:oklch(0.65 0.18 var(--hue));stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:oklch(0.55 0.2 calc(var(--hue) + 40));stop-opacity:1" />
                   </linearGradient>
+                  <linearGradient id="linkGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:oklch(0.7 0.16 calc(var(--hue) + 20));stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:oklch(0.6 0.18 var(--hue));stop-opacity:1" />
+                  </linearGradient>
+                  <filter id="linkGlow">
+                    <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+                    <feMerge>
+                      <feMergeNode in="coloredBlur"/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
                 </defs>
-                <!-- Eslabón izquierdo -->
-                <path class="link-part link-left" d="M 18 24 Q 12 24 12 32 Q 12 40 18 40 L 28 40 Q 34 40 34 32" 
-                      stroke="url(#linkGradient)" stroke-width="6" fill="none" stroke-linecap="round" />
-                <!-- Eslabón derecho -->
-                <path class="link-part link-right" d="M 46 24 Q 52 24 52 32 Q 52 40 46 40 L 36 40 Q 30 40 30 32" 
-                      stroke="url(#linkGradient)" stroke-width="6" fill="none" stroke-linecap="round" />
-                <!-- QR decorativo -->
-                <rect x="20" y="48" width="3" height="3" fill="url(#linkGradient)" class="qr-dot qr-1" />
-                <rect x="25" y="48" width="3" height="3" fill="url(#linkGradient)" class="qr-dot qr-2" />
-                <rect x="20" y="53" width="3" height="3" fill="url(#linkGradient)" class="qr-dot qr-3" />
-                <rect x="25" y="53" width="3" height="3" fill="url(#linkGradient)" class="qr-dot qr-4" />
+                
+                <!-- Eslabón izquierdo con diseño 3D moderno -->
+                <g class="link-left" filter="url(#linkGlow)">
+                  <!-- Parte superior del eslabón -->
+                  <path d="M 18 28 Q 10 28 10 38 Q 10 48 18 48 L 30 48 Q 35 48 35 43" 
+                        stroke="url(#linkGrad1)" stroke-width="7" fill="none" 
+                        stroke-linecap="round" opacity="0.9"/>
+                  <!-- Reflejo interior -->
+                  <path d="M 18 30 Q 13 30 13 38 Q 13 46 18 46 L 28 46" 
+                        stroke="oklch(0.9 0.1 var(--hue))" stroke-width="2" fill="none" 
+                        stroke-linecap="round" opacity="0.3" class="inner-shine"/>
+                </g>
+                
+                <!-- Eslabón derecho con diseño 3D moderno -->
+                <g class="link-right" filter="url(#linkGlow)">
+                  <!-- Parte superior del eslabón -->
+                  <path d="M 62 28 Q 70 28 70 38 Q 70 48 62 48 L 50 48 Q 45 48 45 43" 
+                        stroke="url(#linkGrad2)" stroke-width="7" fill="none" 
+                        stroke-linecap="round" opacity="0.9"/>
+                  <!-- Reflejo interior -->
+                  <path d="M 62 30 Q 67 30 67 38 Q 67 46 62 46 L 52 46" 
+                        stroke="oklch(0.9 0.1 var(--hue))" stroke-width="2" fill="none" 
+                        stroke-linecap="round" opacity="0.3" class="inner-shine"/>
+                </g>
+                
+                <!-- Conexión central brillante -->
+                <g class="center-connection">
+                  <line x1="35" y1="38" x2="45" y2="38" 
+                        stroke="url(#linkGrad1)" stroke-width="3" 
+                        stroke-linecap="round" opacity="0.6" class="connect-beam"/>
+                  <circle cx="40" cy="38" r="3" fill="url(#linkGrad2)" 
+                          class="center-node" opacity="0.8"/>
+                </g>
+                
+                <!-- QR Code moderno y estilizado -->
+                <g class="qr-pattern" transform="translate(52, 54)">
+                  <!-- Marco del QR -->
+                  <rect x="0" y="0" width="20" height="20" rx="2" 
+                        fill="none" stroke="url(#linkGrad1)" stroke-width="1" opacity="0.4"/>
+                  
+                  <!-- Patrón de módulos QR modernos -->
+                  <g class="qr-modules">
+                    <rect x="2" y="2" width="3" height="3" rx="0.5" fill="url(#linkGrad1)" class="qr-dot d-1"/>
+                    <rect x="7" y="2" width="3" height="3" rx="0.5" fill="url(#linkGrad2)" class="qr-dot d-2"/>
+                    <rect x="12" y="2" width="3" height="3" rx="0.5" fill="url(#linkGrad1)" class="qr-dot d-3"/>
+                    <rect x="2" y="7" width="3" height="3" rx="0.5" fill="url(#linkGrad2)" class="qr-dot d-4"/>
+                    <rect x="7" y="7" width="6" height="6" rx="1" fill="url(#linkGrad1)" class="qr-center"/>
+                    <rect x="15" y="7" width="3" height="3" rx="0.5" fill="url(#linkGrad2)" class="qr-dot d-5"/>
+                    <rect x="2" y="15" width="3" height="3" rx="0.5" fill="url(#linkGrad1)" class="qr-dot d-6"/>
+                    <rect x="7" y="15" width="3" height="3" rx="0.5" fill="url(#linkGrad2)" class="qr-dot d-7"/>
+                    <rect x="15" y="15" width="3" height="3" rx="0.5" fill="url(#linkGrad1)" class="qr-dot d-8"/>
+                  </g>
+                </g>
+                
+                <!-- Partículas de conexión -->
+                <circle cx="25" cy="25" r="1.5" fill="url(#linkGrad1)" class="connection-particle cp-1" opacity="0.6"/>
+                <circle cx="55" cy="25" r="1.5" fill="url(#linkGrad2)" class="connection-particle cp-2" opacity="0.6"/>
               </svg>
             )}
           </div>
@@ -154,140 +285,140 @@ const tools = [
 </MainGridLayout>
 
 <style>
-  /* Hub principal */
   .tools-hub {
     display: flex;
     flex-direction: column;
     gap: 2rem;
   }
 
-  /* Header */
   .tools-header {
     text-align: center;
     padding: 1rem 0 0.5rem;
   }
 
-  /* 🎨 SVG del Header Premium */
+  /* 🎨 ICONO HEADER ULTRA PREMIUM */
   .tools-header-icon {
     margin-bottom: 0.75rem;
     display: inline-block;
-    animation: floatIcon 3s ease-in-out infinite;
+    animation: headerFloat 4s ease-in-out infinite;
   }
 
   .header-svg {
-    width: 80px;
-    height: 80px;
-    filter: drop-shadow(0 4px 16px oklch(0.7 0.14 var(--hue) / 0.3));
+    width: 90px;
+    height: 90px;
+    filter: drop-shadow(0 8px 24px oklch(0.7 0.14 var(--hue) / 0.4));
   }
 
-  /* Animación de las herramientas del header */
-  .tool-wrench {
-    animation: wrenchRotate 4s ease-in-out infinite;
-    transform-origin: center;
+  @keyframes headerFloat {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    33% { transform: translateY(-12px) rotate(2deg); }
+    66% { transform: translateY(-6px) rotate(-2deg); }
   }
 
-  .tool-screwdriver {
-    animation: screwdriverShake 3s ease-in-out infinite;
-    transform-origin: center;
+  /* Animaciones del icono header */
+  .hex-bg {
+    animation: hexPulse 3s ease-in-out infinite;
   }
 
-  .spark {
-    animation: sparkPulse 2s ease-in-out infinite;
+  @keyframes hexPulse {
+    0%, 100% { transform: scale(1); opacity: 0.15; }
+    50% { transform: scale(1.05); opacity: 0.25; }
   }
 
-  .spark-1 { animation-delay: 0s; }
-  .spark-2 { animation-delay: 0.6s; }
-  .spark-3 { animation-delay: 1.2s; }
-
-  @keyframes floatIcon {
-    0%, 100% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-10px);
-    }
+  .center-shape {
+    animation: shapeRotate 6s linear infinite;
+    transform-origin: 60px 45px;
   }
 
-  @keyframes wrenchRotate {
-    0%, 100% {
-      transform: rotate(0deg);
-    }
-    50% {
-      transform: rotate(15deg);
-    }
+  @keyframes shapeRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 
-  @keyframes screwdriverShake {
-    0%, 100% {
-      transform: rotate(0deg) translateX(0);
-    }
-    25% {
-      transform: rotate(-5deg) translateX(-2px);
-    }
-    75% {
-      transform: rotate(5deg) translateX(2px);
-    }
+  .connect-line {
+    animation: lineGrow 2s ease-in-out infinite;
   }
 
-  @keyframes sparkPulse {
-    0%, 100% {
-      opacity: 0.6;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 1;
-      transform: scale(1.5);
-    }
+  @keyframes lineGrow {
+    0%, 100% { stroke-dasharray: 2 2; }
+    50% { stroke-dasharray: 4 4; }
   }
 
-  /* 🎨 Título con gradiente animado */
+  .orbit {
+    animation: orbitRotate 8s linear infinite;
+    transform-origin: 60px 45px;
+  }
+
+  .orbit-1 { animation-duration: 8s; }
+  .orbit-2 { animation-duration: 12s; animation-direction: reverse; }
+
+  @keyframes orbitRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .particle {
+    animation: particleFloat 3s ease-in-out infinite;
+  }
+
+  .p-1 { animation-delay: 0s; }
+  .p-2 { animation-delay: 0.5s; }
+  .p-3 { animation-delay: 1s; }
+  .p-4 { animation-delay: 1.5s; }
+
+  @keyframes particleFloat {
+    0%, 100% { transform: translate(0, 0); opacity: 0.8; }
+    50% { transform: translate(3px, -5px); opacity: 0.4; }
+  }
+
+  /* 🎨 TÍTULO PREMIUM */
   .tools-title {
     font-size: 2.5rem;
     font-weight: 800;
     letter-spacing: -0.02em;
     background: linear-gradient(
       135deg,
-      oklch(0.65 0.16 var(--hue)),
-      oklch(0.6 0.18 calc(var(--hue) + 40)),
-      oklch(0.65 0.16 var(--hue))
+      oklch(0.7 0.18 var(--hue)),
+      oklch(0.65 0.2 calc(var(--hue) + 30)),
+      oklch(0.6 0.18 calc(var(--hue) + 60)),
+      oklch(0.65 0.2 calc(var(--hue) + 30)),
+      oklch(0.7 0.18 var(--hue))
     );
-    background-size: 200% 100%;
+    background-size: 300% 100%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     margin-bottom: 0.5rem;
     line-height: 1.2;
-    animation: titleShimmer 4s ease-in-out infinite, titleFadeIn 0.6s ease-out;
+    animation: premiumShimmer 5s ease-in-out infinite, titleEntrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  @keyframes titleShimmer {
-    0%, 100% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
+  @keyframes premiumShimmer {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
   }
 
-  @keyframes titleFadeIn {
+  @keyframes titleEntrance {
     from {
       opacity: 0;
-      transform: translateY(-10px);
+      transform: translateY(-20px) scale(0.95);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateY(0) scale(1);
     }
   }
 
   :global(.dark) .tools-title {
     background: linear-gradient(
       135deg,
-      oklch(0.75 0.14 var(--hue)),
-      oklch(0.7 0.16 calc(var(--hue) + 40)),
-      oklch(0.75 0.14 var(--hue))
+      oklch(0.8 0.16 var(--hue)),
+      oklch(0.75 0.18 calc(var(--hue) + 30)),
+      oklch(0.7 0.16 calc(var(--hue) + 60)),
+      oklch(0.75 0.18 calc(var(--hue) + 30)),
+      oklch(0.8 0.16 var(--hue))
     );
-    background-size: 200% 100%;
+    background-size: 300% 100%;
     -webkit-background-clip: text;
     background-clip: text;
   }
@@ -298,18 +429,12 @@ const tools = [
     line-height: 1.5;
     max-width: 32rem;
     margin: 0 auto 0.75rem;
-    animation: subtitleFadeIn 0.6s ease-out 0.2s both;
+    animation: subtitleFade 0.8s ease-out 0.2s both;
   }
 
-  @keyframes subtitleFadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(-5px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  @keyframes subtitleFade {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   :global(.dark) .tools-subtitle {
@@ -323,18 +448,12 @@ const tools = [
     gap: 0.5rem;
     font-size: 0.85rem;
     font-weight: 600;
-    animation: statsFadeIn 0.6s ease-out 0.3s both;
+    animation: statsFade 0.8s ease-out 0.4s both;
   }
 
-  @keyframes statsFadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(5px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  @keyframes statsFade {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .tools-stat {
@@ -353,7 +472,7 @@ const tools = [
     color: #475569;
   }
 
-  /* Grid */
+  /* GRID */
   .tools-grid {
     display: grid;
     gap: 1.25rem;
@@ -366,7 +485,7 @@ const tools = [
     }
   }
 
-  /* Card de herramienta */
+  /* 🎨 CARDS ULTRA PREMIUM */
   .tool-card {
     position: relative;
     display: flex;
@@ -378,15 +497,27 @@ const tools = [
     border: 1px solid rgba(0, 0, 0, 0.06);
     text-decoration: none;
     color: inherit;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     overflow: hidden;
-    animation: toolFadeIn 0.5s ease both;
+    animation: cardEntrance 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  @keyframes cardEntrance {
+    from {
+      opacity: 0;
+      transform: translateY(30px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
   }
 
   :global(.dark) .tool-card {
     border-color: rgba(255, 255, 255, 0.08);
   }
 
+  /* Borde superior brillante */
   .tool-card::before {
     content: "";
     position: absolute;
@@ -396,53 +527,57 @@ const tools = [
     height: 3px;
     background: linear-gradient(
       90deg,
-      oklch(0.7 0.14 var(--hue)),
-      oklch(0.65 0.16 calc(var(--hue) + 60)),
-      oklch(0.7 0.14 var(--hue))
+      transparent,
+      oklch(0.7 0.18 var(--hue)),
+      oklch(0.65 0.2 calc(var(--hue) + 40)),
+      oklch(0.7 0.18 var(--hue)),
+      transparent
     );
     background-size: 200% 100%;
     opacity: 0;
-    transition: opacity 0.4s ease;
-    animation: borderShimmer 3s ease-in-out infinite;
+    transition: opacity 0.5s ease;
+    animation: borderFlow 3s linear infinite;
   }
 
-  @keyframes borderShimmer {
-    0%, 100% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
+  @keyframes borderFlow {
+    from { background-position: -200% 0; }
+    to { background-position: 200% 0; }
   }
 
+  /* Resplandor de fondo */
   .tool-card::after {
     content: "";
     position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
+    top: -100%;
+    left: -100%;
+    width: 300%;
+    height: 300%;
     background: radial-gradient(
-      circle,
-      oklch(0.7 0.14 var(--hue) / 0.04) 0%,
-      transparent 70%
+      circle at center,
+      oklch(0.7 0.18 var(--hue) / 0.08) 0%,
+      transparent 60%
     );
     opacity: 0;
-    transition: opacity 0.6s ease;
+    transition: opacity 0.6s ease, transform 0.6s ease;
     pointer-events: none;
+    transform: scale(0.5);
   }
 
   .tool-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 20px 40px oklch(0.7 0.14 var(--hue) / 0.15),
-                0 8px 16px rgba(0, 0, 0, 0.08);
-    border-color: oklch(0.8 0.08 var(--hue));
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 
+      0 25px 50px oklch(0.7 0.18 var(--hue) / 0.2),
+      0 10px 20px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    border-color: oklch(0.75 0.12 var(--hue));
   }
 
   :global(.dark) .tool-card:hover {
-    box-shadow: 0 20px 40px oklch(0.4 0.1 var(--hue) / 0.25),
-                0 8px 16px rgba(0, 0, 0, 0.4);
-    border-color: oklch(0.45 0.08 var(--hue));
+    box-shadow: 
+      0 25px 50px oklch(0.5 0.14 var(--hue) / 0.3),
+      0 10px 20px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    border-color: oklch(0.5 0.12 var(--hue));
   }
 
   .tool-card:hover::before {
@@ -451,13 +586,10 @@ const tools = [
 
   .tool-card:hover::after {
     opacity: 1;
+    transform: scale(1);
   }
 
-  .tool-card:active {
-    transform: translateY(-3px);
-  }
-
-  /* Badge */
+  /* BADGE PREMIUM */
   .tool-badge {
     position: absolute;
     top: 1rem;
@@ -466,192 +598,241 @@ const tools = [
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    padding: 0.25rem 0.6rem;
+    padding: 0.3rem 0.7rem;
     border-radius: 9999px;
-    background: oklch(0.93 0.04 var(--hue));
-    color: oklch(0.5 0.14 var(--hue));
-    animation: badgePulse 2s ease-in-out infinite;
+    background: linear-gradient(135deg, oklch(0.95 0.06 var(--hue)), oklch(0.9 0.08 calc(var(--hue) + 20)));
+    color: oklch(0.5 0.16 var(--hue));
+    animation: badgeGlow 2.5s ease-in-out infinite;
     z-index: 1;
+    box-shadow: 0 2px 8px oklch(0.7 0.14 var(--hue) / 0.3);
   }
 
-  @keyframes badgePulse {
+  @keyframes badgeGlow {
     0%, 100% {
-      box-shadow: 0 0 0 0 oklch(0.7 0.14 var(--hue) / 0.4);
+      box-shadow: 0 2px 8px oklch(0.7 0.14 var(--hue) / 0.3), 0 0 0 0 oklch(0.7 0.14 var(--hue) / 0.5);
     }
     50% {
-      box-shadow: 0 0 0 4px oklch(0.7 0.14 var(--hue) / 0);
+      box-shadow: 0 4px 12px oklch(0.7 0.14 var(--hue) / 0.4), 0 0 0 6px oklch(0.7 0.14 var(--hue) / 0);
     }
   }
 
   :global(.dark) .tool-badge {
-    background: oklch(0.3 0.05 var(--hue));
-    color: oklch(0.78 0.12 var(--hue));
+    background: linear-gradient(135deg, oklch(0.35 0.08 var(--hue)), oklch(0.3 0.1 calc(var(--hue) + 20)));
+    color: oklch(0.8 0.14 var(--hue));
   }
 
-  /* 🎨 Wrapper del icono SVG */
+  /* 🎨 WRAPPER ICONO ULTRA PREMIUM */
   .tool-icon-wrapper {
-    width: 3.5rem;
-    height: 3.5rem;
+    width: 4rem;
+    height: 4rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 1rem;
-    background: oklch(0.95 0.03 var(--hue));
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border-radius: 1.25rem;
+    background: linear-gradient(135deg, oklch(0.97 0.04 var(--hue)), oklch(0.94 0.06 calc(var(--hue) + 20)));
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     position: relative;
     overflow: hidden;
+    box-shadow: 
+      0 4px 12px oklch(0.7 0.14 var(--hue) / 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
   }
 
   .tool-icon-wrapper::before {
     content: "";
     position: absolute;
     inset: 0;
-    border-radius: 1rem;
+    border-radius: 1.25rem;
     background: linear-gradient(
       135deg,
-      oklch(0.98 0.02 var(--hue)),
-      transparent 50%
+      oklch(0.99 0.02 var(--hue)),
+      transparent 60%
     );
     opacity: 0;
-    transition: opacity 0.4s ease;
+    transition: opacity 0.5s ease;
   }
 
   :global(.dark) .tool-icon-wrapper {
-    background: oklch(0.28 0.03 var(--hue));
+    background: linear-gradient(135deg, oklch(0.3 0.06 var(--hue)), oklch(0.25 0.08 calc(var(--hue) + 20)));
+    box-shadow: 
+      0 4px 12px oklch(0.3 0.1 var(--hue) / 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
   .tool-card:hover .tool-icon-wrapper {
-    transform: scale(1.12) rotate(5deg);
-    background: oklch(0.9 0.06 var(--hue));
+    transform: scale(1.15) rotate(8deg);
+    background: linear-gradient(135deg, oklch(0.92 0.08 var(--hue)), oklch(0.88 0.1 calc(var(--hue) + 30)));
+    box-shadow: 
+      0 8px 20px oklch(0.7 0.18 var(--hue) / 0.3),
+      inset 0 2px 0 rgba(255, 255, 255, 0.3);
+  }
+
+  :global(.dark) .tool-card:hover .tool-icon-wrapper {
+    background: linear-gradient(135deg, oklch(0.4 0.1 var(--hue)), oklch(0.35 0.12 calc(var(--hue) + 30)));
   }
 
   .tool-card:hover .tool-icon-wrapper::before {
     opacity: 1;
   }
 
-  :global(.dark) .tool-card:hover .tool-icon-wrapper {
-    background: oklch(0.35 0.06 var(--hue));
-  }
-
-  /* 🎨 SVG de las herramientas */
+  /* 🎨 SVG ICONS - ANIMACIONES ESPECÍFICAS */
   .tool-svg {
-    width: 32px;
-    height: 32px;
+    width: 100%;
+    height: 100%;
     position: relative;
     z-index: 1;
   }
 
-  /* Animaciones específicas del Teleprompter */
-  .tele-line {
-    animation: textScroll 3s ease-in-out infinite;
+  /* TELEPROMPTER */
+  .tele-frame {
+    animation: frameGlow 2.5s ease-in-out infinite;
   }
 
-  .line-1 { animation-delay: 0s; }
-  .line-2 { animation-delay: 0.3s; }
-  .line-3 { animation-delay: 0.6s; }
-
-  @keyframes textScroll {
-    0%, 100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    50% {
-      opacity: 0.5;
-      transform: translateY(-2px);
-    }
+  @keyframes frameGlow {
+    0%, 100% { filter: url(#teleGlow); }
+    50% { filter: url(#teleGlow) brightness(1.1); }
   }
 
-  .tele-indicator {
-    animation: recordPulse 1.5s ease-in-out infinite;
+  .text-bars .bar {
+    animation: textFlow 3s ease-in-out infinite;
   }
 
-  @keyframes recordPulse {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.3;
-    }
+  .bar-1 { animation-delay: 0s; }
+  .bar-2 { animation-delay: 0.3s; }
+  .bar-3 { animation-delay: 0.6s; }
+  .bar-4 { animation-delay: 0.9s; }
+
+  @keyframes textFlow {
+    0%, 100% { opacity: 0.8; transform: translateX(0); }
+    50% { opacity: 0.4; transform: translateX(-3px); }
   }
 
-  .tele-screen {
-    animation: screenGlow 2s ease-in-out infinite;
+  .pulse-dot {
+    animation: recordingPulse 1.5s ease-in-out infinite;
   }
 
-  @keyframes screenGlow {
-    0%, 100% {
-      filter: brightness(1);
-    }
-    50% {
-      filter: brightness(1.1);
-    }
+  @keyframes recordingPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.3; transform: scale(0.7); }
   }
 
-  /* Animaciones del acortador de links */
-  .link-part {
-    animation: linkFloat 2s ease-in-out infinite;
+  .glass-shine {
+    animation: shineMove 3s ease-in-out infinite;
   }
 
-  .link-left {
-    animation-delay: 0s;
+  @keyframes shineMove {
+    0%, 100% { opacity: 0.08; transform: translateY(0); }
+    50% { opacity: 0.15; transform: translateY(5px); }
   }
 
-  .link-right {
-    animation-delay: 0.5s;
+  .detail-dot {
+    animation: detailPulse 2s ease-in-out infinite;
   }
 
-  @keyframes linkFloat {
-    0%, 100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-2px);
-    }
+  @keyframes detailPulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
   }
 
-  .qr-dot {
-    animation: qrBlink 1.5s ease-in-out infinite;
+  /* LINK SHORTENER */
+  .link-left, .link-right {
+    animation: linkBreath 2.5s ease-in-out infinite;
   }
 
-  .qr-1 { animation-delay: 0s; }
-  .qr-2 { animation-delay: 0.2s; }
-  .qr-3 { animation-delay: 0.4s; }
-  .qr-4 { animation-delay: 0.6s; }
+  .link-left { animation-delay: 0s; }
+  .link-right { animation-delay: 0.8s; }
 
-  @keyframes qrBlink {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.3;
-    }
+  @keyframes linkBreath {
+    0%, 100% { opacity: 0.9; transform: translateY(0); }
+    50% { opacity: 1; transform: translateY(-2px); }
   }
 
-  /* Efecto hover en SVG */
+  .inner-shine {
+    animation: shineFlow 2s ease-in-out infinite;
+  }
+
+  @keyframes shineFlow {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.6; }
+  }
+
+  .center-connection .connect-beam {
+    animation: beamPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes beamPulse {
+    0%, 100% { opacity: 0.6; stroke-width: 3; }
+    50% { opacity: 1; stroke-width: 4; }
+  }
+
+  .center-node {
+    animation: nodePulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes nodePulse {
+    0%, 100% { opacity: 0.8; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.2); }
+  }
+
+  .qr-modules .qr-dot {
+    animation: qrFlicker 2s ease-in-out infinite;
+  }
+
+  .d-1 { animation-delay: 0s; }
+  .d-2 { animation-delay: 0.2s; }
+  .d-3 { animation-delay: 0.4s; }
+  .d-4 { animation-delay: 0.6s; }
+  .d-5 { animation-delay: 0.8s; }
+  .d-6 { animation-delay: 1s; }
+  .d-7 { animation-delay: 1.2s; }
+  .d-8 { animation-delay: 1.4s; }
+
+  @keyframes qrFlicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .qr-center {
+    animation: qrCenterPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes qrCenterPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(0.95); }
+  }
+
+  .connection-particle {
+    animation: particleDrift 3s ease-in-out infinite;
+  }
+
+  .cp-1 { animation-delay: 0s; }
+  .cp-2 { animation-delay: 1s; }
+
+  @keyframes particleDrift {
+    0%, 100% { opacity: 0.6; transform: translate(0, 0); }
+    50% { opacity: 1; transform: translate(2px, -3px); }
+  }
+
+  /* HOVER EN SVG */
   .tool-card:hover .tool-svg {
-    animation: svgBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: svgHoverBounce 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  @keyframes svgBounce {
-    0% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(1.15) rotate(5deg);
-    }
-    100% {
-      transform: scale(1);
-    }
+  @keyframes svgHoverBounce {
+    0% { transform: scale(1) rotate(0deg); }
+    40% { transform: scale(1.2) rotate(8deg); }
+    70% { transform: scale(0.95) rotate(-4deg); }
+    100% { transform: scale(1) rotate(0deg); }
   }
 
-  /* Contenido */
+  /* CONTENIDO */
   .tool-name {
     font-size: 1.35rem;
     font-weight: 700;
     color: #0f172a;
     margin-bottom: 0.35rem;
     line-height: 1.3;
-    transition: color 0.3s ease;
+    transition: all 0.3s ease;
   }
 
   :global(.dark) .tool-name {
@@ -659,11 +840,12 @@ const tools = [
   }
 
   .tool-card:hover .tool-name {
-    color: oklch(0.55 0.14 var(--hue));
+    color: oklch(0.55 0.16 var(--hue));
+    transform: translateX(2px);
   }
 
   :global(.dark) .tool-card:hover .tool-name {
-    color: oklch(0.75 0.14 var(--hue));
+    color: oklch(0.75 0.16 var(--hue));
   }
 
   .tool-description {
@@ -676,7 +858,7 @@ const tools = [
     color: #94a3b8;
   }
 
-  /* Features */
+  /* FEATURES */
   .tool-features {
     display: flex;
     flex-wrap: wrap;
@@ -686,27 +868,30 @@ const tools = [
   .tool-feature-tag {
     font-size: 0.75rem;
     font-weight: 600;
-    padding: 0.2rem 0.55rem;
-    border-radius: 0.375rem;
-    background: oklch(0.96 0.015 var(--hue));
+    padding: 0.25rem 0.6rem;
+    border-radius: 0.5rem;
+    background: oklch(0.97 0.02 var(--hue));
     color: #475569;
-    border: 1px solid oklch(0.92 0.02 var(--hue));
-    transition: all 0.3s ease;
+    border: 1px solid oklch(0.92 0.03 var(--hue));
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   :global(.dark) .tool-feature-tag {
-    background: oklch(0.22 0.02 var(--hue));
+    background: oklch(0.22 0.03 var(--hue));
     color: #94a3b8;
-    border-color: oklch(0.32 0.03 var(--hue));
+    border-color: oklch(0.32 0.04 var(--hue));
   }
 
   .tool-card:hover .tool-feature-tag {
-    transform: translateY(-1px);
-    border-color: oklch(0.8 0.06 var(--hue));
+    transform: translateY(-2px);
+    border-color: oklch(0.8 0.08 var(--hue));
+    background: oklch(0.98 0.04 var(--hue));
+    box-shadow: 0 2px 8px oklch(0.7 0.14 var(--hue) / 0.15);
   }
 
   :global(.dark) .tool-card:hover .tool-feature-tag {
-    border-color: oklch(0.4 0.06 var(--hue));
+    border-color: oklch(0.4 0.08 var(--hue));
+    background: oklch(0.25 0.05 var(--hue));
   }
 
   /* CTA */
@@ -716,67 +901,57 @@ const tools = [
     gap: 0.5rem;
     font-size: 0.85rem;
     font-weight: 600;
-    color: oklch(0.55 0.14 var(--hue));
+    color: oklch(0.55 0.16 var(--hue));
     margin-top: 0.25rem;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   :global(.dark) .tool-cta {
-    color: oklch(0.72 0.14 var(--hue));
+    color: oklch(0.72 0.16 var(--hue));
   }
 
   .tool-cta-arrow {
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     font-size: 1rem;
     display: inline-block;
   }
 
   .tool-card:hover .tool-cta-arrow {
-    transform: translateX(6px);
-    animation: arrowBounce 0.6s ease-in-out;
+    transform: translateX(8px);
+    animation: arrowPulse 0.8s ease-in-out;
   }
 
-  @keyframes arrowBounce {
-    0%, 100% {
-      transform: translateX(6px);
-    }
-    50% {
-      transform: translateX(10px);
-    }
+  @keyframes arrowPulse {
+    0%, 100% { transform: translateX(8px) scale(1); }
+    50% { transform: translateX(12px) scale(1.2); }
   }
 
   .tool-card:hover .tool-cta {
-    color: oklch(0.6 0.16 var(--hue));
+    color: oklch(0.6 0.18 var(--hue));
   }
 
   :global(.dark) .tool-card:hover .tool-cta {
-    color: oklch(0.78 0.16 var(--hue));
+    color: oklch(0.78 0.18 var(--hue));
   }
 
-  /* Footer */
+  /* FOOTER */
   .tools-footer {
     text-align: center;
     padding: 1rem 1.5rem;
     border-radius: var(--radius-large);
-    background: oklch(0.97 0.008 var(--hue));
-    border: 1px dashed oklch(0.88 0.03 var(--hue));
-    animation: footerFadeIn 0.6s ease-out 0.5s both;
+    background: oklch(0.97 0.01 var(--hue));
+    border: 1px dashed oklch(0.88 0.04 var(--hue));
+    animation: footerFade 0.8s ease-out 0.6s both;
   }
 
-  @keyframes footerFadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  @keyframes footerFade {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   :global(.dark) .tools-footer {
-    background: oklch(0.2 0.015 var(--hue));
-    border-color: oklch(0.32 0.03 var(--hue));
+    background: oklch(0.2 0.02 var(--hue));
+    border-color: oklch(0.32 0.04 var(--hue));
   }
 
   .tools-footer p {
@@ -789,70 +964,38 @@ const tools = [
     color: #94a3b8;
   }
 
-  /* Animation */
-  @keyframes toolFadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* Mobile adjustments */
+  /* MOBILE */
   @media (max-width: 640px) {
     .tools-title {
       font-size: 2rem;
     }
 
     .header-svg {
-      width: 60px;
-      height: 60px;
+      width: 70px;
+      height: 70px;
     }
 
     .tool-card {
-      padding: 1.25rem;
+      padding: 1.5rem;
     }
 
     .tool-icon-wrapper {
-      width: 3rem;
-      height: 3rem;
-    }
-
-    .tool-svg {
-      width: 28px;
-      height: 28px;
+      width: 3.5rem;
+      height: 3.5rem;
     }
   }
 
-  /* Optimización de rendimiento */
+  /* RENDIMIENTO */
   .tool-card:hover {
     will-change: transform;
   }
 
-  .tool-icon-wrapper:hover {
-    will-change: transform;
-  }
-
-  /* Accesibilidad - Reducir movimiento */
+  /* ACCESIBILIDAD */
   @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
+    *, *::before, *::after {
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
-    }
-    
-    .tool-card:hover {
-      transform: translateY(-2px);
-    }
-    
-    .tool-svg,
-    .header-svg {
-      animation: none;
     }
   }
 </style>
