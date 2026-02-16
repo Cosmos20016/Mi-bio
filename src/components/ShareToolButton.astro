@@ -28,7 +28,7 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     <span>Compartir</span>
   </button>
 
-  <div class="share-popup" id={`${uniqueId}-popup`} style="display: none;">
+  <div class="share-popup" id={`${uniqueId}-popup`}>
     <div class="share-popup-inner">
       <button class="share-option" data-platform="whatsapp" aria-label="Compartir en WhatsApp">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="#25D366">
@@ -70,11 +70,9 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
 </div>
 
 <script>
-  // Wait for DOM to be ready and initialize on each page load (Swup compatibility)
   let shareAbortController: AbortController | null = null;
 
   function initShareButtons() {
-    // Abort previous listeners
     if (shareAbortController) {
       shareAbortController.abort();
     }
@@ -86,7 +84,7 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     shareButtons.forEach((button) => {
       const buttonElement = button as HTMLButtonElement;
       const buttonId = buttonElement.id;
-      const popup = document.getElementById(`${buttonId}-popup`);
+      const popup = document.getElementById(`${buttonId}-popup`) as HTMLElement;
       
       if (!popup) return;
 
@@ -94,67 +92,74 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
       const toolDescription = buttonElement.dataset.toolDescription || '';
       const toolUrl = buttonElement.dataset.toolUrl || '';
       
-      // Generate absolute URL
       const absoluteUrl = `${window.location.origin}${toolUrl}`;
       const shareText = `¡Mira esta herramienta gratuita: ${toolName}! ${toolDescription} 🚀`;
 
-      // Toggle popup
-      const togglePopup = (e: Event) => {
-        e.stopPropagation();
-        const isVisible = popup.style.display === 'block';
-        
-        // Close all other popups first
-        document.querySelectorAll('.share-popup').forEach(p => {
-          (p as HTMLElement).style.display = 'none';
-        });
-        
-        if (!isVisible) {
-          popup.style.display = 'block';
-          requestAnimationFrame(() => {
-            popup.classList.add('share-popup-visible');
-          });
-        } else {
-          popup.classList.remove('share-popup-visible');
-          setTimeout(() => {
-            popup.style.display = 'none';
-          }, 200);
-        }
+      // 🔧 Mejor detección de dispositivos táctiles
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const hasNativeShare = 'share' in navigator && navigator.canShare;
+
+      // 🔧 Funciones mejoradas para abrir/cerrar
+      const closePopup = () => {
+        popup.classList.remove('share-popup-visible');
+        document.body.classList.remove('share-popup-open');
       };
 
-      // Check if Web Share API is available on mobile
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      const hasNativeShare = 'share' in navigator;
+      const openPopup = () => {
+        // Cerrar otros popups primero
+        document.querySelectorAll('.share-popup').forEach(p => {
+          (p as HTMLElement).classList.remove('share-popup-visible');
+        });
+        document.body.classList.remove('share-popup-open');
+        
+        // Abrir este popup
+        popup.classList.add('share-popup-visible');
+        document.body.classList.add('share-popup-open');
+      };
 
-      // Handle button click
+      // 🔧 Manejo del clic del botón
       buttonElement.addEventListener('click', async (e) => {
-        // Use native share on mobile if available
-        if (isMobile && hasNativeShare) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Intentar compartir nativo solo en dispositivos táctiles
+        if (isTouchDevice && hasNativeShare) {
           try {
-            await navigator.share({
+            const shareData = {
               title: toolName,
               text: shareText,
               url: absoluteUrl,
-            });
-            return;
+            };
+            
+            if (navigator.canShare(shareData)) {
+              await navigator.share(shareData);
+              return; // Éxito, no mostrar popup
+            }
           } catch (err) {
-            // If user cancelled the native share dialog, just do nothing
-            if (err instanceof DOMException && err.name === 'AbortError') {
+            // Si el usuario canceló, no mostrar popup
+            if (err instanceof Error && err.name === 'AbortError') {
               return;
             }
-            // Only fall through to popup for real errors (not cancellations)
-            console.log('Native share failed, falling back to popup:', err);
+            // Para cualquier otro error, mostrar popup
+            console.log('Native share not available, showing popup');
           }
         }
         
-        // Show popup for desktop or if native share truly fails
-        togglePopup(e);
+        // Mostrar/ocultar popup
+        if (popup.classList.contains('share-popup-visible')) {
+          closePopup();
+        } else {
+          openPopup();
+        }
       }, { signal });
 
-      // Handle share options
+      // 🔧 Manejo de opciones de compartir
       const shareOptions = popup.querySelectorAll('.share-option');
       shareOptions.forEach((option) => {
-        option.addEventListener('click', async (e) => {
+        const handleShare = async (e: Event) => {
+          e.preventDefault();
           e.stopPropagation();
+          
           const platform = (option as HTMLElement).dataset.platform;
           
           let shareUrl = '';
@@ -189,10 +194,9 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
                   const originalText = copyText.textContent;
                   const originalSvg = copySvg.outerHTML;
                   copyText.textContent = '¡Copiado!';
-                  // Green check icon for success feedback
                   copySvg.outerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-                  // Subtle green background (hue 145 = green)
                   (option as HTMLElement).style.background = 'oklch(0.95 0.05 145)';
+                  
                   setTimeout(() => {
                     copyText.textContent = originalText;
                     const currentSvg = option.querySelector('svg');
@@ -204,43 +208,49 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
                 }
               } catch (err) {
                 console.error('Failed to copy:', err);
+                alert('No se pudo copiar el enlace');
               }
-              // Keep popup open after copying to show feedback to the user
-              // NO cerrar el popup después de copiar, para que el usuario vea el feedback
-              return;
+              return; // Mantener popup abierto para mostrar feedback
           }
           
-          // Close popup after sharing (except for copy)
-          popup.classList.remove('share-popup-visible');
-          setTimeout(() => {
-            popup.style.display = 'none';
-          }, 200);
-        }, { signal });
-      });
-    });
+          closePopup();
+        };
 
-    // Close popup when clicking outside
-    document.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('.share-tool-button-wrapper')) {
-        document.querySelectorAll('.share-popup').forEach(popup => {
-          popup.classList.remove('share-popup-visible');
-          setTimeout(() => {
-            (popup as HTMLElement).style.display = 'none';
-          }, 200);
-        });
+        // 🔧 Soporte para click y touch
+        option.addEventListener('click', handleShare, { signal });
+        if (isTouchDevice) {
+          option.addEventListener('touchend', handleShare, { signal, passive: false });
+        }
+      });
+
+      // 🔧 Cerrar al hacer clic fuera
+      const closeOnOutsideClick = (e: Event) => {
+        const target = e.target as HTMLElement;
+        if (!target.closest('.share-tool-button-wrapper') && popup.classList.contains('share-popup-visible')) {
+          closePopup();
+        }
+      };
+
+      document.addEventListener('click', closeOnOutsideClick, { signal });
+      if (isTouchDevice) {
+        document.addEventListener('touchstart', closeOnOutsideClick, { signal });
       }
-    }, { signal });
+
+      // 🔧 Cerrar con tecla Escape
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && popup.classList.contains('share-popup-visible')) {
+          closePopup();
+        }
+      }, { signal });
+    });
   }
 
-  // Initialize on page load
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initShareButtons);
   } else {
     initShareButtons();
   }
 
-  // Re-initialize for Swup page transitions
   document.addEventListener('swup:page:view', initShareButtons);
   document.addEventListener('astro:page-load', initShareButtons);
 </script>
@@ -266,6 +276,8 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     border: none;
     cursor: pointer;
     transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
   }
 
   :global(.dark) .share-tool-button {
@@ -293,6 +305,7 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     height: 14px;
   }
 
+  /* 🔧 POPUP MEJORADO */
   .share-popup {
     position: absolute;
     top: calc(100% + 0.5rem);
@@ -302,11 +315,12 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     border-radius: 1rem;
     padding: 0.75rem;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
-    z-index: 1000;
+    z-index: 9999; /* 🔧 Z-index mucho más alto */
     opacity: 0;
     transform: translateY(-10px);
     transition: opacity 0.2s ease, transform 0.2s ease;
     pointer-events: none;
+    visibility: hidden; /* 🔧 Añadido para mejor control */
   }
 
   :global(.dark) .share-popup {
@@ -318,6 +332,7 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     opacity: 1;
     transform: translateY(0);
     pointer-events: auto;
+    visibility: visible; /* 🔧 Añadido */
   }
 
   .share-popup-inner {
@@ -341,6 +356,9 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     font-size: 0.75rem;
     font-weight: 600;
     color: #475569;
+    -webkit-tap-highlight-color: transparent; /* 🔧 Elimina highlight azul en Android */
+    user-select: none;
+    touch-action: manipulation; /* 🔧 Mejor manejo táctil */
   }
 
   :global(.dark) .share-option {
@@ -361,7 +379,6 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     transform: translateY(0);
   }
 
-  /* Social platform colors */
   .share-option[data-platform="whatsapp"] svg {
     color: #25D366;
   }
@@ -390,17 +407,30 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     color: oklch(0.75 0.12 var(--hue));
   }
 
-  /* Mobile responsive */
+  /* 🔧 PREVENIR SCROLL EN MÓVIL */
+  :global(body.share-popup-open) {
+    overflow: hidden;
+    touch-action: none;
+  }
+
+  /* 🔧 MOBILE: Bottom Sheet nativo */
   @media (max-width: 640px) {
     .share-popup {
-      right: auto;
-      left: 50%;
-      transform: translateX(-50%) translateY(-10px);
-      min-width: 260px;
+      position: fixed; /* 🔧 Cambio crítico para Android */
+      top: auto;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      transform: translateY(100%); /* 🔧 Slide desde abajo */
+      min-width: auto;
+      border-radius: 1.5rem 1.5rem 0 0;
+      padding: 1rem 1rem 1.5rem;
+      max-height: 80vh;
+      overflow-y: auto;
     }
 
     .share-popup-visible {
-      transform: translateX(-50%) translateY(0);
+      transform: translateY(0); /* 🔧 Desliza hacia arriba */
     }
 
     .share-tool-button {
@@ -412,11 +442,41 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
       width: 12px;
       height: 12px;
     }
+
+    .share-popup-inner {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.625rem;
+    }
+
+    .share-option {
+      padding: 1rem 0.5rem;
+      min-height: 80px;
+    }
   }
 
   @media (min-width: 641px) {
     .share-popup-inner {
       grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  /* 🔧 Tablet */
+  @media (min-width: 641px) and (max-width: 1024px) {
+    .share-popup {
+      right: 0;
+      left: auto;
+      transform: translateY(-10px);
+    }
+
+    .share-popup-visible {
+      transform: translateY(0);
+    }
+  }
+
+  /* 🔧 Fix para Chrome Android y otros navegadores móviles */
+  @supports (-webkit-touch-callout: none) {
+    .share-popup {
+      -webkit-overflow-scrolling: touch;
     }
   }
 </style>
