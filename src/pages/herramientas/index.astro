@@ -669,156 +669,350 @@ const tools = [
   }
 
   /* ============================================
-     ANIMACIONES URL SHORTENER (NUEVAS - CONTENIDAS)
+     ANIMACIONES URL SHORTENER (NIVEL PROFESIONAL)
      ============================================ */
   
-  /* URL Larga */
+  /* FASE 1: URL Larga - Breathing + Compresión visual (0-1.2s) */
   .url-icon .url-long-bar {
-    animation: urlLongPulse 2.8s ease-in-out infinite;
+    animation: urlLongCompress 3.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   }
 
-  @keyframes urlLongPulse {
-    0%, 100% { opacity: 0.9; }
-    50% { opacity: 1; }
+  @keyframes urlLongCompress {
+    0%, 100% { 
+      opacity: 0.9; 
+      transform: scaleX(1); 
+    }
+    15% { 
+      opacity: 1; 
+      transform: scaleX(0.98); 
+    }
+    35% { 
+      opacity: 0.75; 
+      transform: scaleX(0.95); 
+    }
+    45%, 100% { 
+      opacity: 0.9; 
+      transform: scaleX(1); 
+    }
   }
 
-  /* Segmentos de texto */
+  /* Segmentos de texto - Desvanecimiento secuencial elegante */
   .url-icon .tseg {
-    animation: textSegFade 2.8s ease-in-out infinite;
+    animation: textSegSequence 3.5s ease-in-out infinite;
   }
 
   .url-icon .ts1 { animation-delay: 0s; }
-  .url-icon .ts2 { animation-delay: 0.05s; }
-  .url-icon .ts3 { animation-delay: 0.1s; }
-  .url-icon .ts4 { animation-delay: 0.15s; }
-  .url-icon .ts5 { animation-delay: 0.2s; }
-  .url-icon .ts6 { animation-delay: 0.25s; }
-  .url-icon .ts7 { animation-delay: 0.3s; }
-  .url-icon .ts8 { animation-delay: 0.35s; }
+  .url-icon .ts2 { animation-delay: 0.04s; }
+  .url-icon .ts3 { animation-delay: 0.08s; }
+  .url-icon .ts4 { animation-delay: 0.12s; }
+  .url-icon .ts5 { animation-delay: 0.16s; }
+  .url-icon .ts6 { animation-delay: 0.2s; }
+  .url-icon .ts7 { animation-delay: 0.24s; }
+  .url-icon .ts8 { animation-delay: 0.28s; }
 
-  @keyframes textSegFade {
-    0%, 30% { opacity: 0.7; }
-    40%, 70% { opacity: 0.35; }
-    80%, 100% { opacity: 0.7; }
+  @keyframes textSegSequence {
+    0%, 10% { 
+      opacity: 0.7; 
+      transform: translateY(0) scaleX(1); 
+    }
+    20% { 
+      opacity: 0.5; 
+      transform: translateY(-1px) scaleX(0.95); 
+    }
+    35% { 
+      opacity: 0.2; 
+      transform: translateY(-2px) scaleX(0.85); 
+    }
+    45% { 
+      opacity: 0.7; 
+      transform: translateY(0) scaleX(1); 
+    }
   }
 
-  /* Brillo */
+  /* Brillo superior - Efecto de energía fluyendo */
   .url-icon .url-shine {
-    animation: urlShineMove 2.8s ease-in-out infinite;
+    animation: urlShineFlow 3.5s ease-in-out infinite;
   }
 
-  @keyframes urlShineMove {
-    0%, 100% { opacity: 0.35; }
-    50% { opacity: 0.5; }
+  @keyframes urlShineFlow {
+    0%, 100% { 
+      opacity: 0.35; 
+      transform: translateX(0); 
+    }
+    15% { 
+      opacity: 0.55; 
+      transform: translateX(2px); 
+    }
+    35% { 
+      opacity: 0.25; 
+      transform: translateX(-1px); 
+    }
+    50% { 
+      opacity: 0.35; 
+      transform: translateX(0); 
+    }
   }
 
-  /* Rayo */
+  /* FASE 2: Rayo - Aparición dramática con anticipación (1.2-1.8s) */
   .url-icon .main-bolt {
-    animation: mainBoltStrike 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    animation: mainBoltDramatic 3.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
     transform-origin: 40px 42px;
   }
 
-  @keyframes mainBoltStrike {
-    0%, 28% { opacity: 0; transform: scale(0.85); }
-    36% { opacity: 0.92; transform: scale(1.03); }
-    44%, 100% { opacity: 0.92; transform: scale(1); }
+  @keyframes mainBoltDramatic {
+    0%, 30% { 
+      opacity: 0; 
+      transform: scale(0.5) translateY(5px); 
+    }
+    35% { 
+      opacity: 0.3; 
+      transform: scale(0.7) translateY(2px); 
+    }
+    42% { 
+      opacity: 1; 
+      transform: scale(1.08) translateY(-1px); 
+    }
+    50% { 
+      opacity: 0.92; 
+      transform: scale(1) translateY(0); 
+    }
+    100% { 
+      opacity: 0.92; 
+      transform: scale(1) translateY(0); 
+    }
   }
 
-  /* Líneas de energía */
+  /* Líneas de energía - Burst sincronizado con el rayo */
   .url-icon .energy-side-lines line {
-    animation: energyLineFlash 3s ease-in-out infinite;
+    animation: energyBurst 3.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   }
 
-  .url-icon .energy-l1 { animation-delay: 0.36s; }
-  .url-icon .energy-l2 { animation-delay: 0.4s; }
+  .url-icon .energy-l1 { animation-delay: 0.02s; }
+  .url-icon .energy-l2 { animation-delay: 0.02s; }
 
-  @keyframes energyLineFlash {
-    0%, 32% { opacity: 0; }
-    36% { opacity: 0.68; }
-    50%, 100% { opacity: 0.68; }
+  @keyframes energyBurst {
+    0%, 36% { 
+      opacity: 0; 
+      transform: scaleX(0.3); 
+    }
+    42% { 
+      opacity: 0.85; 
+      transform: scaleX(1.15); 
+    }
+    48% { 
+      opacity: 0.68; 
+      transform: scaleX(1); 
+    }
+    100% { 
+      opacity: 0.68; 
+      transform: scaleX(1); 
+    }
   }
 
-  /* Chispas */
+  /* Chispas - Explosión radial sincronizada */
   .url-icon .spark-d {
-    animation: sparkDotBurst 3s ease-out infinite;
+    animation: sparkRadialBurst 3.5s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
   }
 
-  .url-icon .sd1 { animation-delay: 0.37s; }
-  .url-icon .sd2 { animation-delay: 0.39s; }
-  .url-icon .sd3 { animation-delay: 0.41s; }
-  .url-icon .sd4 { animation-delay: 0.43s; }
+  .url-icon .sd1 { animation-delay: 0.03s; --spark-tx: -1px; --spark-ty: -1px; }
+  .url-icon .sd2 { animation-delay: 0.04s; --spark-tx: 1px; --spark-ty: -1px; }
+  .url-icon .sd3 { animation-delay: 0.05s; --spark-tx: -1px; --spark-ty: 1px; }
+  .url-icon .sd4 { animation-delay: 0.06s; --spark-tx: 1px; --spark-ty: 1px; }
 
-  @keyframes sparkDotBurst {
-    0%, 33% { opacity: 0; transform: scale(0); }
-    37% { opacity: 0.75; transform: scale(1.2); }
-    45% { opacity: 0.4; transform: scale(0.9); }
-    52% { opacity: 0; transform: scale(0); }
+  @keyframes sparkRadialBurst {
+    0%, 38% { 
+      opacity: 0; 
+      transform: translate(0, 0) scale(0); 
+    }
+    42% { 
+      opacity: 0.9; 
+      transform: translate(calc(var(--spark-tx) * 0.5), calc(var(--spark-ty) * 0.5)) scale(1.4); 
+    }
+    48% { 
+      opacity: 0.6; 
+      transform: translate(var(--spark-tx), var(--spark-ty)) scale(1); 
+    }
+    54% { 
+      opacity: 0.3; 
+      transform: translate(calc(var(--spark-tx) * 1.2), calc(var(--spark-ty) * 1.2)) scale(0.6); 
+    }
+    60% { 
+      opacity: 0; 
+      transform: translate(calc(var(--spark-tx) * 1.5), calc(var(--spark-ty) * 1.5)) scale(0); 
+    }
     100% { opacity: 0; }
   }
 
-  /* URL Corta */
+  /* FASE 3: URL Corta - Aparición con bounce satisfactorio (1.8-2.5s) */
   .url-icon .url-short-capsule {
-    animation: shortCapsuleReveal 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    animation: shortCapsuleBounce 3.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
   }
 
-  @keyframes shortCapsuleReveal {
-    0%, 57% { opacity: 0; transform: translateY(10px) scale(0.92); }
-    68% { opacity: 0.94; transform: translateY(-1px) scale(1.02); }
-    76%, 100% { opacity: 0.94; transform: translateY(0) scale(1); }
+  @keyframes shortCapsuleBounce {
+    0%, 54% { 
+      opacity: 0; 
+      transform: translateY(12px) scale(0.88); 
+    }
+    65% { 
+      opacity: 1; 
+      transform: translateY(-3px) scale(1.06); 
+    }
+    72% { 
+      opacity: 0.94; 
+      transform: translateY(1px) scale(0.98); 
+    }
+    78% { 
+      opacity: 0.94; 
+      transform: translateY(0) scale(1); 
+    }
+    100% { 
+      opacity: 0.94; 
+      transform: translateY(0) scale(1); 
+    }
   }
 
+  /* Brillo interno - Activación gradual */
   .url-icon .capsule-inner-shine {
-    animation: innerShineGlow 3s ease-in-out infinite;
+    animation: innerShineActivate 3.5s ease-in-out infinite;
   }
 
-  @keyframes innerShineGlow {
-    0%, 57% { opacity: 0; }
-    68% { opacity: 0.45; }
-    76%, 100% { opacity: 0.32; }
+  @keyframes innerShineActivate {
+    0%, 54% { 
+      opacity: 0; 
+      transform: scaleX(0.8); 
+    }
+    65% { 
+      opacity: 0.55; 
+      transform: scaleX(1.05); 
+    }
+    75% { 
+      opacity: 0.32; 
+      transform: scaleX(1); 
+    }
+    100% { 
+      opacity: 0.32; 
+      transform: scaleX(1); 
+    }
   }
 
-  /* Icono de enlace */
+  /* Icono de enlace - Dibujado con estilo */
   .url-icon .link-icon-group {
-    animation: linkIconDraw 3s ease-out infinite;
+    animation: linkIconMorph 3.5s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
   }
 
-  @keyframes linkIconDraw {
-    0%, 62% { opacity: 0; transform: scale(0.75); }
-    72% { opacity: 1; transform: scale(1.08); }
-    80%, 100% { opacity: 0.88; transform: scale(1); }
+  @keyframes linkIconMorph {
+    0%, 60% { 
+      opacity: 0; 
+      transform: scale(0.6) rotate(-10deg); 
+    }
+    70% { 
+      opacity: 1; 
+      transform: scale(1.12) rotate(5deg); 
+    }
+    78% { 
+      opacity: 0.88; 
+      transform: scale(0.98) rotate(-2deg); 
+    }
+    84% { 
+      opacity: 0.88; 
+      transform: scale(1) rotate(0deg); 
+    }
+    100% { 
+      opacity: 0.88; 
+      transform: scale(1) rotate(0deg); 
+    }
   }
 
-  /* Check */
+  /* FASE 4: Check - Pop final satisfactorio (2.5-3s) */
   .url-icon .check-success-group {
-    animation: checkSuccessShow 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    animation: checkSuccessPop 3.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
   }
 
-  @keyframes checkSuccessShow {
-    0%, 72% { opacity: 0; transform: scale(0); }
-    80% { opacity: 1; transform: scale(1.08); }
-    86%, 100% { opacity: 0.93; transform: scale(1); }
+  @keyframes checkSuccessPop {
+    0%, 72% { 
+      opacity: 0; 
+      transform: scale(0) rotate(-45deg); 
+    }
+    80% { 
+      opacity: 1; 
+      transform: scale(1.15) rotate(10deg); 
+    }
+    86% { 
+      opacity: 0.93; 
+      transform: scale(0.96) rotate(-3deg); 
+    }
+    90% { 
+      opacity: 0.93; 
+      transform: scale(1.02) rotate(1deg); 
+    }
+    94% { 
+      opacity: 0.93; 
+      transform: scale(1) rotate(0deg); 
+    }
+    100% { 
+      opacity: 0.93; 
+      transform: scale(1) rotate(0deg); 
+    }
   }
 
+  /* Pulso del check - Ondas continuas */
   .url-icon .check-circle-pulse {
-    animation: checkPulseRing 2s ease-in-out infinite;
+    animation: checkPulseWave 2.2s ease-in-out infinite;
   }
 
-  @keyframes checkPulseRing {
-    0%, 100% { opacity: 0.45; transform: scale(1); }
-    50% { opacity: 0; transform: scale(1.25); }
+  @keyframes checkPulseWave {
+    0%, 100% { 
+      opacity: 0.45; 
+      transform: scale(1); 
+    }
+    50% { 
+      opacity: 0; 
+      transform: scale(1.3); 
+    }
   }
 
-  /* Flechas laterales */
+  /* Flechas laterales - Movimiento de compresión */
   .url-icon .side-arrow {
-    animation: sideArrowPulse 2.8s ease-in-out infinite;
+    animation: sideArrowCompress 3.5s ease-in-out infinite;
   }
 
   .url-icon .arrow-l { animation-delay: 0s; }
-  .url-icon .arrow-r { animation-delay: 0.08s; }
+  .url-icon .arrow-r { animation-delay: 0.05s; }
 
-  @keyframes sideArrowPulse {
-    0%, 100% { opacity: 0.68; }
-    50% { opacity: 0.88; }
+  @keyframes sideArrowCompress {
+    0%, 100% { 
+      opacity: 0.68; 
+      transform: translateX(0); 
+    }
+    15% { 
+      opacity: 0.85; 
+      transform: translateX(0); 
+    }
+    35% { 
+      opacity: 1; 
+      transform: translateX(2px); 
+    }
+    45% { 
+      opacity: 0.68; 
+      transform: translateX(0); 
+    }
+  }
+
+  /* MICRO-INTERACCIONES EN HOVER */
+  .tool-card:hover .url-icon .url-long-bar {
+    animation-duration: 2s;
+  }
+
+  .tool-card:hover .url-icon .main-bolt {
+    animation-duration: 2s;
+  }
+
+  .tool-card:hover .url-icon .url-short-capsule {
+    animation-duration: 2s;
+  }
+
+  .tool-card:hover .url-icon .check-success-group {
+    animation-duration: 2s;
   }
 
   /* ============================================
