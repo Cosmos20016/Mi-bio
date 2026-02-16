@@ -28,15 +28,14 @@ const tools = [
   <section class="tools-hub">
     <header class="tools-header">
       <div class="tools-header-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" class="header-svg">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="header-svg">
           <defs>
             <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" style="stop-color:oklch(0.7 0.2 var(--hue));stop-opacity:1" />
-              <stop offset="50%" style="stop-color:oklch(0.65 0.22 calc(var(--hue) + 30));stop-opacity:1" />
-              <stop offset="100%" style="stop-color:oklch(0.6 0.2 calc(var(--hue) + 60));stop-opacity:1" />
+              <stop offset="100%" style="stop-color:oklch(0.6 0.22 calc(var(--hue) + 40));stop-opacity:1" />
             </linearGradient>
             <filter id="glow">
-              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+              <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
               <feMerge>
                 <feMergeNode in="coloredBlur"/>
                 <feMergeNode in="SourceGraphic"/>
@@ -44,23 +43,24 @@ const tools = [
             </filter>
           </defs>
           
-          <polygon points="60,12 88,28 88,60 60,76 32,60 32,28" 
+          <!-- Hexágono simple y limpio -->
+          <polygon points="50,15 75,28 75,54 50,67 25,54 25,28" 
                    fill="none" stroke="url(#headerGrad)" stroke-width="2" 
-                   opacity="0.4" class="hex-outer"/>
+                   opacity="0.5" class="hex-outline"/>
           
-          <polygon points="60,20 80,32 80,56 60,68 40,56 40,32" 
-                   fill="url(#headerGrad)" opacity="0.15" class="hex-mid"/>
+          <!-- Cristal central minimalista -->
+          <circle cx="50" cy="41" r="12" fill="url(#headerGrad)" 
+                  filter="url(#glow)" opacity="0.7" class="center-glow"/>
           
-          <circle cx="60" cy="44" r="18" fill="url(#headerGrad)" 
-                  filter="url(#glow)" opacity="0.8" class="center-crystal"/>
+          <!-- Estrella simple -->
+          <path d="M 50 33 L 52 38 L 57 39 L 53 43 L 54 48 L 50 45 L 46 48 L 47 43 L 43 39 L 48 38 Z" 
+                fill="white" opacity="0.9" class="star"/>
           
-          <path d="M 60 32 L 63 40 L 71 42 L 64 48 L 66 56 L 60 52 L 54 56 L 56 48 L 49 42 L 57 40 Z" 
-                fill="white" opacity="0.9" class="inner-star"/>
-          
-          <circle cx="40" cy="30" r="3" fill="url(#headerGrad)" class="energy-dot e1"/>
-          <circle cx="80" cy="30" r="2.5" fill="url(#headerGrad)" class="energy-dot e2"/>
-          <circle cx="35" cy="58" r="2" fill="url(#headerGrad)" class="energy-dot e3"/>
-          <circle cx="85" cy="58" r="3" fill="url(#headerGrad)" class="energy-dot e4"/>
+          <!-- Puntos minimalistas -->
+          <circle cx="35" cy="30" r="2" fill="url(#headerGrad)" class="dot d1" opacity="0.6"/>
+          <circle cx="65" cy="30" r="2" fill="url(#headerGrad)" class="dot d2" opacity="0.6"/>
+          <circle cx="35" cy="52" r="2" fill="url(#headerGrad)" class="dot d3" opacity="0.6"/>
+          <circle cx="65" cy="52" r="2" fill="url(#headerGrad)" class="dot d4" opacity="0.6"/>
         </svg>
       </div>
 
@@ -88,20 +88,14 @@ const tools = [
 
           <div class="tool-icon-wrapper">
             {tool.iconType === "teleprompter" && (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="tool-svg">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" class="tool-svg">
                 <defs>
                   <linearGradient id="teleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" style="stop-color:oklch(0.7 0.2 var(--hue));stop-opacity:1" />
                     <stop offset="100%" style="stop-color:oklch(0.55 0.22 calc(var(--hue) + 40));stop-opacity:1" />
                   </linearGradient>
-                  <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" style="stop-color:oklch(0.85 0.15 var(--hue));stop-opacity:0.2" />
-                    <stop offset="40%" style="stop-color:oklch(0.85 0.15 var(--hue));stop-opacity:1" />
-                    <stop offset="60%" style="stop-color:oklch(0.85 0.15 var(--hue));stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:oklch(0.85 0.15 var(--hue));stop-opacity:0.2" />
-                  </linearGradient>
-                  <filter id="screenGlow">
-                    <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                  <filter id="softGlow">
+                    <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
                     <feMerge>
                       <feMergeNode in="coloredBlur"/>
                       <feMergeNode in="SourceGraphic"/>
@@ -109,196 +103,108 @@ const tools = [
                   </filter>
                 </defs>
                 
-                <!-- Monitor profesional -->
-                <g class="monitor-group">
-                  <rect x="16" y="24" width="68" height="44" rx="4" 
-                        fill="url(#teleGrad)" stroke="oklch(0.8 0.15 var(--hue))" 
-                        stroke-width="1.5" filter="url(#screenGlow)"/>
-                  
-                  <rect x="20" y="28" width="60" height="36" rx="2" 
-                        fill="oklch(0.1 0.04 var(--hue))"/>
-                  
-                  <!-- Texto scrolleando -->
-                  <g class="scrolling-text">
-                    <rect x="24" y="34" width="36" height="3.5" rx="1.75" 
-                          fill="url(#textGrad)" class="text-line t1"/>
-                    <rect x="24" y="41" width="46" height="3.5" rx="1.75" 
-                          fill="url(#textGrad)" class="text-line t2"/>
-                    <rect x="24" y="48" width="40" height="3.5" rx="1.75" 
-                          fill="url(#textGrad)" class="text-line t3"/>
-                    <rect x="24" y="55" width="32" height="3.5" rx="1.75" 
-                          fill="url(#textGrad)" class="text-line t4"/>
-                  </g>
-                  
-                  <!-- FLECHA SCROLL GRANDE Y CLARA -->
-                  <g class="scroll-arrow">
-                    <path d="M 50 38 L 56 32 L 62 38" 
-                          stroke="oklch(0.8 0.18 var(--hue))" stroke-width="3" 
-                          fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                    <line x1="56" y1="32" x2="56" y2="52" 
-                          stroke="oklch(0.8 0.18 var(--hue))" stroke-width="2.5" 
-                          stroke-linecap="round"/>
-                    <!-- Punta de flecha inferior -->
-                    <circle cx="56" cy="52" r="2.5" fill="oklch(0.8 0.18 var(--hue))"/>
-                  </g>
-                  
-                  <!-- REC indicator -->
-                  <g class="rec-indicator">
-                    <circle cx="74" cy="32" r="3.5" fill="oklch(0.65 0.25 20)" opacity="0.3"/>
-                    <circle cx="74" cy="32" r="2.2" fill="oklch(0.75 0.3 20)" class="rec-dot"/>
-                  </g>
-                  
-                  <!-- Reflejo -->
-                  <rect x="22" y="29" width="26" height="20" rx="2" 
-                        fill="white" opacity="0.1"/>
+                <!-- Monitor limpio y moderno -->
+                <rect x="15" y="18" width="50" height="34" rx="3" 
+                      fill="url(#teleGrad)" opacity="0.9" filter="url(#softGlow)"/>
+                
+                <!-- Pantalla -->
+                <rect x="18" y="21" width="44" height="28" rx="2" 
+                      fill="oklch(0.12 0.04 var(--hue))"/>
+                
+                <!-- SOLO 3 LÍNEAS DE TEXTO - MINIMALISTA -->
+                <g class="text-lines">
+                  <rect x="22" y="27" width="28" height="2" rx="1" 
+                        fill="oklch(0.8 0.15 var(--hue))" opacity="0.7" class="line l1"/>
+                  <rect x="22" y="33" width="36" height="2" rx="1" 
+                        fill="oklch(0.8 0.15 var(--hue))" opacity="0.6" class="line l2"/>
+                  <rect x="22" y="39" width="32" height="2" rx="1" 
+                        fill="oklch(0.8 0.15 var(--hue))" opacity="0.5" class="line l3"/>
                 </g>
                 
-                <!-- Play button más visible -->
-                <g class="play-button">
-                  <circle cx="50" cy="50" r="11" fill="oklch(0.15 0.04 var(--hue))" opacity="0.6"/>
-                  <circle cx="50" cy="50" r="9" fill="url(#teleGrad)" opacity="0.4" class="play-bg"/>
-                  <path d="M 47 45 L 47 55 L 56 50 Z" 
-                        fill="oklch(0.85 0.15 var(--hue))" class="play-triangle"/>
+                <!-- FLECHA ÚNICA Y CLARA -->
+                <g class="arrow-up">
+                  <path d="M 40 30 L 43 27 L 46 30" 
+                        stroke="oklch(0.8 0.18 var(--hue))" stroke-width="2" 
+                        fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <line x1="43" y1="27" x2="43" y2="38" 
+                        stroke="oklch(0.8 0.18 var(--hue))" stroke-width="2" 
+                        stroke-linecap="round"/>
                 </g>
                 
-                <!-- Base -->
-                <path d="M 43 68 L 45 75 L 55 75 L 57 68 Z" 
-                      fill="url(#teleGrad)" opacity="0.9"/>
-                <rect x="36" y="75" width="28" height="3.5" rx="1.75" 
-                      fill="url(#teleGrad)"/>
+                <!-- REC minimalista -->
+                <circle cx="58" cy="25" r="2" fill="oklch(0.7 0.3 20)" class="rec-dot" opacity="0.8"/>
+                
+                <!-- Base simple -->
+                <rect x="35" y="52" width="10" height="2" rx="1" fill="url(#teleGrad)" opacity="0.8"/>
+                <rect x="30" y="54" width="20" height="2" rx="1" fill="url(#teleGrad)" opacity="0.7"/>
               </svg>
             )}
             
             {tool.iconType === "link" && (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="tool-svg">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" class="tool-svg">
                 <defs>
                   <linearGradient id="linkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" style="stop-color:oklch(0.7 0.2 var(--hue));stop-opacity:1" />
                     <stop offset="100%" style="stop-color:oklch(0.55 0.22 calc(var(--hue) + 40));stop-opacity:1" />
                   </linearGradient>
                   <filter id="linkGlow">
-                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                    <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
                     <feMerge>
                       <feMergeNode in="coloredBlur"/>
                       <feMergeNode in="SourceGraphic"/>
                     </feMerge>
                   </filter>
-                  <clipPath id="scissorClip">
-                    <rect x="0" y="0" width="100" height="100"/>
-                  </clipPath>
                 </defs>
                 
-                <!-- URL LARGA CON TIJERAS CORTANDO -->
-                <g class="long-url-group">
-                  <!-- Barra de URL larga -->
-                  <rect x="10" y="20" width="80" height="12" rx="6" 
-                        fill="oklch(0.25 0.06 var(--hue))" opacity="0.8"/>
+                <!-- BARRA LARGA ARRIBA -->
+                <rect x="12" y="20" width="56" height="8" rx="4" 
+                      fill="oklch(0.25 0.06 var(--hue))" opacity="0.7" class="long-bar"/>
+                
+                <!-- Línea larga -->
+                <line x1="16" y1="24" x2="60" y2="24" 
+                      stroke="oklch(0.5 0.12 var(--hue))" stroke-width="2" 
+                      stroke-linecap="round" opacity="0.5"/>
+                
+                <!-- TIJERA SIMPLE Y ELEGANTE -->
+                <g class="scissors-simple" filter="url(#linkGlow)">
+                  <!-- Anillos -->
+                  <circle cx="35" cy="40" r="4" fill="none" 
+                          stroke="url(#linkGrad)" stroke-width="2"/>
+                  <circle cx="45" cy="40" r="4" fill="none" 
+                          stroke="url(#linkGrad)" stroke-width="2"/>
                   
-                  <!-- Líneas simulando URL larga -->
-                  <line x1="16" y1="26" x2="82" y2="26" 
-                        stroke="oklch(0.5 0.12 var(--hue))" stroke-width="2.5" 
-                        stroke-linecap="round" opacity="0.5" class="long-url-line"/>
+                  <!-- Hojas -->
+                  <line x1="35" y1="40" x2="30" y2="32" 
+                        stroke="url(#linkGrad)" stroke-width="2.5" stroke-linecap="round"/>
+                  <line x1="45" y1="40" x2="50" y2="32" 
+                        stroke="url(#linkGrad)" stroke-width="2.5" stroke-linecap="round"/>
                   
-                  <!-- TIJERAS GIGANTES CORTANDO - CONCEPTO CLAVE -->
-                  <g class="scissors" filter="url(#linkGlow)">
-                    <!-- Tijera derecha -->
-                    <ellipse cx="54" cy="26" rx="5" ry="7" 
-                             fill="url(#linkGrad)" transform="rotate(25 54 26)" class="scissor-right"/>
-                    <!-- Tijera izquierda -->
-                    <ellipse cx="46" cy="26" rx="5" ry="7" 
-                             fill="url(#linkGrad)" transform="rotate(-25 46 26)" class="scissor-left"/>
-                    <!-- Punto de pivote -->
-                    <circle cx="50" cy="26" r="3" fill="oklch(0.9 0.08 var(--hue))"/>
-                    <!-- Hojas -->
-                    <path d="M 50 26 L 58 18" stroke="url(#linkGrad)" stroke-width="2.5" 
-                          stroke-linecap="round" class="blade-right"/>
-                    <path d="M 50 26 L 42 18" stroke="url(#linkGrad)" stroke-width="2.5" 
-                          stroke-linecap="round" class="blade-left"/>
-                  </g>
-                  
-                  <!-- Líneas de corte -->
-                  <g class="cut-lines">
-                    <line x1="48" y1="20" x2="48" y2="32" 
-                          stroke="oklch(0.8 0.18 var(--hue))" stroke-width="1.5" 
-                          stroke-dasharray="2 2" opacity="0.6" class="cut-line-1"/>
-                    <line x1="52" y1="20" x2="52" y2="32" 
-                          stroke="oklch(0.8 0.18 var(--hue))" stroke-width="1.5" 
-                          stroke-dasharray="2 2" opacity="0.6" class="cut-line-2"/>
-                  </g>
+                  <!-- Punto central -->
+                  <circle cx="40" cy="40" r="2" fill="oklch(0.85 0.12 var(--hue))"/>
                 </g>
                 
-                <!-- FLECHA DE COMPRESIÓN -->
-                <g class="compress-arrow">
-                  <path d="M 45 40 L 50 45 L 55 40" 
-                        stroke="url(#linkGrad)" stroke-width="3" 
-                        fill="none" stroke-linecap="round" stroke-linejoin="round" 
-                        filter="url(#linkGlow)"/>
-                  <line x1="50" y1="38" x2="50" y2="48" 
-                        stroke="url(#linkGrad)" stroke-width="2.5" 
-                        stroke-linecap="round" filter="url(#linkGlow)"/>
-                  
-                  <!-- Partículas de compresión -->
-                  <circle cx="40" cy="42" r="1.5" fill="url(#linkGrad)" class="compress-particle cp1" opacity="0.8"/>
-                  <circle cx="60" cy="42" r="1.5" fill="url(#linkGrad)" class="compress-particle cp2" opacity="0.8"/>
-                  <circle cx="43" cy="46" r="1" fill="url(#linkGrad)" class="compress-particle cp3" opacity="0.6"/>
-                  <circle cx="57" cy="46" r="1" fill="url(#linkGrad)" class="compress-particle cp4" opacity="0.6"/>
-                </g>
+                <!-- BARRA CORTA ABAJO - DESTACADA -->
+                <rect x="25" y="52" width="30" height="10" rx="5" 
+                      fill="url(#linkGrad)" filter="url(#linkGlow)" 
+                      class="short-bar" opacity="0.9"/>
                 
-                <!-- URL CORTA - MUY VISIBLE Y DESTACADA -->
-                <g class="short-url-group">
-                  <!-- Fondo brillante grande -->
-                  <rect x="28" y="54" width="44" height="16" rx="8" 
-                        fill="url(#linkGrad)" filter="url(#linkGlow)" 
-                        class="short-url-bg" opacity="0.95"/>
-                  
-                  <!-- Texto grande y legible -->
-                  <text x="50" y="64" 
-                        font-family="monospace" font-size="10" font-weight="bold" 
-                        fill="white" text-anchor="middle" 
-                        class="short-url-text">bit.ly/X</text>
-                  
-                  <!-- Icono de check -->
-                  <g transform="translate(65, 58)">
-                    <circle cx="0" cy="0" r="5" fill="oklch(0.7 0.25 140)" opacity="0.9"/>
-                    <path d="M -2 0 L -0.5 1.5 L 2 -1.5" 
-                          stroke="white" stroke-width="1.5" 
-                          fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                  </g>
-                </g>
+                <!-- Texto -->
+                <text x="40" y="58.5" 
+                      font-family="monospace" font-size="6" font-weight="bold" 
+                      fill="white" text-anchor="middle">bit.ly</text>
                 
-                <!-- QR CODE MODERNO Y GRANDE -->
-                <g class="qr-code-display" transform="translate(12, 72)">
-                  <!-- Fondo del QR -->
-                  <rect x="0" y="0" width="26" height="26" rx="4" 
-                        fill="white" stroke="url(#linkGrad)" stroke-width="2.5" 
-                        filter="url(#linkGlow)"/>
+                <!-- QR CODE LIMPIO -->
+                <g class="qr-minimal" transform="translate(58, 50)">
+                  <rect x="0" y="0" width="16" height="16" rx="2" 
+                        fill="white" stroke="url(#linkGrad)" stroke-width="1.5"/>
                   
-                  <!-- Esquinas características QR (grandes) -->
-                  <rect x="3" y="3" width="7" height="7" rx="1.5" fill="url(#linkGrad)"/>
-                  <rect x="16" y="3" width="7" height="7" rx="1.5" fill="url(#linkGrad)"/>
-                  <rect x="3" y="16" width="7" height="7" rx="1.5" fill="url(#linkGrad)"/>
+                  <!-- Esquinas -->
+                  <rect x="2" y="2" width="4" height="4" rx="0.5" fill="url(#linkGrad)"/>
+                  <rect x="10" y="2" width="4" height="4" rx="0.5" fill="url(#linkGrad)"/>
+                  <rect x="2" y="10" width="4" height="4" rx="0.5" fill="url(#linkGrad)"/>
                   
-                  <!-- Centro prominente -->
-                  <rect x="11" y="11" width="7" height="7" rx="1.5" fill="url(#linkGrad)" class="qr-center"/>
-                  
-                  <!-- Módulos decorativos -->
-                  <rect x="11" y="3" width="3" height="3" rx="0.5" fill="url(#linkGrad)" opacity="0.8"/>
-                  <rect x="3" y="11" width="3" height="3" rx="0.5" fill="url(#linkGrad)" opacity="0.8"/>
-                  <rect x="20" y="11" width="3" height="3" rx="0.5" fill="url(#linkGrad)" opacity="0.8"/>
-                  <rect x="11" y="20" width="3" height="3" rx="0.5" fill="url(#linkGrad)" opacity="0.8"/>
-                  
-                  <!-- Label QR -->
-                  <text x="13" y="30" 
-                        font-family="sans-serif" font-size="5" font-weight="600" 
-                        fill="url(#linkGrad)" text-anchor="middle" 
-                        opacity="0.7">QR</text>
-                </g>
-                
-                <!-- ICONO DE ESTADÍSTICAS -->
-                <g class="stats-icon" transform="translate(65, 78)">
-                  <rect x="0" y="8" width="3" height="8" rx="1" fill="url(#linkGrad)" opacity="0.7" class="stat-bar b1"/>
-                  <rect x="5" y="4" width="3" height="12" rx="1" fill="url(#linkGrad)" opacity="0.8" class="stat-bar b2"/>
-                  <rect x="10" y="0" width="3" height="16" rx="1" fill="url(#linkGrad)" opacity="0.9" class="stat-bar b3"/>
+                  <!-- Centro -->
+                  <rect x="7" y="7" width="4" height="4" rx="0.5" fill="url(#linkGrad)" opacity="0.8"/>
                 </g>
               </svg>
             )}
@@ -350,65 +256,55 @@ const tools = [
   }
 
   .header-svg {
-    width: 90px;
-    height: 90px;
-    filter: drop-shadow(0 8px 24px oklch(0.7 0.18 var(--hue) / 0.4));
+    width: 80px;
+    height: 80px;
+    filter: drop-shadow(0 6px 20px oklch(0.7 0.18 var(--hue) / 0.3));
   }
 
   @keyframes headerFloat {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-10px) rotate(3deg); }
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
   }
 
-  .hex-outer {
-    animation: hexRotate 20s linear infinite;
-    transform-origin: 60px 44px;
+  .hex-outline {
+    animation: hexBreath 4s ease-in-out infinite;
+    transform-origin: 50px 41px;
   }
 
-  @keyframes hexRotate {
+  @keyframes hexBreath {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.05); opacity: 0.7; }
+  }
+
+  .center-glow {
+    animation: glowPulse 3s ease-in-out infinite;
+  }
+
+  @keyframes glowPulse {
+    0%, 100% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.1); opacity: 0.9; }
+  }
+
+  .star {
+    animation: starSpin 12s linear infinite;
+    transform-origin: 50px 41px;
+  }
+
+  @keyframes starSpin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
   }
 
-  .hex-mid {
-    animation: hexPulse 3s ease-in-out infinite;
-    transform-origin: 60px 44px;
+  .dot {
+    animation: dotPulse 3s ease-in-out infinite;
   }
 
-  @keyframes hexPulse {
-    0%, 100% { transform: scale(1); opacity: 0.15; }
-    50% { transform: scale(1.05); opacity: 0.25; }
-  }
+  .d1 { animation-delay: 0s; }
+  .d2 { animation-delay: 0.75s; }
+  .d3 { animation-delay: 1.5s; }
+  .d4 { animation-delay: 2.25s; }
 
-  .center-crystal {
-    animation: crystalPulse 2s ease-in-out infinite;
-  }
-
-  @keyframes crystalPulse {
-    0%, 100% { transform: scale(1); opacity: 0.8; }
-    50% { transform: scale(1.1); opacity: 1; }
-  }
-
-  .inner-star {
-    animation: starRotate 8s linear infinite;
-    transform-origin: 60px 44px;
-  }
-
-  @keyframes starRotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-
-  .energy-dot {
-    animation: energyPulse 2s ease-in-out infinite;
-  }
-
-  .e1 { animation-delay: 0s; }
-  .e2 { animation-delay: 0.5s; }
-  .e3 { animation-delay: 1s; }
-  .e4 { animation-delay: 1.5s; }
-
-  @keyframes energyPulse {
+  @keyframes dotPulse {
     0%, 100% { opacity: 0.6; transform: scale(1); }
     50% { opacity: 1; transform: scale(1.3); }
   }
@@ -420,18 +316,16 @@ const tools = [
     background: linear-gradient(
       135deg,
       oklch(0.7 0.2 var(--hue)),
-      oklch(0.65 0.22 calc(var(--hue) + 30)),
-      oklch(0.6 0.2 calc(var(--hue) + 60)),
-      oklch(0.65 0.22 calc(var(--hue) + 30)),
+      oklch(0.6 0.22 calc(var(--hue) + 40)),
       oklch(0.7 0.2 var(--hue))
     );
-    background-size: 300% 100%;
+    background-size: 200% 100%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     margin-bottom: 0.5rem;
     line-height: 1.2;
-    animation: titleShimmer 5s ease-in-out infinite, titleEntrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: titleShimmer 4s ease-in-out infinite, titleFade 0.6s ease-out;
   }
 
   @keyframes titleShimmer {
@@ -439,21 +333,19 @@ const tools = [
     50% { background-position: 100% 50%; }
   }
 
-  @keyframes titleEntrance {
-    from { opacity: 0; transform: translateY(-20px) scale(0.9); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+  @keyframes titleFade {
+    from { opacity: 0; transform: translateY(-15px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   :global(.dark) .tools-title {
     background: linear-gradient(
       135deg,
       oklch(0.8 0.18 var(--hue)),
-      oklch(0.75 0.2 calc(var(--hue) + 30)),
-      oklch(0.7 0.18 calc(var(--hue) + 60)),
-      oklch(0.75 0.2 calc(var(--hue) + 30)),
+      oklch(0.7 0.2 calc(var(--hue) + 40)),
       oklch(0.8 0.18 var(--hue))
     );
-    background-size: 300% 100%;
+    background-size: 200% 100%;
     -webkit-background-clip: text;
     background-clip: text;
   }
@@ -464,11 +356,11 @@ const tools = [
     line-height: 1.5;
     max-width: 32rem;
     margin: 0 auto 0.75rem;
-    animation: subtitleFade 0.8s ease-out 0.2s both;
+    animation: subtitleFade 0.6s ease-out 0.15s both;
   }
 
   @keyframes subtitleFade {
-    from { opacity: 0; transform: translateY(-10px); }
+    from { opacity: 0; transform: translateY(-8px); }
     to { opacity: 1; transform: translateY(0); }
   }
 
@@ -483,11 +375,11 @@ const tools = [
     gap: 0.5rem;
     font-size: 0.85rem;
     font-weight: 600;
-    animation: statsFade 0.8s ease-out 0.4s both;
+    animation: statsFade 0.6s ease-out 0.3s both;
   }
 
   @keyframes statsFade {
-    from { opacity: 0; transform: translateY(10px); }
+    from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
   }
 
@@ -530,14 +422,14 @@ const tools = [
     border: 1px solid rgba(0, 0, 0, 0.06);
     text-decoration: none;
     color: inherit;
-    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     overflow: hidden;
-    animation: cardEntrance 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    animation: cardFade 0.5s ease-out both;
   }
 
-  @keyframes cardEntrance {
-    from { opacity: 0; transform: translateY(30px) scale(0.95); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+  @keyframes cardFade {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   :global(.dark) .tool-card {
@@ -550,66 +442,49 @@ const tools = [
     top: 0;
     left: 0;
     right: 0;
-    height: 3px;
+    height: 2px;
     background: linear-gradient(
       90deg,
       transparent,
       oklch(0.7 0.2 var(--hue)),
-      oklch(0.65 0.22 calc(var(--hue) + 40)),
-      oklch(0.7 0.2 var(--hue)),
       transparent
     );
-    background-size: 200% 100%;
     opacity: 0;
-    transition: opacity 0.5s ease;
-    animation: borderFlow 3s linear infinite;
-  }
-
-  @keyframes borderFlow {
-    from { background-position: -200% 0; }
-    to { background-position: 200% 0; }
+    transition: opacity 0.4s ease;
   }
 
   .tool-card::after {
     content: "";
     position: absolute;
-    top: -100%;
-    left: -100%;
-    width: 300%;
-    height: 300%;
+    inset: 0;
     background: radial-gradient(
-      circle at center,
-      oklch(0.7 0.2 var(--hue) / 0.1) 0%,
-      transparent 60%
+      circle at 50% 50%,
+      oklch(0.7 0.2 var(--hue) / 0.05) 0%,
+      transparent 70%
     );
     opacity: 0;
-    transition: opacity 0.6s ease, transform 0.6s ease;
+    transition: opacity 0.4s ease;
     pointer-events: none;
-    transform: scale(0.5);
   }
 
   .tool-card:hover {
-    transform: translateY(-8px) scale(1.02);
+    transform: translateY(-6px);
     box-shadow: 
-      0 25px 50px oklch(0.7 0.2 var(--hue) / 0.25),
-      0 10px 20px rgba(0, 0, 0, 0.1);
-    border-color: oklch(0.75 0.14 var(--hue));
+      0 20px 40px oklch(0.7 0.2 var(--hue) / 0.2),
+      0 8px 16px rgba(0, 0, 0, 0.08);
+    border-color: oklch(0.75 0.12 var(--hue));
   }
 
   :global(.dark) .tool-card:hover {
     box-shadow: 
-      0 25px 50px oklch(0.5 0.16 var(--hue) / 0.35),
-      0 10px 20px rgba(0, 0, 0, 0.5);
-    border-color: oklch(0.5 0.14 var(--hue));
+      0 20px 40px oklch(0.5 0.16 var(--hue) / 0.3),
+      0 8px 16px rgba(0, 0, 0, 0.4);
+    border-color: oklch(0.5 0.12 var(--hue));
   }
 
-  .tool-card:hover::before {
-    opacity: 1;
-  }
-
+  .tool-card:hover::before,
   .tool-card:hover::after {
     opacity: 1;
-    transform: scale(1);
   }
 
   .tool-badge {
@@ -620,63 +495,52 @@ const tools = [
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    padding: 0.3rem 0.7rem;
+    padding: 0.3rem 0.65rem;
     border-radius: 9999px;
-    background: linear-gradient(135deg, oklch(0.95 0.08 var(--hue)), oklch(0.9 0.1 calc(var(--hue) + 20)));
-    color: oklch(0.5 0.18 var(--hue));
-    animation: badgeGlow 2.5s ease-in-out infinite;
+    background: linear-gradient(135deg, oklch(0.95 0.06 var(--hue)), oklch(0.92 0.08 calc(var(--hue) + 15)));
+    color: oklch(0.5 0.16 var(--hue));
+    box-shadow: 0 2px 8px oklch(0.7 0.14 var(--hue) / 0.25);
     z-index: 1;
-    box-shadow: 0 2px 8px oklch(0.7 0.16 var(--hue) / 0.3);
-  }
-
-  @keyframes badgeGlow {
-    0%, 100% {
-      box-shadow: 0 2px 8px oklch(0.7 0.16 var(--hue) / 0.3), 0 0 0 0 oklch(0.7 0.16 var(--hue) / 0.5);
-    }
-    50% {
-      box-shadow: 0 4px 12px oklch(0.7 0.16 var(--hue) / 0.4), 0 0 0 6px oklch(0.7 0.16 var(--hue) / 0);
-    }
   }
 
   :global(.dark) .tool-badge {
-    background: linear-gradient(135deg, oklch(0.35 0.1 var(--hue)), oklch(0.3 0.12 calc(var(--hue) + 20)));
-    color: oklch(0.8 0.16 var(--hue));
+    background: linear-gradient(135deg, oklch(0.35 0.08 var(--hue)), oklch(0.32 0.1 calc(var(--hue) + 15)));
+    color: oklch(0.8 0.14 var(--hue));
   }
 
   .tool-icon-wrapper {
-    width: 5rem;
-    height: 5rem;
+    width: 4.5rem;
+    height: 4.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 1.5rem;
-    background: linear-gradient(135deg, oklch(0.97 0.06 var(--hue)), oklch(0.94 0.08 calc(var(--hue) + 20)));
-    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border-radius: 1.25rem;
+    background: linear-gradient(135deg, oklch(0.97 0.05 var(--hue)), oklch(0.95 0.07 calc(var(--hue) + 15)));
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     position: relative;
-    overflow: visible;
     box-shadow: 
-      0 8px 16px oklch(0.7 0.16 var(--hue) / 0.2),
-      inset 0 2px 0 rgba(255, 255, 255, 0.6);
+      0 6px 12px oklch(0.7 0.14 var(--hue) / 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
   }
 
   :global(.dark) .tool-icon-wrapper {
-    background: linear-gradient(135deg, oklch(0.3 0.08 var(--hue)), oklch(0.25 0.1 calc(var(--hue) + 20)));
+    background: linear-gradient(135deg, oklch(0.3 0.07 var(--hue)), oklch(0.27 0.09 calc(var(--hue) + 15)));
     box-shadow: 
-      0 8px 16px oklch(0.3 0.12 var(--hue) / 0.4),
-      inset 0 2px 0 rgba(255, 255, 255, 0.1);
+      0 6px 12px oklch(0.3 0.1 var(--hue) / 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
   }
 
   .tool-card:hover .tool-icon-wrapper {
-    transform: scale(1.15) rotate(5deg);
+    transform: scale(1.1) rotate(3deg);
     box-shadow: 
-      0 12px 24px oklch(0.7 0.2 var(--hue) / 0.35),
-      inset 0 2px 0 rgba(255, 255, 255, 0.8);
+      0 10px 20px oklch(0.7 0.18 var(--hue) / 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7);
   }
 
   :global(.dark) .tool-card:hover .tool-icon-wrapper {
     box-shadow: 
-      0 12px 24px oklch(0.5 0.16 var(--hue) / 0.5),
-      inset 0 2px 0 rgba(255, 255, 255, 0.15);
+      0 10px 20px oklch(0.5 0.14 var(--hue) / 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
   }
 
   .tool-svg {
@@ -684,159 +548,83 @@ const tools = [
     height: 100%;
   }
 
-  /* TELEPROMPTER ANIMATIONS */
-  .scrolling-text .text-line {
-    animation: textScroll 2.5s ease-in-out infinite;
+  /* TELEPROMPTER - MINIMALISTA */
+  .text-lines .line {
+    animation: lineFlow 2.5s ease-in-out infinite;
   }
 
-  .t1 { animation-delay: 0s; }
-  .t2 { animation-delay: 0.25s; }
-  .t3 { animation-delay: 0.5s; }
-  .t4 { animation-delay: 0.75s; }
+  .l1 { animation-delay: 0s; }
+  .l2 { animation-delay: 0.4s; }
+  .l3 { animation-delay: 0.8s; }
 
-  @keyframes textScroll {
-    0%, 100% { 
-      opacity: 1; 
-      transform: translateY(0);
-    }
-    50% { 
-      opacity: 0.4; 
-      transform: translateY(-4px);
-    }
+  @keyframes lineFlow {
+    0%, 100% { opacity: 0.7; transform: translateY(0); }
+    50% { opacity: 0.3; transform: translateY(-3px); }
   }
 
-  .scroll-arrow {
-    animation: arrowBounce 1.2s ease-in-out infinite;
+  .arrow-up {
+    animation: arrowFloat 1.5s ease-in-out infinite;
   }
 
-  @keyframes arrowBounce {
-    0%, 100% { transform: translateY(0); opacity: 1; }
-    50% { transform: translateY(-5px); opacity: 0.7; }
+  @keyframes arrowFloat {
+    0%, 100% { transform: translateY(0); opacity: 0.9; }
+    50% { transform: translateY(-3px); opacity: 1; }
   }
 
   .rec-dot {
-    animation: recBlink 1.2s ease-in-out infinite;
+    animation: recPulse 1.5s ease-in-out infinite;
   }
 
-  @keyframes recBlink {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.3; transform: scale(0.8); }
+  @keyframes recPulse {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 0.3; }
   }
 
-  .play-button {
-    animation: playPulse 2s ease-in-out infinite;
+  /* LINK SHORTENER - MINIMALISTA */
+  .long-bar {
+    animation: longFade 2s ease-in-out infinite;
   }
 
-  @keyframes playPulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.08); opacity: 0.9; }
+  @keyframes longFade {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 0.5; }
   }
 
-  /* LINK SHORTENER ANIMATIONS */
-  .scissors {
+  .scissors-simple {
     animation: scissorsCut 2s ease-in-out infinite;
   }
 
   @keyframes scissorsCut {
     0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(-5deg); }
+    50% { transform: rotate(-3deg); }
   }
 
-  .scissor-left {
-    animation: scissorOpen 1.5s ease-in-out infinite;
+  .short-bar {
+    animation: shortGlow 2s ease-in-out infinite;
   }
 
-  .scissor-right {
-    animation: scissorOpen 1.5s ease-in-out infinite reverse;
+  @keyframes shortGlow {
+    0%, 100% { opacity: 0.9; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.03); }
   }
 
-  @keyframes scissorOpen {
-    0%, 100% { transform: rotate(-25deg); }
-    50% { transform: rotate(-35deg); }
+  .qr-minimal {
+    animation: qrFloat 3s ease-in-out infinite;
   }
 
-  .cut-line-1, .cut-line-2 {
-    animation: cutFlash 2s ease-in-out infinite;
-  }
-
-  .cut-line-2 { animation-delay: 0.3s; }
-
-  @keyframes cutFlash {
-    0%, 100% { opacity: 0.6; }
-    50% { opacity: 0; }
-  }
-
-  .compress-arrow {
-    animation: compressMove 1.8s ease-in-out infinite;
-  }
-
-  @keyframes compressMove {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(3px); }
-  }
-
-  .compress-particle {
-    animation: particleCompress 1.5s ease-in-out infinite;
-  }
-
-  .cp1 { animation-delay: 0s; }
-  .cp2 { animation-delay: 0.3s; }
-  .cp3 { animation-delay: 0.6s; }
-  .cp4 { animation-delay: 0.9s; }
-
-  @keyframes particleCompress {
-    0%, 100% { opacity: 0.8; transform: scale(1); }
-    50% { opacity: 0.3; transform: scale(0.6); }
-  }
-
-  .short-url-bg {
-    animation: urlHighlight 2s ease-in-out infinite;
-  }
-
-  @keyframes urlHighlight {
-    0%, 100% { opacity: 0.95; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.05); }
-  }
-
-  .qr-code-display {
-    animation: qrAppear 3s ease-in-out infinite;
-  }
-
-  @keyframes qrAppear {
-    0%, 100% { transform: translate(12px, 72px); opacity: 1; }
-    50% { transform: translate(12px, 70px); opacity: 0.9; }
-  }
-
-  .qr-center {
-    animation: qrPulse 2s ease-in-out infinite;
-  }
-
-  @keyframes qrPulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.7; transform: scale(0.95); }
-  }
-
-  .stats-icon .stat-bar {
-    animation: statGrow 2s ease-in-out infinite;
-  }
-
-  .b1 { animation-delay: 0s; }
-  .b2 { animation-delay: 0.3s; }
-  .b3 { animation-delay: 0.6s; }
-
-  @keyframes statGrow {
-    0%, 100% { transform: scaleY(1); }
-    50% { transform: scaleY(1.2); }
+  @keyframes qrFloat {
+    0%, 100% { transform: translate(58px, 50px); }
+    50% { transform: translate(58px, 48px); }
   }
 
   .tool-card:hover .tool-svg {
-    animation: svgHover 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: svgHover 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   @keyframes svgHover {
-    0% { transform: scale(1) rotate(0deg); }
-    40% { transform: scale(1.15) rotate(5deg); }
-    100% { transform: scale(1) rotate(0deg); }
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
   }
 
   .tool-name {
@@ -853,12 +641,12 @@ const tools = [
   }
 
   .tool-card:hover .tool-name {
-    color: oklch(0.55 0.18 var(--hue));
-    transform: translateX(3px);
+    color: oklch(0.55 0.16 var(--hue));
+    transform: translateX(2px);
   }
 
   :global(.dark) .tool-card:hover .tool-name {
-    color: oklch(0.75 0.18 var(--hue));
+    color: oklch(0.75 0.16 var(--hue));
   }
 
   .tool-description {
@@ -881,23 +669,22 @@ const tools = [
     font-size: 0.75rem;
     font-weight: 600;
     padding: 0.25rem 0.6rem;
-    border-radius: 0.5rem;
-    background: oklch(0.97 0.03 var(--hue));
+    border-radius: 0.4rem;
+    background: oklch(0.97 0.025 var(--hue));
     color: #475569;
-    border: 1px solid oklch(0.92 0.04 var(--hue));
+    border: 1px solid oklch(0.93 0.03 var(--hue));
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   :global(.dark) .tool-feature-tag {
-    background: oklch(0.22 0.04 var(--hue));
+    background: oklch(0.23 0.03 var(--hue));
     color: #94a3b8;
-    border-color: oklch(0.32 0.05 var(--hue));
+    border-color: oklch(0.32 0.04 var(--hue));
   }
 
   .tool-card:hover .tool-feature-tag {
-    transform: translateY(-2px);
-    border-color: oklch(0.8 0.1 var(--hue));
-    box-shadow: 0 2px 8px oklch(0.7 0.16 var(--hue) / 0.2);
+    transform: translateY(-1px);
+    border-color: oklch(0.82 0.08 var(--hue));
   }
 
   .tool-cta {
@@ -906,56 +693,50 @@ const tools = [
     gap: 0.5rem;
     font-size: 0.85rem;
     font-weight: 600;
-    color: oklch(0.55 0.18 var(--hue));
+    color: oklch(0.55 0.16 var(--hue));
     margin-top: 0.25rem;
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   :global(.dark) .tool-cta {
-    color: oklch(0.72 0.18 var(--hue));
+    color: oklch(0.72 0.16 var(--hue));
   }
 
   .tool-cta-arrow {
-    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     font-size: 1rem;
     display: inline-block;
   }
 
   .tool-card:hover .tool-cta-arrow {
-    transform: translateX(8px);
-    animation: arrowPulse 0.8s ease-in-out;
-  }
-
-  @keyframes arrowPulse {
-    0%, 100% { transform: translateX(8px); }
-    50% { transform: translateX(12px) scale(1.2); }
+    transform: translateX(6px);
   }
 
   .tool-card:hover .tool-cta {
-    color: oklch(0.6 0.2 var(--hue));
+    color: oklch(0.6 0.18 var(--hue));
   }
 
   :global(.dark) .tool-card:hover .tool-cta {
-    color: oklch(0.78 0.2 var(--hue));
+    color: oklch(0.78 0.18 var(--hue));
   }
 
   .tools-footer {
     text-align: center;
     padding: 1rem 1.5rem;
     border-radius: var(--radius-large);
-    background: oklch(0.97 0.02 var(--hue));
-    border: 1px dashed oklch(0.88 0.05 var(--hue));
-    animation: footerFade 0.8s ease-out 0.6s both;
+    background: oklch(0.97 0.015 var(--hue));
+    border: 1px dashed oklch(0.89 0.04 var(--hue));
+    animation: footerFade 0.6s ease-out 0.5s both;
   }
 
   @keyframes footerFade {
-    from { opacity: 0; transform: translateY(15px); }
+    from { opacity: 0; transform: translateY(12px); }
     to { opacity: 1; transform: translateY(0); }
   }
 
   :global(.dark) .tools-footer {
-    background: oklch(0.2 0.03 var(--hue));
-    border-color: oklch(0.32 0.05 var(--hue));
+    background: oklch(0.21 0.025 var(--hue));
+    border-color: oklch(0.32 0.04 var(--hue));
   }
 
   .tools-footer p {
@@ -974,8 +755,8 @@ const tools = [
     }
 
     .header-svg {
-      width: 70px;
-      height: 70px;
+      width: 65px;
+      height: 65px;
     }
 
     .tool-card {
