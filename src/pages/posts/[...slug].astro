@@ -245,9 +245,6 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         class="card-base rounded-[var(--radius-large)] px-6 md:px-9 py-6 mt-6"
         aria-label="Comentarios del artículo"
     >
-        <div class="giscus-loading flex flex-col items-center justify-center py-8 gap-3 text-black/50 dark:text-white/50">
-            <span class="text-sm" role="status">Cargando comentarios...</span>
-        </div>
     </section>
 
     <script>
@@ -441,10 +438,6 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             
             const isMobile = isMobileDevice();
             console.log(`[Giscus] 🚀 Loading on ${isMobile ? 'MOBILE' : 'DESKTOP'}`);
-            
-            // Limpiar loading
-            const loading = container.querySelector('.giscus-loading');
-            if (loading) loading.remove();
             
             const currentTheme = getCurrentTheme();
             
@@ -777,16 +770,6 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         #giscus-container :global(*) {
             max-width: 100%;
             box-sizing: border-box;
-        }
-        
-        /* --- Loading Animation --- */
-        .giscus-loading {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
         }
     </style>
 
