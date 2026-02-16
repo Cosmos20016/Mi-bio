@@ -26,7 +26,6 @@ const tools = [
 
 <MainGridLayout title="Herramientas" description="Herramientas premium para creadores">
   <section class="tools-hub">
-    <!-- Header -->
     <header class="tools-header">
       <div class="tools-header-icon">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" class="header-svg">
@@ -45,24 +44,19 @@ const tools = [
             </filter>
           </defs>
           
-          <!-- Hexágono exterior -->
           <polygon points="60,12 88,28 88,60 60,76 32,60 32,28" 
                    fill="none" stroke="url(#headerGrad)" stroke-width="2" 
                    opacity="0.4" class="hex-outer"/>
           
-          <!-- Hexágono medio -->
           <polygon points="60,20 80,32 80,56 60,68 40,56 40,32" 
                    fill="url(#headerGrad)" opacity="0.15" class="hex-mid"/>
           
-          <!-- Cristal central -->
           <circle cx="60" cy="44" r="18" fill="url(#headerGrad)" 
                   filter="url(#glow)" opacity="0.8" class="center-crystal"/>
           
-          <!-- Estrella interna -->
           <path d="M 60 32 L 63 40 L 71 42 L 64 48 L 66 56 L 60 52 L 54 56 L 56 48 L 49 42 L 57 40 Z" 
                 fill="white" opacity="0.9" class="inner-star"/>
           
-          <!-- Puntos de energía -->
           <circle cx="40" cy="30" r="3" fill="url(#headerGrad)" class="energy-dot e1"/>
           <circle cx="80" cy="30" r="2.5" fill="url(#headerGrad)" class="energy-dot e2"/>
           <circle cx="35" cy="58" r="2" fill="url(#headerGrad)" class="energy-dot e3"/>
@@ -83,7 +77,6 @@ const tools = [
       </div>
     </header>
 
-    <!-- Grid de herramientas -->
     <div class="tools-grid">
       {tools.map((tool, i) => (
         <a
@@ -102,10 +95,10 @@ const tools = [
                     <stop offset="100%" style="stop-color:oklch(0.55 0.22 calc(var(--hue) + 40));stop-opacity:1" />
                   </linearGradient>
                   <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" style="stop-color:oklch(0.8 0.15 var(--hue));stop-opacity:0" />
-                    <stop offset="30%" style="stop-color:oklch(0.8 0.15 var(--hue));stop-opacity:1" />
-                    <stop offset="70%" style="stop-color:oklch(0.8 0.15 var(--hue));stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:oklch(0.8 0.15 var(--hue));stop-opacity:0" />
+                    <stop offset="0%" style="stop-color:oklch(0.85 0.15 var(--hue));stop-opacity:0.2" />
+                    <stop offset="40%" style="stop-color:oklch(0.85 0.15 var(--hue));stop-opacity:1" />
+                    <stop offset="60%" style="stop-color:oklch(0.85 0.15 var(--hue));stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:oklch(0.85 0.15 var(--hue));stop-opacity:0.2" />
                   </linearGradient>
                   <filter id="screenGlow">
                     <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
@@ -116,68 +109,62 @@ const tools = [
                   </filter>
                 </defs>
                 
-                <!-- MONITOR ESTILO BROADCAST CON PROFUNDIDAD -->
+                <!-- Monitor profesional -->
                 <g class="monitor-group">
-                  <!-- Sombra del monitor -->
-                  <rect x="18" y="27" width="64" height="42" rx="3" 
-                        fill="black" opacity="0.2" transform="translate(1, 1)"/>
-                  
-                  <!-- Cuerpo del monitor -->
-                  <rect x="18" y="26" width="64" height="42" rx="3" 
+                  <rect x="16" y="24" width="68" height="44" rx="4" 
                         fill="url(#teleGrad)" stroke="oklch(0.8 0.15 var(--hue))" 
                         stroke-width="1.5" filter="url(#screenGlow)"/>
                   
-                  <!-- Pantalla oscura interior -->
-                  <rect x="22" y="30" width="56" height="34" rx="2" 
-                        fill="oklch(0.12 0.04 var(--hue))"/>
+                  <rect x="20" y="28" width="60" height="36" rx="2" 
+                        fill="oklch(0.1 0.04 var(--hue))"/>
                   
-                  <!-- TEXTO SCROLLEANDO - ESTE ES EL CONCEPTO CLAVE -->
+                  <!-- Texto scrolleando -->
                   <g class="scrolling-text">
-                    <!-- Líneas de texto visibles que se mueven -->
-                    <rect x="26" y="36" width="32" height="3" rx="1.5" 
+                    <rect x="24" y="34" width="36" height="3.5" rx="1.75" 
                           fill="url(#textGrad)" class="text-line t1"/>
-                    <rect x="26" y="42" width="42" height="3" rx="1.5" 
+                    <rect x="24" y="41" width="46" height="3.5" rx="1.75" 
                           fill="url(#textGrad)" class="text-line t2"/>
-                    <rect x="26" y="48" width="36" height="3" rx="1.5" 
+                    <rect x="24" y="48" width="40" height="3.5" rx="1.75" 
                           fill="url(#textGrad)" class="text-line t3"/>
-                    <rect x="26" y="54" width="28" height="3" rx="1.5" 
+                    <rect x="24" y="55" width="32" height="3.5" rx="1.75" 
                           fill="url(#textGrad)" class="text-line t4"/>
                   </g>
                   
-                  <!-- FLECHA DE SCROLL HACIA ARRIBA - ICÓNICA -->
+                  <!-- FLECHA SCROLL GRANDE Y CLARA -->
                   <g class="scroll-arrow">
-                    <path d="M 50 40 L 54 36 L 58 40" 
-                          stroke="oklch(0.75 0.18 var(--hue))" stroke-width="2.5" 
-                          fill="none" stroke-linecap="round" stroke-linejoin="round" 
-                          opacity="0.8"/>
-                    <line x1="54" y1="36" x2="54" y2="48" 
-                          stroke="oklch(0.75 0.18 var(--hue))" stroke-width="2" 
-                          stroke-linecap="round" opacity="0.8"/>
+                    <path d="M 50 38 L 56 32 L 62 38" 
+                          stroke="oklch(0.8 0.18 var(--hue))" stroke-width="3" 
+                          fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="56" y1="32" x2="56" y2="52" 
+                          stroke="oklch(0.8 0.18 var(--hue))" stroke-width="2.5" 
+                          stroke-linecap="round"/>
+                    <!-- Punta de flecha inferior -->
+                    <circle cx="56" cy="52" r="2.5" fill="oklch(0.8 0.18 var(--hue))"/>
                   </g>
                   
-                  <!-- Indicador REC pulsante -->
+                  <!-- REC indicator -->
                   <g class="rec-indicator">
-                    <circle cx="72" cy="34" r="3" fill="oklch(0.6 0.25 20)" opacity="0.3"/>
-                    <circle cx="72" cy="34" r="2" fill="oklch(0.7 0.3 20)" class="rec-dot"/>
+                    <circle cx="74" cy="32" r="3.5" fill="oklch(0.65 0.25 20)" opacity="0.3"/>
+                    <circle cx="74" cy="32" r="2.2" fill="oklch(0.75 0.3 20)" class="rec-dot"/>
                   </g>
                   
-                  <!-- Reflejo de cristal -->
-                  <rect x="24" y="31" width="24" height="18" rx="2" 
-                        fill="white" opacity="0.12"/>
+                  <!-- Reflejo -->
+                  <rect x="22" y="29" width="26" height="20" rx="2" 
+                        fill="white" opacity="0.1"/>
                 </g>
                 
-                <!-- PLAY BUTTON PROMINENTE - Segunda idea clave -->
+                <!-- Play button más visible -->
                 <g class="play-button">
-                  <circle cx="50" cy="52" r="10" fill="url(#teleGrad)" 
-                          opacity="0.3" class="play-bg"/>
-                  <path d="M 48 48 L 48 56 L 56 52 Z" 
-                        fill="oklch(0.8 0.15 var(--hue))" class="play-triangle"/>
+                  <circle cx="50" cy="50" r="11" fill="oklch(0.15 0.04 var(--hue))" opacity="0.6"/>
+                  <circle cx="50" cy="50" r="9" fill="url(#teleGrad)" opacity="0.4" class="play-bg"/>
+                  <path d="M 47 45 L 47 55 L 56 50 Z" 
+                        fill="oklch(0.85 0.15 var(--hue))" class="play-triangle"/>
                 </g>
                 
-                <!-- Base del soporte -->
-                <path d="M 44 68 L 46 74 L 54 74 L 56 68 Z" 
+                <!-- Base -->
+                <path d="M 43 68 L 45 75 L 55 75 L 57 68 Z" 
                       fill="url(#teleGrad)" opacity="0.9"/>
-                <rect x="38" y="74" width="24" height="3" rx="1.5" 
+                <rect x="36" y="75" width="28" height="3.5" rx="1.75" 
                       fill="url(#teleGrad)"/>
               </svg>
             )}
@@ -190,92 +177,128 @@ const tools = [
                     <stop offset="100%" style="stop-color:oklch(0.55 0.22 calc(var(--hue) + 40));stop-opacity:1" />
                   </linearGradient>
                   <filter id="linkGlow">
-                    <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
                     <feMerge>
                       <feMergeNode in="coloredBlur"/>
                       <feMergeNode in="SourceGraphic"/>
                     </feMerge>
                   </filter>
+                  <clipPath id="scissorClip">
+                    <rect x="0" y="0" width="100" height="100"/>
+                  </clipPath>
                 </defs>
                 
-                <!-- URL LARGA EN LA PARTE SUPERIOR -->
-                <g class="long-url">
-                  <!-- Fondo de la URL larga -->
-                  <rect x="15" y="22" width="70" height="10" rx="5" 
-                        fill="oklch(0.2 0.05 var(--hue))" opacity="0.6"/>
+                <!-- URL LARGA CON TIJERAS CORTANDO -->
+                <g class="long-url-group">
+                  <!-- Barra de URL larga -->
+                  <rect x="10" y="20" width="80" height="12" rx="6" 
+                        fill="oklch(0.25 0.06 var(--hue))" opacity="0.8"/>
                   
-                  <!-- Texto simulado de URL larga -->
-                  <line x1="20" y1="27" x2="75" y2="27" 
-                        stroke="oklch(0.5 0.1 var(--hue))" stroke-width="2" 
-                        stroke-linecap="round" opacity="0.4" class="url-text"/>
-                  <circle cx="80" cy="27" r="1.5" fill="oklch(0.5 0.1 var(--hue))" opacity="0.4"/>
-                  <circle cx="77" cy="27" r="1.5" fill="oklch(0.5 0.1 var(--hue))" opacity="0.4"/>
-                  <circle cx="74" cy="27" r="1.5" fill="oklch(0.5 0.1 var(--hue))" opacity="0.4"/>
+                  <!-- Líneas simulando URL larga -->
+                  <line x1="16" y1="26" x2="82" y2="26" 
+                        stroke="oklch(0.5 0.12 var(--hue))" stroke-width="2.5" 
+                        stroke-linecap="round" opacity="0.5" class="long-url-line"/>
+                  
+                  <!-- TIJERAS GIGANTES CORTANDO - CONCEPTO CLAVE -->
+                  <g class="scissors" filter="url(#linkGlow)">
+                    <!-- Tijera derecha -->
+                    <ellipse cx="54" cy="26" rx="5" ry="7" 
+                             fill="url(#linkGrad)" transform="rotate(25 54 26)" class="scissor-right"/>
+                    <!-- Tijera izquierda -->
+                    <ellipse cx="46" cy="26" rx="5" ry="7" 
+                             fill="url(#linkGrad)" transform="rotate(-25 46 26)" class="scissor-left"/>
+                    <!-- Punto de pivote -->
+                    <circle cx="50" cy="26" r="3" fill="oklch(0.9 0.08 var(--hue))"/>
+                    <!-- Hojas -->
+                    <path d="M 50 26 L 58 18" stroke="url(#linkGrad)" stroke-width="2.5" 
+                          stroke-linecap="round" class="blade-right"/>
+                    <path d="M 50 26 L 42 18" stroke="url(#linkGrad)" stroke-width="2.5" 
+                          stroke-linecap="round" class="blade-left"/>
+                  </g>
+                  
+                  <!-- Líneas de corte -->
+                  <g class="cut-lines">
+                    <line x1="48" y1="20" x2="48" y2="32" 
+                          stroke="oklch(0.8 0.18 var(--hue))" stroke-width="1.5" 
+                          stroke-dasharray="2 2" opacity="0.6" class="cut-line-1"/>
+                    <line x1="52" y1="20" x2="52" y2="32" 
+                          stroke="oklch(0.8 0.18 var(--hue))" stroke-width="1.5" 
+                          stroke-dasharray="2 2" opacity="0.6" class="cut-line-2"/>
+                  </g>
                 </g>
                 
-                <!-- FLECHA MÁGICA DE TRANSFORMACIÓN - CONCEPTO CLAVE -->
-                <g class="magic-arrow" filter="url(#linkGlow)">
-                  <path d="M 50 37 L 50 47" 
+                <!-- FLECHA DE COMPRESIÓN -->
+                <g class="compress-arrow">
+                  <path d="M 45 40 L 50 45 L 55 40" 
                         stroke="url(#linkGrad)" stroke-width="3" 
-                        stroke-linecap="round" class="arrow-shaft"/>
-                  <path d="M 50 47 L 45 42" 
-                        stroke="url(#linkGrad)" stroke-width="3" 
-                        stroke-linecap="round" class="arrow-tip-l"/>
-                  <path d="M 50 47 L 55 42" 
-                        stroke="url(#linkGrad)" stroke-width="3" 
-                        stroke-linecap="round" class="arrow-tip-r"/>
+                        fill="none" stroke-linecap="round" stroke-linejoin="round" 
+                        filter="url(#linkGlow)"/>
+                  <line x1="50" y1="38" x2="50" y2="48" 
+                        stroke="url(#linkGrad)" stroke-width="2.5" 
+                        stroke-linecap="round" filter="url(#linkGlow)"/>
                   
-                  <!-- Partículas mágicas alrededor de la flecha -->
-                  <circle cx="43" cy="40" r="1.5" fill="url(#linkGrad)" class="magic-particle mp1" opacity="0.8"/>
-                  <circle cx="57" cy="40" r="1.5" fill="url(#linkGrad)" class="magic-particle mp2" opacity="0.8"/>
-                  <circle cx="48" cy="44" r="1" fill="url(#linkGrad)" class="magic-particle mp3" opacity="0.6"/>
-                  <circle cx="52" cy="44" r="1" fill="url(#linkGrad)" class="magic-particle mp4" opacity="0.6"/>
+                  <!-- Partículas de compresión -->
+                  <circle cx="40" cy="42" r="1.5" fill="url(#linkGrad)" class="compress-particle cp1" opacity="0.8"/>
+                  <circle cx="60" cy="42" r="1.5" fill="url(#linkGrad)" class="compress-particle cp2" opacity="0.8"/>
+                  <circle cx="43" cy="46" r="1" fill="url(#linkGrad)" class="compress-particle cp3" opacity="0.6"/>
+                  <circle cx="57" cy="46" r="1" fill="url(#linkGrad)" class="compress-particle cp4" opacity="0.6"/>
                 </g>
                 
-                <!-- URL CORTA EN LA PARTE INFERIOR - MÁS GRANDE Y PROMINENTE -->
-                <g class="short-url">
-                  <!-- Fondo brillante de la URL corta -->
-                  <rect x="32" y="54" width="36" height="12" rx="6" 
+                <!-- URL CORTA - MUY VISIBLE Y DESTACADA -->
+                <g class="short-url-group">
+                  <!-- Fondo brillante grande -->
+                  <rect x="28" y="54" width="44" height="16" rx="8" 
                         fill="url(#linkGrad)" filter="url(#linkGlow)" 
-                        class="short-url-bg" opacity="0.9"/>
+                        class="short-url-bg" opacity="0.95"/>
                   
-                  <!-- Texto de URL corta más visible -->
-                  <text x="50" y="62" 
-                        font-family="monospace" font-size="8" font-weight="bold" 
+                  <!-- Texto grande y legible -->
+                  <text x="50" y="64" 
+                        font-family="monospace" font-size="10" font-weight="bold" 
                         fill="white" text-anchor="middle" 
-                        class="short-url-text">bit.ly</text>
+                        class="short-url-text">bit.ly/X</text>
+                  
+                  <!-- Icono de check -->
+                  <g transform="translate(65, 58)">
+                    <circle cx="0" cy="0" r="5" fill="oklch(0.7 0.25 140)" opacity="0.9"/>
+                    <path d="M -2 0 L -0.5 1.5 L 2 -1.5" 
+                          stroke="white" stroke-width="1.5" 
+                          fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  </g>
                 </g>
                 
-                <!-- QR CODE MODERNO - MÁS GRANDE Y VISIBLE -->
-                <g class="qr-code" transform="translate(62, 68)">
-                  <!-- Marco del QR -->
-                  <rect x="0" y="0" width="24" height="24" rx="3" 
-                        fill="white" stroke="url(#linkGrad)" stroke-width="2" 
+                <!-- QR CODE MODERNO Y GRANDE -->
+                <g class="qr-code-display" transform="translate(12, 72)">
+                  <!-- Fondo del QR -->
+                  <rect x="0" y="0" width="26" height="26" rx="4" 
+                        fill="white" stroke="url(#linkGrad)" stroke-width="2.5" 
                         filter="url(#linkGlow)"/>
                   
-                  <!-- Patrón QR simplificado pero reconocible -->
-                  <rect x="3" y="3" width="6" height="6" rx="1" fill="url(#linkGrad)" class="qr-corner"/>
-                  <rect x="15" y="3" width="6" height="6" rx="1" fill="url(#linkGrad)" class="qr-corner"/>
-                  <rect x="3" y="15" width="6" height="6" rx="1" fill="url(#linkGrad)" class="qr-corner"/>
+                  <!-- Esquinas características QR (grandes) -->
+                  <rect x="3" y="3" width="7" height="7" rx="1.5" fill="url(#linkGrad)"/>
+                  <rect x="16" y="3" width="7" height="7" rx="1.5" fill="url(#linkGrad)"/>
+                  <rect x="3" y="16" width="7" height="7" rx="1.5" fill="url(#linkGrad)"/>
                   
-                  <!-- Centro del QR -->
-                  <rect x="11" y="11" width="6" height="6" rx="1" fill="url(#linkGrad)" class="qr-center"/>
+                  <!-- Centro prominente -->
+                  <rect x="11" y="11" width="7" height="7" rx="1.5" fill="url(#linkGrad)" class="qr-center"/>
                   
                   <!-- Módulos decorativos -->
-                  <rect x="11" y="3" width="2" height="2" fill="url(#linkGrad)" opacity="0.7"/>
-                  <rect x="3" y="11" width="2" height="2" fill="url(#linkGrad)" opacity="0.7"/>
-                  <rect x="19" y="11" width="2" height="2" fill="url(#linkGrad)" opacity="0.7"/>
-                  <rect x="11" y="19" width="2" height="2" fill="url(#linkGrad)" opacity="0.7"/>
+                  <rect x="11" y="3" width="3" height="3" rx="0.5" fill="url(#linkGrad)" opacity="0.8"/>
+                  <rect x="3" y="11" width="3" height="3" rx="0.5" fill="url(#linkGrad)" opacity="0.8"/>
+                  <rect x="20" y="11" width="3" height="3" rx="0.5" fill="url(#linkGrad)" opacity="0.8"/>
+                  <rect x="11" y="20" width="3" height="3" rx="0.5" fill="url(#linkGrad)" opacity="0.8"/>
+                  
+                  <!-- Label QR -->
+                  <text x="13" y="30" 
+                        font-family="sans-serif" font-size="5" font-weight="600" 
+                        fill="url(#linkGrad)" text-anchor="middle" 
+                        opacity="0.7">QR</text>
                 </g>
                 
-                <!-- Icono de enlace pequeño decorativo -->
-                <g class="link-icon" opacity="0.5">
-                  <circle cx="20" cy="62" r="3" stroke="url(#linkGrad)" 
-                          stroke-width="1.5" fill="none"/>
-                  <circle cx="28" cy="62" r="3" stroke="url(#linkGrad)" 
-                          stroke-width="1.5" fill="none"/>
-                  <line x1="22" y1="62" x2="26" y2="62" 
-                        stroke="url(#linkGrad)" stroke-width="1.5"/>
+                <!-- ICONO DE ESTADÍSTICAS -->
+                <g class="stats-icon" transform="translate(65, 78)">
+                  <rect x="0" y="8" width="3" height="8" rx="1" fill="url(#linkGrad)" opacity="0.7" class="stat-bar b1"/>
+                  <rect x="5" y="4" width="3" height="12" rx="1" fill="url(#linkGrad)" opacity="0.8" class="stat-bar b2"/>
+                  <rect x="10" y="0" width="3" height="16" rx="1" fill="url(#linkGrad)" opacity="0.9" class="stat-bar b3"/>
                 </g>
               </svg>
             )}
@@ -320,7 +343,6 @@ const tools = [
     padding: 1rem 0 0.5rem;
   }
 
-  /* 🎨 HEADER ICON */
   .tools-header-icon {
     margin-bottom: 0.75rem;
     display: inline-block;
@@ -391,7 +413,6 @@ const tools = [
     50% { opacity: 1; transform: scale(1.3); }
   }
 
-  /* 🎨 TÍTULO */
   .tools-title {
     font-size: 2.5rem;
     font-weight: 800;
@@ -486,7 +507,6 @@ const tools = [
     color: #475569;
   }
 
-  /* GRID */
   .tools-grid {
     display: grid;
     gap: 1.25rem;
@@ -499,7 +519,6 @@ const tools = [
     }
   }
 
-  /* 🎨 CARDS */
   .tool-card {
     position: relative;
     display: flex;
@@ -593,7 +612,6 @@ const tools = [
     transform: scale(1);
   }
 
-  /* BADGE */
   .tool-badge {
     position: absolute;
     top: 1rem;
@@ -625,7 +643,6 @@ const tools = [
     color: oklch(0.8 0.16 var(--hue));
   }
 
-  /* 🎨 ICON WRAPPER */
   .tool-icon-wrapper {
     width: 5rem;
     height: 5rem;
@@ -662,7 +679,6 @@ const tools = [
       inset 0 2px 0 rgba(255, 255, 255, 0.15);
   }
 
-  /* 🎨 SVG ANIMATIONS */
   .tool-svg {
     width: 100%;
     height: 100%;
@@ -670,13 +686,13 @@ const tools = [
 
   /* TELEPROMPTER ANIMATIONS */
   .scrolling-text .text-line {
-    animation: textScroll 3s ease-in-out infinite;
+    animation: textScroll 2.5s ease-in-out infinite;
   }
 
   .t1 { animation-delay: 0s; }
-  .t2 { animation-delay: 0.3s; }
-  .t3 { animation-delay: 0.6s; }
-  .t4 { animation-delay: 0.9s; }
+  .t2 { animation-delay: 0.25s; }
+  .t3 { animation-delay: 0.5s; }
+  .t4 { animation-delay: 0.75s; }
 
   @keyframes textScroll {
     0%, 100% { 
@@ -684,27 +700,27 @@ const tools = [
       transform: translateY(0);
     }
     50% { 
-      opacity: 0.3; 
-      transform: translateY(-3px);
+      opacity: 0.4; 
+      transform: translateY(-4px);
     }
   }
 
   .scroll-arrow {
-    animation: arrowBounce 1.5s ease-in-out infinite;
+    animation: arrowBounce 1.2s ease-in-out infinite;
   }
 
   @keyframes arrowBounce {
-    0%, 100% { transform: translateY(0); opacity: 0.8; }
-    50% { transform: translateY(-4px); opacity: 1; }
+    0%, 100% { transform: translateY(0); opacity: 1; }
+    50% { transform: translateY(-5px); opacity: 0.7; }
   }
 
   .rec-dot {
-    animation: recBlink 1.5s ease-in-out infinite;
+    animation: recBlink 1.2s ease-in-out infinite;
   }
 
   @keyframes recBlink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.2; }
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.3; transform: scale(0.8); }
   }
 
   .play-button {
@@ -713,58 +729,104 @@ const tools = [
 
   @keyframes playPulse {
     0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.1); opacity: 0.8; }
+    50% { transform: scale(1.08); opacity: 0.9; }
   }
 
   /* LINK SHORTENER ANIMATIONS */
-  .magic-arrow {
-    animation: arrowTransform 2s ease-in-out infinite;
+  .scissors {
+    animation: scissorsCut 2s ease-in-out infinite;
   }
 
-  @keyframes arrowTransform {
+  @keyframes scissorsCut {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(-5deg); }
+  }
+
+  .scissor-left {
+    animation: scissorOpen 1.5s ease-in-out infinite;
+  }
+
+  .scissor-right {
+    animation: scissorOpen 1.5s ease-in-out infinite reverse;
+  }
+
+  @keyframes scissorOpen {
+    0%, 100% { transform: rotate(-25deg); }
+    50% { transform: rotate(-35deg); }
+  }
+
+  .cut-line-1, .cut-line-2 {
+    animation: cutFlash 2s ease-in-out infinite;
+  }
+
+  .cut-line-2 { animation-delay: 0.3s; }
+
+  @keyframes cutFlash {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 0; }
+  }
+
+  .compress-arrow {
+    animation: compressMove 1.8s ease-in-out infinite;
+  }
+
+  @keyframes compressMove {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(3px); }
   }
 
-  .magic-particle {
-    animation: particleTwinkle 1.5s ease-in-out infinite;
+  .compress-particle {
+    animation: particleCompress 1.5s ease-in-out infinite;
   }
 
-  .mp1 { animation-delay: 0s; }
-  .mp2 { animation-delay: 0.3s; }
-  .mp3 { animation-delay: 0.6s; }
-  .mp4 { animation-delay: 0.9s; }
+  .cp1 { animation-delay: 0s; }
+  .cp2 { animation-delay: 0.3s; }
+  .cp3 { animation-delay: 0.6s; }
+  .cp4 { animation-delay: 0.9s; }
 
-  @keyframes particleTwinkle {
+  @keyframes particleCompress {
     0%, 100% { opacity: 0.8; transform: scale(1); }
-    50% { opacity: 0.2; transform: scale(0.5); }
+    50% { opacity: 0.3; transform: scale(0.6); }
   }
 
   .short-url-bg {
-    animation: urlGlow 2s ease-in-out infinite;
+    animation: urlHighlight 2s ease-in-out infinite;
   }
 
-  @keyframes urlGlow {
-    0%, 100% { opacity: 0.9; transform: scale(1); }
+  @keyframes urlHighlight {
+    0%, 100% { opacity: 0.95; transform: scale(1); }
     50% { opacity: 1; transform: scale(1.05); }
   }
 
-  .qr-code {
-    animation: qrFloat 3s ease-in-out infinite;
+  .qr-code-display {
+    animation: qrAppear 3s ease-in-out infinite;
   }
 
-  @keyframes qrFloat {
-    0%, 100% { transform: translate(62px, 68px) rotate(0deg); }
-    50% { transform: translate(62px, 65px) rotate(2deg); }
+  @keyframes qrAppear {
+    0%, 100% { transform: translate(12px, 72px); opacity: 1; }
+    50% { transform: translate(12px, 70px); opacity: 0.9; }
   }
 
-  .qr-corner {
-    animation: cornerPulse 2s ease-in-out infinite;
+  .qr-center {
+    animation: qrPulse 2s ease-in-out infinite;
   }
 
-  @keyframes cornerPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
+  @keyframes qrPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(0.95); }
+  }
+
+  .stats-icon .stat-bar {
+    animation: statGrow 2s ease-in-out infinite;
+  }
+
+  .b1 { animation-delay: 0s; }
+  .b2 { animation-delay: 0.3s; }
+  .b3 { animation-delay: 0.6s; }
+
+  @keyframes statGrow {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(1.2); }
   }
 
   .tool-card:hover .tool-svg {
@@ -777,7 +839,6 @@ const tools = [
     100% { transform: scale(1) rotate(0deg); }
   }
 
-  /* CONTENT */
   .tool-name {
     font-size: 1.35rem;
     font-weight: 700;
@@ -810,7 +871,6 @@ const tools = [
     color: #94a3b8;
   }
 
-  /* FEATURES */
   .tool-features {
     display: flex;
     flex-wrap: wrap;
@@ -840,7 +900,6 @@ const tools = [
     box-shadow: 0 2px 8px oklch(0.7 0.16 var(--hue) / 0.2);
   }
 
-  /* CTA */
   .tool-cta {
     display: flex;
     align-items: center;
@@ -880,7 +939,6 @@ const tools = [
     color: oklch(0.78 0.2 var(--hue));
   }
 
-  /* FOOTER */
   .tools-footer {
     text-align: center;
     padding: 1rem 1.5rem;
@@ -910,7 +968,6 @@ const tools = [
     color: #94a3b8;
   }
 
-  /* MOBILE */
   @media (max-width: 640px) {
     .tools-title {
       font-size: 2rem;
@@ -931,12 +988,10 @@ const tools = [
     }
   }
 
-  /* PERFORMANCE */
   .tool-card:hover {
     will-change: transform;
   }
 
-  /* ACCESSIBILITY */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
