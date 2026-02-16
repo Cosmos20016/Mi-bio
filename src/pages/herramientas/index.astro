@@ -76,7 +76,7 @@ const tools = [
 
       <div class="tools-grid" role="list">
         {tools.map((tool, i) => (
-          <a
+          
             class="tool-card"
             href={tool.href}
             style={`--card-index: ${i};`}
@@ -272,42 +272,91 @@ const tools = [
 
 <script>
   // ============================================
-  // OPTIMIZACIÓN ULTRA: Solo activar animaciones cuando son visibles
+  // SISTEMA DE ANIMACIONES MEJORADO - CORREGIDO PARA MÓVIL
   // ============================================
   
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   
   if (!prefersReducedMotion) {
-    const observerOptions = {
-      rootMargin: '100px',
-      threshold: [0, 0.5, 1],
+    // Función para activar animación de un card
+    const activateCard = (card, ratio = 1) => {
+      const svg = card.querySelector('[data-icon-svg]');
+      if (!svg) return;
+      
+      requestAnimationFrame(() => {
+        svg.classList.add('animate-active');
+        
+        // Pre-warm GPU solo cuando está bien visible
+        if (ratio > 0.5) {
+          svg.style.willChange = 'transform, opacity';
+          setTimeout(() => svg.style.willChange = 'auto', 300);
+        }
+      });
     };
     
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const svg = entry.target.querySelector('[data-icon-svg]');
-          if (!svg) return;
-          
-          requestAnimationFrame(() => {
+    // Función para desactivar animación
+    const deactivateCard = (card) => {
+      const svg = card.querySelector('[data-icon-svg]');
+      if (!svg) return;
+      
+      requestAnimationFrame(() => {
+        svg.classList.remove('animate-active');
+      });
+    };
+    
+    // Inicializar sistema de animaciones
+    const initAnimations = () => {
+      const cards = document.querySelectorAll('[data-tool-card]');
+      if (!cards.length) return;
+      
+      const observerOptions = {
+        rootMargin: '50px',
+        threshold: [0, 0.25, 0.5, 0.75, 1],
+      };
+      
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
             if (entry.isIntersecting) {
-              svg.classList.add('animate-active');
-              
-              // Pre-warm GPU solo cuando está visible
-              if (entry.intersectionRatio > 0.5) {
-                svg.style.willChange = 'transform, opacity';
-                setTimeout(() => svg.style.willChange = 'auto', 300);
-              }
+              activateCard(entry.target, entry.intersectionRatio);
             } else {
-              svg.classList.remove('animate-active');
+              deactivateCard(entry.target);
             }
           });
+        },
+        observerOptions
+      );
+      
+      // Observar todos los cards
+      cards.forEach((card) => observer.observe(card));
+      
+      // CRÍTICO: Activar inmediatamente los cards que ya son visibles
+      // Esto soluciona el problema en móvil donde el observer puede no dispararse
+      // al cargar la página si los elementos ya están en viewport
+      setTimeout(() => {
+        cards.forEach((card) => {
+          const rect = card.getBoundingClientRect();
+          const isVisible = (
+            rect.top < window.innerHeight &&
+            rect.bottom > 0 &&
+            rect.left < window.innerWidth &&
+            rect.right > 0
+          );
+          
+          if (isVisible) {
+            activateCard(card, 1);
+          }
         });
-      },
-      observerOptions
-    );
+      }, 100); // Pequeño delay para asegurar que el layout esté estable
+    };
     
-    document.querySelectorAll('[data-tool-card]').forEach((card) => observer.observe(card));
+    // Ejecutar cuando el DOM esté completamente listo
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initAnimations);
+    } else {
+      // Si el DOM ya está listo, ejecutar inmediatamente
+      initAnimations();
+    }
   }
 </script>
 
