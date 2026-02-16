@@ -18,6 +18,11 @@ const toolMetadata = {
   description={toolMetadata.description}
 >
   <article class="tool-page">
+    <!-- Skip link para accesibilidad -->
+    <a href="#main-content" class="skip-link">
+      Saltar al contenido principal
+    </a>
+
     <!-- Navegación superior mejorada con ARIA -->
     <nav class="tool-nav" aria-label="Navegación de herramientas">
       <a 
@@ -64,7 +69,7 @@ const toolMetadata = {
     </header>
 
     <!-- Componente principal -->
-    <section aria-label="Aplicación de teleprompter">
+    <section id="main-content" aria-label="Aplicación de teleprompter">
       <Teleprompter client:only="svelte" />
     </section>
   </article>
@@ -75,15 +80,63 @@ const toolMetadata = {
      Variables y configuración base
      ============================================ */
   .tool-page {
+    /* Colores base */
     --hue-fallback: 250;
     --card-bg-fallback: #ffffff;
     --radius-large-fallback: 1rem;
     
+    /* Colores de texto */
+    --color-text-muted: #64748b;
+    --color-text-muted-dark: #94a3b8;
+    
+    /* Bordes */
+    --color-border-light: rgba(0, 0, 0, 0.06);
+    --color-border-dark: rgba(255, 255, 255, 0.08);
+    
+    /* Interacción */
+    --touch-target-min: 2.75rem;
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.2s ease;
+    --transition-smooth: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Layout */
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-    /* Contenido más accesible */
     min-height: 0;
+    
+    /* Safe areas para dispositivos con notch */
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+    
+    /* Scroll suave y prevención de overflow horizontal */
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+  }
+
+  /* ============================================
+     Skip link (Accesibilidad)
+     ============================================ */
+  .skip-link {
+    position: absolute;
+    top: -3rem;
+    left: 0;
+    background: oklch(0.6 0.18 var(--hue, var(--hue-fallback)));
+    color: white;
+    padding: 0.75rem 1.5rem;
+    z-index: 1000;
+    border-radius: 0 0 0.5rem 0;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: top var(--transition-smooth);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .skip-link:focus {
+    top: 0;
+    outline: 3px solid white;
+    outline-offset: -3px;
   }
 
   /* ============================================
@@ -94,7 +147,6 @@ const toolMetadata = {
     align-items: center;
     gap: 0.25rem;
     flex-wrap: wrap;
-    /* Mejorar touch targets en móvil */
     padding: 0.25rem 0;
   }
 
@@ -109,19 +161,32 @@ const toolMetadata = {
     padding: 0.4rem 0.75rem;
     border-radius: 0.5rem;
     transition: 
-      background-color 0.2s ease,
-      color 0.2s ease,
-      transform 0.15s ease;
+      background-color var(--transition-normal),
+      color var(--transition-normal),
+      transform var(--transition-fast);
     
-    /* Mejor área de touch */
-    min-height: 2.75rem;
+    /* Touch targets apropiados */
+    min-height: var(--touch-target-min);
     
-    /* Accesibilidad mejorada */
+    /* Accesibilidad */
     position: relative;
     outline-offset: 2px;
+    
+    /* Optimizaciones móviles */
+    -webkit-tap-highlight-color: oklch(0.6 0.18 var(--hue, var(--hue-fallback)) / 0.1);
+    user-select: none;
   }
 
-  /* Focus visible para teclado */
+  /* Performance optimization */
+  .tool-nav-back:hover {
+    will-change: transform;
+  }
+
+  .tool-nav-back:not(:hover) {
+    will-change: auto;
+  }
+
+  /* Focus visible para navegación por teclado */
   .tool-nav-back:focus-visible {
     outline: 2px solid oklch(0.6 0.18 var(--hue, var(--hue-fallback)));
     outline-offset: 3px;
@@ -147,7 +212,7 @@ const toolMetadata = {
   }
 
   .tool-nav-arrow {
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--transition-smooth);
     font-size: 1rem;
     line-height: 1;
   }
@@ -174,12 +239,12 @@ const toolMetadata = {
   }
 
   .breadcrumb-current {
-    color: #64748b;
+    color: var(--color-text-muted);
     font-weight: 500;
   }
 
   :global(.dark) .breadcrumb-current {
-    color: #94a3b8;
+    color: var(--color-text-muted-dark);
   }
 
   /* ============================================
@@ -192,17 +257,16 @@ const toolMetadata = {
     padding: 1.25rem 1.5rem;
     background: var(--card-bg, var(--card-bg-fallback));
     border-radius: var(--radius-large, var(--radius-large-fallback));
-    border: 1px solid rgba(0, 0, 0, 0.06);
-    
-    /* Sombra sutil para profundidad */
+    border: 1px solid var(--color-border-light);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-    
-    /* Mejor flujo de contenido */
     container-type: inline-size;
+    
+    /* Prevenir overflow */
+    overflow: hidden;
   }
 
   :global(.dark) .tool-page-header {
-    border-color: rgba(255, 255, 255, 0.08);
+    border-color: var(--color-border-dark);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
 
@@ -215,9 +279,16 @@ const toolMetadata = {
     justify-content: center;
     border-radius: 1rem;
     background: oklch(0.95 0.03 var(--hue, var(--hue-fallback)));
-    
-    /* Transición suave */
-    transition: transform 0.2s ease;
+    transition: transform var(--transition-normal);
+  }
+
+  /* Performance optimization para hover */
+  .tool-page-header:hover .tool-page-icon-wrapper {
+    will-change: transform;
+  }
+
+  .tool-page-header:not(:hover) .tool-page-icon-wrapper {
+    will-change: auto;
   }
 
   :global(.dark) .tool-page-icon-wrapper {
@@ -235,7 +306,7 @@ const toolMetadata = {
 
   .tool-page-content {
     flex: 1;
-    min-width: 0; /* Permite que el contenido se envuelva correctamente */
+    min-width: 0;
   }
 
   .tool-page-title {
@@ -252,8 +323,6 @@ const toolMetadata = {
     background-clip: text;
     margin: 0 0 0.35rem 0;
     line-height: 1.2;
-    
-    /* Fallback para navegadores sin soporte de background-clip */
     color: oklch(0.6 0.18 var(--hue, var(--hue-fallback)));
   }
 
@@ -277,14 +346,14 @@ const toolMetadata = {
 
   .tool-page-description {
     font-size: 0.9rem;
-    color: #64748b;
+    color: var(--color-text-muted);
     line-height: 1.55;
     margin: 0 0 0.65rem 0;
-    max-width: 65ch; /* Mejor legibilidad */
+    max-width: 65ch;
   }
 
   :global(.dark) .tool-page-description {
-    color: #94a3b8;
+    color: var(--color-text-muted-dark);
   }
 
   .tool-page-header-actions {
@@ -317,11 +386,9 @@ const toolMetadata = {
     background: oklch(0.93 0.04 var(--hue, var(--hue-fallback)));
     color: oklch(0.5 0.14 var(--hue, var(--hue-fallback)));
     line-height: 1.4;
-    
-    /* Transición suave */
     transition: 
-      background-color 0.2s ease,
-      transform 0.15s ease;
+      background-color var(--transition-normal),
+      transform var(--transition-fast);
   }
 
   .tool-page-badges li:hover .tool-page-badge {
@@ -331,6 +398,14 @@ const toolMetadata = {
   :global(.dark) .tool-page-badge {
     background: oklch(0.3 0.05 var(--hue, var(--hue-fallback)));
     color: oklch(0.78 0.12 var(--hue, var(--hue-fallback)));
+  }
+
+  /* ============================================
+     Sección principal con content-visibility
+     ============================================ */
+  .tool-page section {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 500px;
   }
 
   /* ============================================
@@ -356,10 +431,12 @@ const toolMetadata = {
     }
   }
 
-  /* Mobile */
+  /* Mobile Portrait */
   @media (max-width: 640px) {
     .tool-page {
       gap: 1rem;
+      padding-left: max(1rem, env(safe-area-inset-left));
+      padding-right: max(1rem, env(safe-area-inset-right));
     }
 
     .tool-nav {
@@ -407,6 +484,39 @@ const toolMetadata = {
     }
   }
 
+  /* Mobile Landscape */
+  @media (max-width: 640px) and (orientation: landscape) {
+    .tool-page-header {
+      flex-direction: row;
+      padding: 0.75rem 1rem;
+      gap: 1rem;
+    }
+    
+    .tool-page-icon-wrapper {
+      width: 2.5rem;
+      height: 2.5rem;
+      min-width: 2.5rem;
+    }
+
+    .tool-page-icon {
+      font-size: 1.25rem;
+    }
+    
+    .tool-page-title {
+      font-size: 1.25rem;
+    }
+
+    .tool-page-description {
+      font-size: 0.8rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .tool-page-header-actions {
+      flex-direction: row;
+      width: auto;
+    }
+  }
+
   /* Muy pequeño (menos de 375px) */
   @media (max-width: 375px) {
     .tool-page-header {
@@ -427,6 +537,10 @@ const toolMetadata = {
      Accesibilidad - Reduce motion
      ============================================ */
   @media (prefers-reduced-motion: reduce) {
+    .tool-page {
+      scroll-behavior: auto;
+    }
+
     *,
     *::before,
     *::after {
@@ -440,6 +554,10 @@ const toolMetadata = {
     .tool-page-badge {
       transition: none !important;
     }
+
+    .skip-link {
+      transition: none !important;
+    }
   }
 
   /* ============================================
@@ -450,8 +568,22 @@ const toolMetadata = {
       border-width: 2px;
     }
 
-    .tool-nav-back:focus-visible {
+    .tool-nav-back:focus-visible,
+    .skip-link:focus {
       outline-width: 3px;
+    }
+
+    .tool-page-badge {
+      border: 1px solid currentColor;
+    }
+  }
+
+  /* ============================================
+     Dark mode específico
+     ============================================ */
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not(.light)) .tool-page {
+      /* Optimizaciones adicionales para dark mode */
     }
   }
 
@@ -461,18 +593,36 @@ const toolMetadata = {
   @media print {
     .tool-nav,
     .tool-page-badges,
-    .tool-page-header-actions {
+    .tool-page-header-actions,
+    .skip-link {
       display: none;
     }
 
     .tool-page-header {
       border: 1px solid #000;
       box-shadow: none;
+      page-break-inside: avoid;
     }
 
     .tool-page-title {
       color: #000 !important;
       -webkit-text-fill-color: #000 !important;
+    }
+
+    .tool-page {
+      overflow: visible;
+    }
+  }
+
+  /* ============================================
+     Optimizaciones para GPU
+     ============================================ */
+  @media (hover: hover) and (pointer: fine) {
+    .tool-nav-back,
+    .tool-page-icon-wrapper,
+    .tool-page-badge {
+      backface-visibility: hidden;
+      -webkit-font-smoothing: antialiased;
     }
   }
 </style>
