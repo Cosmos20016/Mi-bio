@@ -103,12 +103,25 @@ const tools = [
     padding: 1rem 0 0.5rem;
   }
 
+  /* 🎨 ANIMACIÓN PREMIUM: Icono del header con flotación suave */
   .tools-header-icon {
     font-size: 3rem;
     margin-bottom: 0.75rem;
     filter: drop-shadow(0 4px 12px oklch(0.7 0.14 var(--hue) / 0.3));
+    animation: floatIcon 3s ease-in-out infinite;
+    display: inline-block;
   }
 
+  @keyframes floatIcon {
+    0%, 100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-8px) rotate(5deg);
+    }
+  }
+
+  /* 🎨 ANIMACIÓN PREMIUM: Título con gradiente animado */
   .tools-title {
     font-size: 2.5rem;
     font-weight: 800;
@@ -116,21 +129,46 @@ const tools = [
     background: linear-gradient(
       135deg,
       oklch(0.65 0.16 var(--hue)),
-      oklch(0.6 0.18 calc(var(--hue) + 40))
+      oklch(0.6 0.18 calc(var(--hue) + 40)),
+      oklch(0.65 0.16 var(--hue))
     );
+    background-size: 200% 100%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     margin-bottom: 0.5rem;
     line-height: 1.2;
+    animation: titleShimmer 4s ease-in-out infinite, titleFadeIn 0.6s ease-out;
+  }
+
+  @keyframes titleShimmer {
+    0%, 100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  @keyframes titleFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   :global(.dark) .tools-title {
     background: linear-gradient(
       135deg,
       oklch(0.75 0.14 var(--hue)),
-      oklch(0.7 0.16 calc(var(--hue) + 40))
+      oklch(0.7 0.16 calc(var(--hue) + 40)),
+      oklch(0.75 0.14 var(--hue))
     );
+    background-size: 200% 100%;
     -webkit-background-clip: text;
     background-clip: text;
   }
@@ -141,6 +179,18 @@ const tools = [
     line-height: 1.5;
     max-width: 32rem;
     margin: 0 auto 0.75rem;
+    animation: subtitleFadeIn 0.6s ease-out 0.2s both;
+  }
+
+  @keyframes subtitleFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-5px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   :global(.dark) .tools-subtitle {
@@ -154,6 +204,18 @@ const tools = [
     gap: 0.5rem;
     font-size: 0.85rem;
     font-weight: 600;
+    animation: statsFadeIn 0.6s ease-out 0.3s both;
+  }
+
+  @keyframes statsFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(5px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .tools-stat {
@@ -197,7 +259,7 @@ const tools = [
     border: 1px solid rgba(0, 0, 0, 0.06);
     text-decoration: none;
     color: inherit;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
     animation: toolFadeIn 0.5s ease both;
   }
@@ -206,6 +268,7 @@ const tools = [
     border-color: rgba(255, 255, 255, 0.08);
   }
 
+  /* 🎨 EFECTO PREMIUM: Resplandor sutil en el borde superior */
   .tool-card::before {
     content: "";
     position: absolute;
@@ -216,22 +279,52 @@ const tools = [
     background: linear-gradient(
       90deg,
       oklch(0.7 0.14 var(--hue)),
-      oklch(0.65 0.16 calc(var(--hue) + 60))
+      oklch(0.65 0.16 calc(var(--hue) + 60)),
+      oklch(0.7 0.14 var(--hue))
+    );
+    background-size: 200% 100%;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    animation: borderShimmer 3s ease-in-out infinite;
+  }
+
+  @keyframes borderShimmer {
+    0%, 100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  /* 🎨 EFECTO PREMIUM: Brillo sutil de fondo */
+  .tool-card::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(
+      circle,
+      oklch(0.7 0.14 var(--hue) / 0.03) 0%,
+      transparent 70%
     );
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.6s ease;
+    pointer-events: none;
   }
 
   .tool-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 20px 40px oklch(0.7 0.14 var(--hue) / 0.12),
-                0 8px 16px rgba(0, 0, 0, 0.06);
+    transform: translateY(-6px);
+    box-shadow: 0 20px 40px oklch(0.7 0.14 var(--hue) / 0.15),
+                0 8px 16px rgba(0, 0, 0, 0.08);
     border-color: oklch(0.8 0.08 var(--hue));
   }
 
   :global(.dark) .tool-card:hover {
-    box-shadow: 0 20px 40px oklch(0.4 0.1 var(--hue) / 0.2),
-                0 8px 16px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 20px 40px oklch(0.4 0.1 var(--hue) / 0.25),
+                0 8px 16px rgba(0, 0, 0, 0.4);
     border-color: oklch(0.45 0.08 var(--hue));
   }
 
@@ -239,8 +332,12 @@ const tools = [
     opacity: 1;
   }
 
+  .tool-card:hover::after {
+    opacity: 1;
+  }
+
   .tool-card:active {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
   }
 
   /* Badge */
@@ -256,6 +353,17 @@ const tools = [
     border-radius: 9999px;
     background: oklch(0.93 0.04 var(--hue));
     color: oklch(0.5 0.14 var(--hue));
+    animation: badgePulse 2s ease-in-out infinite;
+    z-index: 1;
+  }
+
+  @keyframes badgePulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 oklch(0.7 0.14 var(--hue) / 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 4px oklch(0.7 0.14 var(--hue) / 0);
+    }
   }
 
   :global(.dark) .tool-badge {
@@ -263,7 +371,7 @@ const tools = [
     color: oklch(0.78 0.12 var(--hue));
   }
 
-  /* Icono */
+  /* 🎨 ANIMACIÓN PREMIUM: Icono con rotación y escala suave */
   .tool-icon-wrapper {
     width: 3.5rem;
     height: 3.5rem;
@@ -272,7 +380,24 @@ const tools = [
     justify-content: center;
     border-radius: 1rem;
     background: oklch(0.95 0.03 var(--hue));
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* 🎨 Brillo interno en el icono */
+  .tool-icon-wrapper::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 1rem;
+    background: linear-gradient(
+      135deg,
+      oklch(0.98 0.02 var(--hue)),
+      transparent 50%
+    );
+    opacity: 0;
+    transition: opacity 0.4s ease;
   }
 
   :global(.dark) .tool-icon-wrapper {
@@ -280,8 +405,12 @@ const tools = [
   }
 
   .tool-card:hover .tool-icon-wrapper {
-    transform: scale(1.08);
+    transform: scale(1.12) rotate(5deg);
     background: oklch(0.9 0.06 var(--hue));
+  }
+
+  .tool-card:hover .tool-icon-wrapper::before {
+    opacity: 1;
   }
 
   :global(.dark) .tool-card:hover .tool-icon-wrapper {
@@ -290,6 +419,35 @@ const tools = [
 
   .tool-icon {
     font-size: 1.75rem;
+    position: relative;
+    z-index: 1;
+    animation: iconBounce 2s ease-in-out infinite;
+  }
+
+  @keyframes iconBounce {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-2px);
+    }
+  }
+
+  /* 🎨 Al hacer hover, el icono gira sutilmente */
+  .tool-card:hover .tool-icon {
+    animation: iconSpin 0.6s ease-out;
+  }
+
+  @keyframes iconSpin {
+    0% {
+      transform: rotate(0deg) scale(1);
+    }
+    50% {
+      transform: rotate(10deg) scale(1.1);
+    }
+    100% {
+      transform: rotate(0deg) scale(1);
+    }
   }
 
   /* Contenido */
@@ -299,10 +457,19 @@ const tools = [
     color: #0f172a;
     margin-bottom: 0.35rem;
     line-height: 1.3;
+    transition: color 0.3s ease;
   }
 
   :global(.dark) .tool-name {
     color: #f1f5f9;
+  }
+
+  .tool-card:hover .tool-name {
+    color: oklch(0.55 0.14 var(--hue));
+  }
+
+  :global(.dark) .tool-card:hover .tool-name {
+    color: oklch(0.75 0.14 var(--hue));
   }
 
   .tool-description {
@@ -330,12 +497,23 @@ const tools = [
     background: oklch(0.96 0.015 var(--hue));
     color: #475569;
     border: 1px solid oklch(0.92 0.02 var(--hue));
+    transition: all 0.3s ease;
   }
 
   :global(.dark) .tool-feature-tag {
     background: oklch(0.22 0.02 var(--hue));
     color: #94a3b8;
     border-color: oklch(0.32 0.03 var(--hue));
+  }
+
+  /* 🎨 Efecto hover en las etiquetas */
+  .tool-card:hover .tool-feature-tag {
+    transform: translateY(-1px);
+    border-color: oklch(0.8 0.06 var(--hue));
+  }
+
+  :global(.dark) .tool-card:hover .tool-feature-tag {
+    border-color: oklch(0.4 0.06 var(--hue));
   }
 
   /* CTA */
@@ -347,7 +525,7 @@ const tools = [
     font-weight: 600;
     color: oklch(0.55 0.14 var(--hue));
     margin-top: 0.25rem;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   :global(.dark) .tool-cta {
@@ -355,12 +533,24 @@ const tools = [
   }
 
   .tool-cta-arrow {
-    transition: transform 0.2s ease;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     font-size: 1rem;
+    display: inline-block;
   }
 
+  /* 🎨 Flecha con animación de rebote */
   .tool-card:hover .tool-cta-arrow {
-    transform: translateX(4px);
+    transform: translateX(6px);
+    animation: arrowBounce 0.6s ease-in-out;
+  }
+
+  @keyframes arrowBounce {
+    0%, 100% {
+      transform: translateX(6px);
+    }
+    50% {
+      transform: translateX(10px);
+    }
   }
 
   .tool-card:hover .tool-cta {
@@ -378,6 +568,18 @@ const tools = [
     border-radius: var(--radius-large);
     background: oklch(0.97 0.008 var(--hue));
     border: 1px dashed oklch(0.88 0.03 var(--hue));
+    animation: footerFadeIn 0.6s ease-out 0.5s both;
+  }
+
+  @keyframes footerFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   :global(.dark) .tools-footer {
@@ -399,7 +601,7 @@ const tools = [
   @keyframes toolFadeIn {
     from {
       opacity: 0;
-      transform: translateY(12px);
+      transform: translateY(20px);
     }
     to {
       opacity: 1;
@@ -428,6 +630,38 @@ const tools = [
 
     .tool-icon {
       font-size: 1.5rem;
+    }
+  }
+
+  /* 🎨 OPTIMIZACIÓN: Usar will-change solo durante interacciones */
+  .tool-card:hover {
+    will-change: transform;
+  }
+
+  .tool-icon-wrapper:hover {
+    will-change: transform;
+  }
+
+  /* 🎨 Reducir animaciones si el usuario prefiere menos movimiento */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    
+    .tool-card:hover {
+      transform: translateY(-2px);
+    }
+    
+    .tool-icon-wrapper {
+      animation: none;
+    }
+    
+    .tools-header-icon {
+      animation: none;
     }
   }
 </style>
