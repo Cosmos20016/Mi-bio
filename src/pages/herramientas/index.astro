@@ -189,31 +189,31 @@ const tools = [
                   
                   <!-- RAYO DE COMPRESIÓN - Centro -->
                   <g class="lightning-strike">
-                    <!-- Rayo principal con efecto de brillo -->
-                    <path d="M 45 34 L 33 42 L 39 42 L 34 50 L 46 42 L 40 42 Z" 
+                    <!-- Rayo principal con efecto de brillo (ajustado para no salirse) -->
+                    <path d="M 42 36 L 35 42 L 39 42 L 36 48 L 45 42 L 41 42 Z" 
                           fill="url(#urlBurst)" opacity="0.95" 
                           filter="url(#urlGlow)" class="bolt-main"/>
                     
                     <!-- Líneas de energía alrededor del rayo -->
                     <g class="energy-lines">
-                      <line x1="32" y1="38" x2="28" y2="38" stroke="url(#urlBurst)" 
+                      <line x1="33" y1="40" x2="29" y2="40" stroke="url(#urlBurst)" 
                             stroke-width="2" stroke-linecap="round" opacity="0.7" class="eline e1"/>
-                      <line x1="48" y1="38" x2="52" y2="38" stroke="url(#urlBurst)" 
+                      <line x1="47" y1="40" x2="51" y2="40" stroke="url(#urlBurst)" 
                             stroke-width="2" stroke-linecap="round" opacity="0.7" class="eline e2"/>
-                      <line x1="32" y1="44" x2="28" y2="44" stroke="url(#urlBurst)" 
+                      <line x1="33" y1="45" x2="29" y2="45" stroke="url(#urlBurst)" 
                             stroke-width="1.5" stroke-linecap="round" opacity="0.6" class="eline e3"/>
-                      <line x1="48" y1="44" x2="52" y2="44" stroke="url(#urlBurst)" 
+                      <line x1="47" y1="45" x2="51" y2="45" stroke="url(#urlBurst)" 
                             stroke-width="1.5" stroke-linecap="round" opacity="0.6" class="eline e4"/>
                     </g>
                     
                     <!-- Chispas pequeñas -->
                     <g class="sparks">
-                      <circle cx="30" cy="36" r="1.5" fill="url(#urlBurst)" opacity="0.8" class="spark sp1"/>
-                      <circle cx="50" cy="36" r="1.5" fill="url(#urlBurst)" opacity="0.8" class="spark sp2"/>
-                      <circle cx="30" cy="46" r="1.2" fill="url(#urlBurst)" opacity="0.7" class="spark sp3"/>
-                      <circle cx="50" cy="46" r="1.2" fill="url(#urlBurst)" opacity="0.7" class="spark sp4"/>
-                      <circle cx="40" cy="34" r="1" fill="url(#urlBurst)" opacity="0.6" class="spark sp5"/>
-                      <circle cx="40" cy="50" r="1" fill="url(#urlBurst)" opacity="0.6" class="spark sp6"/>
+                      <circle cx="31" cy="38" r="1.5" fill="url(#urlBurst)" opacity="0.8" class="spark sp1"/>
+                      <circle cx="49" cy="38" r="1.5" fill="url(#urlBurst)" opacity="0.8" class="spark sp2"/>
+                      <circle cx="31" cy="47" r="1.2" fill="url(#urlBurst)" opacity="0.7" class="spark sp3"/>
+                      <circle cx="49" cy="47" r="1.2" fill="url(#urlBurst)" opacity="0.7" class="spark sp4"/>
+                      <circle cx="40" cy="36" r="1" fill="url(#urlBurst)" opacity="0.6" class="spark sp5"/>
+                      <circle cx="40" cy="48" r="1" fill="url(#urlBurst)" opacity="0.6" class="spark sp6"/>
                     </g>
                     
                     <!-- Ondas de impacto -->
@@ -757,8 +757,8 @@ const tools = [
   }
 
   @keyframes boltStrike {
-    0%, 25% { opacity: 0; transform: scale(0.5) rotate(-15deg); }
-    35% { opacity: 0.95; transform: scale(1.15) rotate(3deg); }
+    0%, 25% { opacity: 0; transform: scale(0.7) rotate(0deg); }
+    35% { opacity: 0.95; transform: scale(1.08) rotate(0deg); }
     45% { opacity: 1; transform: scale(1) rotate(0deg); }
     60%, 100% { opacity: 0.95; transform: scale(1) rotate(0deg); }
   }
