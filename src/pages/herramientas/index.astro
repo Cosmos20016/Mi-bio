@@ -137,8 +137,24 @@ const tools = [
                     <stop offset="0%" style="stop-color:oklch(0.7 0.2 var(--hue));stop-opacity:1" />
                     <stop offset="100%" style="stop-color:oklch(0.55 0.22 calc(var(--hue) + 40));stop-opacity:1" />
                   </linearGradient>
+                  <linearGradient id="linkGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:oklch(0.85 0.2 var(--hue));stop-opacity:1" />
+                    <stop offset="50%" style="stop-color:oklch(0.75 0.22 calc(var(--hue) + 20));stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:oklch(0.65 0.2 calc(var(--hue) + 40));stop-opacity:1" />
+                  </linearGradient>
+                  <linearGradient id="chainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:oklch(0.8 0.18 var(--hue));stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:oklch(0.6 0.2 calc(var(--hue) + 30));stop-opacity:1" />
+                  </linearGradient>
                   <filter id="premiumGlow">
-                    <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+                    <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                    <feMerge>
+                      <feMergeNode in="coloredBlur"/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
+                  <filter id="softGlow">
+                    <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
                     <feMerge>
                       <feMergeNode in="coloredBlur"/>
                       <feMergeNode in="SourceGraphic"/>
@@ -146,62 +162,98 @@ const tools = [
                   </filter>
                 </defs>
                 
-                <!-- DISEÑO PREMIUM SIMPLIFICADO -->
-                <g class="url-shortener">
-                  <!-- Barra larga superior (URL original) -->
-                  <rect x="16" y="22" width="48" height="8" rx="4" 
-                        fill="url(#linkGrad)" opacity="0.85" 
-                        filter="url(#premiumGlow)" class="long-url"/>
+                <!-- DISEÑO ÉPICO: CADENA ROMPIÉNDOSE + TRANSFORMACIÓN -->
+                <g class="url-shortener-epic">
                   
-                  <!-- Texto simulado en la barra larga -->
-                  <rect x="20" y="25.5" width="3" height="1" rx="0.5" fill="white" opacity="0.6"/>
-                  <rect x="24" y="25.5" width="3" height="1" rx="0.5" fill="white" opacity="0.6"/>
-                  <rect x="28" y="25.5" width="3" height="1" rx="0.5" fill="white" opacity="0.6"/>
-                  <rect x="32" y="25.5" width="3" height="1" rx="0.5" fill="white" opacity="0.6"/>
-                  <rect x="36" y="25.5" width="3" height="1" rx="0.5" fill="white" opacity="0.5"/>
-                  <rect x="40" y="25.5" width="3" height="1" rx="0.5" fill="white" opacity="0.5"/>
-                  <rect x="44" y="25.5" width="3" height="1" rx="0.5" fill="white" opacity="0.4"/>
-                  <rect x="48" y="25.5" width="3" height="1" rx="0.5" fill="white" opacity="0.4"/>
-                  <rect x="52" y="25.5" width="3" height="1" rx="0.5" fill="white" opacity="0.3"/>
-                  <rect x="56" y="25.5" width="3" height="1" rx="0.5" fill="white" opacity="0.3"/>
-                  
-                  <!-- Flechas de compresión -->
-                  <g class="compress-arrows">
-                    <path d="M 26 38 L 29 40 L 26 42" 
-                          stroke="url(#linkGrad)" stroke-width="2" 
-                          fill="none" stroke-linecap="round" stroke-linejoin="round" 
-                          opacity="0.7" class="arrow-left"/>
-                    <path d="M 54 38 L 51 40 L 54 42" 
-                          stroke="url(#linkGrad)" stroke-width="2" 
-                          fill="none" stroke-linecap="round" stroke-linejoin="round" 
-                          opacity="0.7" class="arrow-right"/>
+                  <!-- Eslabón izquierdo de la cadena -->
+                  <g class="chain-left">
+                    <path d="M 28 30 Q 22 30 22 36 Q 22 42 28 42 L 32 42 Q 32 36 32 36 Q 32 30 28 30 Z" 
+                          fill="none" stroke="url(#chainGrad)" stroke-width="2.5" 
+                          opacity="0.9" filter="url(#softGlow)" class="chain-link-left"/>
+                    <circle cx="28" cy="36" r="2" fill="url(#linkGrad)" opacity="0.8" class="chain-dot-left"/>
                   </g>
                   
-                  <!-- Partículas de velocidad -->
-                  <g class="speed-particles">
-                    <circle cx="22" cy="40" r="1.5" fill="url(#linkGrad)" class="particle p1" opacity="0.6"/>
-                    <circle cx="34" cy="40" r="1.2" fill="url(#linkGrad)" class="particle p2" opacity="0.5"/>
-                    <circle cx="46" cy="40" r="1" fill="url(#linkGrad)" class="particle p3" opacity="0.4"/>
-                    <circle cx="58" cy="40" r="0.8" fill="url(#linkGrad)" class="particle p4" opacity="0.3"/>
+                  <!-- Eslabón derecho de la cadena -->
+                  <g class="chain-right">
+                    <path d="M 52 30 Q 58 30 58 36 Q 58 42 52 42 L 48 42 Q 48 36 48 36 Q 48 30 52 30 Z" 
+                          fill="none" stroke="url(#chainGrad)" stroke-width="2.5" 
+                          opacity="0.9" filter="url(#softGlow)" class="chain-link-right"/>
+                    <circle cx="52" cy="36" r="2" fill="url(#linkGrad)" opacity="0.8" class="chain-dot-right"/>
                   </g>
                   
-                  <!-- Barra corta inferior (URL acortada) -->
-                  <rect x="30" y="50" width="20" height="8" rx="4" 
-                        fill="url(#linkGrad)" opacity="0.95" 
-                        filter="url(#premiumGlow)" class="short-url"/>
-                  
-                  <!-- Texto en la barra corta -->
-                  <rect x="34" y="53.5" width="3" height="1" rx="0.5" fill="white" opacity="0.7"/>
-                  <rect x="38" y="53.5" width="3" height="1" rx="0.5" fill="white" opacity="0.7"/>
-                  <rect x="42" y="53.5" width="3" height="1" rx="0.5" fill="white" opacity="0.7"/>
-                  
-                  <!-- Check mark de éxito -->
-                  <g class="check-mark" transform="translate(52, 52)">
-                    <circle cx="0" cy="2" r="3" fill="oklch(0.7 0.22 140)" opacity="0.9"/>
-                    <path d="M -1.3 1.7 L -0.3 2.7 L 1.3 0.7" 
-                          stroke="white" stroke-width="1" 
-                          fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <!-- Eslabón central ROMPIÉNDOSE -->
+                  <g class="chain-center">
+                    <g class="break-left-piece">
+                      <path d="M 36 32 Q 32 32 32 36 Q 32 40 36 40 L 38 40" 
+                            fill="none" stroke="url(#chainGrad)" stroke-width="2.5" 
+                            opacity="0.85" filter="url(#softGlow)" stroke-linecap="round"/>
+                    </g>
+                    <g class="break-right-piece">
+                      <path d="M 44 32 Q 48 32 48 36 Q 48 40 44 40 L 42 40" 
+                            fill="none" stroke="url(#chainGrad)" stroke-width="2.5" 
+                            opacity="0.85" filter="url(#softGlow)" stroke-linecap="round"/>
+                    </g>
                   </g>
+                  
+                  <!-- EXPLOSIÓN DE PARTÍCULAS en el centro -->
+                  <g class="explosion-particles">
+                    <circle cx="40" cy="36" r="1.5" fill="url(#linkGlow)" class="explosion-p1" opacity="0"/>
+                    <circle cx="40" cy="36" r="1.2" fill="url(#linkGlow)" class="explosion-p2" opacity="0"/>
+                    <circle cx="40" cy="36" r="1" fill="url(#linkGlow)" class="explosion-p3" opacity="0"/>
+                    <circle cx="40" cy="36" r="0.8" fill="url(#linkGlow)" class="explosion-p4" opacity="0"/>
+                    <circle cx="40" cy="36" r="1" fill="url(#linkGlow)" class="explosion-p5" opacity="0"/>
+                    <circle cx="40" cy="36" r="0.9" fill="url(#linkGlow)" class="explosion-p6" opacity="0"/>
+                  </g>
+                  
+                  <!-- Ondas de energía expansivas -->
+                  <g class="energy-waves">
+                    <circle cx="40" cy="36" r="8" fill="none" stroke="url(#linkGlow)" 
+                            stroke-width="1.5" opacity="0" class="wave w1"/>
+                    <circle cx="40" cy="36" r="8" fill="none" stroke="url(#linkGlow)" 
+                            stroke-width="1" opacity="0" class="wave w2"/>
+                  </g>
+                  
+                  <!-- RESULTADO: URL ACORTADA CON ESTILO -->
+                  <g class="result-container">
+                    <!-- Cápsula premium con gradiente -->
+                    <rect x="26" y="52" width="28" height="10" rx="5" 
+                          fill="url(#linkGrad)" opacity="0.95" 
+                          filter="url(#premiumGlow)" class="result-capsule"/>
+                    
+                    <!-- Brillo interno -->
+                    <rect x="27" y="53" width="26" height="4" rx="2" 
+                          fill="url(#linkGlow)" opacity="0.3" class="inner-shine"/>
+                    
+                    <!-- Símbolo de enlace minimalista -->
+                    <g transform="translate(31, 56)">
+                      <path d="M 2 2 L 2 4 M 6 2 L 6 4 M 1 3 L 3 3 M 5 3 L 7 3" 
+                            stroke="white" stroke-width="1.2" stroke-linecap="round" 
+                            opacity="0.9" class="link-symbol"/>
+                    </g>
+                    
+                    <!-- Texto "bit.ly" elegante -->
+                    <text x="42" y="58.5" font-family="system-ui, -apple-system" 
+                          font-size="5" font-weight="700" 
+                          fill="white" text-anchor="middle" opacity="0.95">bit.ly</text>
+                    
+                    <!-- Indicador de velocidad/éxito -->
+                    <g transform="translate(56, 56)" class="success-indicator">
+                      <circle cx="0" cy="0" r="3.5" fill="oklch(0.7 0.22 140)" opacity="0.95"/>
+                      <circle cx="0" cy="0" r="2.5" fill="oklch(0.8 0.18 140)" opacity="0.4" class="success-pulse"/>
+                      <path d="M -1.5 -0.3 L -0.5 0.7 L 1.5 -1" 
+                            stroke="white" stroke-width="1.2" 
+                            fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    </g>
+                  </g>
+                  
+                  <!-- Destellos de luz decorativos -->
+                  <g class="light-sparkles">
+                    <circle cx="23" cy="28" r="1" fill="url(#linkGlow)" opacity="0" class="sparkle s1"/>
+                    <circle cx="57" cy="28" r="1" fill="url(#linkGlow)" opacity="0" class="sparkle s2"/>
+                    <circle cx="20" cy="44" r="0.8" fill="url(#linkGlow)" opacity="0" class="sparkle s3"/>
+                    <circle cx="60" cy="44" r="0.8" fill="url(#linkGlow)" opacity="0" class="sparkle s4"/>
+                  </g>
+                  
                 </g>
               </svg>
             )}
@@ -577,102 +629,290 @@ const tools = [
     50% { opacity: 0.3; }
   }
 
-  /* ===== ANIMACIONES URL SHORTENER (MEJORADAS) ===== */
-  .long-url {
-    animation: longUrlPulse 2.5s ease-in-out infinite;
-    transform-origin: center;
+  /* ===== ANIMACIONES ÉPICAS DEL URL SHORTENER ===== */
+  
+  /* Cadena izquierda - respiración sutil */
+  .chain-left {
+    animation: chainBreathe 3s ease-in-out infinite;
+    transform-origin: 28px 36px;
   }
 
-  @keyframes longUrlPulse {
-    0%, 100% { 
+  @keyframes chainBreathe {
+    0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.9; }
+    50% { transform: scale(1.05) rotate(-2deg); opacity: 1; }
+  }
+
+  /* Cadena derecha - respiración sutil */
+  .chain-right {
+    animation: chainBreathe 3s ease-in-out infinite 0.3s;
+    transform-origin: 52px 36px;
+  }
+
+  /* Eslabón rompiéndose - separación dramática */
+  .break-left-piece {
+    animation: breakLeft 3s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+    transform-origin: 36px 36px;
+  }
+
+  @keyframes breakLeft {
+    0%, 30% { 
+      transform: translateX(0) rotate(0deg); 
       opacity: 0.85; 
-      transform: scaleX(1);
     }
-    50% { 
-      opacity: 0.95; 
-      transform: scaleX(0.98);
+    40%, 70% { 
+      transform: translateX(-4px) rotate(-15deg); 
+      opacity: 0.5; 
     }
-  }
-
-  .compress-arrows {
-    animation: arrowsCompress 2s ease-in-out infinite;
-  }
-
-  @keyframes arrowsCompress {
-    0%, 100% { opacity: 0.7; }
-    50% { opacity: 1; }
-  }
-
-  .arrow-left {
-    animation: arrowMoveLeft 2s ease-in-out infinite;
-  }
-
-  @keyframes arrowMoveLeft {
-    0%, 100% { transform: translateX(0); opacity: 0.7; }
-    50% { transform: translateX(3px); opacity: 1; }
-  }
-
-  .arrow-right {
-    animation: arrowMoveRight 2s ease-in-out infinite;
-  }
-
-  @keyframes arrowMoveRight {
-    0%, 100% { transform: translateX(0); opacity: 0.7; }
-    50% { transform: translateX(-3px); opacity: 1; }
-  }
-
-  .speed-particles .particle {
-    animation: particleFloat 2s ease-in-out infinite;
-  }
-
-  .p1 { animation-delay: 0s; }
-  .p2 { animation-delay: 0.3s; }
-  .p3 { animation-delay: 0.6s; }
-  .p4 { animation-delay: 0.9s; }
-
-  @keyframes particleFloat {
-    0%, 100% { 
-      opacity: 0.6; 
-      transform: translateY(0) scale(1); 
-    }
-    50% { 
-      opacity: 0.2; 
-      transform: translateY(-2px) scale(0.7); 
+    80%, 100% { 
+      transform: translateX(0) rotate(0deg); 
+      opacity: 0.85; 
     }
   }
 
-  .short-url {
-    animation: shortUrlGlow 2s ease-in-out infinite;
+  .break-right-piece {
+    animation: breakRight 3s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+    transform-origin: 44px 36px;
   }
 
-  @keyframes shortUrlGlow {
-    0%, 100% { 
-      opacity: 0.95; 
-      transform: translateY(0);
+  @keyframes breakRight {
+    0%, 30% { 
+      transform: translateX(0) rotate(0deg); 
+      opacity: 0.85; 
     }
-    50% { 
-      opacity: 1; 
-      transform: translateY(-1px);
+    40%, 70% { 
+      transform: translateX(4px) rotate(15deg); 
+      opacity: 0.5; 
+    }
+    80%, 100% { 
+      transform: translateX(0) rotate(0deg); 
+      opacity: 0.85; 
     }
   }
 
-  .check-mark {
-    animation: checkAppear 2s ease-in-out infinite;
+  /* Explosión de partículas - patrón radial */
+  .explosion-p1 {
+    animation: explode1 3s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
   }
 
-  @keyframes checkAppear {
-    0%, 40% { 
+  @keyframes explode1 {
+    0%, 35% { transform: translate(0, 0); opacity: 0; }
+    40% { opacity: 0.9; }
+    50% { transform: translate(-8px, -8px); opacity: 0.6; }
+    60% { transform: translate(-10px, -10px); opacity: 0; }
+    100% { transform: translate(0, 0); opacity: 0; }
+  }
+
+  .explosion-p2 {
+    animation: explode2 3s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+  }
+
+  @keyframes explode2 {
+    0%, 35% { transform: translate(0, 0); opacity: 0; }
+    40% { opacity: 0.8; }
+    50% { transform: translate(8px, -8px); opacity: 0.5; }
+    60% { transform: translate(10px, -10px); opacity: 0; }
+    100% { transform: translate(0, 0); opacity: 0; }
+  }
+
+  .explosion-p3 {
+    animation: explode3 3s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+  }
+
+  @keyframes explode3 {
+    0%, 35% { transform: translate(0, 0); opacity: 0; }
+    40% { opacity: 0.7; }
+    50% { transform: translate(-8px, 8px); opacity: 0.4; }
+    60% { transform: translate(-10px, 10px); opacity: 0; }
+    100% { transform: translate(0, 0); opacity: 0; }
+  }
+
+  .explosion-p4 {
+    animation: explode4 3s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+  }
+
+  @keyframes explode4 {
+    0%, 35% { transform: translate(0, 0); opacity: 0; }
+    40% { opacity: 0.6; }
+    50% { transform: translate(8px, 8px); opacity: 0.3; }
+    60% { transform: translate(10px, 10px); opacity: 0; }
+    100% { transform: translate(0, 0); opacity: 0; }
+  }
+
+  .explosion-p5 {
+    animation: explode5 3s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+  }
+
+  @keyframes explode5 {
+    0%, 35% { transform: translate(0, 0); opacity: 0; }
+    40% { opacity: 0.8; }
+    50% { transform: translate(0, -10px); opacity: 0.4; }
+    60% { transform: translate(0, -12px); opacity: 0; }
+    100% { transform: translate(0, 0); opacity: 0; }
+  }
+
+  .explosion-p6 {
+    animation: explode6 3s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+  }
+
+  @keyframes explode6 {
+    0%, 35% { transform: translate(0, 0); opacity: 0; }
+    40% { opacity: 0.7; }
+    50% { transform: translate(0, 10px); opacity: 0.3; }
+    60% { transform: translate(0, 12px); opacity: 0; }
+    100% { transform: translate(0, 0); opacity: 0; }
+  }
+
+  /* Ondas de energía expansivas */
+  .wave {
+    animation: waveExpand 3s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+  }
+
+  .w1 { animation-delay: 0s; }
+  .w2 { animation-delay: 0.15s; }
+
+  @keyframes waveExpand {
+    0%, 35% { 
+      transform: scale(0); 
       opacity: 0; 
-      transform: translate(52px, 52px) scale(0.5) rotate(-45deg); 
     }
-    50%, 90% { 
-      opacity: 0.9; 
-      transform: translate(52px, 52px) scale(1) rotate(0deg); 
+    40% { 
+      transform: scale(0.8); 
+      opacity: 0.6; 
+    }
+    55% { 
+      transform: scale(2); 
+      opacity: 0.2; 
+    }
+    70% { 
+      transform: scale(2.5); 
+      opacity: 0; 
     }
     100% { 
+      transform: scale(0); 
       opacity: 0; 
-      transform: translate(52px, 52px) scale(0.5) rotate(-45deg); 
     }
+  }
+
+  /* Cápsula del resultado - aparición elegante */
+  .result-capsule {
+    animation: capsuleAppear 3s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+  }
+
+  @keyframes capsuleAppear {
+    0%, 50% { 
+      transform: translateY(10px) scale(0.9); 
+      opacity: 0; 
+    }
+    65% { 
+      transform: translateY(-2px) scale(1.05); 
+      opacity: 1; 
+    }
+    75% { 
+      transform: translateY(0) scale(1); 
+      opacity: 0.95; 
+    }
+    100% { 
+      transform: translateY(0) scale(1); 
+      opacity: 0.95; 
+    }
+  }
+
+  /* Brillo interno pulsante */
+  .inner-shine {
+    animation: shineFlow 3s ease-in-out infinite;
+  }
+
+  @keyframes shineFlow {
+    0%, 50% { opacity: 0; }
+    65% { opacity: 0.5; }
+    75%, 100% { opacity: 0.3; }
+  }
+
+  /* Símbolo de enlace */
+  .link-symbol {
+    animation: symbolDraw 3s ease-in-out infinite;
+  }
+
+  @keyframes symbolDraw {
+    0%, 55% { opacity: 0; transform: scale(0.5); }
+    70% { opacity: 1; transform: scale(1.1); }
+    80%, 100% { opacity: 0.9; transform: scale(1); }
+  }
+
+  /* Indicador de éxito */
+  .success-indicator {
+    animation: successPop 3s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+  }
+
+  @keyframes successPop {
+    0%, 60% { 
+      transform: translate(56px, 56px) scale(0) rotate(-90deg); 
+      opacity: 0; 
+    }
+    75% { 
+      transform: translate(56px, 56px) scale(1.2) rotate(10deg); 
+      opacity: 1; 
+    }
+    85% { 
+      transform: translate(56px, 56px) scale(1) rotate(0deg); 
+      opacity: 0.95; 
+    }
+    100% { 
+      transform: translate(56px, 56px) scale(1) rotate(0deg); 
+      opacity: 0.95; 
+    }
+  }
+
+  .success-pulse {
+    animation: successRipple 1.5s ease-in-out infinite;
+  }
+
+  @keyframes successRipple {
+    0%, 100% { transform: scale(1); opacity: 0.4; }
+    50% { transform: scale(1.4); opacity: 0; }
+  }
+
+  /* Destellos decorativos */
+  .sparkle {
+    animation: sparkleTwinkle 3s ease-in-out infinite;
+  }
+
+  .s1 { animation-delay: 0.4s; }
+  .s2 { animation-delay: 0.5s; }
+  .s3 { animation-delay: 0.6s; }
+  .s4 { animation-delay: 0.7s; }
+
+  @keyframes sparkleTwinkle {
+    0%, 30%, 100% { 
+      transform: scale(0) rotate(0deg); 
+      opacity: 0; 
+    }
+    40% { 
+      transform: scale(1.5) rotate(90deg); 
+      opacity: 0.9; 
+    }
+    50% { 
+      transform: scale(1) rotate(180deg); 
+      opacity: 0.6; 
+    }
+    60% { 
+      transform: scale(0) rotate(270deg); 
+      opacity: 0; 
+    }
+  }
+
+  /* Puntos de la cadena */
+  .chain-dot-left {
+    animation: dotGlow 3s ease-in-out infinite;
+  }
+
+  .chain-dot-right {
+    animation: dotGlow 3s ease-in-out infinite 0.3s;
+  }
+
+  @keyframes dotGlow {
+    0%, 100% { opacity: 0.8; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.3); }
   }
 
   .tool-card:hover .tool-svg {
