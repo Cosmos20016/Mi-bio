@@ -28,7 +28,7 @@ import { url } from "@utils/url-utils";
       <div class="tool-page-icon-wrapper" aria-hidden="true">
         <span class="tool-page-icon">🔗</span>
       </div>
-      <div>
+      <div class="tool-page-content">
         <h1 class="tool-page-title">Acortador de URLs</h1>
         <p class="tool-page-description">
           Acorta, organiza y comparte tus enlaces favoritos. QR codes al instante, historial completo y exportación sin límites.
@@ -57,12 +57,16 @@ import { url } from "@utils/url-utils";
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   /* Navigation */
   .tool-nav {
     display: flex;
     align-items: center;
+    width: 100%;
   }
 
   .tool-nav-list {
@@ -73,6 +77,7 @@ import { url } from "@utils/url-utils";
     list-style: none;
     margin: 0;
     padding: 0;
+    width: 100%;
   }
 
   .tool-nav-back {
@@ -127,10 +132,12 @@ import { url } from "@utils/url-utils";
     align-items: center;
     gap: 0.25rem;
     font-size: 0.85rem;
+    min-width: 0;
   }
 
   .breadcrumb-sep {
     color: #cbd5e1;
+    flex-shrink: 0;
   }
 
   :global(.dark) .breadcrumb-sep {
@@ -140,6 +147,9 @@ import { url } from "@utils/url-utils";
   .breadcrumb-current {
     color: #64748b;
     font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   :global(.dark) .breadcrumb-current {
@@ -155,6 +165,8 @@ import { url } from "@utils/url-utils";
     background: var(--card-bg, #ffffff);
     border-radius: var(--radius-large, 1rem);
     border: 1px solid rgba(0, 0, 0, 0.06);
+    width: 100%;
+    box-sizing: border-box;
   }
 
   :global(.dark) .tool-page-header {
@@ -171,6 +183,7 @@ import { url } from "@utils/url-utils";
     justify-content: center;
     border-radius: 1rem;
     background: oklch(0.95 0.03 var(--hue, 250));
+    flex-shrink: 0;
   }
 
   :global(.dark) .tool-page-icon-wrapper {
@@ -181,11 +194,16 @@ import { url } from "@utils/url-utils";
     font-size: 1.75rem;
   }
 
+  .tool-page-content {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+  }
+
   .tool-page-title {
     font-size: 1.75rem;
     font-weight: 800;
     letter-spacing: -0.01em;
-    /* Fallback color para navegadores sin soporte de background-clip */
     color: oklch(0.65 0.16 var(--hue, 250));
     background: linear-gradient(
       135deg,
@@ -197,9 +215,9 @@ import { url } from "@utils/url-utils";
     background-clip: text;
     margin-bottom: 0.35rem;
     line-height: 1.2;
+    word-wrap: break-word;
   }
 
-  /* Soporte para navegadores que no admiten background-clip: text */
   @supports not (background-clip: text) {
     .tool-page-title {
       background: none;
@@ -259,6 +277,7 @@ import { url } from "@utils/url-utils";
     border-radius: 9999px;
     background: oklch(0.93 0.04 var(--hue, 250));
     color: oklch(0.5 0.14 var(--hue, 250));
+    white-space: nowrap;
   }
 
   :global(.dark) .tool-page-badge {
@@ -266,16 +285,41 @@ import { url } from "@utils/url-utils";
     color: oklch(0.78 0.12 var(--hue, 250));
   }
 
-  /* Mobile */
-  @media (max-width: 640px) {
+  /* Tablet ajustes */
+  @media (max-width: 768px) {
     .tool-page-header {
-      flex-direction: column;
-      align-items: flex-start;
-      padding: 1rem 1.25rem;
+      padding: 1.125rem 1.375rem;
     }
 
     .tool-page-title {
-      font-size: 1.5rem;
+      font-size: 1.625rem;
+    }
+
+    .tool-page-description {
+      font-size: 0.875rem;
+    }
+  }
+
+  /* Mobile */
+  @media (max-width: 640px) {
+    .tool-page {
+      gap: 1.25rem;
+    }
+
+    .tool-nav-back {
+      font-size: 0.85rem;
+      padding: 0.35rem 0.65rem;
+    }
+
+    .tool-nav-breadcrumb {
+      font-size: 0.8rem;
+    }
+
+    .tool-page-header {
+      flex-direction: row;
+      align-items: flex-start;
+      padding: 1rem;
+      gap: 1rem;
     }
 
     .tool-page-icon-wrapper {
@@ -286,6 +330,64 @@ import { url } from "@utils/url-utils";
 
     .tool-page-icon {
       font-size: 1.5rem;
+    }
+
+    .tool-page-title {
+      font-size: 1.375rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .tool-page-description {
+      font-size: 0.85rem;
+      line-height: 1.5;
+      margin-bottom: 0.75rem;
+    }
+
+    .tool-page-header-actions {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.65rem;
+      width: 100%;
+    }
+
+    .tool-page-badges {
+      gap: 0.35rem;
+    }
+
+    .tool-page-badge {
+      font-size: 0.65rem;
+      padding: 0.2rem 0.5rem;
+    }
+
+    /* Asegurar que el ShareToolButton tenga ancho completo en móvil */
+    .tool-page-header-actions :global(.share-tool-button),
+    .tool-page-header-actions :global(button),
+    .tool-page-header-actions :global([data-share-button]) {
+      width: 100%;
+      max-width: 100%;
+    }
+  }
+
+  /* Mobile pequeño */
+  @media (max-width: 480px) {
+    .tool-page-header {
+      padding: 0.875rem;
+    }
+
+    .tool-page-title {
+      font-size: 1.25rem;
+    }
+
+    .tool-page-description {
+      font-size: 0.8rem;
+    }
+
+    .tool-nav-list {
+      gap: 0.15rem;
+    }
+
+    .breadcrumb-current {
+      max-width: 150px;
     }
   }
 
@@ -302,5 +404,10 @@ import { url } from "@utils/url-utils";
     .tool-nav-arrow {
       transition: none;
     }
+  }
+
+  /* Fix para evitar overflow horizontal */
+  * {
+    box-sizing: border-box;
   }
 </style>
