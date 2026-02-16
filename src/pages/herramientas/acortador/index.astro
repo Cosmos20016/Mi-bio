@@ -7,21 +7,25 @@ import { url } from "@utils/url-utils";
 
 <MainGridLayout title="Acortador de URLs" description="Acortador de URLs premium para creadores">
   <section class="tool-page">
-    <!-- Navegación superior mejorada -->
-    <nav class="tool-nav">
-      <a class="tool-nav-back" href={url("/herramientas/")}>
-        <span class="tool-nav-arrow">←</span>
-        <span>Herramientas</span>
-      </a>
-      <div class="tool-nav-breadcrumb">
-        <span class="breadcrumb-sep">/</span>
-        <span class="breadcrumb-current">Acortador de URLs</span>
-      </div>
+    <!-- Navegación superior mejorada con accesibilidad -->
+    <nav class="tool-nav" aria-label="Breadcrumb">
+      <ol class="tool-nav-list">
+        <li>
+          <a class="tool-nav-back" href={url("/herramientas/")} aria-label="Volver a Herramientas">
+            <span class="tool-nav-arrow" aria-hidden="true">←</span>
+            <span>Herramientas</span>
+          </a>
+        </li>
+        <li class="tool-nav-breadcrumb">
+          <span class="breadcrumb-sep" aria-hidden="true">/</span>
+          <span class="breadcrumb-current" aria-current="page">Acortador de URLs</span>
+        </li>
+      </ol>
     </nav>
 
     <!-- Header de la herramienta -->
     <header class="tool-page-header">
-      <div class="tool-page-icon-wrapper">
+      <div class="tool-page-icon-wrapper" aria-hidden="true">
         <span class="tool-page-icon">🔗</span>
       </div>
       <div>
@@ -30,10 +34,10 @@ import { url } from "@utils/url-utils";
           Acorta, organiza y comparte tus enlaces favoritos. QR codes al instante, historial completo y exportación sin límites.
         </p>
         <div class="tool-page-header-actions">
-          <div class="tool-page-badges">
-            <span class="tool-page-badge">Sin publicidad</span>
-            <span class="tool-page-badge">Privado</span>
-            <span class="tool-page-badge">Gratuito</span>
+          <div class="tool-page-badges" role="list" aria-label="Características de la herramienta">
+            <span class="tool-page-badge" role="listitem">Sin publicidad</span>
+            <span class="tool-page-badge" role="listitem">Privado</span>
+            <span class="tool-page-badge" role="listitem">Gratuito</span>
           </div>
           <ShareToolButton 
             toolName="Acortador de URLs"
@@ -59,8 +63,16 @@ import { url } from "@utils/url-utils";
   .tool-nav {
     display: flex;
     align-items: center;
+  }
+
+  .tool-nav-list {
+    display: flex;
+    align-items: center;
     gap: 0.25rem;
     flex-wrap: wrap;
+    list-style: none;
+    margin: 0;
+    padding: 0;
   }
 
   .tool-nav-back {
@@ -69,7 +81,7 @@ import { url } from "@utils/url-utils";
     gap: 0.4rem;
     font-size: 0.9rem;
     font-weight: 600;
-    color: oklch(0.55 0.12 var(--hue));
+    color: oklch(0.55 0.12 var(--hue, 250));
     text-decoration: none;
     padding: 0.4rem 0.75rem;
     border-radius: 0.5rem;
@@ -77,17 +89,28 @@ import { url } from "@utils/url-utils";
   }
 
   :global(.dark) .tool-nav-back {
-    color: oklch(0.72 0.12 var(--hue));
+    color: oklch(0.72 0.12 var(--hue, 250));
   }
 
   .tool-nav-back:hover {
-    background: oklch(0.95 0.025 var(--hue));
-    color: oklch(0.5 0.14 var(--hue));
+    background: oklch(0.95 0.025 var(--hue, 250));
+    color: oklch(0.5 0.14 var(--hue, 250));
   }
 
   :global(.dark) .tool-nav-back:hover {
-    background: oklch(0.28 0.03 var(--hue));
-    color: oklch(0.78 0.14 var(--hue));
+    background: oklch(0.28 0.03 var(--hue, 250));
+    color: oklch(0.78 0.14 var(--hue, 250));
+  }
+
+  .tool-nav-back:focus-visible {
+    outline: 2px solid oklch(0.5 0.14 var(--hue, 250));
+    outline-offset: 2px;
+    background: oklch(0.95 0.025 var(--hue, 250));
+  }
+
+  :global(.dark) .tool-nav-back:focus-visible {
+    outline-color: oklch(0.78 0.14 var(--hue, 250));
+    background: oklch(0.28 0.03 var(--hue, 250));
   }
 
   .tool-nav-arrow {
@@ -129,12 +152,13 @@ import { url } from "@utils/url-utils";
     align-items: flex-start;
     gap: 1.25rem;
     padding: 1.25rem 1.5rem;
-    background: var(--card-bg);
-    border-radius: var(--radius-large);
+    background: var(--card-bg, #ffffff);
+    border-radius: var(--radius-large, 1rem);
     border: 1px solid rgba(0, 0, 0, 0.06);
   }
 
   :global(.dark) .tool-page-header {
+    background: var(--card-bg, oklch(0.2 0.02 var(--hue, 250)));
     border-color: rgba(255, 255, 255, 0.08);
   }
 
@@ -146,11 +170,11 @@ import { url } from "@utils/url-utils";
     align-items: center;
     justify-content: center;
     border-radius: 1rem;
-    background: oklch(0.95 0.03 var(--hue));
+    background: oklch(0.95 0.03 var(--hue, 250));
   }
 
   :global(.dark) .tool-page-icon-wrapper {
-    background: oklch(0.28 0.03 var(--hue));
+    background: oklch(0.28 0.03 var(--hue, 250));
   }
 
   .tool-page-icon {
@@ -161,10 +185,12 @@ import { url } from "@utils/url-utils";
     font-size: 1.75rem;
     font-weight: 800;
     letter-spacing: -0.01em;
+    /* Fallback color para navegadores sin soporte de background-clip */
+    color: oklch(0.65 0.16 var(--hue, 250));
     background: linear-gradient(
       135deg,
-      oklch(0.65 0.16 var(--hue)),
-      oklch(0.6 0.18 calc(var(--hue) + 40))
+      oklch(0.65 0.16 var(--hue, 250)),
+      oklch(0.6 0.18 min(360, max(0, calc(var(--hue, 250) + 40))))
     );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -173,14 +199,31 @@ import { url } from "@utils/url-utils";
     line-height: 1.2;
   }
 
+  /* Soporte para navegadores que no admiten background-clip: text */
+  @supports not (background-clip: text) {
+    .tool-page-title {
+      background: none;
+      color: oklch(0.65 0.16 var(--hue, 250));
+    }
+  }
+
   :global(.dark) .tool-page-title {
+    color: oklch(0.75 0.14 var(--hue, 250));
     background: linear-gradient(
       135deg,
-      oklch(0.75 0.14 var(--hue)),
-      oklch(0.7 0.16 calc(var(--hue) + 40))
+      oklch(0.75 0.14 var(--hue, 250)),
+      oklch(0.7 0.16 min(360, max(0, calc(var(--hue, 250) + 40))))
     );
     -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+
+  @supports not (background-clip: text) {
+    :global(.dark) .tool-page-title {
+      background: none;
+      color: oklch(0.75 0.14 var(--hue, 250));
+    }
   }
 
   .tool-page-description {
@@ -214,13 +257,13 @@ import { url } from "@utils/url-utils";
     letter-spacing: 0.04em;
     padding: 0.2rem 0.55rem;
     border-radius: 9999px;
-    background: oklch(0.93 0.04 var(--hue));
-    color: oklch(0.5 0.14 var(--hue));
+    background: oklch(0.93 0.04 var(--hue, 250));
+    color: oklch(0.5 0.14 var(--hue, 250));
   }
 
   :global(.dark) .tool-page-badge {
-    background: oklch(0.3 0.05 var(--hue));
-    color: oklch(0.78 0.12 var(--hue));
+    background: oklch(0.3 0.05 var(--hue, 250));
+    color: oklch(0.78 0.12 var(--hue, 250));
   }
 
   /* Mobile */
@@ -243,6 +286,21 @@ import { url } from "@utils/url-utils";
 
     .tool-page-icon {
       font-size: 1.5rem;
+    }
+  }
+
+  /* Prevención de layout shift */
+  @media (prefers-reduced-motion: no-preference) {
+    .tool-nav-back,
+    .tool-nav-arrow {
+      transition: all 0.2s ease;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tool-nav-back,
+    .tool-nav-arrow {
+      transition: none;
     }
   }
 </style>
