@@ -1,4 +1,3 @@
----
 import type { GetStaticPaths, Page } from "astro";
 import Pagination from "../components/control/Pagination.astro";
 import PostPage from "../components/PostPage.astro";
@@ -17,9 +16,12 @@ interface Props {
 	page: Page<CollectionEntry<"blog">>;
 }
 
-const { page } = Astro.props as Props;
-const len = page.data.length;
+const { page } = Astro.props;
+const postsCount = page.data.length;
 const isHomePage = page.currentPage === 1;
+
+// URL base para construcción de enlaces
+const baseUrl = Astro.site?.toString() ?? siteConfig.url;
 
 // JSON-LD solo para la página principal
 const jsonLd = isHomePage
@@ -27,12 +29,12 @@ const jsonLd = isHomePage
 			"@context": "https://schema.org",
 			"@type": "WebSite",
 			name: profileConfig.name,
-			url: Astro.site?.toString() ?? siteConfig.url,
+			url: baseUrl,
 			description: profileConfig.bio,
 			author: {
 				"@type": "Person",
 				name: profileConfig.name,
-				url: new URL("/about/", Astro.site ?? siteConfig.url).href,
+				url: new URL("/about/", baseUrl).href,
 				sameAs: [
 					"https://www.youtube.com/@kevinborjayt",
 					"https://www.facebook.com/share/16n7f7zdYQ/",
@@ -42,7 +44,7 @@ const jsonLd = isHomePage
 				"@type": "SearchAction",
 				target: {
 					"@type": "EntryPoint",
-					urlTemplate: new URL("?q={search_term_string}", Astro.site ?? siteConfig.url).href,
+					urlTemplate: new URL("?q={search_term_string}", baseUrl).href,
 				},
 				"query-input": "required name=search_term_string",
 			},
@@ -50,7 +52,7 @@ const jsonLd = isHomePage
 	: null;
 
 // Cálculo de delay para animación
-const animationDelay = `calc(var(--content-delay) + ${len * 50}ms)`;
+const animationDelay = `calc(var(--content-delay) + ${postsCount * 50}ms)`;
 ---
 
 <MainGridLayout>
@@ -68,6 +70,6 @@ const animationDelay = `calc(var(--content-delay) + ${len * 50}ms)`;
 	<Pagination
 		class="mx-auto onload-animation"
 		page={page}
-		style={animationDelay}
+		style={`animation-delay: ${animationDelay}`}
 	/>
 </MainGridLayout>
