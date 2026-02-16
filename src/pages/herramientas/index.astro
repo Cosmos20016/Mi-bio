@@ -26,22 +26,18 @@ const tools = [
 
 <MainGridLayout title="Herramientas" description="Herramientas premium para creadores">
   <section class="tools-hub">
-    <!-- Header con icono premium -->
+    <!-- Header -->
     <header class="tools-header">
       <div class="tools-header-icon">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" class="header-svg">
           <defs>
-            <linearGradient id="headerGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" style="stop-color:oklch(0.7 0.18 var(--hue));stop-opacity:1" />
-              <stop offset="50%" style="stop-color:oklch(0.65 0.2 calc(var(--hue) + 30));stop-opacity:1" />
-              <stop offset="100%" style="stop-color:oklch(0.6 0.18 calc(var(--hue) + 60));stop-opacity:1" />
-            </linearGradient>
-            <linearGradient id="headerGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" style="stop-color:oklch(0.75 0.16 calc(var(--hue) + 20));stop-opacity:1" />
-              <stop offset="100%" style="stop-color:oklch(0.65 0.18 var(--hue));stop-opacity:1" />
+            <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:oklch(0.7 0.2 var(--hue));stop-opacity:1" />
+              <stop offset="50%" style="stop-color:oklch(0.65 0.22 calc(var(--hue) + 30));stop-opacity:1" />
+              <stop offset="100%" style="stop-color:oklch(0.6 0.2 calc(var(--hue) + 60));stop-opacity:1" />
             </linearGradient>
             <filter id="glow">
-              <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
               <feMerge>
                 <feMergeNode in="coloredBlur"/>
                 <feMergeNode in="SourceGraphic"/>
@@ -49,34 +45,28 @@ const tools = [
             </filter>
           </defs>
           
-          <!-- Hexágono de fondo con efecto de profundidad -->
-          <polygon points="60,15 85,30 85,60 60,75 35,60 35,30" 
-                   fill="url(#headerGrad1)" opacity="0.15" class="hex-bg"/>
+          <!-- Hexágono exterior -->
+          <polygon points="60,12 88,28 88,60 60,76 32,60 32,28" 
+                   fill="none" stroke="url(#headerGrad)" stroke-width="2" 
+                   opacity="0.4" class="hex-outer"/>
           
-          <!-- Forma geométrica central estilizada -->
-          <g class="center-shape">
-            <!-- Triángulo superior -->
-            <path d="M 60 25 L 70 40 L 50 40 Z" fill="url(#headerGrad1)" filter="url(#glow)"/>
-            <!-- Rombo central -->
-            <path d="M 60 42 L 72 52 L 60 62 L 48 52 Z" fill="url(#headerGrad2)" filter="url(#glow)"/>
-            <!-- Líneas de conexión -->
-            <line x1="60" y1="40" x2="60" y2="42" stroke="url(#headerGrad1)" stroke-width="2" class="connect-line"/>
-            <line x1="60" y1="62" x2="60" y2="70" stroke="url(#headerGrad2)" stroke-width="2" class="connect-line"/>
-          </g>
+          <!-- Hexágono medio -->
+          <polygon points="60,20 80,32 80,56 60,68 40,56 40,32" 
+                   fill="url(#headerGrad)" opacity="0.15" class="hex-mid"/>
           
-          <!-- Órbitas decorativas -->
-          <g class="orbits">
-            <circle cx="60" cy="45" r="25" fill="none" stroke="url(#headerGrad1)" 
-                    stroke-width="1" opacity="0.3" class="orbit orbit-1"/>
-            <circle cx="60" cy="45" r="32" fill="none" stroke="url(#headerGrad2)" 
-                    stroke-width="0.5" opacity="0.2" class="orbit orbit-2"/>
-          </g>
+          <!-- Cristal central -->
+          <circle cx="60" cy="44" r="18" fill="url(#headerGrad)" 
+                  filter="url(#glow)" opacity="0.8" class="center-crystal"/>
           
-          <!-- Partículas flotantes -->
-          <circle cx="35" cy="35" r="2.5" fill="url(#headerGrad1)" class="particle p-1" opacity="0.8"/>
-          <circle cx="85" cy="40" r="2" fill="url(#headerGrad2)" class="particle p-2" opacity="0.7"/>
-          <circle cx="40" cy="65" r="1.5" fill="url(#headerGrad1)" class="particle p-3" opacity="0.6"/>
-          <circle cx="80" cy="70" r="2" fill="url(#headerGrad2)" class="particle p-4" opacity="0.7"/>
+          <!-- Estrella interna -->
+          <path d="M 60 32 L 63 40 L 71 42 L 64 48 L 66 56 L 60 52 L 54 56 L 56 48 L 49 42 L 57 40 Z" 
+                fill="white" opacity="0.9" class="inner-star"/>
+          
+          <!-- Puntos de energía -->
+          <circle cx="40" cy="30" r="3" fill="url(#headerGrad)" class="energy-dot e1"/>
+          <circle cx="80" cy="30" r="2.5" fill="url(#headerGrad)" class="energy-dot e2"/>
+          <circle cx="35" cy="58" r="2" fill="url(#headerGrad)" class="energy-dot e3"/>
+          <circle cx="85" cy="58" r="3" fill="url(#headerGrad)" class="energy-dot e4"/>
         </svg>
       </div>
 
@@ -101,91 +91,106 @@ const tools = [
           href={tool.href}
           style={`animation-delay: calc(var(--content-delay) + ${i * 100}ms)`}
         >
-          <!-- Badge -->
           <div class="tool-badge">{tool.badge}</div>
 
-          <!-- Icono SVG Ultra Premium -->
           <div class="tool-icon-wrapper">
             {tool.iconType === "teleprompter" && (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" class="tool-svg">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="tool-svg">
                 <defs>
-                  <linearGradient id="teleGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:oklch(0.65 0.18 var(--hue));stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:oklch(0.55 0.2 calc(var(--hue) + 40));stop-opacity:1" />
+                  <linearGradient id="teleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:oklch(0.7 0.2 var(--hue));stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:oklch(0.55 0.22 calc(var(--hue) + 40));stop-opacity:1" />
                   </linearGradient>
-                  <linearGradient id="teleGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" style="stop-color:oklch(0.7 0.16 calc(var(--hue) + 20));stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:oklch(0.6 0.18 var(--hue));stop-opacity:1" />
+                  <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style="stop-color:oklch(0.8 0.15 var(--hue));stop-opacity:0" />
+                    <stop offset="30%" style="stop-color:oklch(0.8 0.15 var(--hue));stop-opacity:1" />
+                    <stop offset="70%" style="stop-color:oklch(0.8 0.15 var(--hue));stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:oklch(0.8 0.15 var(--hue));stop-opacity:0" />
                   </linearGradient>
-                  <filter id="teleGlow">
-                    <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+                  <filter id="screenGlow">
+                    <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
                     <feMerge>
                       <feMergeNode in="coloredBlur"/>
                       <feMergeNode in="SourceGraphic"/>
                     </feMerge>
                   </filter>
-                  <clipPath id="screenClip">
-                    <rect x="15" y="18" width="50" height="34" rx="3"/>
-                  </clipPath>
                 </defs>
                 
-                <!-- Marco del monitor con diseño moderno -->
-                <rect x="12" y="15" width="56" height="40" rx="4" 
-                      fill="url(#teleGrad1)" filter="url(#teleGlow)" class="tele-frame"/>
-                
-                <!-- Pantalla interior oscura -->
-                <rect x="15" y="18" width="50" height="34" rx="3" 
-                      fill="oklch(0.15 0.03 var(--hue))" opacity="0.9"/>
-                
-                <!-- Contenido de la pantalla -->
-                <g clip-path="url(#screenClip)">
-                  <!-- Barras de texto animadas con diseño moderno -->
-                  <g class="text-bars">
-                    <rect x="20" y="24" width="30" height="2.5" rx="1.25" 
-                          fill="url(#teleGrad2)" opacity="0.8" class="bar bar-1"/>
-                    <rect x="20" y="30" width="40" height="2.5" rx="1.25" 
-                          fill="url(#teleGrad2)" opacity="0.6" class="bar bar-2"/>
-                    <rect x="20" y="36" width="35" height="2.5" rx="1.25" 
-                          fill="url(#teleGrad2)" opacity="0.7" class="bar bar-3"/>
-                    <rect x="20" y="42" width="28" height="2.5" rx="1.25" 
-                          fill="url(#teleGrad2)" opacity="0.5" class="bar bar-4"/>
+                <!-- MONITOR ESTILO BROADCAST CON PROFUNDIDAD -->
+                <g class="monitor-group">
+                  <!-- Sombra del monitor -->
+                  <rect x="18" y="27" width="64" height="42" rx="3" 
+                        fill="black" opacity="0.2" transform="translate(1, 1)"/>
+                  
+                  <!-- Cuerpo del monitor -->
+                  <rect x="18" y="26" width="64" height="42" rx="3" 
+                        fill="url(#teleGrad)" stroke="oklch(0.8 0.15 var(--hue))" 
+                        stroke-width="1.5" filter="url(#screenGlow)"/>
+                  
+                  <!-- Pantalla oscura interior -->
+                  <rect x="22" y="30" width="56" height="34" rx="2" 
+                        fill="oklch(0.12 0.04 var(--hue))"/>
+                  
+                  <!-- TEXTO SCROLLEANDO - ESTE ES EL CONCEPTO CLAVE -->
+                  <g class="scrolling-text">
+                    <!-- Líneas de texto visibles que se mueven -->
+                    <rect x="26" y="36" width="32" height="3" rx="1.5" 
+                          fill="url(#textGrad)" class="text-line t1"/>
+                    <rect x="26" y="42" width="42" height="3" rx="1.5" 
+                          fill="url(#textGrad)" class="text-line t2"/>
+                    <rect x="26" y="48" width="36" height="3" rx="1.5" 
+                          fill="url(#textGrad)" class="text-line t3"/>
+                    <rect x="26" y="54" width="28" height="3" rx="1.5" 
+                          fill="url(#textGrad)" class="text-line t4"/>
                   </g>
                   
-                  <!-- Indicador de reproducción moderno -->
-                  <g class="play-indicator">
-                    <circle cx="58" cy="25" r="4" fill="url(#teleGrad2)" opacity="0.3"/>
-                    <circle cx="58" cy="25" r="2.5" fill="oklch(0.75 0.18 var(--hue))" class="pulse-dot"/>
+                  <!-- FLECHA DE SCROLL HACIA ARRIBA - ICÓNICA -->
+                  <g class="scroll-arrow">
+                    <path d="M 50 40 L 54 36 L 58 40" 
+                          stroke="oklch(0.75 0.18 var(--hue))" stroke-width="2.5" 
+                          fill="none" stroke-linecap="round" stroke-linejoin="round" 
+                          opacity="0.8"/>
+                    <line x1="54" y1="36" x2="54" y2="48" 
+                          stroke="oklch(0.75 0.18 var(--hue))" stroke-width="2" 
+                          stroke-linecap="round" opacity="0.8"/>
                   </g>
+                  
+                  <!-- Indicador REC pulsante -->
+                  <g class="rec-indicator">
+                    <circle cx="72" cy="34" r="3" fill="oklch(0.6 0.25 20)" opacity="0.3"/>
+                    <circle cx="72" cy="34" r="2" fill="oklch(0.7 0.3 20)" class="rec-dot"/>
+                  </g>
+                  
+                  <!-- Reflejo de cristal -->
+                  <rect x="24" y="31" width="24" height="18" rx="2" 
+                        fill="white" opacity="0.12"/>
                 </g>
                 
-                <!-- Reflejos de cristal en el monitor -->
-                <rect x="16" y="19" width="20" height="15" rx="2" 
-                      fill="white" opacity="0.08" class="glass-shine"/>
+                <!-- PLAY BUTTON PROMINENTE - Segunda idea clave -->
+                <g class="play-button">
+                  <circle cx="50" cy="52" r="10" fill="url(#teleGrad)" 
+                          opacity="0.3" class="play-bg"/>
+                  <path d="M 48 48 L 48 56 L 56 52 Z" 
+                        fill="oklch(0.8 0.15 var(--hue))" class="play-triangle"/>
+                </g>
                 
-                <!-- Base moderna del soporte -->
-                <path d="M 35 56 L 38 62 L 42 62 L 45 56 Z" 
-                      fill="url(#teleGrad1)" opacity="0.9"/>
-                <rect x="30" y="62" width="20" height="4" rx="2" 
-                      fill="url(#teleGrad1)"/>
-                
-                <!-- Detalles decorativos -->
-                <circle cx="40" cy="58" r="1.5" fill="url(#teleGrad2)" opacity="0.6" class="detail-dot"/>
+                <!-- Base del soporte -->
+                <path d="M 44 68 L 46 74 L 54 74 L 56 68 Z" 
+                      fill="url(#teleGrad)" opacity="0.9"/>
+                <rect x="38" y="74" width="24" height="3" rx="1.5" 
+                      fill="url(#teleGrad)"/>
               </svg>
             )}
             
             {tool.iconType === "link" && (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" class="tool-svg">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="tool-svg">
                 <defs>
-                  <linearGradient id="linkGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:oklch(0.65 0.18 var(--hue));stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:oklch(0.55 0.2 calc(var(--hue) + 40));stop-opacity:1" />
-                  </linearGradient>
-                  <linearGradient id="linkGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" style="stop-color:oklch(0.7 0.16 calc(var(--hue) + 20));stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:oklch(0.6 0.18 var(--hue));stop-opacity:1" />
+                  <linearGradient id="linkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:oklch(0.7 0.2 var(--hue));stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:oklch(0.55 0.22 calc(var(--hue) + 40));stop-opacity:1" />
                   </linearGradient>
                   <filter id="linkGlow">
-                    <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+                    <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
                     <feMerge>
                       <feMergeNode in="coloredBlur"/>
                       <feMergeNode in="SourceGraphic"/>
@@ -193,80 +198,100 @@ const tools = [
                   </filter>
                 </defs>
                 
-                <!-- Eslabón izquierdo con diseño 3D moderno -->
-                <g class="link-left" filter="url(#linkGlow)">
-                  <!-- Parte superior del eslabón -->
-                  <path d="M 18 28 Q 10 28 10 38 Q 10 48 18 48 L 30 48 Q 35 48 35 43" 
-                        stroke="url(#linkGrad1)" stroke-width="7" fill="none" 
-                        stroke-linecap="round" opacity="0.9"/>
-                  <!-- Reflejo interior -->
-                  <path d="M 18 30 Q 13 30 13 38 Q 13 46 18 46 L 28 46" 
-                        stroke="oklch(0.9 0.1 var(--hue))" stroke-width="2" fill="none" 
-                        stroke-linecap="round" opacity="0.3" class="inner-shine"/>
-                </g>
-                
-                <!-- Eslabón derecho con diseño 3D moderno -->
-                <g class="link-right" filter="url(#linkGlow)">
-                  <!-- Parte superior del eslabón -->
-                  <path d="M 62 28 Q 70 28 70 38 Q 70 48 62 48 L 50 48 Q 45 48 45 43" 
-                        stroke="url(#linkGrad2)" stroke-width="7" fill="none" 
-                        stroke-linecap="round" opacity="0.9"/>
-                  <!-- Reflejo interior -->
-                  <path d="M 62 30 Q 67 30 67 38 Q 67 46 62 46 L 52 46" 
-                        stroke="oklch(0.9 0.1 var(--hue))" stroke-width="2" fill="none" 
-                        stroke-linecap="round" opacity="0.3" class="inner-shine"/>
-                </g>
-                
-                <!-- Conexión central brillante -->
-                <g class="center-connection">
-                  <line x1="35" y1="38" x2="45" y2="38" 
-                        stroke="url(#linkGrad1)" stroke-width="3" 
-                        stroke-linecap="round" opacity="0.6" class="connect-beam"/>
-                  <circle cx="40" cy="38" r="3" fill="url(#linkGrad2)" 
-                          class="center-node" opacity="0.8"/>
-                </g>
-                
-                <!-- QR Code moderno y estilizado -->
-                <g class="qr-pattern" transform="translate(52, 54)">
-                  <!-- Marco del QR -->
-                  <rect x="0" y="0" width="20" height="20" rx="2" 
-                        fill="none" stroke="url(#linkGrad1)" stroke-width="1" opacity="0.4"/>
+                <!-- URL LARGA EN LA PARTE SUPERIOR -->
+                <g class="long-url">
+                  <!-- Fondo de la URL larga -->
+                  <rect x="15" y="22" width="70" height="10" rx="5" 
+                        fill="oklch(0.2 0.05 var(--hue))" opacity="0.6"/>
                   
-                  <!-- Patrón de módulos QR modernos -->
-                  <g class="qr-modules">
-                    <rect x="2" y="2" width="3" height="3" rx="0.5" fill="url(#linkGrad1)" class="qr-dot d-1"/>
-                    <rect x="7" y="2" width="3" height="3" rx="0.5" fill="url(#linkGrad2)" class="qr-dot d-2"/>
-                    <rect x="12" y="2" width="3" height="3" rx="0.5" fill="url(#linkGrad1)" class="qr-dot d-3"/>
-                    <rect x="2" y="7" width="3" height="3" rx="0.5" fill="url(#linkGrad2)" class="qr-dot d-4"/>
-                    <rect x="7" y="7" width="6" height="6" rx="1" fill="url(#linkGrad1)" class="qr-center"/>
-                    <rect x="15" y="7" width="3" height="3" rx="0.5" fill="url(#linkGrad2)" class="qr-dot d-5"/>
-                    <rect x="2" y="15" width="3" height="3" rx="0.5" fill="url(#linkGrad1)" class="qr-dot d-6"/>
-                    <rect x="7" y="15" width="3" height="3" rx="0.5" fill="url(#linkGrad2)" class="qr-dot d-7"/>
-                    <rect x="15" y="15" width="3" height="3" rx="0.5" fill="url(#linkGrad1)" class="qr-dot d-8"/>
-                  </g>
+                  <!-- Texto simulado de URL larga -->
+                  <line x1="20" y1="27" x2="75" y2="27" 
+                        stroke="oklch(0.5 0.1 var(--hue))" stroke-width="2" 
+                        stroke-linecap="round" opacity="0.4" class="url-text"/>
+                  <circle cx="80" cy="27" r="1.5" fill="oklch(0.5 0.1 var(--hue))" opacity="0.4"/>
+                  <circle cx="77" cy="27" r="1.5" fill="oklch(0.5 0.1 var(--hue))" opacity="0.4"/>
+                  <circle cx="74" cy="27" r="1.5" fill="oklch(0.5 0.1 var(--hue))" opacity="0.4"/>
                 </g>
                 
-                <!-- Partículas de conexión -->
-                <circle cx="25" cy="25" r="1.5" fill="url(#linkGrad1)" class="connection-particle cp-1" opacity="0.6"/>
-                <circle cx="55" cy="25" r="1.5" fill="url(#linkGrad2)" class="connection-particle cp-2" opacity="0.6"/>
+                <!-- FLECHA MÁGICA DE TRANSFORMACIÓN - CONCEPTO CLAVE -->
+                <g class="magic-arrow" filter="url(#linkGlow)">
+                  <path d="M 50 37 L 50 47" 
+                        stroke="url(#linkGrad)" stroke-width="3" 
+                        stroke-linecap="round" class="arrow-shaft"/>
+                  <path d="M 50 47 L 45 42" 
+                        stroke="url(#linkGrad)" stroke-width="3" 
+                        stroke-linecap="round" class="arrow-tip-l"/>
+                  <path d="M 50 47 L 55 42" 
+                        stroke="url(#linkGrad)" stroke-width="3" 
+                        stroke-linecap="round" class="arrow-tip-r"/>
+                  
+                  <!-- Partículas mágicas alrededor de la flecha -->
+                  <circle cx="43" cy="40" r="1.5" fill="url(#linkGrad)" class="magic-particle mp1" opacity="0.8"/>
+                  <circle cx="57" cy="40" r="1.5" fill="url(#linkGrad)" class="magic-particle mp2" opacity="0.8"/>
+                  <circle cx="48" cy="44" r="1" fill="url(#linkGrad)" class="magic-particle mp3" opacity="0.6"/>
+                  <circle cx="52" cy="44" r="1" fill="url(#linkGrad)" class="magic-particle mp4" opacity="0.6"/>
+                </g>
+                
+                <!-- URL CORTA EN LA PARTE INFERIOR - MÁS GRANDE Y PROMINENTE -->
+                <g class="short-url">
+                  <!-- Fondo brillante de la URL corta -->
+                  <rect x="32" y="54" width="36" height="12" rx="6" 
+                        fill="url(#linkGrad)" filter="url(#linkGlow)" 
+                        class="short-url-bg" opacity="0.9"/>
+                  
+                  <!-- Texto de URL corta más visible -->
+                  <text x="50" y="62" 
+                        font-family="monospace" font-size="8" font-weight="bold" 
+                        fill="white" text-anchor="middle" 
+                        class="short-url-text">bit.ly</text>
+                </g>
+                
+                <!-- QR CODE MODERNO - MÁS GRANDE Y VISIBLE -->
+                <g class="qr-code" transform="translate(62, 68)">
+                  <!-- Marco del QR -->
+                  <rect x="0" y="0" width="24" height="24" rx="3" 
+                        fill="white" stroke="url(#linkGrad)" stroke-width="2" 
+                        filter="url(#linkGlow)"/>
+                  
+                  <!-- Patrón QR simplificado pero reconocible -->
+                  <rect x="3" y="3" width="6" height="6" rx="1" fill="url(#linkGrad)" class="qr-corner"/>
+                  <rect x="15" y="3" width="6" height="6" rx="1" fill="url(#linkGrad)" class="qr-corner"/>
+                  <rect x="3" y="15" width="6" height="6" rx="1" fill="url(#linkGrad)" class="qr-corner"/>
+                  
+                  <!-- Centro del QR -->
+                  <rect x="11" y="11" width="6" height="6" rx="1" fill="url(#linkGrad)" class="qr-center"/>
+                  
+                  <!-- Módulos decorativos -->
+                  <rect x="11" y="3" width="2" height="2" fill="url(#linkGrad)" opacity="0.7"/>
+                  <rect x="3" y="11" width="2" height="2" fill="url(#linkGrad)" opacity="0.7"/>
+                  <rect x="19" y="11" width="2" height="2" fill="url(#linkGrad)" opacity="0.7"/>
+                  <rect x="11" y="19" width="2" height="2" fill="url(#linkGrad)" opacity="0.7"/>
+                </g>
+                
+                <!-- Icono de enlace pequeño decorativo -->
+                <g class="link-icon" opacity="0.5">
+                  <circle cx="20" cy="62" r="3" stroke="url(#linkGrad)" 
+                          stroke-width="1.5" fill="none"/>
+                  <circle cx="28" cy="62" r="3" stroke="url(#linkGrad)" 
+                          stroke-width="1.5" fill="none"/>
+                  <line x1="22" y1="62" x2="26" y2="62" 
+                        stroke="url(#linkGrad)" stroke-width="1.5"/>
+                </g>
               </svg>
             )}
           </div>
 
-          <!-- Contenido -->
           <div class="tool-content">
             <h2 class="tool-name">{tool.name}</h2>
             <p class="tool-description">{tool.description}</p>
           </div>
 
-          <!-- Features -->
           <div class="tool-features">
             {tool.features.map((feature) => (
               <span class="tool-feature-tag">{feature}</span>
             ))}
           </div>
 
-          <!-- CTA visual -->
           <div class="tool-cta">
             <span>Abrir herramienta</span>
             <span class="tool-cta-arrow">→</span>
@@ -275,7 +300,6 @@ const tools = [
       ))}
     </div>
 
-    <!-- Footer informativo -->
     <div class="tools-footer">
       <p>
         🔒 Todas las herramientas funcionan en tu navegador. Tus datos nunca salen de tu dispositivo.
@@ -296,7 +320,7 @@ const tools = [
     padding: 1rem 0 0.5rem;
   }
 
-  /* 🎨 ICONO HEADER ULTRA PREMIUM */
+  /* 🎨 HEADER ICON */
   .tools-header-icon {
     margin-bottom: 0.75rem;
     display: inline-block;
@@ -306,18 +330,27 @@ const tools = [
   .header-svg {
     width: 90px;
     height: 90px;
-    filter: drop-shadow(0 8px 24px oklch(0.7 0.14 var(--hue) / 0.4));
+    filter: drop-shadow(0 8px 24px oklch(0.7 0.18 var(--hue) / 0.4));
   }
 
   @keyframes headerFloat {
     0%, 100% { transform: translateY(0) rotate(0deg); }
-    33% { transform: translateY(-12px) rotate(2deg); }
-    66% { transform: translateY(-6px) rotate(-2deg); }
+    50% { transform: translateY(-10px) rotate(3deg); }
   }
 
-  /* Animaciones del icono header */
-  .hex-bg {
+  .hex-outer {
+    animation: hexRotate 20s linear infinite;
+    transform-origin: 60px 44px;
+  }
+
+  @keyframes hexRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .hex-mid {
     animation: hexPulse 3s ease-in-out infinite;
+    transform-origin: 60px 44px;
   }
 
   @keyframes hexPulse {
@@ -325,64 +358,51 @@ const tools = [
     50% { transform: scale(1.05); opacity: 0.25; }
   }
 
-  .center-shape {
-    animation: shapeRotate 6s linear infinite;
-    transform-origin: 60px 45px;
+  .center-crystal {
+    animation: crystalPulse 2s ease-in-out infinite;
   }
 
-  @keyframes shapeRotate {
+  @keyframes crystalPulse {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.1); opacity: 1; }
+  }
+
+  .inner-star {
+    animation: starRotate 8s linear infinite;
+    transform-origin: 60px 44px;
+  }
+
+  @keyframes starRotate {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
   }
 
-  .connect-line {
-    animation: lineGrow 2s ease-in-out infinite;
+  .energy-dot {
+    animation: energyPulse 2s ease-in-out infinite;
   }
 
-  @keyframes lineGrow {
-    0%, 100% { stroke-dasharray: 2 2; }
-    50% { stroke-dasharray: 4 4; }
+  .e1 { animation-delay: 0s; }
+  .e2 { animation-delay: 0.5s; }
+  .e3 { animation-delay: 1s; }
+  .e4 { animation-delay: 1.5s; }
+
+  @keyframes energyPulse {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.3); }
   }
 
-  .orbit {
-    animation: orbitRotate 8s linear infinite;
-    transform-origin: 60px 45px;
-  }
-
-  .orbit-1 { animation-duration: 8s; }
-  .orbit-2 { animation-duration: 12s; animation-direction: reverse; }
-
-  @keyframes orbitRotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-
-  .particle {
-    animation: particleFloat 3s ease-in-out infinite;
-  }
-
-  .p-1 { animation-delay: 0s; }
-  .p-2 { animation-delay: 0.5s; }
-  .p-3 { animation-delay: 1s; }
-  .p-4 { animation-delay: 1.5s; }
-
-  @keyframes particleFloat {
-    0%, 100% { transform: translate(0, 0); opacity: 0.8; }
-    50% { transform: translate(3px, -5px); opacity: 0.4; }
-  }
-
-  /* 🎨 TÍTULO PREMIUM */
+  /* 🎨 TÍTULO */
   .tools-title {
     font-size: 2.5rem;
     font-weight: 800;
     letter-spacing: -0.02em;
     background: linear-gradient(
       135deg,
-      oklch(0.7 0.18 var(--hue)),
-      oklch(0.65 0.2 calc(var(--hue) + 30)),
-      oklch(0.6 0.18 calc(var(--hue) + 60)),
-      oklch(0.65 0.2 calc(var(--hue) + 30)),
-      oklch(0.7 0.18 var(--hue))
+      oklch(0.7 0.2 var(--hue)),
+      oklch(0.65 0.22 calc(var(--hue) + 30)),
+      oklch(0.6 0.2 calc(var(--hue) + 60)),
+      oklch(0.65 0.22 calc(var(--hue) + 30)),
+      oklch(0.7 0.2 var(--hue))
     );
     background-size: 300% 100%;
     -webkit-background-clip: text;
@@ -390,33 +410,27 @@ const tools = [
     background-clip: text;
     margin-bottom: 0.5rem;
     line-height: 1.2;
-    animation: premiumShimmer 5s ease-in-out infinite, titleEntrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: titleShimmer 5s ease-in-out infinite, titleEntrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  @keyframes premiumShimmer {
+  @keyframes titleShimmer {
     0%, 100% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
   }
 
   @keyframes titleEntrance {
-    from {
-      opacity: 0;
-      transform: translateY(-20px) scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
+    from { opacity: 0; transform: translateY(-20px) scale(0.9); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
   }
 
   :global(.dark) .tools-title {
     background: linear-gradient(
       135deg,
-      oklch(0.8 0.16 var(--hue)),
-      oklch(0.75 0.18 calc(var(--hue) + 30)),
-      oklch(0.7 0.16 calc(var(--hue) + 60)),
-      oklch(0.75 0.18 calc(var(--hue) + 30)),
-      oklch(0.8 0.16 var(--hue))
+      oklch(0.8 0.18 var(--hue)),
+      oklch(0.75 0.2 calc(var(--hue) + 30)),
+      oklch(0.7 0.18 calc(var(--hue) + 60)),
+      oklch(0.75 0.2 calc(var(--hue) + 30)),
+      oklch(0.8 0.18 var(--hue))
     );
     background-size: 300% 100%;
     -webkit-background-clip: text;
@@ -457,11 +471,11 @@ const tools = [
   }
 
   .tools-stat {
-    color: oklch(0.55 0.12 var(--hue));
+    color: oklch(0.55 0.14 var(--hue));
   }
 
   :global(.dark) .tools-stat {
-    color: oklch(0.72 0.12 var(--hue));
+    color: oklch(0.72 0.14 var(--hue));
   }
 
   .tools-stat-divider {
@@ -485,7 +499,7 @@ const tools = [
     }
   }
 
-  /* 🎨 CARDS ULTRA PREMIUM */
+  /* 🎨 CARDS */
   .tool-card {
     position: relative;
     display: flex;
@@ -503,21 +517,14 @@ const tools = [
   }
 
   @keyframes cardEntrance {
-    from {
-      opacity: 0;
-      transform: translateY(30px) scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
+    from { opacity: 0; transform: translateY(30px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
   }
 
   :global(.dark) .tool-card {
     border-color: rgba(255, 255, 255, 0.08);
   }
 
-  /* Borde superior brillante */
   .tool-card::before {
     content: "";
     position: absolute;
@@ -528,9 +535,9 @@ const tools = [
     background: linear-gradient(
       90deg,
       transparent,
-      oklch(0.7 0.18 var(--hue)),
-      oklch(0.65 0.2 calc(var(--hue) + 40)),
-      oklch(0.7 0.18 var(--hue)),
+      oklch(0.7 0.2 var(--hue)),
+      oklch(0.65 0.22 calc(var(--hue) + 40)),
+      oklch(0.7 0.2 var(--hue)),
       transparent
     );
     background-size: 200% 100%;
@@ -544,7 +551,6 @@ const tools = [
     to { background-position: 200% 0; }
   }
 
-  /* Resplandor de fondo */
   .tool-card::after {
     content: "";
     position: absolute;
@@ -554,7 +560,7 @@ const tools = [
     height: 300%;
     background: radial-gradient(
       circle at center,
-      oklch(0.7 0.18 var(--hue) / 0.08) 0%,
+      oklch(0.7 0.2 var(--hue) / 0.1) 0%,
       transparent 60%
     );
     opacity: 0;
@@ -566,18 +572,16 @@ const tools = [
   .tool-card:hover {
     transform: translateY(-8px) scale(1.02);
     box-shadow: 
-      0 25px 50px oklch(0.7 0.18 var(--hue) / 0.2),
-      0 10px 20px rgba(0, 0, 0, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    border-color: oklch(0.75 0.12 var(--hue));
+      0 25px 50px oklch(0.7 0.2 var(--hue) / 0.25),
+      0 10px 20px rgba(0, 0, 0, 0.1);
+    border-color: oklch(0.75 0.14 var(--hue));
   }
 
   :global(.dark) .tool-card:hover {
     box-shadow: 
-      0 25px 50px oklch(0.5 0.14 var(--hue) / 0.3),
-      0 10px 20px rgba(0, 0, 0, 0.5),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    border-color: oklch(0.5 0.12 var(--hue));
+      0 25px 50px oklch(0.5 0.16 var(--hue) / 0.35),
+      0 10px 20px rgba(0, 0, 0, 0.5);
+    border-color: oklch(0.5 0.14 var(--hue));
   }
 
   .tool-card:hover::before {
@@ -589,7 +593,7 @@ const tools = [
     transform: scale(1);
   }
 
-  /* BADGE PREMIUM */
+  /* BADGE */
   .tool-badge {
     position: absolute;
     top: 1rem;
@@ -600,232 +604,180 @@ const tools = [
     letter-spacing: 0.05em;
     padding: 0.3rem 0.7rem;
     border-radius: 9999px;
-    background: linear-gradient(135deg, oklch(0.95 0.06 var(--hue)), oklch(0.9 0.08 calc(var(--hue) + 20)));
-    color: oklch(0.5 0.16 var(--hue));
+    background: linear-gradient(135deg, oklch(0.95 0.08 var(--hue)), oklch(0.9 0.1 calc(var(--hue) + 20)));
+    color: oklch(0.5 0.18 var(--hue));
     animation: badgeGlow 2.5s ease-in-out infinite;
     z-index: 1;
-    box-shadow: 0 2px 8px oklch(0.7 0.14 var(--hue) / 0.3);
+    box-shadow: 0 2px 8px oklch(0.7 0.16 var(--hue) / 0.3);
   }
 
   @keyframes badgeGlow {
     0%, 100% {
-      box-shadow: 0 2px 8px oklch(0.7 0.14 var(--hue) / 0.3), 0 0 0 0 oklch(0.7 0.14 var(--hue) / 0.5);
+      box-shadow: 0 2px 8px oklch(0.7 0.16 var(--hue) / 0.3), 0 0 0 0 oklch(0.7 0.16 var(--hue) / 0.5);
     }
     50% {
-      box-shadow: 0 4px 12px oklch(0.7 0.14 var(--hue) / 0.4), 0 0 0 6px oklch(0.7 0.14 var(--hue) / 0);
+      box-shadow: 0 4px 12px oklch(0.7 0.16 var(--hue) / 0.4), 0 0 0 6px oklch(0.7 0.16 var(--hue) / 0);
     }
   }
 
   :global(.dark) .tool-badge {
-    background: linear-gradient(135deg, oklch(0.35 0.08 var(--hue)), oklch(0.3 0.1 calc(var(--hue) + 20)));
-    color: oklch(0.8 0.14 var(--hue));
+    background: linear-gradient(135deg, oklch(0.35 0.1 var(--hue)), oklch(0.3 0.12 calc(var(--hue) + 20)));
+    color: oklch(0.8 0.16 var(--hue));
   }
 
-  /* 🎨 WRAPPER ICONO ULTRA PREMIUM */
+  /* 🎨 ICON WRAPPER */
   .tool-icon-wrapper {
-    width: 4rem;
-    height: 4rem;
+    width: 5rem;
+    height: 5rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 1.25rem;
-    background: linear-gradient(135deg, oklch(0.97 0.04 var(--hue)), oklch(0.94 0.06 calc(var(--hue) + 20)));
+    border-radius: 1.5rem;
+    background: linear-gradient(135deg, oklch(0.97 0.06 var(--hue)), oklch(0.94 0.08 calc(var(--hue) + 20)));
     transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     box-shadow: 
-      0 4px 12px oklch(0.7 0.14 var(--hue) / 0.15),
-      inset 0 1px 0 rgba(255, 255, 255, 0.5);
-  }
-
-  .tool-icon-wrapper::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 1.25rem;
-    background: linear-gradient(
-      135deg,
-      oklch(0.99 0.02 var(--hue)),
-      transparent 60%
-    );
-    opacity: 0;
-    transition: opacity 0.5s ease;
+      0 8px 16px oklch(0.7 0.16 var(--hue) / 0.2),
+      inset 0 2px 0 rgba(255, 255, 255, 0.6);
   }
 
   :global(.dark) .tool-icon-wrapper {
-    background: linear-gradient(135deg, oklch(0.3 0.06 var(--hue)), oklch(0.25 0.08 calc(var(--hue) + 20)));
+    background: linear-gradient(135deg, oklch(0.3 0.08 var(--hue)), oklch(0.25 0.1 calc(var(--hue) + 20)));
     box-shadow: 
-      0 4px 12px oklch(0.3 0.1 var(--hue) / 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      0 8px 16px oklch(0.3 0.12 var(--hue) / 0.4),
+      inset 0 2px 0 rgba(255, 255, 255, 0.1);
   }
 
   .tool-card:hover .tool-icon-wrapper {
-    transform: scale(1.15) rotate(8deg);
-    background: linear-gradient(135deg, oklch(0.92 0.08 var(--hue)), oklch(0.88 0.1 calc(var(--hue) + 30)));
+    transform: scale(1.15) rotate(5deg);
     box-shadow: 
-      0 8px 20px oklch(0.7 0.18 var(--hue) / 0.3),
-      inset 0 2px 0 rgba(255, 255, 255, 0.3);
+      0 12px 24px oklch(0.7 0.2 var(--hue) / 0.35),
+      inset 0 2px 0 rgba(255, 255, 255, 0.8);
   }
 
   :global(.dark) .tool-card:hover .tool-icon-wrapper {
-    background: linear-gradient(135deg, oklch(0.4 0.1 var(--hue)), oklch(0.35 0.12 calc(var(--hue) + 30)));
+    box-shadow: 
+      0 12px 24px oklch(0.5 0.16 var(--hue) / 0.5),
+      inset 0 2px 0 rgba(255, 255, 255, 0.15);
   }
 
-  .tool-card:hover .tool-icon-wrapper::before {
-    opacity: 1;
-  }
-
-  /* 🎨 SVG ICONS - ANIMACIONES ESPECÍFICAS */
+  /* 🎨 SVG ANIMATIONS */
   .tool-svg {
     width: 100%;
     height: 100%;
-    position: relative;
-    z-index: 1;
   }
 
-  /* TELEPROMPTER */
-  .tele-frame {
-    animation: frameGlow 2.5s ease-in-out infinite;
+  /* TELEPROMPTER ANIMATIONS */
+  .scrolling-text .text-line {
+    animation: textScroll 3s ease-in-out infinite;
   }
 
-  @keyframes frameGlow {
-    0%, 100% { filter: url(#teleGlow); }
-    50% { filter: url(#teleGlow) brightness(1.1); }
+  .t1 { animation-delay: 0s; }
+  .t2 { animation-delay: 0.3s; }
+  .t3 { animation-delay: 0.6s; }
+  .t4 { animation-delay: 0.9s; }
+
+  @keyframes textScroll {
+    0%, 100% { 
+      opacity: 1; 
+      transform: translateY(0);
+    }
+    50% { 
+      opacity: 0.3; 
+      transform: translateY(-3px);
+    }
   }
 
-  .text-bars .bar {
-    animation: textFlow 3s ease-in-out infinite;
+  .scroll-arrow {
+    animation: arrowBounce 1.5s ease-in-out infinite;
   }
 
-  .bar-1 { animation-delay: 0s; }
-  .bar-2 { animation-delay: 0.3s; }
-  .bar-3 { animation-delay: 0.6s; }
-  .bar-4 { animation-delay: 0.9s; }
-
-  @keyframes textFlow {
-    0%, 100% { opacity: 0.8; transform: translateX(0); }
-    50% { opacity: 0.4; transform: translateX(-3px); }
+  @keyframes arrowBounce {
+    0%, 100% { transform: translateY(0); opacity: 0.8; }
+    50% { transform: translateY(-4px); opacity: 1; }
   }
 
-  .pulse-dot {
-    animation: recordingPulse 1.5s ease-in-out infinite;
+  .rec-dot {
+    animation: recBlink 1.5s ease-in-out infinite;
   }
 
-  @keyframes recordingPulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.3; transform: scale(0.7); }
+  @keyframes recBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
   }
 
-  .glass-shine {
-    animation: shineMove 3s ease-in-out infinite;
+  .play-button {
+    animation: playPulse 2s ease-in-out infinite;
   }
 
-  @keyframes shineMove {
-    0%, 100% { opacity: 0.08; transform: translateY(0); }
-    50% { opacity: 0.15; transform: translateY(5px); }
+  @keyframes playPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
   }
 
-  .detail-dot {
-    animation: detailPulse 2s ease-in-out infinite;
+  /* LINK SHORTENER ANIMATIONS */
+  .magic-arrow {
+    animation: arrowTransform 2s ease-in-out infinite;
   }
 
-  @keyframes detailPulse {
-    0%, 100% { opacity: 0.6; }
-    50% { opacity: 1; }
+  @keyframes arrowTransform {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(3px); }
   }
 
-  /* LINK SHORTENER */
-  .link-left, .link-right {
-    animation: linkBreath 2.5s ease-in-out infinite;
+  .magic-particle {
+    animation: particleTwinkle 1.5s ease-in-out infinite;
   }
 
-  .link-left { animation-delay: 0s; }
-  .link-right { animation-delay: 0.8s; }
+  .mp1 { animation-delay: 0s; }
+  .mp2 { animation-delay: 0.3s; }
+  .mp3 { animation-delay: 0.6s; }
+  .mp4 { animation-delay: 0.9s; }
 
-  @keyframes linkBreath {
-    0%, 100% { opacity: 0.9; transform: translateY(0); }
-    50% { opacity: 1; transform: translateY(-2px); }
+  @keyframes particleTwinkle {
+    0%, 100% { opacity: 0.8; transform: scale(1); }
+    50% { opacity: 0.2; transform: scale(0.5); }
   }
 
-  .inner-shine {
-    animation: shineFlow 2s ease-in-out infinite;
+  .short-url-bg {
+    animation: urlGlow 2s ease-in-out infinite;
   }
 
-  @keyframes shineFlow {
-    0%, 100% { opacity: 0.3; }
+  @keyframes urlGlow {
+    0%, 100% { opacity: 0.9; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
+  }
+
+  .qr-code {
+    animation: qrFloat 3s ease-in-out infinite;
+  }
+
+  @keyframes qrFloat {
+    0%, 100% { transform: translate(62px, 68px) rotate(0deg); }
+    50% { transform: translate(62px, 65px) rotate(2deg); }
+  }
+
+  .qr-corner {
+    animation: cornerPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes cornerPulse {
+    0%, 100% { opacity: 1; }
     50% { opacity: 0.6; }
   }
 
-  .center-connection .connect-beam {
-    animation: beamPulse 2s ease-in-out infinite;
-  }
-
-  @keyframes beamPulse {
-    0%, 100% { opacity: 0.6; stroke-width: 3; }
-    50% { opacity: 1; stroke-width: 4; }
-  }
-
-  .center-node {
-    animation: nodePulse 1.5s ease-in-out infinite;
-  }
-
-  @keyframes nodePulse {
-    0%, 100% { opacity: 0.8; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.2); }
-  }
-
-  .qr-modules .qr-dot {
-    animation: qrFlicker 2s ease-in-out infinite;
-  }
-
-  .d-1 { animation-delay: 0s; }
-  .d-2 { animation-delay: 0.2s; }
-  .d-3 { animation-delay: 0.4s; }
-  .d-4 { animation-delay: 0.6s; }
-  .d-5 { animation-delay: 0.8s; }
-  .d-6 { animation-delay: 1s; }
-  .d-7 { animation-delay: 1.2s; }
-  .d-8 { animation-delay: 1.4s; }
-
-  @keyframes qrFlicker {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
-
-  .qr-center {
-    animation: qrCenterPulse 2s ease-in-out infinite;
-  }
-
-  @keyframes qrCenterPulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.7; transform: scale(0.95); }
-  }
-
-  .connection-particle {
-    animation: particleDrift 3s ease-in-out infinite;
-  }
-
-  .cp-1 { animation-delay: 0s; }
-  .cp-2 { animation-delay: 1s; }
-
-  @keyframes particleDrift {
-    0%, 100% { opacity: 0.6; transform: translate(0, 0); }
-    50% { opacity: 1; transform: translate(2px, -3px); }
-  }
-
-  /* HOVER EN SVG */
   .tool-card:hover .tool-svg {
-    animation: svgHoverBounce 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: svgHover 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  @keyframes svgHoverBounce {
+  @keyframes svgHover {
     0% { transform: scale(1) rotate(0deg); }
-    40% { transform: scale(1.2) rotate(8deg); }
-    70% { transform: scale(0.95) rotate(-4deg); }
+    40% { transform: scale(1.15) rotate(5deg); }
     100% { transform: scale(1) rotate(0deg); }
   }
 
-  /* CONTENIDO */
+  /* CONTENT */
   .tool-name {
     font-size: 1.35rem;
     font-weight: 700;
@@ -840,12 +792,12 @@ const tools = [
   }
 
   .tool-card:hover .tool-name {
-    color: oklch(0.55 0.16 var(--hue));
-    transform: translateX(2px);
+    color: oklch(0.55 0.18 var(--hue));
+    transform: translateX(3px);
   }
 
   :global(.dark) .tool-card:hover .tool-name {
-    color: oklch(0.75 0.16 var(--hue));
+    color: oklch(0.75 0.18 var(--hue));
   }
 
   .tool-description {
@@ -870,28 +822,22 @@ const tools = [
     font-weight: 600;
     padding: 0.25rem 0.6rem;
     border-radius: 0.5rem;
-    background: oklch(0.97 0.02 var(--hue));
+    background: oklch(0.97 0.03 var(--hue));
     color: #475569;
-    border: 1px solid oklch(0.92 0.03 var(--hue));
+    border: 1px solid oklch(0.92 0.04 var(--hue));
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   :global(.dark) .tool-feature-tag {
-    background: oklch(0.22 0.03 var(--hue));
+    background: oklch(0.22 0.04 var(--hue));
     color: #94a3b8;
-    border-color: oklch(0.32 0.04 var(--hue));
+    border-color: oklch(0.32 0.05 var(--hue));
   }
 
   .tool-card:hover .tool-feature-tag {
     transform: translateY(-2px);
-    border-color: oklch(0.8 0.08 var(--hue));
-    background: oklch(0.98 0.04 var(--hue));
-    box-shadow: 0 2px 8px oklch(0.7 0.14 var(--hue) / 0.15);
-  }
-
-  :global(.dark) .tool-card:hover .tool-feature-tag {
-    border-color: oklch(0.4 0.08 var(--hue));
-    background: oklch(0.25 0.05 var(--hue));
+    border-color: oklch(0.8 0.1 var(--hue));
+    box-shadow: 0 2px 8px oklch(0.7 0.16 var(--hue) / 0.2);
   }
 
   /* CTA */
@@ -901,13 +847,13 @@ const tools = [
     gap: 0.5rem;
     font-size: 0.85rem;
     font-weight: 600;
-    color: oklch(0.55 0.16 var(--hue));
+    color: oklch(0.55 0.18 var(--hue));
     margin-top: 0.25rem;
     transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   :global(.dark) .tool-cta {
-    color: oklch(0.72 0.16 var(--hue));
+    color: oklch(0.72 0.18 var(--hue));
   }
 
   .tool-cta-arrow {
@@ -922,16 +868,16 @@ const tools = [
   }
 
   @keyframes arrowPulse {
-    0%, 100% { transform: translateX(8px) scale(1); }
+    0%, 100% { transform: translateX(8px); }
     50% { transform: translateX(12px) scale(1.2); }
   }
 
   .tool-card:hover .tool-cta {
-    color: oklch(0.6 0.18 var(--hue));
+    color: oklch(0.6 0.2 var(--hue));
   }
 
   :global(.dark) .tool-card:hover .tool-cta {
-    color: oklch(0.78 0.18 var(--hue));
+    color: oklch(0.78 0.2 var(--hue));
   }
 
   /* FOOTER */
@@ -939,8 +885,8 @@ const tools = [
     text-align: center;
     padding: 1rem 1.5rem;
     border-radius: var(--radius-large);
-    background: oklch(0.97 0.01 var(--hue));
-    border: 1px dashed oklch(0.88 0.04 var(--hue));
+    background: oklch(0.97 0.02 var(--hue));
+    border: 1px dashed oklch(0.88 0.05 var(--hue));
     animation: footerFade 0.8s ease-out 0.6s both;
   }
 
@@ -950,8 +896,8 @@ const tools = [
   }
 
   :global(.dark) .tools-footer {
-    background: oklch(0.2 0.02 var(--hue));
-    border-color: oklch(0.32 0.04 var(--hue));
+    background: oklch(0.2 0.03 var(--hue));
+    border-color: oklch(0.32 0.05 var(--hue));
   }
 
   .tools-footer p {
@@ -980,17 +926,17 @@ const tools = [
     }
 
     .tool-icon-wrapper {
-      width: 3.5rem;
-      height: 3.5rem;
+      width: 4rem;
+      height: 4rem;
     }
   }
 
-  /* RENDIMIENTO */
+  /* PERFORMANCE */
   .tool-card:hover {
     will-change: transform;
   }
 
-  /* ACCESIBILIDAD */
+  /* ACCESSIBILITY */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
