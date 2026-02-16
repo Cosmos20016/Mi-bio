@@ -78,7 +78,8 @@ const tools = [
         <a
           class="tool-card"
           href={tool.href}
-          style={`animation-delay: calc(var(--content-delay) + ${i * 100}ms)`}
+          style={`--card-index: ${i}; animation-delay: calc(var(--content-delay, 0ms) + ${i * 100}ms)`}
+          aria-label={`Abrir ${tool.name}: ${tool.description}`}
         >
           <div class="tool-badge">{tool.badge}</div>
 
@@ -86,11 +87,11 @@ const tools = [
             {tool.iconType === "teleprompter" && (
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" class="tool-svg teleprompter-icon">
                 <defs>
-                  <linearGradient id="teleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <linearGradient id={`teleGrad-${i}`} x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" style="stop-color:oklch(0.7 0.2 var(--hue));stop-opacity:1" />
                     <stop offset="100%" style="stop-color:oklch(0.55 0.22 calc(var(--hue) + 40));stop-opacity:1" />
                   </linearGradient>
-                  <filter id="teleGlow">
+                  <filter id={`teleGlow-${i}`}>
                     <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
                     <feMerge>
                       <feMergeNode in="coloredBlur"/>
@@ -100,7 +101,7 @@ const tools = [
                 </defs>
                 
                 <rect x="15" y="18" width="50" height="34" rx="3" 
-                      fill="url(#teleGrad)" opacity="0.9" filter="url(#teleGlow)"/>
+                      fill={`url(#teleGrad-${i})`} opacity="0.9" filter={`url(#teleGlow-${i})`}/>
                 
                 <rect x="18" y="21" width="44" height="28" rx="2" 
                       fill="oklch(0.12 0.04 var(--hue))"/>
@@ -125,25 +126,25 @@ const tools = [
                 
                 <circle cx="58" cy="25" r="2" fill="oklch(0.7 0.3 20)" class="rec-dot" opacity="0.8"/>
                 
-                <rect x="35" y="52" width="10" height="2" rx="1" fill="url(#teleGrad)" opacity="0.8"/>
-                <rect x="30" y="54" width="20" height="2" rx="1" fill="url(#teleGrad)" opacity="0.7"/>
+                <rect x="35" y="52" width="10" height="2" rx="1" fill={`url(#teleGrad-${i})`} opacity="0.8"/>
+                <rect x="30" y="54" width="20" height="2" rx="1" fill={`url(#teleGrad-${i})`} opacity="0.7"/>
               </svg>
             )}
             
             {tool.iconType === "link" && (
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="tool-svg url-icon">
                 <defs>
-                  <linearGradient id="urlGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <linearGradient id={`urlGrad-${i}`} x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" style="stop-color:oklch(0.72 0.22 var(--hue));stop-opacity:1" />
                     <stop offset="100%" style="stop-color:oklch(0.58 0.24 calc(var(--hue) + 45));stop-opacity:1" />
                   </linearGradient>
                   
-                  <radialGradient id="particleGrad" cx="50%" cy="50%" r="50%">
+                  <radialGradient id={`particleGrad-${i}`} cx="50%" cy="50%" r="50%">
                     <stop offset="0%" style="stop-color:oklch(0.85 0.2 var(--hue));stop-opacity:1" />
                     <stop offset="100%" style="stop-color:oklch(0.7 0.22 calc(var(--hue) + 30));stop-opacity:0" />
                   </radialGradient>
                   
-                  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                  <filter id={`glow-${i}`} x="-50%" y="-50%" width="200%" height="200%">
                     <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
                     <feMerge>
                       <feMergeNode in="coloredBlur"/>
@@ -151,7 +152,7 @@ const tools = [
                     </feMerge>
                   </filter>
                   
-                  <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+                  <filter id={`softGlow-${i}`} x="-50%" y="-50%" width="200%" height="200%">
                     <feGaussianBlur stdDeviation="2.5" result="blur"/>
                     <feMerge>
                       <feMergeNode in="blur"/>
@@ -162,19 +163,19 @@ const tools = [
                 
                 <!-- Partículas flotantes -->
                 <g class="particles">
-                  <circle cx="30" cy="35" r="2" fill="url(#particleGrad)" class="particle p1" opacity="0"/>
-                  <circle cx="45" cy="32" r="1.8" fill="url(#particleGrad)" class="particle p2" opacity="0"/>
-                  <circle cx="55" cy="38" r="1.5" fill="url(#particleGrad)" class="particle p3" opacity="0"/>
-                  <circle cx="70" cy="35" r="2.2" fill="url(#particleGrad)" class="particle p4" opacity="0"/>
-                  <circle cx="38" cy="42" r="1.6" fill="url(#particleGrad)" class="particle p5" opacity="0"/>
-                  <circle cx="62" cy="40" r="1.9" fill="url(#particleGrad)" class="particle p6" opacity="0"/>
+                  <circle cx="30" cy="35" r="2" fill={`url(#particleGrad-${i})`} class="particle p1" opacity="0"/>
+                  <circle cx="45" cy="32" r="1.8" fill={`url(#particleGrad-${i})`} class="particle p2" opacity="0"/>
+                  <circle cx="55" cy="38" r="1.5" fill={`url(#particleGrad-${i})`} class="particle p3" opacity="0"/>
+                  <circle cx="70" cy="35" r="2.2" fill={`url(#particleGrad-${i})`} class="particle p4" opacity="0"/>
+                  <circle cx="38" cy="42" r="1.6" fill={`url(#particleGrad-${i})`} class="particle p5" opacity="0"/>
+                  <circle cx="62" cy="40" r="1.9" fill={`url(#particleGrad-${i})`} class="particle p6" opacity="0"/>
                 </g>
                 
                 <!-- URL Larga (top) -->
                 <g class="long-url-container">
                   <rect x="20" y="28" width="60" height="8" rx="4" 
-                        fill="url(#urlGrad)" opacity="0.92" 
-                        filter="url(#softGlow)" class="long-url-bar"/>
+                        fill={`url(#urlGrad-${i})`} opacity="0.92" 
+                        filter={`url(#softGlow-${i})`} class="long-url-bar"/>
                   
                   <!-- Líneas de texto animadas -->
                   <g class="text-flow">
@@ -193,16 +194,16 @@ const tools = [
                 <!-- Centro: Vórtice/Procesamiento -->
                 <g class="vortex-center">
                   <!-- Anillos concéntricos -->
-                  <circle cx="50" cy="50" r="8" fill="none" stroke="url(#urlGrad)" 
+                  <circle cx="50" cy="50" r="8" fill="none" stroke={`url(#urlGrad-${i})`} 
                           stroke-width="1.5" opacity="0" class="ring ring1"/>
-                  <circle cx="50" cy="50" r="6" fill="none" stroke="url(#urlGrad)" 
+                  <circle cx="50" cy="50" r="6" fill="none" stroke={`url(#urlGrad-${i})`} 
                           stroke-width="1.2" opacity="0" class="ring ring2"/>
-                  <circle cx="50" cy="50" r="4" fill="none" stroke="url(#urlGrad)" 
+                  <circle cx="50" cy="50" r="4" fill="none" stroke={`url(#urlGrad-${i})`} 
                           stroke-width="1" opacity="0" class="ring ring3"/>
                   
                   <!-- Núcleo central -->
-                  <circle cx="50" cy="50" r="5" fill="url(#urlGrad)" 
-                          opacity="0" filter="url(#glow)" class="core"/>
+                  <circle cx="50" cy="50" r="5" fill={`url(#urlGrad-${i})`} 
+                          opacity="0" filter={`url(#glow-${i})`} class="core"/>
                   
                   <!-- Chispas orbitales -->
                   <circle cx="50" cy="42" r="1.5" fill="oklch(0.85 0.2 var(--hue))" 
@@ -218,8 +219,8 @@ const tools = [
                 <!-- URL Corta (bottom) -->
                 <g class="short-url-container">
                   <rect x="32" y="64" width="36" height="8" rx="4" 
-                        fill="url(#urlGrad)" opacity="0" 
-                        filter="url(#softGlow)" class="short-url-bar"/>
+                        fill={`url(#urlGrad-${i})`} opacity="0" 
+                        filter={`url(#softGlow-${i})`} class="short-url-bar"/>
                   
                   <!-- Icono de enlace -->
                   <g class="link-icon" opacity="0">
@@ -241,10 +242,10 @@ const tools = [
                 <!-- Ondas de energía -->
                 <g class="energy-waves">
                   <path d="M 25 50 Q 30 48, 35 50 T 45 50" 
-                        stroke="url(#urlGrad)" stroke-width="1.5" 
+                        stroke={`url(#urlGrad-${i})`} stroke-width="1.5" 
                         fill="none" opacity="0" class="wave w1"/>
                   <path d="M 55 50 Q 60 48, 65 50 T 75 50" 
-                        stroke="url(#urlGrad)" stroke-width="1.5" 
+                        stroke={`url(#urlGrad-${i})`} stroke-width="1.5" 
                         fill="none" opacity="0" class="wave w2"/>
                 </g>
               </svg>
@@ -280,8 +281,13 @@ const tools = [
 
 <style>
   /* ============================================
-     BASE
+     BASE Y VARIABLES
      ============================================ */
+  
+  :root {
+    --float-amount-header: -8px;
+    --float-amount-arrow: -3px;
+  }
   
   /* Text selection con color del tema */
   .tool-name::selection,
@@ -327,7 +333,7 @@ const tools = [
   .tools-header-icon {
     margin-bottom: 0.5rem;
     display: inline-block;
-    animation: headerFloat 4s ease-in-out infinite;
+    animation: float 4s ease-in-out infinite;
   }
 
   @media (min-width: 768px) {
@@ -349,9 +355,17 @@ const tools = [
     }
   }
 
-  @keyframes headerFloat {
+  /* Remover drop-shadow costoso en móvil */
+  @media (max-width: 767px) {
+    .header-svg {
+      filter: drop-shadow(0 4px 12px oklch(0.7 0.18 var(--hue) / 0.2));
+    }
+  }
+
+  /* Animación unificada de float */
+  @keyframes float {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
+    50% { transform: translateY(var(--float-amount-header, -8px)); }
   }
 
   .hex-outline {
@@ -545,6 +559,7 @@ const tools = [
     transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     overflow: hidden;
     animation: cardFade 0.5s ease-out both;
+    contain: layout style paint;
   }
 
   @media (min-width: 768px) {
@@ -588,11 +603,19 @@ const tools = [
       0 4px 12px oklch(0.5 0.1 var(--hue) / 0.08);
   }
 
+  /* Focus state para accesibilidad */
+  .tool-card:focus-visible {
+    outline: 3px solid oklch(0.7 0.2 var(--hue));
+    outline-offset: 4px;
+    transform: translateY(-4px);
+  }
+
   :global(.dark) .tool-card {
     border-color: rgba(255, 255, 255, 0.08);
   }
 
-  :global(.dark) .tool-card:hover {
+  :global(.dark) .tool-card:hover,
+  :global(.dark) .tool-card:focus-visible {
     border-color: oklch(0.7 0.15 var(--hue) / 0.3);
   }
 
@@ -615,6 +638,14 @@ const tools = [
     .tool-badge {
       top: 1rem;
       right: 1rem;
+    }
+  }
+
+  /* Remover backdrop-filter costoso en móvil */
+  @media (max-width: 767px) {
+    .tool-badge {
+      backdrop-filter: none;
+      background: oklch(0.7 0.18 var(--hue) / 0.18);
     }
   }
 
@@ -642,6 +673,7 @@ const tools = [
     width: 85px;
     height: 85px;
     transition: transform 0.3s ease;
+    will-change: transform;
   }
 
   @media (min-width: 768px) {
@@ -716,6 +748,9 @@ const tools = [
     color: #475569;
     border-radius: var(--radius-small);
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
   }
 
   @media (min-width: 768px) {
@@ -782,7 +817,7 @@ const tools = [
   }
 
   /* ============================================
-     TELEPROMPTER ICON (ORIGINAL - SIN CAMBIOS)
+     TELEPROMPTER ICON
      ============================================ */
   .text-lines rect {
     animation: textScroll 3s ease-in-out infinite;
@@ -798,12 +833,8 @@ const tools = [
   }
 
   .arrow-up {
-    animation: arrowBounce 2s ease-in-out infinite;
-  }
-
-  @keyframes arrowBounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-3px); }
+    animation: float 2s ease-in-out infinite;
+    --float-amount-header: var(--float-amount-arrow);
   }
 
   .rec-dot {
@@ -816,20 +847,22 @@ const tools = [
   }
 
   /* ============================================
-     URL SHORTENER - NUEVA ANIMACIÓN PREMIUM
+     URL SHORTENER ICON - OPTIMIZADO
      ============================================ */
   
-  /* Partículas flotantes */
-  .particle {
-    animation: particleFlow 4s ease-in-out infinite;
-  }
+  /* Solo animar partículas en desktop */
+  @media (min-width: 768px) {
+    .particle {
+      animation: particleFlow 4s ease-in-out infinite;
+    }
 
-  .p1 { animation-delay: 0s; }
-  .p2 { animation-delay: 0.3s; }
-  .p3 { animation-delay: 0.6s; }
-  .p4 { animation-delay: 0.9s; }
-  .p5 { animation-delay: 1.2s; }
-  .p6 { animation-delay: 1.5s; }
+    .p1 { animation-delay: 0s; }
+    .p2 { animation-delay: 0.3s; }
+    .p3 { animation-delay: 0.6s; }
+    .p4 { animation-delay: 0.9s; }
+    .p5 { animation-delay: 1.2s; }
+    .p6 { animation-delay: 1.5s; }
+  }
 
   @keyframes particleFlow {
     0% {
@@ -854,7 +887,6 @@ const tools = [
     }
   }
 
-  /* URL larga - pulso suave */
   .long-url-bar {
     animation: longPulse 4s ease-in-out infinite;
   }
@@ -870,7 +902,6 @@ const tools = [
     }
   }
 
-  /* Bits de texto fluyendo */
   .text-bit {
     animation: textFlow 4s ease-in-out infinite;
   }
@@ -900,10 +931,10 @@ const tools = [
     }
   }
 
-  /* Vórtice central - anillos expansivos */
   .ring {
     animation: ringExpand 2s ease-out infinite;
     transform-origin: 50px 50px;
+    will-change: transform;
   }
 
   .ring1 { animation-delay: 0s; }
@@ -927,9 +958,9 @@ const tools = [
     }
   }
 
-  /* Núcleo central */
   .core {
     animation: corePulse 2s ease-in-out infinite;
+    will-change: transform;
   }
 
   @keyframes corePulse {
@@ -943,7 +974,6 @@ const tools = [
     }
   }
 
-  /* Orbitales giratorios */
   .orbital {
     animation: orbit 3s linear infinite;
     transform-origin: 50px 50px;
@@ -981,7 +1011,6 @@ const tools = [
     }
   }
 
-  /* Ondas de energía */
   .wave {
     animation: waveFlow 3s ease-in-out infinite;
   }
@@ -1008,7 +1037,6 @@ const tools = [
     }
   }
 
-  /* URL corta - aparición */
   .short-url-bar {
     animation: shortAppear 4s ease-in-out infinite;
   }
@@ -1028,7 +1056,6 @@ const tools = [
     }
   }
 
-  /* Icono y texto */
   .link-icon,
   .short-text {
     animation: contentFade 4s ease-in-out infinite;
@@ -1047,7 +1074,6 @@ const tools = [
     }
   }
 
-  /* Brillos */
   .shine-top {
     animation: shineFlow 4s ease-in-out infinite;
   }
@@ -1072,25 +1098,48 @@ const tools = [
     }
   }
 
-  /* Performance optimizations */
-  .particle, .text-bit, .ring, .core, .orbital, .wave,
-  .long-url-bar, .short-url-bar, .link-icon, .short-text,
-  .shine-top, .shine-bottom {
-    will-change: transform, opacity;
-  }
-
-  /* Reduced motion */
+  /* ============================================
+     ACCESIBILIDAD - REDUCED MOTION
+     ============================================ */
   @media (prefers-reduced-motion: reduce) {
-    .particle, .text-bit, .ring, .core, .orbital, .wave,
-    .long-url-bar, .short-url-bar, .link-icon, .short-text,
-    .shine-top, .shine-bottom {
-      animation: none !important;
+    /* Deshabilitar TODAS las animaciones */
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
     }
     
+    /* Mantener opacidades finales */
     .long-url-bar { opacity: 0.92; }
     .short-url-bar,
     .link-icon,
     .short-text,
     .shine-bottom { opacity: 1; }
+    
+    .tool-card {
+      animation: none;
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* ============================================
+     RESPONSIVE - PANTALLAS PEQUEÑAS
+     ============================================ */
+  @media (max-width: 374px) {
+    .tool-svg {
+      width: 70px;
+      height: 70px;
+    }
+    
+    .tool-icon-wrapper {
+      height: 85px;
+    }
+    
+    .tools-title {
+      font-size: 1.75rem;
+    }
   }
 </style>
