@@ -1,35 +1,38 @@
 ---
-import type { GetStaticPaths } from "astro";
+import type { GetStaticPaths, Page } from "astro";
 import Pagination from "../components/control/Pagination.astro";
 import PostPage from "../components/PostPage.astro";
 import { profileConfig, siteConfig } from "../config";
 import { PAGE_SIZE } from "../constants/constants";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { getSortedPosts } from "../utils/content-utils";
+import type { CollectionEntry } from "astro:content";
 
 export const getStaticPaths = (async ({ paginate }) => {
 	const allBlogPosts = await getSortedPosts();
 	return paginate(allBlogPosts, { pageSize: PAGE_SIZE });
 }) satisfies GetStaticPaths;
-// https://github.com/withastro/astro/issues/6507#issuecomment-1489916992
 
-const { page } = Astro.props;
+interface Props {
+	page: Page<CollectionEntry<"blog">>;
+}
 
+const { page } = Astro.props as Props;
 const len = page.data.length;
-
-// Only add JSON-LD for the first page (home page)
 const isHomePage = page.currentPage === 1;
+
+// JSON-LD solo para la página principal
 const jsonLd = isHomePage
 	? {
 			"@context": "https://schema.org",
 			"@type": "WebSite",
 			name: profileConfig.name,
-			url: Astro.site?.toString(),
+			url: Astro.site?.toString() ?? siteConfig.url,
 			description: profileConfig.bio,
 			author: {
 				"@type": "Person",
 				name: profileConfig.name,
-				url: new URL("/about/", Astro.site).href,
+				url: new URL("/about/", Astro.site ?? siteConfig.url).href,
 				sameAs: [
 					"https://www.youtube.com/@kevinborjayt",
 					"https://www.facebook.com/share/16n7f7zdYQ/",
@@ -37,15 +40,34 @@ const jsonLd = isHomePage
 			},
 			potentialAction: {
 				"@type": "SearchAction",
-				target: new URL("?q={search_term_string}", Astro.site).href,
+				target: {
+					"@type": "EntryPoint",
+					urlTemplate: new URL("?q={search_term_string}", Astro.site ?? siteConfig.url).href,
+				},
 				"query-input": "required name=search_term_string",
 			},
 		}
 	: null;
+
+// Cálculo de delay para animación
+const animationDelay = `calc(var(--content-delay) + ${len * 50}ms)`;
 ---
 
 <MainGridLayout>
-	{isHomePage && jsonLd && <script is:inline slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>}
-    <PostPage page={page}></PostPage>
-    <Pagination class="mx-auto onload-animation" page={page} style={`animation-delay: calc(var(--content-delay) + ${(len)*50}ms)`}></Pagination>
+	{
+		isHomePage && jsonLd && (
+			<script
+				is:inline
+				slot="head"
+				type="application/ld+json"
+				set:html={JSON.stringify(jsonLd)}
+			/>
+		)
+	}
+	<PostPage page={page} />
+	<Pagination
+		class="mx-auto onload-animation"
+		page={page}
+		style={animationDelay}
+	/>
 </MainGridLayout>
