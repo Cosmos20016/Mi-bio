@@ -3,64 +3,99 @@ import ShareToolButton from "@components/ShareToolButton.astro";
 import Teleprompter from "@components/teleprompter/Teleprompter.svelte";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { url } from "@utils/url-utils";
+
+// Metadata para SEO
+const toolMetadata = {
+  name: "Teleprompter Studio",
+  description: "Tu estudio profesional de lectura en pantalla con velocidad precisa, modo espejo y más",
+  icon: "📺",
+  features: ["Pro", "Pantalla completa", "Atajos"]
+};
 ---
 
-<MainGridLayout title="Teleprompter" description="Teleprompter Studio para creadores">
-  <section class="tool-page">
-    <!-- Navegación superior mejorada -->
-    <nav class="tool-nav">
-      <a class="tool-nav-back" href={url("/herramientas/")}>
-        <span class="tool-nav-arrow">←</span>
+<MainGridLayout 
+  title={toolMetadata.name} 
+  description={toolMetadata.description}
+>
+  <article class="tool-page">
+    <!-- Navegación superior mejorada con ARIA -->
+    <nav class="tool-nav" aria-label="Navegación de herramientas">
+      <a 
+        class="tool-nav-back" 
+        href={url("/herramientas/")}
+        aria-label="Volver a la página de Herramientas"
+      >
+        <span class="tool-nav-arrow" aria-hidden="true">←</span>
         <span>Herramientas</span>
       </a>
-      <div class="tool-nav-breadcrumb">
-        <span class="breadcrumb-sep">/</span>
-        <span class="breadcrumb-current">Teleprompter Studio</span>
+      <div class="tool-nav-breadcrumb" role="navigation" aria-label="Ruta de navegación">
+        <span class="breadcrumb-sep" aria-hidden="true">/</span>
+        <span class="breadcrumb-current" aria-current="page">
+          {toolMetadata.name}
+        </span>
       </div>
     </nav>
 
     <!-- Header de la herramienta -->
     <header class="tool-page-header">
-      <div class="tool-page-icon-wrapper">
-        <span class="tool-page-icon">📺</span>
+      <div class="tool-page-icon-wrapper" aria-hidden="true">
+        <span class="tool-page-icon">{toolMetadata.icon}</span>
       </div>
-      <div>
-        <h1 class="tool-page-title">Teleprompter Studio</h1>
+      <div class="tool-page-content">
+        <h1 class="tool-page-title">{toolMetadata.name}</h1>
         <p class="tool-page-description">
           Tu estudio profesional de lectura en pantalla. Velocidad precisa, modo espejo, focus mode, atajos de teclado, countdown personalizable y pantalla completa.
         </p>
         <div class="tool-page-header-actions">
-          <div class="tool-page-badges">
-            <span class="tool-page-badge">Pro</span>
-            <span class="tool-page-badge">Pantalla completa</span>
-            <span class="tool-page-badge">Atajos</span>
-          </div>
+          <ul class="tool-page-badges" role="list" aria-label="Características de la herramienta">
+            {toolMetadata.features.map((feature) => (
+              <li>
+                <span class="tool-page-badge">{feature}</span>
+              </li>
+            ))}
+          </ul>
           <ShareToolButton 
-            toolName="Teleprompter Studio"
-            toolDescription="Tu estudio profesional de lectura en pantalla con velocidad precisa, modo espejo y más"
+            toolName={toolMetadata.name}
+            toolDescription={toolMetadata.description}
             toolUrl="/herramientas/teleprompter/"
           />
         </div>
       </div>
     </header>
 
-    <Teleprompter client:only="svelte" />
-  </section>
+    <!-- Componente principal -->
+    <section aria-label="Aplicación de teleprompter">
+      <Teleprompter client:only="svelte" />
+    </section>
+  </article>
 </MainGridLayout>
 
 <style>
+  /* ============================================
+     Variables y configuración base
+     ============================================ */
   .tool-page {
+    --hue-fallback: 250;
+    --card-bg-fallback: #ffffff;
+    --radius-large-fallback: 1rem;
+    
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    /* Contenido más accesible */
+    min-height: 0;
   }
 
-  /* Navigation */
+  /* ============================================
+     Navegación superior
+     ============================================ */
   .tool-nav {
     display: flex;
     align-items: center;
     gap: 0.25rem;
     flex-wrap: wrap;
+    /* Mejorar touch targets en móvil */
+    padding: 0.25rem 0;
   }
 
   .tool-nav-back {
@@ -69,30 +104,52 @@ import { url } from "@utils/url-utils";
     gap: 0.4rem;
     font-size: 0.9rem;
     font-weight: 600;
-    color: oklch(0.55 0.12 var(--hue));
+    color: oklch(0.55 0.12 var(--hue, var(--hue-fallback)));
     text-decoration: none;
     padding: 0.4rem 0.75rem;
     border-radius: 0.5rem;
-    transition: all 0.2s ease;
+    transition: 
+      background-color 0.2s ease,
+      color 0.2s ease,
+      transform 0.15s ease;
+    
+    /* Mejor área de touch */
+    min-height: 2.75rem;
+    
+    /* Accesibilidad mejorada */
+    position: relative;
+    outline-offset: 2px;
+  }
+
+  /* Focus visible para teclado */
+  .tool-nav-back:focus-visible {
+    outline: 2px solid oklch(0.6 0.18 var(--hue, var(--hue-fallback)));
+    outline-offset: 3px;
   }
 
   :global(.dark) .tool-nav-back {
-    color: oklch(0.72 0.12 var(--hue));
+    color: oklch(0.72 0.12 var(--hue, var(--hue-fallback)));
   }
 
   .tool-nav-back:hover {
-    background: oklch(0.95 0.025 var(--hue));
-    color: oklch(0.5 0.14 var(--hue));
+    background: oklch(0.95 0.025 var(--hue, var(--hue-fallback)));
+    color: oklch(0.5 0.14 var(--hue, var(--hue-fallback)));
+    transform: translateX(-2px);
   }
 
   :global(.dark) .tool-nav-back:hover {
-    background: oklch(0.28 0.03 var(--hue));
-    color: oklch(0.78 0.14 var(--hue));
+    background: oklch(0.28 0.03 var(--hue, var(--hue-fallback)));
+    color: oklch(0.78 0.14 var(--hue, var(--hue-fallback)));
+  }
+
+  .tool-nav-back:active {
+    transform: translateX(-1px) scale(0.98);
   }
 
   .tool-nav-arrow {
-    transition: transform 0.2s ease;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     font-size: 1rem;
+    line-height: 1;
   }
 
   .tool-nav-back:hover .tool-nav-arrow {
@@ -108,6 +165,8 @@ import { url } from "@utils/url-utils";
 
   .breadcrumb-sep {
     color: #cbd5e1;
+    user-select: none;
+    pointer-events: none;
   }
 
   :global(.dark) .breadcrumb-sep {
@@ -123,19 +182,28 @@ import { url } from "@utils/url-utils";
     color: #94a3b8;
   }
 
-  /* Header */
+  /* ============================================
+     Header de la herramienta
+     ============================================ */
   .tool-page-header {
     display: flex;
     align-items: flex-start;
     gap: 1.25rem;
     padding: 1.25rem 1.5rem;
-    background: var(--card-bg);
-    border-radius: var(--radius-large);
+    background: var(--card-bg, var(--card-bg-fallback));
+    border-radius: var(--radius-large, var(--radius-large-fallback));
     border: 1px solid rgba(0, 0, 0, 0.06);
+    
+    /* Sombra sutil para profundidad */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    
+    /* Mejor flujo de contenido */
+    container-type: inline-size;
   }
 
   :global(.dark) .tool-page-header {
     border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
 
   .tool-page-icon-wrapper {
@@ -146,15 +214,28 @@ import { url } from "@utils/url-utils";
     align-items: center;
     justify-content: center;
     border-radius: 1rem;
-    background: oklch(0.95 0.03 var(--hue));
+    background: oklch(0.95 0.03 var(--hue, var(--hue-fallback)));
+    
+    /* Transición suave */
+    transition: transform 0.2s ease;
   }
 
   :global(.dark) .tool-page-icon-wrapper {
-    background: oklch(0.28 0.03 var(--hue));
+    background: oklch(0.28 0.03 var(--hue, var(--hue-fallback)));
+  }
+
+  .tool-page-header:hover .tool-page-icon-wrapper {
+    transform: scale(1.05);
   }
 
   .tool-page-icon {
     font-size: 1.75rem;
+    line-height: 1;
+  }
+
+  .tool-page-content {
+    flex: 1;
+    min-width: 0; /* Permite que el contenido se envuelva correctamente */
   }
 
   .tool-page-title {
@@ -163,31 +244,43 @@ import { url } from "@utils/url-utils";
     letter-spacing: -0.01em;
     background: linear-gradient(
       135deg,
-      oklch(0.65 0.16 var(--hue)),
-      oklch(0.6 0.18 calc(var(--hue) + 40))
+      oklch(0.65 0.16 var(--hue, var(--hue-fallback))),
+      oklch(0.6 0.18 calc(var(--hue, var(--hue-fallback)) + 40))
     );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin-bottom: 0.35rem;
+    margin: 0 0 0.35rem 0;
     line-height: 1.2;
+    
+    /* Fallback para navegadores sin soporte de background-clip */
+    color: oklch(0.6 0.18 var(--hue, var(--hue-fallback)));
+  }
+
+  @supports (background-clip: text) or (-webkit-background-clip: text) {
+    .tool-page-title {
+      color: transparent;
+    }
   }
 
   :global(.dark) .tool-page-title {
     background: linear-gradient(
       135deg,
-      oklch(0.75 0.14 var(--hue)),
-      oklch(0.7 0.16 calc(var(--hue) + 40))
+      oklch(0.75 0.14 var(--hue, var(--hue-fallback))),
+      oklch(0.7 0.16 calc(var(--hue, var(--hue-fallback)) + 40))
     );
     -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
     background-clip: text;
+    color: oklch(0.7 0.16 var(--hue, var(--hue-fallback)));
   }
 
   .tool-page-description {
     font-size: 0.9rem;
     color: #64748b;
     line-height: 1.55;
-    margin-bottom: 0.65rem;
+    margin: 0 0 0.65rem 0;
+    max-width: 65ch; /* Mejor legibilidad */
   }
 
   :global(.dark) .tool-page-description {
@@ -197,14 +290,21 @@ import { url } from "@utils/url-utils";
   .tool-page-header-actions {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 0.75rem;
     flex-wrap: wrap;
   }
 
+  /* ============================================
+     Badges y características
+     ============================================ */
   .tool-page-badges {
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
   }
 
   .tool-page-badge {
@@ -214,25 +314,76 @@ import { url } from "@utils/url-utils";
     letter-spacing: 0.04em;
     padding: 0.2rem 0.55rem;
     border-radius: 9999px;
-    background: oklch(0.93 0.04 var(--hue));
-    color: oklch(0.5 0.14 var(--hue));
+    background: oklch(0.93 0.04 var(--hue, var(--hue-fallback)));
+    color: oklch(0.5 0.14 var(--hue, var(--hue-fallback)));
+    line-height: 1.4;
+    
+    /* Transición suave */
+    transition: 
+      background-color 0.2s ease,
+      transform 0.15s ease;
+  }
+
+  .tool-page-badges li:hover .tool-page-badge {
+    transform: translateY(-1px);
   }
 
   :global(.dark) .tool-page-badge {
-    background: oklch(0.3 0.05 var(--hue));
-    color: oklch(0.78 0.12 var(--hue));
+    background: oklch(0.3 0.05 var(--hue, var(--hue-fallback)));
+    color: oklch(0.78 0.12 var(--hue, var(--hue-fallback)));
+  }
+
+  /* ============================================
+     Responsive Design
+     ============================================ */
+  
+  /* Tablets */
+  @media (max-width: 768px) {
+    .tool-page {
+      gap: 1.25rem;
+    }
+
+    .tool-page-header {
+      gap: 1rem;
+    }
+
+    .tool-page-title {
+      font-size: 1.6rem;
+    }
+
+    .tool-page-header-actions {
+      width: 100%;
+    }
   }
 
   /* Mobile */
   @media (max-width: 640px) {
+    .tool-page {
+      gap: 1rem;
+    }
+
+    .tool-nav {
+      padding: 0.5rem 0;
+    }
+
+    .tool-nav-back {
+      font-size: 0.85rem;
+      padding: 0.5rem 0.65rem;
+    }
+
     .tool-page-header {
       flex-direction: column;
       align-items: flex-start;
       padding: 1rem 1.25rem;
+      gap: 0.875rem;
     }
 
     .tool-page-title {
       font-size: 1.5rem;
+    }
+
+    .tool-page-description {
+      font-size: 0.875rem;
     }
 
     .tool-page-icon-wrapper {
@@ -243,6 +394,85 @@ import { url } from "@utils/url-utils";
 
     .tool-page-icon {
       font-size: 1.5rem;
+    }
+
+    .tool-page-header-actions {
+      flex-direction: column;
+      align-items: flex-start;
+      width: 100%;
+    }
+
+    .tool-page-badges {
+      width: 100%;
+    }
+  }
+
+  /* Muy pequeño (menos de 375px) */
+  @media (max-width: 375px) {
+    .tool-page-header {
+      padding: 0.875rem 1rem;
+    }
+
+    .tool-page-title {
+      font-size: 1.35rem;
+    }
+
+    .tool-page-badge {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.45rem;
+    }
+  }
+
+  /* ============================================
+     Accesibilidad - Reduce motion
+     ============================================ */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+
+    .tool-nav-arrow,
+    .tool-page-icon-wrapper,
+    .tool-page-badge {
+      transition: none !important;
+    }
+  }
+
+  /* ============================================
+     Alto contraste
+     ============================================ */
+  @media (prefers-contrast: high) {
+    .tool-page-header {
+      border-width: 2px;
+    }
+
+    .tool-nav-back:focus-visible {
+      outline-width: 3px;
+    }
+  }
+
+  /* ============================================
+     Print styles
+     ============================================ */
+  @media print {
+    .tool-nav,
+    .tool-page-badges,
+    .tool-page-header-actions {
+      display: none;
+    }
+
+    .tool-page-header {
+      border: 1px solid #000;
+      box-shadow: none;
+    }
+
+    .tool-page-title {
+      color: #000 !important;
+      -webkit-text-fill-color: #000 !important;
     }
   }
 </style>
