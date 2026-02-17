@@ -28,7 +28,7 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     <span>Compartir</span>
   </button>
 
-  <div class="share-popup" id={`${uniqueId}-popup`}>
+  <div class="share-popup" id={`${uniqueId}-popup`} role="dialog" aria-modal="true">
     <div class="share-popup-inner">
       <button class="share-option" data-platform="whatsapp" aria-label="Compartir en WhatsApp">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="#25D366">
@@ -59,9 +59,14 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
       </button>
 
       <button class="share-option" data-platform="copy" aria-label="Copiar enlace">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" class="copy-icon" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <!-- Icono por defecto -->
+        <svg class="copy-icon copy-icon-default" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
           <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        <!-- Icono de éxito (oculto por defecto) -->
+        <svg class="copy-icon copy-icon-check" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
         </svg>
         <span class="copy-text">Copiar enlace</span>
       </button>
@@ -78,74 +83,58 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     }
     shareAbortController = new AbortController();
     const signal = shareAbortController.signal;
-    
+
     const shareButtons = document.querySelectorAll('.share-tool-button');
-    
+
     shareButtons.forEach((button) => {
       const buttonElement = button as HTMLButtonElement;
       const buttonId = buttonElement.id;
       const popup = document.getElementById(`${buttonId}-popup`) as HTMLElement;
-      
+
       if (!popup) return;
 
       const toolName = buttonElement.dataset.toolName || '';
       const toolDescription = buttonElement.dataset.toolDescription || '';
       const toolUrl = buttonElement.dataset.toolUrl || '';
-      
+
       const absoluteUrl = `${window.location.origin}${toolUrl}`;
       const shareText = `¡Mira esta herramienta gratuita: ${toolName}! ${toolDescription} 🚀`;
 
-      // 🔧 Mejor detección de dispositivos táctiles
+      // Detectar dispositivo táctil
       const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-      const hasNativeShare = 'share' in navigator && navigator.canShare;
+      const hasNativeShare = 'share' in navigator && typeof navigator.canShare === 'function';
 
-      // 🔧 Funciones mejoradas para abrir/cerrar
       const closePopup = () => {
         popup.classList.remove('share-popup-visible');
-        document.body.classList.remove('share-popup-open');
       };
 
       const openPopup = () => {
-        // Cerrar otros popups primero
-        document.querySelectorAll('.share-popup').forEach(p => {
+        // Cerrar todos los otros popups primero
+        document.querySelectorAll('.share-popup').forEach((p) => {
           (p as HTMLElement).classList.remove('share-popup-visible');
         });
-        document.body.classList.remove('share-popup-open');
-        
-        // Abrir este popup
         popup.classList.add('share-popup-visible');
-        document.body.classList.add('share-popup-open');
       };
 
-      // 🔧 Manejo del clic del botón
+      // ─── Botón principal ────────────────────────────────────────────────────
       buttonElement.addEventListener('click', async (e) => {
         e.preventDefault();
         e.stopPropagation();
 
-        // Intentar compartir nativo solo en dispositivos táctiles
+        // Compartir nativo solo en móvil/táctil
         if (isTouchDevice && hasNativeShare) {
           try {
-            const shareData = {
-              title: toolName,
-              text: shareText,
-              url: absoluteUrl,
-            };
-            
+            const shareData = { title: toolName, text: shareText, url: absoluteUrl };
             if (navigator.canShare(shareData)) {
               await navigator.share(shareData);
-              return; // Éxito, no mostrar popup
-            }
-          } catch (err) {
-            // Si el usuario canceló, no mostrar popup
-            if (err instanceof Error && err.name === 'AbortError') {
               return;
             }
-            // Para cualquier otro error, mostrar popup
-            console.log('Native share not available, showing popup');
+          } catch (err) {
+            if (err instanceof Error && err.name === 'AbortError') return;
+            // Fallo: caemos al popup
           }
         }
-        
-        // Mostrar/ocultar popup
+
         if (popup.classList.contains('share-popup-visible')) {
           closePopup();
         } else {
@@ -153,90 +142,113 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
         }
       }, { signal });
 
-      // 🔧 Manejo de opciones de compartir
+      // ─── Opciones del popup ─────────────────────────────────────────────────
       const shareOptions = popup.querySelectorAll('.share-option');
+
       shareOptions.forEach((option) => {
-        const handleShare = async (e: Event) => {
+        // FIX: solo escuchar 'click'. En móvil, el navegador genera un click
+        // sintético tras touchend ~300ms después (o inmediato con touch-action:manipulation).
+        // Añadir 'touchend' ADEMÁS del 'click' causaba doble disparo.
+        option.addEventListener('click', async (e) => {
           e.preventDefault();
           e.stopPropagation();
-          
+
           const platform = (option as HTMLElement).dataset.platform;
-          
-          let shareUrl = '';
-          
+
           switch (platform) {
             case 'whatsapp':
-              shareUrl = `https://wa.me/?text=${encodeURIComponent(`${shareText} ${absoluteUrl}`)}`;
-              window.open(shareUrl, '_blank', 'noopener,noreferrer');
+              window.open(
+                `https://wa.me/?text=${encodeURIComponent(`${shareText} ${absoluteUrl}`)}`,
+                '_blank', 'noopener,noreferrer'
+              );
+              closePopup();
               break;
-              
+
             case 'facebook':
-              shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(absoluteUrl)}`;
-              window.open(shareUrl, '_blank', 'noopener,noreferrer');
+              window.open(
+                `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(absoluteUrl)}`,
+                '_blank', 'noopener,noreferrer'
+              );
+              closePopup();
               break;
-              
+
             case 'twitter':
-              shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(absoluteUrl)}&text=${encodeURIComponent(shareText)}`;
-              window.open(shareUrl, '_blank', 'noopener,noreferrer');
+              window.open(
+                `https://twitter.com/intent/tweet?url=${encodeURIComponent(absoluteUrl)}&text=${encodeURIComponent(shareText)}`,
+                '_blank', 'noopener,noreferrer'
+              );
+              closePopup();
               break;
-              
+
             case 'telegram':
-              shareUrl = `https://t.me/share/url?url=${encodeURIComponent(absoluteUrl)}&text=${encodeURIComponent(shareText)}`;
-              window.open(shareUrl, '_blank', 'noopener,noreferrer');
+              window.open(
+                `https://t.me/share/url?url=${encodeURIComponent(absoluteUrl)}&text=${encodeURIComponent(shareText)}`,
+                '_blank', 'noopener,noreferrer'
+              );
+              closePopup();
               break;
-              
-            case 'copy':
+
+            case 'copy': {
+              // FIX: no usar outerHTML para reemplazar SVG — invalida referencias DOM.
+              // En su lugar, mostramos/ocultamos dos SVGs distintos con CSS.
+              const copyText = option.querySelector('.copy-text') as HTMLElement | null;
+              const iconDefault = option.querySelector('.copy-icon-default') as SVGElement | null;
+              const iconCheck   = option.querySelector('.copy-icon-check')   as SVGElement | null;
+
               try {
                 await navigator.clipboard.writeText(absoluteUrl);
-                const copyText = option.querySelector('.copy-text');
-                const copySvg = option.querySelector('svg');
-                if (copyText && copySvg) {
-                  const originalText = copyText.textContent;
-                  const originalSvg = copySvg.outerHTML;
-                  copyText.textContent = '¡Copiado!';
-                  copySvg.outerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-                  (option as HTMLElement).style.background = 'oklch(0.95 0.05 145)';
-                  
-                  setTimeout(() => {
-                    copyText.textContent = originalText;
-                    const currentSvg = option.querySelector('svg');
-                    if (currentSvg) {
-                      currentSvg.outerHTML = originalSvg;
-                    }
-                    (option as HTMLElement).style.background = '';
-                  }, 2000);
-                }
-              } catch (err) {
-                console.error('Failed to copy:', err);
-                alert('No se pudo copiar el enlace');
-              }
-              return; // Mantener popup abierto para mostrar feedback
-          }
-          
-          closePopup();
-        };
 
-        // 🔧 Soporte para click y touch
-        option.addEventListener('click', handleShare, { signal });
-        if (isTouchDevice) {
-          option.addEventListener('touchend', handleShare, { signal, passive: false });
-        }
+                if (copyText)    copyText.textContent = '¡Copiado!';
+                if (iconDefault) iconDefault.style.display = 'none';
+                if (iconCheck)   iconCheck.style.display   = 'block';
+                (option as HTMLElement).style.background = 'oklch(0.95 0.05 145)';
+
+                setTimeout(() => {
+                  if (copyText)    copyText.textContent = 'Copiar enlace';
+                  if (iconDefault) iconDefault.style.display = '';
+                  if (iconCheck)   iconCheck.style.display   = 'none';
+                  (option as HTMLElement).style.background = '';
+                }, 2000);
+              } catch {
+                // Fallback para navegadores sin clipboard API (HTTP, Safari antiguo)
+                try {
+                  const ta = document.createElement('textarea');
+                  ta.value = absoluteUrl;
+                  ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+                  document.body.appendChild(ta);
+                  ta.select();
+                  document.execCommand('copy');
+                  document.body.removeChild(ta);
+
+                  if (copyText) copyText.textContent = '¡Copiado!';
+                  setTimeout(() => {
+                    if (copyText) copyText.textContent = 'Copiar enlace';
+                  }, 2000);
+                } catch {
+                  alert('No se pudo copiar el enlace');
+                }
+              }
+              // Mantener popup abierto para mostrar feedback
+              break;
+            }
+          }
+        }, { signal });
       });
 
-      // 🔧 Cerrar al hacer clic fuera
-      const closeOnOutsideClick = (e: Event) => {
-        const target = e.target as HTMLElement;
-        if (!target.closest('.share-tool-button-wrapper') && popup.classList.contains('share-popup-visible')) {
+      // ─── Cerrar al hacer clic / tap fuera del popup ─────────────────────────
+      // FIX: solo escuchamos 'click' — no 'touchstart'.
+      // Escuchar touchstart cerraba el popup antes de que touchend disparase
+      // el click sintético en las opciones, dejándolas inoperativas en móvil.
+      document.addEventListener('click', (e) => {
+        if (
+          popup.classList.contains('share-popup-visible') &&
+          !(e.target as HTMLElement).closest('.share-tool-button-wrapper')
+        ) {
           closePopup();
         }
-      };
+      }, { signal });
 
-      document.addEventListener('click', closeOnOutsideClick, { signal });
-      if (isTouchDevice) {
-        document.addEventListener('touchstart', closeOnOutsideClick, { signal });
-      }
-
-      // 🔧 Cerrar con tecla Escape
+      // ─── Cerrar con Escape ──────────────────────────────────────────────────
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && popup.classList.contains('share-popup-visible')) {
           closePopup();
@@ -305,7 +317,7 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     height: 14px;
   }
 
-  /* 🔧 POPUP MEJORADO */
+  /* ── Popup ─────────────────────────────────────────────────────────────── */
   .share-popup {
     position: absolute;
     top: calc(100% + 0.5rem);
@@ -315,12 +327,12 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     border-radius: 1rem;
     padding: 0.75rem;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
-    z-index: 9999; /* 🔧 Z-index mucho más alto */
+    z-index: 9999;
     opacity: 0;
     transform: translateY(-10px);
     transition: opacity 0.2s ease, transform 0.2s ease;
     pointer-events: none;
-    visibility: hidden; /* 🔧 Añadido para mejor control */
+    visibility: hidden;
   }
 
   :global(.dark) .share-popup {
@@ -332,7 +344,7 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     opacity: 1;
     transform: translateY(0);
     pointer-events: auto;
-    visibility: visible; /* 🔧 Añadido */
+    visibility: visible;
   }
 
   .share-popup-inner {
@@ -341,6 +353,7 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     gap: 0.5rem;
   }
 
+  /* ── Opciones ──────────────────────────────────────────────────────────── */
   .share-option {
     display: flex;
     flex-direction: column;
@@ -356,9 +369,9 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     font-size: 0.75rem;
     font-weight: 600;
     color: #475569;
-    -webkit-tap-highlight-color: transparent; /* 🔧 Elimina highlight azul en Android */
+    -webkit-tap-highlight-color: transparent;
     user-select: none;
-    touch-action: manipulation; /* 🔧 Mejor manejo táctil */
+    touch-action: manipulation; /* elimina el delay de 300ms en móvil */
   }
 
   :global(.dark) .share-option {
@@ -379,24 +392,12 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     transform: translateY(0);
   }
 
-  .share-option[data-platform="whatsapp"] svg {
-    color: #25D366;
-  }
-
-  .share-option[data-platform="facebook"] svg {
-    color: #1877F2;
-  }
-
   .twitter-icon {
     color: #14171A;
   }
 
   :global(.dark) .twitter-icon {
     color: #E7E9EA;
-  }
-
-  .share-option[data-platform="telegram"] svg {
-    color: #0088cc;
   }
 
   .copy-icon {
@@ -407,30 +408,30 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     color: oklch(0.75 0.12 var(--hue));
   }
 
-  /* 🔧 PREVENIR SCROLL EN MÓVIL */
-  :global(body.share-popup-open) {
-    overflow: hidden;
-    touch-action: none;
+  /* FIX: dos iconos de copia — uno visible por defecto, el otro oculto */
+  .copy-icon-check {
+    display: none;
   }
 
-  /* 🔧 MOBILE: Bottom Sheet nativo */
+  /* ── Mobile: bottom sheet ─────────────────────────────────────────────── */
   @media (max-width: 640px) {
     .share-popup {
-      position: fixed; /* 🔧 Cambio crítico para Android */
+      position: fixed;
       top: auto;
       bottom: 0;
       left: 0;
       right: 0;
-      transform: translateY(100%); /* 🔧 Slide desde abajo */
+      transform: translateY(100%);
       min-width: auto;
       border-radius: 1.5rem 1.5rem 0 0;
       padding: 1rem 1rem 1.5rem;
       max-height: 80vh;
       overflow-y: auto;
+      /* FIX: sin overflow:hidden en body — el popup mismo es scrollable si hace falta */
     }
 
     .share-popup-visible {
-      transform: translateY(0); /* 🔧 Desliza hacia arriba */
+      transform: translateY(0);
     }
 
     .share-tool-button {
@@ -460,20 +461,6 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     }
   }
 
-  /* 🔧 Tablet */
-  @media (min-width: 641px) and (max-width: 1024px) {
-    .share-popup {
-      right: 0;
-      left: auto;
-      transform: translateY(-10px);
-    }
-
-    .share-popup-visible {
-      transform: translateY(0);
-    }
-  }
-
-  /* 🔧 Fix para Chrome Android y otros navegadores móviles */
   @supports (-webkit-touch-callout: none) {
     .share-popup {
       -webkit-overflow-scrolling: touch;
