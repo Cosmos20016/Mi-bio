@@ -1,4 +1,238 @@
-<script>
+---
+import path from "node:path";
+import License from "@components/misc/License.astro";
+import Markdown from "@components/misc/Markdown.astro";
+import I18nKey from "@i18n/i18nKey";
+import { i18n } from "@i18n/translation";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { getSortedPosts } from "@utils/content-utils";
+import { getDir, getPostUrlBySlug } from "@utils/url-utils";
+import { Icon } from "astro-icon/components";
+import { licenseConfig } from "src/config";
+import ImageWrapper from "../../components/misc/ImageWrapper.astro";
+import PostMetadata from "../../components/PostMeta.astro";
+import { profileConfig, siteConfig } from "../../config";
+import { formatDateToYYYYMMDD } from "../../utils/date-utils";
+
+export async function getStaticPaths() {
+    const blogEntries = await getSortedPosts();
+    return blogEntries.map((entry) => ({
+        params: { slug: entry.slug },
+        props: { entry },
+    }));
+}
+
+const { entry } = Astro.props;
+
+const renderResult = await entry.render();
+const { Content, headings } = renderResult;
+const { remarkPluginFrontmatter } = renderResult;
+
+const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: entry.data.title,
+    description: entry.data.description || entry.data.title,
+    keywords: entry.data.tags,
+    image: entry.data.image
+        ? new URL(
+                entry.data.image.startsWith("/")
+                    ? entry.data.image
+                    : `/${entry.data.image}`,
+                Astro.site,
+            ).href
+        : new URL("/og-default.png", Astro.site).href,
+    author: {
+        "@type": "Person",
+        name: profileConfig.name,
+        url: Astro.site?.toString(),
+    },
+    publisher: {
+        "@type": "Person",
+        name: profileConfig.name,
+        url: Astro.site?.toString(),
+    },
+    datePublished: formatDateToYYYYMMDD(entry.data.published),
+    dateModified: entry.data.updated
+        ? formatDateToYYYYMMDD(entry.data.updated)
+        : formatDateToYYYYMMDD(entry.data.published),
+    mainEntityOfPage: {
+        "@type": "WebPage",
+        "@id": new URL(`/posts/${entry.slug}/`, Astro.site).href,
+    },
+    inLanguage: entry.data.lang
+        ? entry.data.lang.replace("_", "-")
+        : siteConfig.lang.replace("_", "-"),
+};
+
+const nextUrl = entry.data.nextSlug ? getPostUrlBySlug(entry.data.nextSlug) : null;
+const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : null;
+---
+<MainGridLayout 
+    banner={entry.data.image} 
+    title={entry.data.title} 
+    description={entry.data.description} 
+    lang={entry.data.lang} 
+    setOGTypeArticle={true} 
+    headings={headings}
+>
+    <script is:inline slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>
+    
+    <article 
+        class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative mb-4"
+        itemscope 
+        itemtype="https://schema.org/BlogPosting"
+    >
+        <div 
+            id="post-container" 
+            class:list={["card-base z-10 px-6 md:px-9 pt-6 pb-4 relative w-full", {}]}
+        >
+            <div 
+                class="flex flex-row text-black/30 dark:text-white/30 gap-5 mb-3 transition onload-animation"
+                role="complementary"
+                aria-label="Información del artículo"
+            >
+                <div class="flex flex-row items-center">
+                    <div 
+                        class="transition h-6 w-6 rounded-md bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50 flex items-center justify-center mr-2"
+                        aria-hidden="true"
+                    >
+                        <Icon name="material-symbols:notes-rounded"></Icon>
+                    </div>
+                    <div class="text-sm">
+                        <span itemprop="wordCount">{remarkPluginFrontmatter.words}</span>
+                        {" " + i18n(I18nKey.wordsCount)}
+                    </div>
+                </div>
+                <div class="flex flex-row items-center">
+                    <div 
+                        class="transition h-6 w-6 rounded-md bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50 flex items-center justify-center mr-2"
+                        aria-hidden="true"
+                    >
+                        <Icon name="material-symbols:schedule-outline-rounded"></Icon>
+                    </div>
+                    <div class="text-sm">
+                        <span itemprop="timeRequired" content={`PT${remarkPluginFrontmatter.minutes}M`}>
+                            {remarkPluginFrontmatter.minutes}
+                        </span>
+                        {" " + i18n(remarkPluginFrontmatter.minutes === 1 ? I18nKey.minuteCount : I18nKey.minutesCount)}
+                    </div>
+                </div>
+            </div>
+
+            <header class="relative onload-animation">
+                <h1
+                    data-pagefind-body 
+                    data-pagefind-weight="10" 
+                    data-pagefind-meta="title"
+                    itemprop="headline"
+                    class="transition w-full block font-bold mb-3
+                    text-3xl md:text-[2.25rem]/[2.75rem]
+                    text-black/90 dark:text-white/90
+                    md:before:w-1 before:h-5 before:rounded-md before:bg-[var(--primary)]
+                    before:absolute before:top-[0.75rem] before:left-[-1.125rem]
+                ">
+                    {entry.data.title}
+                </h1>
+            </header>
+
+            <div class="onload-animation">
+                <PostMetadata
+                    class="mb-5"
+                    published={entry.data.published}
+                    updated={entry.data.updated}
+                    tags={entry.data.tags}
+                    category={entry.data.category}
+                ></PostMetadata>
+                {!entry.data.image && (
+                    <div class="border-[var(--line-divider)] border-dashed border-b-[1px] mb-5"></div>
+                )}
+            </div>
+
+            {entry.data.image && (
+                <ImageWrapper 
+                    id="post-cover" 
+                    src={entry.data.image} 
+                    basePath={path.join("content/posts/", getDir(entry.id))} 
+                    class="mb-8 rounded-xl banner-container onload-animation"
+                    itemprop="image"
+                />
+            )}
+
+            <div itemprop="articleBody">
+                <Markdown class="mb-6 markdown-content onload-animation">
+                    <Content />
+                </Markdown>
+            </div>
+
+            {licenseConfig.enable && (
+                <License 
+                    title={entry.data.title} 
+                    slug={entry.slug} 
+                    pubDate={entry.data.published} 
+                    class="mb-6 rounded-xl license-container onload-animation"
+                ></License>
+            )}
+        </div>
+    </article>
+
+    <nav 
+        class="flex flex-col md:flex-row justify-between mb-4 gap-4 overflow-hidden w-full"
+        aria-label="Navegación entre artículos"
+    >
+        {nextUrl ? (
+            <a 
+                href={nextUrl}
+                class="w-full font-bold overflow-hidden active:scale-95 transition-transform"
+                aria-label={`Anterior: ${entry.data.nextTitle}`}
+                rel="prev"
+            >
+                <div class="btn-card rounded-2xl w-full h-[3.75rem] max-w-full px-4 flex items-center !justify-start gap-4">
+                    <Icon 
+                        name="material-symbols:chevron-left-rounded" 
+                        class="text-[2rem] text-[var(--primary)] flex-shrink-0" 
+                        aria-hidden="true"
+                    />
+                    <span class="overflow-hidden transition overflow-ellipsis whitespace-nowrap max-w-[calc(100%_-_3rem)] text-black/75 dark:text-white/75">
+                        {entry.data.nextTitle}
+                    </span>
+                </div>
+            </a>
+        ) : (
+            <div class="w-full" aria-hidden="true"></div>
+        )}
+
+        {prevUrl ? (
+            <a 
+                href={prevUrl}
+                class="w-full font-bold overflow-hidden active:scale-95 transition-transform"
+                aria-label={`Siguiente: ${entry.data.prevTitle}`}
+                rel="next"
+            >
+                <div class="btn-card rounded-2xl w-full h-[3.75rem] max-w-full px-4 flex items-center !justify-end gap-4">
+                    <span class="overflow-hidden transition overflow-ellipsis whitespace-nowrap max-w-[calc(100%_-_3rem)] text-black/75 dark:text-white/75">
+                        {entry.data.prevTitle}
+                    </span>
+                    <Icon 
+                        name="material-symbols:chevron-right-rounded" 
+                        class="text-[2rem] text-[var(--primary)] flex-shrink-0" 
+                        aria-hidden="true"
+                    />
+                </div>
+            </a>
+        ) : (
+            <div class="w-full" aria-hidden="true"></div>
+        )}
+    </nav>
+
+    <section 
+        id="giscus-container" 
+        class="card-base rounded-[var(--radius-large)] px-6 md:px-9 py-6 mt-6"
+        aria-label="Comentarios del artículo"
+    >
+    </section>
+
+    <script>
         // ============================================
         // GISCUS COMMENTS - OPTIMIZADO
         // ============================================
@@ -30,12 +264,8 @@
                 : 'light';
         }
 
-        /**
-         * Espera el iframe con MutationObserver — sin polling, reacción instantánea
-         */
         function waitForGiscusIframe(): Promise<HTMLIFrameElement | null> {
             return new Promise((resolve) => {
-                // Comprobación inmediata por si ya existe
                 const existing = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
                 if (existing) {
                     resolve(existing);
@@ -48,7 +278,6 @@
                     return;
                 }
 
-                // Timeout de seguridad: 5s máximo
                 const timeout = window.setTimeout(() => {
                     iframeObserver?.disconnect();
                     iframeObserver = null;
@@ -153,7 +382,6 @@
                 console.log('[Giscus] ✓ Script loaded');
                 giscusLoaded = true;
 
-                // MutationObserver reacciona en cuanto aparece el iframe — sin polling
                 const iframe = await waitForGiscusIframe();
 
                 if (iframe) {
@@ -268,3 +496,124 @@
 
         console.log('[Giscus] ✓ Module initialized');
     </script>
+
+    <style>
+        #giscus-container {
+            width: 100%;
+            max-width: 100%;
+            background: transparent !important;
+            contain: layout;
+            overflow: visible;
+            min-height: 200px;
+        }
+        
+        #giscus-container :global(iframe.giscus-frame) {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-height: 250px;
+            border: none !important;
+            background: transparent !important;
+            display: block;
+            contain: layout style paint;
+            pointer-events: auto !important;
+            touch-action: pan-y pan-x !important;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        :global(:not(.dark)) #giscus-container {
+            background-color: var(--card-bg, white) !important;
+        }
+        
+        :global(:not(.dark)) #giscus-container :global(iframe.giscus-frame) {
+            color-scheme: light;
+        }
+        
+        :global(.dark) #giscus-container {
+            background-color: var(--card-bg, transparent) !important;
+        }
+        
+        :global(.dark) #giscus-container :global(iframe.giscus-frame) {
+            color-scheme: dark;
+        }
+        
+        @media (max-width: 767px) {
+            #giscus-container {
+                padding: 1rem;
+                border-radius: var(--radius-large);
+                overflow: visible;
+            }
+            
+            #giscus-container :global(iframe.giscus-frame) {
+                min-height: 300px;
+                position: relative;
+                z-index: 1;
+                isolation: isolate;
+            }
+        }
+        
+        @media (min-width: 768px) and (max-width: 1024px) {
+            #giscus-container {
+                padding: 1.5rem;
+            }
+            
+            #giscus-container :global(iframe.giscus-frame) {
+                min-height: 320px;
+            }
+        }
+        
+        @media (min-width: 1025px) {
+            #giscus-container :global(iframe.giscus-frame) {
+                min-height: 350px;
+            }
+        }
+        
+        @media (hover: none) and (pointer: coarse) {
+            #giscus-container :global(button),
+            #giscus-container :global(a),
+            #giscus-container :global(input),
+            #giscus-container :global(textarea) {
+                min-height: 44px;
+                min-width: 44px;
+                padding: 0.75rem;
+            }
+            
+            #giscus-container {
+                -webkit-overflow-scrolling: touch;
+                scroll-behavior: smooth;
+                overscroll-behavior: contain;
+            }
+            
+            #giscus-container :global(input),
+            #giscus-container :global(textarea) {
+                font-size: 16px !important;
+            }
+            
+            #giscus-container :global(iframe.giscus-frame) {
+                touch-action: manipulation !important;
+                user-select: text;
+                -webkit-user-select: text;
+            }
+        }
+        
+        @media (prefers-reduced-motion: reduce) {
+            #giscus-container,
+            #giscus-container * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+        
+        @media print {
+            #giscus-container {
+                display: none !important;
+            }
+        }
+        
+        #giscus-container :global(*) {
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+    </style>
+
+</MainGridLayout>
