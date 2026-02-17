@@ -6,7 +6,7 @@ este texto puede cambiar por completo la forma en que miras tu camino."
 image: "./cover.jpeg"
 tags: [Crisis de los 30 (y 20)]
 category: Desarrollo personal
-draft: false
+draft: true
 ---
 
 ## La razón real por la que te sientes atrasado en la vida (no es tu edad)
