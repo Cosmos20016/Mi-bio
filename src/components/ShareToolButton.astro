@@ -29,40 +29,28 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
   </button>
 </div>
 
-<!-- El popup se crea en JS y se appended a <body> (patron portal),
-     escapando cualquier overflow:hidden del layout padre. -->
+<!-- El popup se crea en JS y se inserta en <body> (patrón portal) para
+     escapar de cualquier overflow:hidden del layout padre. -->
 
 <script>
   let shareAbortController: AbortController | null = null;
 
-  /** Cierra todos los popups portal activos */
   function closeAllPopups() {
     document.querySelectorAll<HTMLElement>('.share-popup-portal').forEach((p) => {
       p.classList.remove('share-popup-visible');
     });
   }
 
-  /**
-   * Posiciona el popup fixed justo debajo del botón.
-   * Solo se usa en desktop (viewport > 640 px).
-   */
+  /** Posiciona el popup fixed justo debajo del botón (solo desktop). */
   function positionPopup(popup: HTMLElement, btn: HTMLButtonElement) {
     const r   = btn.getBoundingClientRect();
+    const w   = 300;
     const gap = 8;
-    const w   = 300; // ancho del popup en px
-
-    // Vertical: debajo del botón
-    popup.style.top = `${r.bottom + gap}px`;
-
-    // Horizontal: alineado a la derecha del botón, sin salir de la pantalla
-    const left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8));
-    popup.style.left = `${left}px`;
+    popup.style.top  = `${r.bottom + gap}px`;
+    popup.style.left = `${Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8))}px`;
   }
 
-  // ── Inicialización ─────────────────────────────────────────────────────────
-
   function initShareButtons() {
-    // Cancelar listeners anteriores
     if (shareAbortController) shareAbortController.abort();
     shareAbortController = new AbortController();
     const signal = shareAbortController.signal;
@@ -70,21 +58,27 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     document.querySelectorAll<HTMLButtonElement>('.share-tool-button').forEach((buttonElement) => {
       const buttonId = buttonElement.id;
 
-      // Limpiar popup previo de este botón (si existe por re-init)
+      // Eliminar popup previo de este botón (re-init tras navegación)
       document.getElementById(`${buttonId}-popup`)?.remove();
 
-      // ── Crear popup y añadirlo a <body> (portal) ─────────────────────────
+      // ── Crear popup y añadirlo a <body> ──────────────────────────────────
       const popup = document.createElement('div');
       popup.id        = `${buttonId}-popup`;
       popup.className = 'share-popup-portal';
       popup.setAttribute('role', 'dialog');
       popup.setAttribute('aria-modal', 'true');
 
-      // Sincronizar dark mode
-      const syncDark = () => {
+      // Copiar --hue del elemento raíz para que oklch() funcione en el portal
+      const rootHue = getComputedStyle(document.documentElement).getPropertyValue('--hue').trim();
+      if (rootHue) popup.style.setProperty('--hue', rootHue);
+
+      const syncTheme = () => {
         popup.classList.toggle('dark', document.documentElement.classList.contains('dark'));
+        // Re-sync --hue por si cambió
+        const hue = getComputedStyle(document.documentElement).getPropertyValue('--hue').trim();
+        if (hue) popup.style.setProperty('--hue', hue);
       };
-      syncDark();
+      syncTheme();
 
       popup.innerHTML = `
         <div class="spp-inner">
@@ -131,7 +125,7 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
 
       document.body.appendChild(popup);
 
-      // ── Leer datos del botón ─────────────────────────────────────────────
+      // ── Datos ────────────────────────────────────────────────────────────
       const toolName        = buttonElement.dataset.toolName        || '';
       const toolDescription = buttonElement.dataset.toolDescription || '';
       const toolUrl         = buttonElement.dataset.toolUrl         || '';
@@ -139,7 +133,10 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
       const shareText       = `¡Mira esta herramienta gratuita: ${toolName}! ${toolDescription} 🚀`;
 
       const isMobile       = () => window.innerWidth <= 640;
-      const isTouchDevice  = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      // FIX móvil: solo activar share nativo si la API está disponible Y
+      // el navegador realmente puede manejar el tipo de contenido.
+      // Algunos navegadores (Samsung Internet, WebView) tienen canShare() pero
+      // navigator.share() falla sin lanzar error → usamos un wrapper con timeout.
       const hasNativeShare = 'share' in navigator && typeof navigator.canShare === 'function';
 
       // ── Abrir / Cerrar ───────────────────────────────────────────────────
@@ -147,7 +144,7 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
 
       const openPopup = () => {
         closeAllPopups();
-        syncDark();
+        syncTheme();
         if (!isMobile()) positionPopup(popup, buttonElement);
         popup.classList.add('share-popup-visible');
       };
@@ -170,24 +167,36 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
         e.preventDefault();
         e.stopPropagation();
 
-        // Compartir nativo solo en móvil/táctil
-        if (isTouchDevice && hasNativeShare) {
-          try {
-            const shareData = { title: toolName, text: shareText, url: absoluteUrl };
-            if (navigator.canShare(shareData)) {
+        // Intentar share nativo en móvil con timeout de seguridad.
+        // Si en 500ms no se abrió el diálogo nativo, mostramos el popup.
+        if (isMobile() && hasNativeShare) {
+          const shareData = { title: toolName, text: shareText, url: absoluteUrl };
+          if (navigator.canShare(shareData)) {
+            let nativeWorked = false;
+            const timeoutId = setTimeout(() => {
+              // Share nativo no se activó → mostrar popup de fallback
+              if (!nativeWorked) openPopup();
+            }, 500);
+
+            try {
               await navigator.share(shareData);
-              return;
+              nativeWorked = true;
+              clearTimeout(timeoutId);
+              return; // Éxito
+            } catch (err) {
+              nativeWorked = true; // Evitar que el timeout abra el popup también
+              clearTimeout(timeoutId);
+              // AbortError = usuario canceló → no hacer nada más
+              if (err instanceof Error && err.name === 'AbortError') return;
+              // Cualquier otro error → mostrar popup
             }
-          } catch (err) {
-            if (err instanceof Error && err.name === 'AbortError') return;
-            // Otro error (ej. Safari con restricciones): caer al popup
           }
         }
 
         popup.classList.contains('share-popup-visible') ? closePopup() : openPopup();
       }, { signal });
 
-      // ── Opciones del popup ───────────────────────────────────────────────
+      // ── Opciones ─────────────────────────────────────────────────────────
       popup.querySelectorAll<HTMLElement>('.spp-option').forEach((option) => {
         option.addEventListener('click', async (e) => {
           e.preventDefault();
@@ -200,22 +209,18 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
               window.open(`https://wa.me/?text=${encodeURIComponent(`${shareText} ${absoluteUrl}`)}`, '_blank', 'noopener,noreferrer');
               closePopup();
               break;
-
             case 'facebook':
               window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(absoluteUrl)}`, '_blank', 'noopener,noreferrer');
               closePopup();
               break;
-
             case 'twitter':
               window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(absoluteUrl)}&text=${encodeURIComponent(shareText)}`, '_blank', 'noopener,noreferrer');
               closePopup();
               break;
-
             case 'telegram':
               window.open(`https://t.me/share/url?url=${encodeURIComponent(absoluteUrl)}&text=${encodeURIComponent(shareText)}`, '_blank', 'noopener,noreferrer');
               closePopup();
               break;
-
             case 'copy': {
               const copyText    = option.querySelector<HTMLElement>('.spp-copy-text')!;
               const iconDefault = option.querySelector<SVGElement>('.spp-copy-default')!;
@@ -238,14 +243,12 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
                 await navigator.clipboard.writeText(absoluteUrl);
                 showSuccess();
               } catch {
-                // Fallback: execCommand (HTTP / Safari antiguo)
                 try {
                   const ta = document.createElement('textarea');
                   ta.value = absoluteUrl;
                   ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none;top:0;left:0';
                   document.body.appendChild(ta);
-                  ta.focus();
-                  ta.select();
+                  ta.focus(); ta.select();
                   const ok = document.execCommand('copy');
                   document.body.removeChild(ta);
                   ok ? showSuccess() : alert('No se pudo copiar el enlace');
@@ -253,7 +256,7 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
                   alert('No se pudo copiar el enlace');
                 }
               }
-              break; // Mantener popup abierto para ver el feedback
+              break;
             }
           }
         }, { signal });
@@ -271,14 +274,12 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
         }
       }, { signal });
 
-      // ── Escape ───────────────────────────────────────────────────────────
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') closePopup();
       }, { signal });
     });
   }
 
-  // Limpiar popups portal al navegar (Astro View Transitions / Swup)
   function cleanupPopups() {
     document.querySelectorAll('.share-popup-portal').forEach((p) => p.remove());
   }
@@ -295,7 +296,6 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
 </script>
 
 <style>
-  /* ── Botón ────────────────────────────────────────────────────────────── */
   .share-tool-button-wrapper {
     position: relative;
     display: inline-flex;
@@ -338,7 +338,6 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
   }
 
   .share-tool-button:active { transform: scale(0.95); }
-
   .share-icon { width: 14px; height: 14px; }
 </style>
 
@@ -348,21 +347,23 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
   .share-popup-portal {
     position: fixed;
     width: 300px;
-    background: #f9fafb;
+    /* Colores originales con oklch + --hue (inyectado por JS desde :root) */
+    background: oklch(0.99 0.005 var(--hue, 250));
     border-radius: 1rem;
     padding: 0.75rem;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.07);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
     z-index: 99999;
     opacity: 0;
     transform: translateY(-8px) scale(0.97);
-    transition: opacity 0.18s ease, transform 0.18s ease;
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s;
     pointer-events: none;
     visibility: hidden;
   }
 
+  /* Dark mode: mismos valores que el original */
   .share-popup-portal.dark {
-    background: #1e1e2e;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.07);
+    background: oklch(0.19 0.015 var(--hue, 250));
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08);
   }
 
   .share-popup-portal.share-popup-visible {
@@ -370,6 +371,7 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     transform: translateY(0) scale(1);
     pointer-events: auto;
     visibility: visible;
+    transition: opacity 0.18s ease, transform 0.18s ease;
   }
 
   /* ── Grid de opciones ─────────────────────────────────────────────────── */
@@ -388,7 +390,7 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     padding: 0.875rem 0.4rem;
     border: none;
     border-radius: 0.75rem;
-    background: #f1f5f9;
+    background: oklch(0.96 0.01 var(--hue, 250));
     cursor: pointer;
     transition: background 0.15s ease, transform 0.15s ease;
     font-size: 0.7rem;
@@ -401,17 +403,17 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
   }
 
   .share-popup-portal.dark .spp-option {
-    background: #2a2a3e;
+    background: oklch(0.24 0.02 var(--hue, 250));
     color: #cbd5e1;
   }
 
   .spp-option:hover {
-    background: #e2e8f0;
+    background: oklch(0.92 0.02 var(--hue, 250));
     transform: translateY(-2px);
   }
 
   .share-popup-portal.dark .spp-option:hover {
-    background: #33334a;
+    background: oklch(0.28 0.03 var(--hue, 250));
   }
 
   .spp-option:active { transform: translateY(0); }
@@ -419,13 +421,16 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
   .spp-twitter-icon { color: #14171A; }
   .share-popup-portal.dark .spp-twitter-icon { color: #E7E9EA; }
 
-  .spp-copy-btn { color: #6366f1; }
-  .share-popup-portal.dark .spp-copy-btn { color: #a5b4fc; }
+  .spp-copy-btn {
+    color: oklch(0.5 0.14 var(--hue, 250));
+  }
+  .share-popup-portal.dark .spp-copy-btn {
+    color: oklch(0.75 0.12 var(--hue, 250));
+  }
 
   /* ── Mobile: bottom sheet ─────────────────────────────────────────────── */
   @media (max-width: 640px) {
     .share-popup-portal {
-      /* Sobreescribir la posición calculada por JS */
       position: fixed !important;
       top: auto !important;
       bottom: 0 !important;
@@ -434,21 +439,21 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
       width: 100% !important;
       max-width: 100%;
       border-radius: 1.25rem 1.25rem 0 0;
-      /* Respeto a notch / home bar en iOS */
-      padding: 1rem 1rem calc(1.25rem + env(safe-area-inset-bottom));
+      /* Espacio extra para la home bar en iPhone/Android */
+      padding: 1.25rem 1rem calc(1.5rem + env(safe-area-inset-bottom));
       max-height: 72vh;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       /* Slide desde abajo */
       transform: translateY(110%) !important;
-      transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.15s ease, visibility 0s linear 0.25s;
+      transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.15s ease, visibility 0s linear 0.28s;
     }
 
     .share-popup-portal.share-popup-visible {
       transform: translateY(0) !important;
       opacity: 1;
       visibility: visible;
-      transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.15s ease;
+      transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.15s ease;
     }
 
     .spp-inner {
