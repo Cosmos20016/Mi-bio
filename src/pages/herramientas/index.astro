@@ -280,14 +280,47 @@ const tools = [
   to { transform: rotate(360deg); }
 }
 
+/*
+  Cada dot se mueve ALEJÁNDOSE del centro (50, 41).
+  d1 (35,30) → arriba-izquierda  → translate(-2px, -2px)
+  d2 (65,30) → arriba-derecha    → translate( 2px, -2px)
+  d3 (35,52) → abajo-izquierda   → translate(-2px,  2px)
+  d4 (65,52) → abajo-derecha     → translate( 2px,  2px)
+  transform-origin apunta al propio centro del dot para que
+  el scale también crezca hacia afuera y no hacia la estrella.
+*/
 .dot { animation: dotPulse 3s ease-in-out infinite; }
-.d1 { animation-delay: 0s; }
-.d2 { animation-delay: 0.75s; }
-.d3 { animation-delay: 1.5s; }
-.d4 { animation-delay: 2.25s; }
+
+.d1 {
+  animation-delay: 0s;
+  transform-origin: 35px 30px;
+  --dx: -2px; --dy: -2px;
+}
+.d2 {
+  animation-delay: 0.75s;
+  transform-origin: 65px 30px;
+  --dx: 2px; --dy: -2px;
+}
+.d3 {
+  animation-delay: 1.5s;
+  transform-origin: 35px 52px;
+  --dx: -2px; --dy: 2px;
+}
+.d4 {
+  animation-delay: 2.25s;
+  transform-origin: 65px 52px;
+  --dx: 2px; --dy: 2px;
+}
+
 @keyframes dotPulse {
-  0%, 100% { opacity: 0.6; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.3); }
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1) translate(0, 0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3) translate(var(--dx), var(--dy));
+  }
 }
 
 .header-eyebrow {
@@ -424,7 +457,6 @@ const tools = [
               border-color 0.3s ease;
   animation: cardIn 0.5s var(--ease-out) both;
   animation-delay: calc(0.1s * var(--i));
-  /* isolate for GPU */
   isolation: isolate;
 }
 
@@ -437,7 +469,6 @@ const tools = [
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Glow effect — CSS only, no JS needed */
 .card-glow {
   position: absolute;
   inset: -1px;
@@ -470,13 +501,11 @@ const tools = [
   border-color: oklch(0.7 0.15 var(--hue-tool, var(--hue)) / 0.4);
 }
 
-/* Touch screens: no hover lift */
 @media (hover: none) {
   .tool-card:hover { transform: none; }
   .tool-card:active { transform: scale(0.985); }
 }
 
-/* Card badge */
 .card-badge {
   position: absolute;
   top: 1rem;
