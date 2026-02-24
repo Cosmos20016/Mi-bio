@@ -244,36 +244,30 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         // ============================================
         // GISCUS COMMENTS — ASTRO VIEW TRANSITIONS
         //
-        // BUGS QUE HABÍA:
+        // BUGS RESUELTOS:
         //
         // 1. "Mantiene instancia vieja" (PC y móvil):
         //    Astro hace morphing de elementos con el mismo id entre páginas.
-        //    El #giscus-container con su iframe sobrevivía al swap porque
-        //    cleanup() nunca limpiaba su contenido. Se ve el contenido del
-        //    post anterior mientras carga el nuevo.
-        //    FIX → cleanup() hace container.innerHTML = '' inmediatamente,
-        //    Y se añade transition:name="giscus" + transition:animate="none"
-        //    en el HTML para que Astro no haga morphing del elemento.
+        //    FIX → cleanup() vacía el container antes del swap +
+        //    transition:name="giscus" + transition:animate="none" en el HTML.
         //
-        // 2. "No carga en móvil al navegar":
-        //    IntersectionObserver medía el contenedor durante la animación
-        //    de View Transitions → layout inestable → nunca detectaba
-        //    intersección en móvil (rendering más lento que en PC).
-        //    FIX → tras navegación SPA, carga directa sin observer.
-        //    El delay usa requestAnimationFrame x2 + 100ms extra en móvil
-        //    en vez de un setTimeout fijo (más fiable que asumir duración
-        //    de animación).
+        // 2. "No carga al navegar en SPA":
+        //    El browser cachea el script de Giscus. Al re-inyectarlo con la
+        //    misma URL, onload dispara pero el script NO se re-ejecuta, por
+        //    lo que Giscus nunca arranca para el nuevo pathname.
+        //    FIX → en SPA navigation se añade ?v=timestamp al src para
+        //    forzar re-ejecución. En primera carga se usa la URL limpia
+        //    para aprovechar el caché normalmente.
+        //    También se eliminó el timing artificial (rAF + setTimeout):
+        //    astro:page-load ya garantiza DOM estable en móvil y desktop.
         //
         // 3. "Error al cargar / solo aparece recargar página":
-        //    onerror se disparaba ante cualquier fallo de red (servidor lento,
-        //    conexión inestable en móvil) y mostraba el error sin reintentar.
-        //    Además, si el script cargaba pero el iframe nunca aparecía
-        //    (edge case silencioso), giscusLoaded quedaba en true bloqueando
-        //    futuros intentos sin avisar al usuario.
-        //    FIX → reintentos automáticos con backoff exponencial (hasta
-        //    MAX_RETRIES), timeout de 8s para detectar script-cargado-pero-
-        //    sin-iframe, y botón de error que reintenta la carga real en vez
-        //    de recargar toda la página.
+        //    onerror mostraba error sin reintentar. Edge case silencioso:
+        //    script cargado pero iframe nunca aparece → giscusLoaded = true
+        //    bloqueaba reintentos futuros.
+        //    FIX → reintentos automáticos con backoff (hasta MAX_RETRIES),
+        //    timeout de 8s para el fallo silencioso, botón que reintenta
+        //    la carga real en vez de recargar la página entera.
         // ============================================
 
         interface GiscusMessage {
@@ -287,7 +281,6 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         let intersectionObserver: IntersectionObserver | null = null;
         let iframeObserver:       MutationObserver | null = null;
         let resizeTimer:          number;
-        let spaLoadTimer:         number;
 
         // ── Reintentos ───────────────────────────────────────────────────────
         let retryCount:    number   = 0;
@@ -397,7 +390,13 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             container.innerHTML = '';
 
             const script = document.createElement('script');
-            script.src = 'https://giscus-personal-woft.vercel.app/es/client.js';
+            // Cache-bust en SPA: fuerza re-ejecución aunque el browser tenga
+            // el script en caché. Sin esto, onload dispara pero Giscus no
+            // se reinicializa para el nuevo pathname. En primera carga usamos
+            // la URL limpia para beneficiarnos del caché normalmente.
+            script.src = isSpaNavigation
+                ? `https://giscus-personal-woft.vercel.app/es/client.js?v=${Date.now()}`
+                : 'https://giscus-personal-woft.vercel.app/es/client.js';
             script.setAttribute('data-repo',              'Cosmos20016/Gestion-de-comentarios');
             script.setAttribute('data-repo-id',           'R_kgDOPSHLmA');
             script.setAttribute('data-category',          'Announcements');
@@ -493,33 +492,9 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             intersectionObserver.observe(container);
         }
 
-        // ── Navegación SPA: carga directa sin IntersectionObserver ───────────
-        //
-        // FIX MÓVIL: usamos requestAnimationFrame x2 para esperar a que el
-        // navegador haya pintado el nuevo layout. Más fiable que un setTimeout
-        // fijo porque no asume ninguna duración de animación concreta.
-        // En móvil añadimos 100ms extra por si el paint es más lento.
-
-        function initAfterNavigation(): void {
-            if (!getContainer()) return;
-            clearTimeout(spaLoadTimer);
-
-            const run = () => loadGiscus();
-
-            if (isMobile()) {
-                // rAF x2 + 100ms: espera 2 frames de paint + buffer para móvil
-                requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                        spaLoadTimer = window.setTimeout(run, 100);
-                    });
-                });
-            } else {
-                // rAF x2 es suficiente en desktop
-                requestAnimationFrame(() => {
-                    requestAnimationFrame(run);
-                });
-            }
-        }
+        // (initAfterNavigation eliminado: astro:page-load ya garantiza que el
+        // DOM está pintado y estable cuando se dispara, tanto en móvil como
+        // en desktop. No hace falta ningún delay artificial adicional.)
 
         // ── Cleanup ───────────────────────────────────────────────────────────
 
@@ -538,7 +513,6 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             iframeObserver?.disconnect();       iframeObserver = null;
 
             clearTimeout(resizeTimer);
-            clearTimeout(spaLoadTimer);
         }
 
         // ── Eventos Astro View Transitions ────────────────────────────────────
@@ -548,8 +522,12 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         document.addEventListener('astro:page-load', () => {
             if (!getContainer()) return;
 
+            // astro:page-load se dispara cuando el DOM está completamente
+            // pintado y estable, tanto en primera carga como en SPA navigation.
+            // En primera carga usamos lazy load (IntersectionObserver).
+            // En SPA navigation cargamos directo porque ya llegamos al post.
             if (isSpaNavigation) {
-                initAfterNavigation();
+                loadGiscus();
             } else {
                 initFirstLoad();
             }
