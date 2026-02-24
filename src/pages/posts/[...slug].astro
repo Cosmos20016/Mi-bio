@@ -68,32 +68,33 @@ const jsonLd = {
 const nextUrl = entry.data.nextSlug ? getPostUrlBySlug(entry.data.nextSlug) : null;
 const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : null;
 ---
-<MainGridLayout 
-    banner={entry.data.image} 
-    title={entry.data.title} 
-    description={entry.data.description} 
-    lang={entry.data.lang} 
-    setOGTypeArticle={true} 
+
+<MainGridLayout
+    banner={entry.data.image}
+    title={entry.data.title}
+    description={entry.data.description}
+    lang={entry.data.lang}
+    setOGTypeArticle={true}
     headings={headings}
 >
     <script is:inline slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>
-    
-    <article 
+
+    <article
         class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative mb-4"
-        itemscope 
+        itemscope
         itemtype="https://schema.org/BlogPosting"
     >
-        <div 
-            id="post-container" 
+        <div
+            id="post-container"
             class:list={["card-base z-10 px-6 md:px-9 pt-6 pb-4 relative w-full", {}]}
         >
-            <div 
+            <div
                 class="flex flex-row text-black/30 dark:text-white/30 gap-5 mb-3 transition onload-animation"
                 role="complementary"
                 aria-label="Información del artículo"
             >
                 <div class="flex flex-row items-center">
-                    <div 
+                    <div
                         class="transition h-6 w-6 rounded-md bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50 flex items-center justify-center mr-2"
                         aria-hidden="true"
                     >
@@ -105,7 +106,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                     </div>
                 </div>
                 <div class="flex flex-row items-center">
-                    <div 
+                    <div
                         class="transition h-6 w-6 rounded-md bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50 flex items-center justify-center mr-2"
                         aria-hidden="true"
                     >
@@ -122,16 +123,16 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
 
             <header class="relative onload-animation">
                 <h1
-                    data-pagefind-body 
-                    data-pagefind-weight="10" 
+                    data-pagefind-body
+                    data-pagefind-weight="10"
                     data-pagefind-meta="title"
                     itemprop="headline"
                     class="transition w-full block font-bold mb-3
                     text-3xl md:text-[2.25rem]/[2.75rem]
                     text-black/90 dark:text-white/90
                     md:before:w-1 before:h-5 before:rounded-md before:bg-[var(--primary)]
-                    before:absolute before:top-[0.75rem] before:left-[-1.125rem]
-                ">
+                    before:absolute before:top-[0.75rem] before:left-[-1.125rem]"
+                >
                     {entry.data.title}
                 </h1>
             </header>
@@ -150,10 +151,10 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             </div>
 
             {entry.data.image && (
-                <ImageWrapper 
-                    id="post-cover" 
-                    src={entry.data.image} 
-                    basePath={path.join("content/posts/", getDir(entry.id))} 
+                <ImageWrapper
+                    id="post-cover"
+                    src={entry.data.image}
+                    basePath={path.join("content/posts/", getDir(entry.id))}
                     class="mb-8 rounded-xl banner-container onload-animation"
                     itemprop="image"
                 />
@@ -166,31 +167,31 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             </div>
 
             {licenseConfig.enable && (
-                <License 
-                    title={entry.data.title} 
-                    slug={entry.slug} 
-                    pubDate={entry.data.published} 
+                <License
+                    title={entry.data.title}
+                    slug={entry.slug}
+                    pubDate={entry.data.published}
                     class="mb-6 rounded-xl license-container onload-animation"
                 ></License>
             )}
         </div>
     </article>
 
-    <nav 
+    <nav
         class="flex flex-col md:flex-row justify-between mb-4 gap-4 overflow-hidden w-full"
         aria-label="Navegación entre artículos"
     >
         {nextUrl ? (
-            <a 
+            <a
                 href={nextUrl}
                 class="w-full font-bold overflow-hidden active:scale-95 transition-transform"
                 aria-label={`Anterior: ${entry.data.nextTitle}`}
                 rel="prev"
             >
                 <div class="btn-card rounded-2xl w-full h-[3.75rem] max-w-full px-4 flex items-center !justify-start gap-4">
-                    <Icon 
-                        name="material-symbols:chevron-left-rounded" 
-                        class="text-[2rem] text-[var(--primary)] flex-shrink-0" 
+                    <Icon
+                        name="material-symbols:chevron-left-rounded"
+                        class="text-[2rem] text-[var(--primary)] flex-shrink-0"
                         aria-hidden="true"
                     />
                     <span class="overflow-hidden transition overflow-ellipsis whitespace-nowrap max-w-[calc(100%_-_3rem)] text-black/75 dark:text-white/75">
@@ -203,7 +204,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         )}
 
         {prevUrl ? (
-            <a 
+            <a
                 href={prevUrl}
                 class="w-full font-bold overflow-hidden active:scale-95 transition-transform"
                 aria-label={`Siguiente: ${entry.data.prevTitle}`}
@@ -213,9 +214,9 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                     <span class="overflow-hidden transition overflow-ellipsis whitespace-nowrap max-w-[calc(100%_-_3rem)] text-black/75 dark:text-white/75">
                         {entry.data.prevTitle}
                     </span>
-                    <Icon 
-                        name="material-symbols:chevron-right-rounded" 
-                        class="text-[2rem] text-[var(--primary)] flex-shrink-0" 
+                    <Icon
+                        name="material-symbols:chevron-right-rounded"
+                        class="text-[2rem] text-[var(--primary)] flex-shrink-0"
                         aria-hidden="true"
                     />
                 </div>
@@ -226,92 +227,96 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
     </nav>
 
     <!--
-        transition:name fuerza a Astro a tratar este contenedor como un
-        elemento NUEVO en cada navegación en vez de hacer morphing del anterior.
-        Sin esto, el iframe de Giscus de la página vieja sobrevive al swap
-        y se muestra en la página nueva hasta que loadGiscus() lo reemplaza.
+        transition:name="giscus" + transition:animate="none" le indica a Astro
+        que trate este elemento como NUEVO en cada navegación en vez de hacer
+        morphing del anterior. Sin esto, el iframe de la página vieja sobrevive
+        al swap y se ve en la nueva página hasta que Giscus lo reemplaza.
     -->
-    <section 
+    <section
         id="giscus-container"
         transition:name="giscus"
         transition:animate="none"
         class="card-base rounded-[var(--radius-large)] px-6 md:px-9 py-6 mt-6"
         aria-label="Comentarios del artículo"
-    >
-    </section>
+    ></section>
 
     <script>
         // ─────────────────────────────────────────────────────────────────────
         // GISCUS — Astro View Transitions
         //
-        // Principios del diseño:
-        //  • Un solo flag de estado: giscusLoaded. Sin giscusLoading.
-        //  • loadGeneration invalida callbacks de navegaciones anteriores.
-        //  • onload → giscusLoaded = true inmediatamente (no esperamos iframe).
-        //    Giscus crea el iframe por su cuenta; nosotros no necesitamos saber
-        //    cuándo aparece para considerar la carga exitosa.
-        //  • Retry solo en onerror (red/servidor). Sin iframeTimeout complejo.
-        //  • Dos triggers: loadGiscus() al final del script (carga directa /
-        //    primera SPA navigation) + astro:page-load (SPA navigation). El
-        //    guard `if (giscusLoaded) return` hace que el segundo sea no-op.
+        // Diseño deliberadamente minimalista:
+        //
+        //  • Un solo hook: astro:page-load. Se dispara tanto en carga directa
+        //    (URL directa, hard refresh) como en cada SPA navigation. Cubre
+        //    todos los casos sin lógica adicional.
+        //
+        //  • ?v=Date.now() en el src siempre. Giscus guarda una bandera
+        //    interna en `window` la primera vez que ejecuta su script. En
+        //    navegaciones SPA el browser puede reutilizar el script del caché;
+        //    Giscus detecta su bandera y se salta la inicialización → el
+        //    container queda vacío → "solo funciona al recargar".
+        //    El timestamp fuerza al browser a tratarlo como recurso nuevo y
+        //    Giscus siempre arranca limpio.
+        //
+        //  • onload → giscusLoaded = true de inmediato, sin esperar al iframe.
+        //    Giscus crea el iframe solo después de ejecutarse. Esperar al
+        //    iframe con un MutationObserver + timeout abría una ventana donde
+        //    un cleanup() en medio podía dejar el estado corrupto.
+        //
+        //  • loadGeneration: cada cleanup() lo incrementa. Los callbacks de
+        //    onload y onerror capturan `gen` al inicio de mountGiscus() y se
+        //    descartan si `gen !== loadGeneration` (navegación anterior).
+        //
+        //  • Retry solo en onerror (fallo real de red o servidor). Sin
+        //    iframeTimeout, sin detección de "fallo silencioso", sin fallback
+        //    de endpoint. Menos código = menos carreras de condición.
         // ─────────────────────────────────────────────────────────────────────
 
-        interface GiscusMessage {
-            giscus: { setConfig: { theme: string } };
-        }
+        const GISCUS_ORIGIN = 'https://giscus-personal-woft.vercel.app';
+        const MAX_RETRIES   = 3;
+        const RETRY_DELAYS  = [1500, 3000, 6000]; // ms, backoff progresivo
 
-        // ── Estado ───────────────────────────────────────────────────────────
-        let giscusLoaded:         boolean = false;
-        let themeObserver:        MutationObserver | null = null;
-        let intersectionObserver: IntersectionObserver | null = null;
-        let iframeObserver:       MutationObserver | null = null;
-        let resizeTimer:          number;
-        let retryCount:           number = 0;
-        const MAX_RETRIES                = 3;
-        const RETRY_DELAYS               = [1500, 3000, 6000];
+        let giscusLoaded:   boolean                    = false;
+        let retryCount:     number                     = 0;
+        let loadGeneration: number                     = 0;
+        let themeObserver:  MutationObserver | null    = null;
 
-        // Cada cleanup() lo incrementa. Los callbacks capturan `gen` al
-        // inicio de loadGiscus(); si al disparar `gen !== loadGeneration`
-        // son de una navegación anterior y se descartan sin actuar.
-        let loadGeneration: number = 0;
-
-        // ── Helpers ──────────────────────────────────────────────────────────
+        // ── Helpers ───────────────────────────────────────────────────────────
 
         function currentTheme(): string {
             return document.documentElement.classList.contains('dark')
-                ? 'transparent_dark' : 'light';
+                ? 'transparent_dark'
+                : 'light';
         }
 
         function getContainer(): HTMLElement | null {
             return document.getElementById('giscus-container');
         }
 
-        // ── Theme observer ───────────────────────────────────────────────────
+        // ── Observer de tema ──────────────────────────────────────────────────
 
         function setupThemeObserver(): void {
             themeObserver?.disconnect();
-            themeObserver = new MutationObserver((mutations) => {
-                if (!mutations.some(m => m.attributeName === 'class')) return;
+            themeObserver = new MutationObserver(() => {
                 const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
                 if (!iframe?.contentWindow) return;
-                const msg: GiscusMessage = { giscus: { setConfig: { theme: currentTheme() } } };
-                try {
-                    iframe.contentWindow.postMessage(msg, 'https://giscus-personal-woft.vercel.app');
-                } catch (e) {
-                    console.error('[Giscus] Theme error:', e);
-                }
+                iframe.contentWindow.postMessage(
+                    { giscus: { setConfig: { theme: currentTheme() } } },
+                    GISCUS_ORIGIN
+                );
             });
             themeObserver.observe(document.documentElement, {
-                attributes: true, attributeFilter: ['class']
+                attributes: true,
+                attributeFilter: ['class'],
             });
         }
 
-        // ── Error UI ─────────────────────────────────────────────────────────
+        // ── UI de error con reintento real ────────────────────────────────────
 
         function showErrorUI(container: HTMLElement): void {
             container.innerHTML = `
                 <div class="flex flex-col items-center justify-center py-8 gap-3 text-red-500">
-                    <span class="text-sm">Error al cargar comentarios</span>
+                    <span class="text-sm">Error al cargar los comentarios</span>
                     <button id="giscus-retry-btn" class="text-xs underline hover:no-underline">
                         Reintentar
                     </button>
@@ -319,38 +324,24 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             document.getElementById('giscus-retry-btn')?.addEventListener('click', () => {
                 retryCount   = 0;
                 giscusLoaded = false;
-                loadGiscus();
+                mountGiscus();
             });
         }
 
-        // ── Cargar Giscus ─────────────────────────────────────────────────────
+        // ── Montar Giscus ─────────────────────────────────────────────────────
 
-        function loadGiscus(): void {
+        function mountGiscus(): void {
             if (giscusLoaded) return;
 
             const container = getContainer();
             if (!container) return;
 
-            // Si ya hay un script de Giscus inyectado y cargando, no
-            // inyectar otro. Esto evita la carrera entre el loadGiscus()
-            // del final del script y el listener de astro:page-load, que
-            // se disparan casi al mismo tiempo en la primera ejecución
-            // (home→post). Sin este guard, el segundo llama a
-            // container.innerHTML = '' y mata al primero antes de que
-            // su onload dispare — problema especialmente visible en móvil
-            // con conexión lenta.
-            if (container.querySelector('script[src*="giscus"]')) return;
-
-            // Captura la generación actual. Los callbacks comprueban que
-            // `gen === loadGeneration` antes de actuar.
             const gen = loadGeneration;
 
             container.innerHTML = '';
 
             const script = document.createElement('script');
-            // Cache-bust siempre: Giscus detecta instancias previas en window
-            // y se salta la inicialización si el script viene del caché.
-            script.src = `https://giscus-personal-woft.vercel.app/es/client.js?v=${Date.now()}`;
+            script.src = `${GISCUS_ORIGIN}/es/client.js?v=${Date.now()}`;
             script.setAttribute('data-repo',              'Cosmos20016/Gestion-de-comentarios');
             script.setAttribute('data-repo-id',           'R_kgDOPSHLmA');
             script.setAttribute('data-category',          'Announcements');
@@ -366,11 +357,12 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             script.async       = true;
 
             script.onerror = () => {
-                if (gen !== loadGeneration) return;
+                if (gen !== loadGeneration) return; // callback de página anterior, ignorar
+
                 if (retryCount < MAX_RETRIES) {
                     const delay = RETRY_DELAYS[retryCount++];
-                    console.warn(`[Giscus] Error. Reintento ${retryCount}/${MAX_RETRIES} en ${delay}ms`);
-                    window.setTimeout(loadGiscus, delay);
+                    console.warn(`[Giscus] Fallo de red. Reintento ${retryCount}/${MAX_RETRIES} en ${delay}ms…`);
+                    window.setTimeout(mountGiscus, delay);
                 } else {
                     retryCount = 0;
                     const c = getContainer();
@@ -379,11 +371,8 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             };
 
             script.onload = () => {
-                if (gen !== loadGeneration) return;
-                // El script se ejecutó correctamente. Giscus creará el iframe
-                // por su cuenta. No esperamos el iframe aquí — ese camino
-                // tenía un bug donde waitForIframe() podía retornar null y
-                // dejar giscusLoading = true para siempre, bloqueando todo.
+                if (gen !== loadGeneration) return; // callback de página anterior, ignorar
+
                 retryCount   = 0;
                 giscusLoaded = true;
                 setupThemeObserver();
@@ -392,152 +381,35 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             container.appendChild(script);
         }
 
-        // ── Cleanup (astro:before-swap) ───────────────────────────────────────
+        // ── Limpieza antes del swap de View Transitions ───────────────────────
 
         function cleanup(): void {
-            const container = getContainer();
-            if (container) container.innerHTML = '';
+            loadGeneration++; // invalida onload/onerror de la carga anterior
 
             giscusLoaded = false;
             retryCount   = 0;
-            loadGeneration++;   // invalida todos los callbacks pendientes
 
-            themeObserver?.disconnect();        themeObserver        = null;
-            intersectionObserver?.disconnect(); intersectionObserver = null;
-            iframeObserver?.disconnect();       iframeObserver       = null;
-            clearTimeout(resizeTimer);
+            themeObserver?.disconnect();
+            themeObserver = null;
+
+            const container = getContainer();
+            if (container) container.innerHTML = '';
         }
 
-        // ── Eventos ──────────────────────────────────────────────────────────
+        // ── Registro de eventos ───────────────────────────────────────────────
 
         document.addEventListener('astro:before-swap', cleanup);
 
-        // astro:page-load dispara en TODA navegación SPA y también en la
-        // carga inicial. giscusLoaded = false en ese punto siempre, así que
-        // loadGiscus() corre sin condición adicional.
         document.addEventListener('astro:page-load', () => {
-            if (getContainer()) loadGiscus();
+            if (getContainer()) mountGiscus();
         });
-
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimer);
-            resizeTimer = window.setTimeout(() => {
-                if (!giscusLoaded && getContainer()) loadGiscus();
-            }, 500);
-        });
-
-        // Trigger de seguridad para carga directa / hard refresh.
-        // Si astro:page-load ya corrió antes de llegar aquí, giscusLoaded
-        // será true y loadGiscus() retorna inmediatamente (no-op).
-        loadGiscus();
     </script>
 
     <style>
-        #giscus-container {
-            width: 100%;
-            max-width: 100%;
-            background: transparent !important;
-            contain: layout;
-            overflow: visible;
-            min-height: 200px;
-        }
-
         #giscus-container :global(iframe.giscus-frame) {
             width: 100% !important;
-            max-width: 100% !important;
-            min-height: 250px;
             border: none !important;
-            background: transparent !important;
             display: block;
-            contain: layout style paint;
-            pointer-events: auto !important;
-            touch-action: pan-y pan-x !important;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        :global(:not(.dark)) #giscus-container {
-            background-color: var(--card-bg, white) !important;
-        }
-
-        :global(:not(.dark)) #giscus-container :global(iframe.giscus-frame) {
-            color-scheme: light;
-        }
-
-        :global(.dark) #giscus-container {
-            background-color: var(--card-bg, transparent) !important;
-        }
-
-        :global(.dark) #giscus-container :global(iframe.giscus-frame) {
-            color-scheme: dark;
-        }
-
-        @media (max-width: 767px) {
-            #giscus-container {
-                padding: 1rem;
-                border-radius: var(--radius-large);
-                overflow: visible;
-            }
-
-            #giscus-container :global(iframe.giscus-frame) {
-                min-height: 300px;
-                position: relative;
-                z-index: 1;
-                isolation: isolate;
-            }
-        }
-
-        @media (min-width: 768px) and (max-width: 1024px) {
-            #giscus-container { padding: 1.5rem; }
-            #giscus-container :global(iframe.giscus-frame) { min-height: 320px; }
-        }
-
-        @media (min-width: 1025px) {
-            #giscus-container :global(iframe.giscus-frame) { min-height: 350px; }
-        }
-
-        @media (hover: none) and (pointer: coarse) {
-            #giscus-container :global(button),
-            #giscus-container :global(a),
-            #giscus-container :global(input),
-            #giscus-container :global(textarea) {
-                min-height: 44px;
-                min-width: 44px;
-                padding: 0.75rem;
-            }
-
-            #giscus-container {
-                -webkit-overflow-scrolling: touch;
-                scroll-behavior: smooth;
-                overscroll-behavior: contain;
-            }
-
-            #giscus-container :global(input),
-            #giscus-container :global(textarea) { font-size: 16px !important; }
-
-            #giscus-container :global(iframe.giscus-frame) {
-                touch-action: manipulation !important;
-                user-select: text;
-                -webkit-user-select: text;
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            #giscus-container,
-            #giscus-container * {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-            }
-        }
-
-        @media print {
-            #giscus-container { display: none !important; }
-        }
-
-        #giscus-container :global(*) {
-            max-width: 100%;
-            box-sizing: border-box;
         }
     </style>
-
 </MainGridLayout>
