@@ -253,21 +253,28 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         //
         // 2. "No carga al navegar en SPA":
         //    El browser cachea el script de Giscus. Al re-inyectarlo con la
-        //    misma URL, onload dispara pero el script NO se re-ejecuta, por
-        //    lo que Giscus nunca arranca para el nuevo pathname.
-        //    FIX → en SPA navigation se añade ?v=timestamp al src para
-        //    forzar re-ejecución. En primera carga se usa la URL limpia
-        //    para aprovechar el caché normalmente.
-        //    También se eliminó el timing artificial (rAF + setTimeout):
-        //    astro:page-load ya garantiza DOM estable en móvil y desktop.
+        //    misma URL, onload dispara pero el script NO se re-ejecuta.
+        //    FIX → cache-bust con ?v=timestamp en SPA navigation.
+        //    astro:page-load garantiza DOM estable sin delays artificiales.
         //
         // 3. "Error al cargar / solo aparece recargar página":
-        //    onerror mostraba error sin reintentar. Edge case silencioso:
-        //    script cargado pero iframe nunca aparece → giscusLoaded = true
-        //    bloqueaba reintentos futuros.
-        //    FIX → reintentos automáticos con backoff (hasta MAX_RETRIES),
+        //    onerror mostraba error sin reintentar. Fallo silencioso si el
+        //    iframe nunca aparecía → giscusLoaded = true bloqueaba reintentos.
+        //    FIX → reintentos automáticos con backoff (MAX_RETRIES),
         //    timeout de 8s para el fallo silencioso, botón que reintenta
         //    la carga real en vez de recargar la página entera.
+        //
+        // 4. "Deja de cargar tras entrar y salir varias veces":
+        //    El iframeTimeout de 8s se lanzaba en onload pero nunca se
+        //    cancelaba en cleanup(). Al navegar rápido, el timeout disparaba
+        //    en el contexto de la nueva página: no encontraba el iframe,
+        //    incrementaba retryCount y llamaba loadGiscus() como fantasma.
+        //    Tras varias navegaciones el retryCount se agotaba y Giscus
+        //    quedaba bloqueado indefinidamente.
+        //    FIX → loadGeneration counter. cleanup() lo incrementa; todos
+        //    los callbacks (onerror, onload, iframeTimeout) comprueban que
+        //    su generación sigue siendo la actual antes de actuar. Los
+        //    callbacks de navegaciones anteriores se descartan silenciosamente.
         // ============================================
 
         interface GiscusMessage {
@@ -286,6 +293,13 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         let retryCount:    number   = 0;
         const MAX_RETRIES           = 3;
         const RETRY_DELAYS          = [1000, 2500, 5000]; // ms, backoff progresivo
+
+        // ── Generación de carga ───────────────────────────────────────────────
+        // Cada cleanup() incrementa este contador. Los callbacks de onload,
+        // onerror e iframeTimeout comprueban si siguen siendo de la generación
+        // actual antes de actuar. Así los callbacks "fantasma" de navigaciones
+        // anteriores no pueden corromper el estado de la página actual.
+        let loadGeneration: number = 0;
 
         // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -385,6 +399,11 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             const container = getContainer();
             if (!container) return;
 
+            // Capturar la generación en el momento de lanzar la carga.
+            // Todos los callbacks que vengan de esta invocación la usarán
+            // para saber si siguen siendo válidos o son "fantasmas".
+            const gen = loadGeneration;
+
             // Vaciar el container antes de inyectar (limpia intentos anteriores
             // y cualquier residuo del morphing de View Transitions)
             container.innerHTML = '';
@@ -412,9 +431,8 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             script.async = true;
 
             // ── onerror: reintenta con backoff antes de mostrar el error ─────
-            // Cubre fallos de red intermitentes (muy comunes en móvil) y
-            // lentitud ocasional del servidor de Giscus en Vercel.
             script.onerror = () => {
+                if (gen !== loadGeneration) return; // callback fantasma, ignorar
                 if (retryCount < MAX_RETRIES) {
                     const delay = RETRY_DELAYS[retryCount];
                     retryCount++;
@@ -430,10 +448,12 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
 
             // ── onload: el script se descargó, esperamos el iframe ────────────
             script.onload = async () => {
+                if (gen !== loadGeneration) return; // callback fantasma, ignorar
+
                 // Guard de seguridad: si el script cargó pero el iframe no
-                // aparece en 8s, lo consideramos un fallo silencioso y
-                // reintentamos (resetear giscusLoaded es clave aquí).
+                // aparece en 8s, lo consideramos un fallo silencioso y reintentamos.
                 const iframeTimeout = window.setTimeout(() => {
+                    if (gen !== loadGeneration) return; // timeout fantasma, ignorar
                     const hasIframe = !!document.querySelector('iframe.giscus-frame');
                     if (!hasIframe) {
                         console.warn('[Giscus] Script OK pero iframe no apareció. Reintentando…');
@@ -452,6 +472,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                 const iframe = await waitForIframe();
                 clearTimeout(iframeTimeout);
 
+                if (gen !== loadGeneration) return; // navegaron mientras esperábamos
                 if (iframe) {
                     retryCount   = 0;
                     giscusLoaded = true;
@@ -500,13 +521,16 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
 
         function cleanup(): void {
             // FIX "instancia vieja": vaciar el contenedor AHORA, antes del swap.
-            // Así el usuario nunca ve el iframe del post anterior en el nuevo.
             const container = getContainer();
             if (container) container.innerHTML = '';
 
             giscusLoaded    = false;
             isSpaNavigation = true;
-            retryCount      = 0; // resetear contador en cada navegación
+            retryCount      = 0;
+            loadGeneration++;  // invalida todos los callbacks pendientes (onerror,
+                               // onload, iframeTimeout) de la carga anterior.
+                               // Aunque disparen después del swap, el guard
+                               // `gen !== loadGeneration` los descartará sin actuar.
 
             themeObserver?.disconnect();        themeObserver = null;
             intersectionObserver?.disconnect(); intersectionObserver = null;
