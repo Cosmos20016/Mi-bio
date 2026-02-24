@@ -563,13 +563,14 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             }, 500);
         });
 
-        // ── Carga inicial (primera visita o recarga) ──────────────────────────
-
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initFirstLoad);
-        } else {
-            initFirstLoad();
-        }
+        // NOTA: No hay bloque de init al final del script.
+        // astro:page-load se dispara en la carga inicial Y en cada SPA
+        // navigation — es el único trigger necesario para todos los casos.
+        // Tener un segundo trigger aquí causaba una carrera: ambos llamaban
+        // loadGiscus() casi al mismo tiempo, el segundo hacía
+        // container.innerHTML = '' matando el script del primero antes de
+        // que su onload disparara → Giscus nunca cargaba al navegar
+        // home → post por primera vez.
     </script>
 
     <style>
