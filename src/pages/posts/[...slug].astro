@@ -251,20 +251,16 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         //    FIX → cleanup() vacía el container antes del swap +
         //    transition:name="giscus" + transition:animate="none" en el HTML.
         //
-        // 2. "No carga al navegar en SPA":
-        //    El browser cachea el script de Giscus. Al re-inyectarlo con la
-        //    misma URL, onload dispara pero el script NO se re-ejecuta.
-        //    FIX → cache-bust con ?v=timestamp en SPA navigation.
-        //
-        // 2b. "No carga viniendo desde home por primera vez":
-        //    astro:before-swap no tenía oyente porque el script solo existe en
-        //    [slug].astro y nunca había corrido. isSpaNavigation quedaba en
-        //    false aunque fuera SPA navigation. astro:page-load llamaba a
-        //    initFirstLoad() → IntersectionObserver en layout inestable →
-        //    nunca detectaba intersección → Giscus no cargaba.
-        //    FIX → astro:page-load siempre llama loadGiscus() directamente,
-        //    sin ramificar por isSpaNavigation. El flag solo se usa dentro de
-        //    loadGiscus() para el cache-bust, donde sí es correcto.
+        // 2. "No carga al navegar en SPA (incluyendo primera vez desde home)":
+        //    Giscus tiene guardias internos que detectan una instancia previa
+        //    en window y omiten la inicialización si el script ya fue cargado.
+        //    Sin cache-bust, el browser reutiliza el script en caché y Giscus
+        //    no se reinicializa para el nuevo pathname.
+        //    Además, cuando se navega home→post por primera vez, el script de
+        //    [slug].astro nunca había corrido, así que isSpaNavigation quedaba
+        //    en false y nunca se aplicaba el cache-bust.
+        //    FIX → siempre usar ?v=Date.now() al inyectar el script, sin
+        //    condición. En carga directa el costo es mínimo.
         //
         // 3. "Error al cargar / solo aparece recargar página":
         //    onerror mostraba error sin reintentar. Fallo silencioso si el
@@ -418,13 +414,14 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             container.innerHTML = '';
 
             const script = document.createElement('script');
-            // Cache-bust en SPA: fuerza re-ejecución aunque el browser tenga
-            // el script en caché. Sin esto, onload dispara pero Giscus no
-            // se reinicializa para el nuevo pathname. En primera carga usamos
-            // la URL limpia para beneficiarnos del caché normalmente.
-            script.src = isSpaNavigation
-                ? `https://giscus-personal-woft.vercel.app/es/client.js?v=${Date.now()}`
-                : 'https://giscus-personal-woft.vercel.app/es/client.js';
+            // Siempre usamos cache-bust al inyectar Giscus dinámicamente.
+            // Giscus tiene guardias internos que detectan una instancia previa
+            // en window y omiten la inicialización si el script ya estaba en
+            // caché. El ?v=timestamp fuerza re-ejecución limpia en cualquier
+            // caso: SPA navigation, primera visita desde home, o reintento.
+            // En carga directa/recarga el costo es mínimo (un fetch extra del
+            // mismo script pequeño). La corrección es total.
+            script.src = `https://giscus-personal-woft.vercel.app/es/client.js?v=${Date.now()}`;
             script.setAttribute('data-repo',              'Cosmos20016/Gestion-de-comentarios');
             script.setAttribute('data-repo-id',           'R_kgDOPSHLmA');
             script.setAttribute('data-category',          'Announcements');
@@ -554,19 +551,6 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
 
         document.addEventListener('astro:page-load', () => {
             if (!getContainer()) return;
-
-            // Siempre llamamos loadGiscus() directamente, sin ramificar por
-            // isSpaNavigation. El motivo: cuando el usuario navega HOME→POST
-            // por primera vez, el script nunca había corrido (solo existe en
-            // [slug].astro), así que astro:before-swap no tuvo oyente y
-            // isSpaNavigation queda en false aunque SÍ sea SPA navigation.
-            // Ramificar aquí causaba que initFirstLoad() montara un
-            // IntersectionObserver durante una transición SPA → layout
-            // inestable → nunca detectaba intersección → Giscus no cargaba.
-            //
-            // isSpaNavigation sigue siendo útil DENTRO de loadGiscus() para
-            // decidir si añadir cache-bust al src del script. Ese uso es
-            // correcto y se mantiene.
             loadGiscus();
         });
 
