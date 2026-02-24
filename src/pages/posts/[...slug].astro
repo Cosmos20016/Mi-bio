@@ -225,8 +225,16 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         )}
     </nav>
 
+    <!--
+        transition:name fuerza a Astro a tratar este contenedor como un
+        elemento NUEVO en cada navegación en vez de hacer morphing del anterior.
+        Sin esto, el iframe de Giscus de la página vieja sobrevive al swap
+        y se muestra en la página nueva hasta que loadGiscus() lo reemplaza.
+    -->
     <section 
-        id="giscus-container" 
+        id="giscus-container"
+        transition:name="giscus"
+        transition:animate="none"
         class="card-base rounded-[var(--radius-large)] px-6 md:px-9 py-6 mt-6"
         aria-label="Comentarios del artículo"
     >
@@ -236,58 +244,64 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         // ============================================
         // GISCUS COMMENTS — ASTRO VIEW TRANSITIONS
         //
-        // POR QUÉ FALLABA EN MÓVIL (y no en PC):
-        // IntersectionObserver mide la posición del contenedor en el momento
-        // en que se registra. Si lo registramos dentro de astro:page-load,
-        // la animación de View Transitions todavía está corriendo y el layout
-        // no es estable. En móvil el rendering es más lento, así que el
-        // contenedor se mide con posición incorrecta y el observer NUNCA
-        // detecta la intersección. En PC el layout ya está estable para
-        // cuando astro:page-load dispara, por eso funciona.
+        // BUGS QUE HABÍA:
         //
-        // FIX:
-        // - Primera carga / recarga: usar IntersectionObserver con lazy load
-        //   (tiene sentido, el usuario puede no haber scrolleado aún).
-        // - Navegación SPA (astro:page-load): cargar Giscus DIRECTAMENTE
-        //   tras un pequeño delay (350ms) que deja que la animación de
-        //   View Transitions termine. Sin observer, sin mediciones de layout.
-        //   El usuario ya navegó intencionalmente a este post, no hay razón
-        //   para retrasar más la carga.
+        // 1. "Mantiene instancia vieja" (PC y móvil):
+        //    Astro hace morphing de elementos con el mismo id entre páginas.
+        //    El #giscus-container con su iframe sobrevivía al swap porque
+        //    cleanup() nunca limpiaba su contenido. Se ve el contenido del
+        //    post anterior mientras carga el nuevo.
+        //    FIX → cleanup() hace container.innerHTML = '' inmediatamente,
+        //    Y se añade transition:name="giscus" + transition:animate="none"
+        //    en el HTML para que Astro no haga morphing del elemento.
+        //
+        // 2. "No carga en móvil al navegar":
+        //    IntersectionObserver medía el contenedor durante la animación
+        //    de View Transitions → layout inestable → nunca detectaba
+        //    intersección en móvil (rendering más lento que en PC).
+        //    FIX → tras navegación SPA, carga directa sin observer.
+        //    El delay usa requestAnimationFrame x2 + 100ms extra en móvil
+        //    en vez de un setTimeout fijo (más fiable que asumir duración
+        //    de animación).
         // ============================================
 
         interface GiscusMessage {
             giscus: { setConfig: { theme: string } };
         }
 
-        let giscusLoaded    = false;
-        let isSpaNavigation = false;   // true cuando venimos de astro:page-load
+        let giscusLoaded:         boolean = false;
+        let isSpaNavigation:      boolean = false;
         let themeObserver:        MutationObserver | null = null;
         let intersectionObserver: IntersectionObserver | null = null;
         let iframeObserver:       MutationObserver | null = null;
-        let resizeTimer:  number;
-        let spaLoadTimer: number;      // delay post-navegación SPA
+        let resizeTimer:          number;
+        let spaLoadTimer:         number;
 
         // ── Helpers ──────────────────────────────────────────────────────────
 
-        function isMobileDevice(): boolean {
-            const ua = navigator.userAgent.toLowerCase();
-            return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua)
-                || (window.innerWidth < 768 && ('ontouchstart' in window || navigator.maxTouchPoints > 0));
+        function isMobile(): boolean {
+            return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
+                navigator.userAgent.toLowerCase()
+            ) || (window.innerWidth < 768 && navigator.maxTouchPoints > 0);
         }
 
-        function getCurrentTheme(): string {
+        function currentTheme(): string {
             return document.documentElement.classList.contains('dark')
                 ? 'transparent_dark' : 'light';
         }
 
-        // ── Esperar el iframe con MutationObserver ────────────────────────────
+        function getContainer(): HTMLElement | null {
+            return document.getElementById('giscus-container');
+        }
 
-        function waitForGiscusIframe(): Promise<HTMLIFrameElement | null> {
+        // ── Esperar iframe de Giscus ──────────────────────────────────────────
+
+        function waitForIframe(): Promise<HTMLIFrameElement | null> {
             return new Promise((resolve) => {
                 const existing = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
                 if (existing) { resolve(existing); return; }
 
-                const container = document.getElementById('giscus-container');
+                const container = getContainer();
                 if (!container) { resolve(null); return; }
 
                 const timeout = window.setTimeout(() => {
@@ -314,47 +328,47 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
 
         function setupThemeObserver(): void {
             themeObserver?.disconnect();
-
             themeObserver = new MutationObserver((mutations) => {
                 if (!mutations.some(m => m.attributeName === 'class')) return;
-
                 const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
                 if (!iframe?.contentWindow) return;
-
-                const msg: GiscusMessage = { giscus: { setConfig: { theme: getCurrentTheme() } } };
+                const msg: GiscusMessage = { giscus: { setConfig: { theme: currentTheme() } } };
                 try {
                     iframe.contentWindow.postMessage(msg, 'https://giscus-personal-woft.vercel.app');
                 } catch (e) {
                     console.error('[Giscus] Theme message error:', e);
                 }
             });
-
             themeObserver.observe(document.documentElement, {
                 attributes: true, attributeFilter: ['class']
             });
         }
 
-        // ── Carga de Giscus ───────────────────────────────────────────────────
+        // ── Cargar Giscus ─────────────────────────────────────────────────────
 
         async function loadGiscus(): Promise<void> {
             if (giscusLoaded) return;
 
-            const container = document.getElementById('giscus-container');
+            const container = getContainer();
             if (!container) return;
+
+            // Asegurarse de que el container esté vacío antes de inyectar
+            // (por si el morphing dejó contenido residual)
+            container.innerHTML = '';
 
             const script = document.createElement('script');
             script.src = 'https://giscus-personal-woft.vercel.app/es/client.js';
-            script.setAttribute('data-repo',            'Cosmos20016/Gestion-de-comentarios');
-            script.setAttribute('data-repo-id',         'R_kgDOPSHLmA');
-            script.setAttribute('data-category',        'Announcements');
-            script.setAttribute('data-category-id',     'DIC_kwDOPSHLmM4CtXsZ');
-            script.setAttribute('data-mapping',         'pathname');
-            script.setAttribute('data-strict',          '0');
+            script.setAttribute('data-repo',             'Cosmos20016/Gestion-de-comentarios');
+            script.setAttribute('data-repo-id',          'R_kgDOPSHLmA');
+            script.setAttribute('data-category',         'Announcements');
+            script.setAttribute('data-category-id',      'DIC_kwDOPSHLmM4CtXsZ');
+            script.setAttribute('data-mapping',          'pathname');
+            script.setAttribute('data-strict',           '0');
             script.setAttribute('data-reactions-enabled','1');
-            script.setAttribute('data-emit-metadata',   '0');
-            script.setAttribute('data-input-position',  'bottom');
-            script.setAttribute('data-theme',           getCurrentTheme());
-            script.setAttribute('data-lang',            'es');
+            script.setAttribute('data-emit-metadata',    '0');
+            script.setAttribute('data-input-position',   'bottom');
+            script.setAttribute('data-theme',            currentTheme());
+            script.setAttribute('data-lang',             'es');
             script.crossOrigin = 'anonymous';
             script.async = true;
 
@@ -370,34 +384,29 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
 
             script.onload = async () => {
                 giscusLoaded = true;
-                const iframe = await waitForGiscusIframe();
+                const iframe = await waitForIframe();
                 if (iframe) setupThemeObserver();
             };
 
             container.appendChild(script);
         }
 
-        // ── Carga inicial con IntersectionObserver (solo primer load) ─────────
+        // ── Primera carga: IntersectionObserver con lazy load ─────────────────
 
-        function isContainerVisible(): boolean {
-            const container = document.getElementById('giscus-container');
+        function isVisible(): boolean {
+            const container = getContainer();
             if (!container) return false;
             const rect = container.getBoundingClientRect();
-            return rect.top < (window.innerHeight || document.documentElement.clientHeight) + 200;
+            return rect.top < (window.innerHeight ?? document.documentElement.clientHeight) + 200;
         }
 
-        function initGiscusFirstLoad(): void {
-            const container = document.getElementById('giscus-container');
+        function initFirstLoad(): void {
+            const container = getContainer();
             if (!container) return;
 
-            // Si ya es visible al cargar, no hace falta observer
-            if (isContainerVisible()) {
-                loadGiscus();
-                return;
-            }
+            if (isVisible()) { loadGiscus(); return; }
 
             intersectionObserver?.disconnect();
-
             intersectionObserver = new IntersectionObserver(
                 (entries) => {
                     entries.forEach(e => {
@@ -407,38 +416,49 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                         }
                     });
                 },
-                {
-                    // Margen generoso para pre-cargar antes de que el usuario llegue
-                    rootMargin: isMobileDevice() ? '400px' : '250px',
-                    threshold: 0
-                }
+                { rootMargin: isMobile() ? '400px' : '250px', threshold: 0 }
             );
-
             intersectionObserver.observe(container);
         }
 
-        // ── Carga directa tras navegación SPA ─────────────────────────────────
-        // FIX MÓVIL: NO usar IntersectionObserver aquí. Cargamos directamente
-        // con un delay de 350ms para que la animación de View Transitions
-        // termine. En móvil el delay es un poco mayor (450ms).
+        // ── Navegación SPA: carga directa sin IntersectionObserver ───────────
+        //
+        // FIX MÓVIL: usamos requestAnimationFrame x2 para esperar a que el
+        // navegador haya pintado el nuevo layout. Más fiable que un setTimeout
+        // fijo porque no asume ninguna duración de animación concreta.
+        // En móvil añadimos 100ms extra por si el paint es más lento.
 
-        function initGiscusAfterNavigation(): void {
-            if (!document.getElementById('giscus-container')) return;
-
+        function initAfterNavigation(): void {
+            if (!getContainer()) return;
             clearTimeout(spaLoadTimer);
 
-            const delay = isMobileDevice() ? 450 : 350;
+            const run = () => loadGiscus();
 
-            spaLoadTimer = window.setTimeout(() => {
-                loadGiscus();
-            }, delay);
+            if (isMobile()) {
+                // rAF x2 + 100ms: espera 2 frames de paint + buffer para móvil
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        spaLoadTimer = window.setTimeout(run, 100);
+                    });
+                });
+            } else {
+                // rAF x2 es suficiente en desktop
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(run);
+                });
+            }
         }
 
         // ── Cleanup ───────────────────────────────────────────────────────────
 
         function cleanup(): void {
+            // FIX "instancia vieja": vaciar el contenedor AHORA, antes del swap.
+            // Así el usuario nunca ve el iframe del post anterior en el nuevo.
+            const container = getContainer();
+            if (container) container.innerHTML = '';
+
             giscusLoaded    = false;
-            isSpaNavigation = true;   // la siguiente page-load es navegación SPA
+            isSpaNavigation = true;
 
             themeObserver?.disconnect();        themeObserver = null;
             intersectionObserver?.disconnect(); intersectionObserver = null;
@@ -448,37 +468,35 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             clearTimeout(spaLoadTimer);
         }
 
-        // ── Eventos de Astro View Transitions ────────────────────────────────
+        // ── Eventos Astro View Transitions ────────────────────────────────────
 
         document.addEventListener('astro:before-swap', cleanup);
 
         document.addEventListener('astro:page-load', () => {
-            if (!document.getElementById('giscus-container')) return;
+            if (!getContainer()) return;
 
             if (isSpaNavigation) {
-                // Venimos de una navegación SPA → carga directa sin observer
-                initGiscusAfterNavigation();
+                initAfterNavigation();
             } else {
-                // Primera carga de la SPA o recarga completa
-                initGiscusFirstLoad();
+                initFirstLoad();
             }
         });
 
-        // ── Re-check en resize (útil al rotar el móvil) ──────────────────────
+        // ── Re-check en resize / rotación ────────────────────────────────────
 
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimer);
             resizeTimer = window.setTimeout(() => {
-                if (!giscusLoaded && isContainerVisible()) loadGiscus();
+                if (!giscusLoaded && isVisible()) loadGiscus();
             }, 500);
         });
 
         // ── Carga inicial (primera visita o recarga) ──────────────────────────
 
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initGiscusFirstLoad);
+            document.addEventListener('DOMContentLoaded', initFirstLoad);
         } else {
-            initGiscusFirstLoad();
+            initFirstLoad();
         }
     </script>
 
