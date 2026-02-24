@@ -36,19 +36,19 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
   // ── 1. Captura síncrona del btnId ────────────────────────────────────────
   var s     = document.currentScript;
   var btnId = s ? s.getAttribute('data-btn-id') : null;
-  if (!btnId) return;
 
   // ── 2. Listener global de astro:page-load (registrado UNA sola vez) ──────
   //
-  // ESTE ES EL FIX REAL:
-  // El error del intento anterior era usar un "registry" que se vaciaba en
-  // astro:before-swap. Cuando el script no se re-ejecuta (deduplicación de
-  // Astro en View Transitions), nadie volvía a rellenar el registry, así que
-  // astro:page-load no inicializaba nada.
+  // IMPORTANTE: este bloque debe ir ANTES del early return de btnId.
   //
-  // La solución correcta: en astro:page-load hacemos querySelectorAll para
-  // encontrar TODOS los botones presentes en el DOM nuevo, sin depender de
-  // ningún registry. El listener se registra una sola vez y nunca se elimina.
+  // BUG que había: en SPA navigation, Astro re-ejecuta scripts is:inline
+  // pero document.currentScript devuelve null. El IIFE hacía early return
+  // antes de llegar aquí, así que __shareGlobalBound nunca se registraba
+  // y astro:page-load nunca inicializaba los botones nuevos.
+  //
+  // FIX: registrar el listener global primero, independientemente de si
+  // btnId está disponible o no. El querySelectorAll encuentra todos los
+  // botones del DOM nuevo sin necesitar currentScript.
   //
   if (!window.__shareGlobalBound) {
     window.__shareGlobalBound = true;
@@ -59,6 +59,10 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
       });
     });
   }
+
+  // Early return solo para la lógica per-instancia (cleanup y init directo).
+  // El global handler de arriba ya está registrado y cubrirá la inicialización.
+  if (!btnId) return;
 
   // ── 3. Cleanup de ESTA instancia al salir de la página ──────────────────
   document.addEventListener('astro:before-swap', function onBeforeSwap() {
@@ -235,7 +239,7 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     };
   }
 
-  // ── 6. Init inmediato (carga completa de página) ─────────────────────────
+  // ── 6. Init inmediato (carga completa de página / currentScript disponible) ─
   initBtn(btnId);
 
 })();
