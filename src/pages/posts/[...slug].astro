@@ -263,12 +263,24 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         //    El delay usa requestAnimationFrame x2 + 100ms extra en móvil
         //    en vez de un setTimeout fijo (más fiable que asumir duración
         //    de animación).
+        //
+        // 3. "Error al cargar / solo aparece recargar página":
+        //    onerror se disparaba ante cualquier fallo de red (servidor lento,
+        //    conexión inestable en móvil) y mostraba el error sin reintentar.
+        //    Además, si el script cargaba pero el iframe nunca aparecía
+        //    (edge case silencioso), giscusLoaded quedaba en true bloqueando
+        //    futuros intentos sin avisar al usuario.
+        //    FIX → reintentos automáticos con backoff exponencial (hasta
+        //    MAX_RETRIES), timeout de 8s para detectar script-cargado-pero-
+        //    sin-iframe, y botón de error que reintenta la carga real en vez
+        //    de recargar toda la página.
         // ============================================
 
         interface GiscusMessage {
             giscus: { setConfig: { theme: string } };
         }
 
+        // ── Estado global ────────────────────────────────────────────────────
         let giscusLoaded:         boolean = false;
         let isSpaNavigation:      boolean = false;
         let themeObserver:        MutationObserver | null = null;
@@ -276,6 +288,11 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         let iframeObserver:       MutationObserver | null = null;
         let resizeTimer:          number;
         let spaLoadTimer:         number;
+
+        // ── Reintentos ───────────────────────────────────────────────────────
+        let retryCount:    number   = 0;
+        const MAX_RETRIES           = 3;
+        const RETRY_DELAYS          = [1000, 2500, 5000]; // ms, backoff progresivo
 
         // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -344,6 +361,29 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             });
         }
 
+        // ── UI de error con botón de reintento real ───────────────────────────
+        // El botón llama a loadGiscus() directamente en vez de recargar la
+        // página entera, lo que es más rápido y conserva el estado de la app.
+
+        function showErrorUI(container: HTMLElement): void {
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-8 gap-3 text-red-500">
+                    <span class="text-sm">Error al cargar comentarios</span>
+                    <button
+                        id="giscus-retry-btn"
+                        class="text-xs underline hover:no-underline"
+                    >
+                        Reintentar
+                    </button>
+                </div>`;
+
+            document.getElementById('giscus-retry-btn')?.addEventListener('click', () => {
+                retryCount   = 0;
+                giscusLoaded = false;
+                loadGiscus();
+            });
+        }
+
         // ── Cargar Giscus ─────────────────────────────────────────────────────
 
         async function loadGiscus(): Promise<void> {
@@ -352,40 +392,72 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             const container = getContainer();
             if (!container) return;
 
-            // Asegurarse de que el container esté vacío antes de inyectar
-            // (por si el morphing dejó contenido residual)
+            // Vaciar el container antes de inyectar (limpia intentos anteriores
+            // y cualquier residuo del morphing de View Transitions)
             container.innerHTML = '';
 
             const script = document.createElement('script');
             script.src = 'https://giscus-personal-woft.vercel.app/es/client.js';
-            script.setAttribute('data-repo',             'Cosmos20016/Gestion-de-comentarios');
-            script.setAttribute('data-repo-id',          'R_kgDOPSHLmA');
-            script.setAttribute('data-category',         'Announcements');
-            script.setAttribute('data-category-id',      'DIC_kwDOPSHLmM4CtXsZ');
-            script.setAttribute('data-mapping',          'pathname');
-            script.setAttribute('data-strict',           '0');
-            script.setAttribute('data-reactions-enabled','1');
-            script.setAttribute('data-emit-metadata',    '0');
-            script.setAttribute('data-input-position',   'bottom');
-            script.setAttribute('data-theme',            currentTheme());
-            script.setAttribute('data-lang',             'es');
+            script.setAttribute('data-repo',              'Cosmos20016/Gestion-de-comentarios');
+            script.setAttribute('data-repo-id',           'R_kgDOPSHLmA');
+            script.setAttribute('data-category',          'Announcements');
+            script.setAttribute('data-category-id',       'DIC_kwDOPSHLmM4CtXsZ');
+            script.setAttribute('data-mapping',           'pathname');
+            script.setAttribute('data-strict',            '0');
+            script.setAttribute('data-reactions-enabled', '1');
+            script.setAttribute('data-emit-metadata',     '0');
+            script.setAttribute('data-input-position',    'bottom');
+            script.setAttribute('data-theme',             currentTheme());
+            script.setAttribute('data-lang',              'es');
             script.crossOrigin = 'anonymous';
             script.async = true;
 
+            // ── onerror: reintenta con backoff antes de mostrar el error ─────
+            // Cubre fallos de red intermitentes (muy comunes en móvil) y
+            // lentitud ocasional del servidor de Giscus en Vercel.
             script.onerror = () => {
-                container.innerHTML = `
-                    <div class="flex flex-col items-center justify-center py-8 gap-3 text-red-500">
-                        <span class="text-sm">Error al cargar comentarios</span>
-                        <button onclick="location.reload()" class="text-xs underline hover:no-underline">
-                            Recargar página
-                        </button>
-                    </div>`;
+                if (retryCount < MAX_RETRIES) {
+                    const delay = RETRY_DELAYS[retryCount];
+                    retryCount++;
+                    console.warn(`[Giscus] Fallo de carga. Reintento ${retryCount}/${MAX_RETRIES} en ${delay}ms…`);
+                    window.setTimeout(() => loadGiscus(), delay);
+                } else {
+                    console.error('[Giscus] No se pudo cargar tras', MAX_RETRIES, 'intentos.');
+                    retryCount = 0;
+                    const c = getContainer();
+                    if (c) showErrorUI(c);
+                }
             };
 
+            // ── onload: el script se descargó, esperamos el iframe ────────────
             script.onload = async () => {
-                giscusLoaded = true;
+                // Guard de seguridad: si el script cargó pero el iframe no
+                // aparece en 8s, lo consideramos un fallo silencioso y
+                // reintentamos (resetear giscusLoaded es clave aquí).
+                const iframeTimeout = window.setTimeout(() => {
+                    const hasIframe = !!document.querySelector('iframe.giscus-frame');
+                    if (!hasIframe) {
+                        console.warn('[Giscus] Script OK pero iframe no apareció. Reintentando…');
+                        giscusLoaded = false;
+                        if (retryCount < MAX_RETRIES) {
+                            retryCount++;
+                            loadGiscus();
+                        } else {
+                            retryCount = 0;
+                            const c = getContainer();
+                            if (c) showErrorUI(c);
+                        }
+                    }
+                }, 8000);
+
                 const iframe = await waitForIframe();
-                if (iframe) setupThemeObserver();
+                clearTimeout(iframeTimeout);
+
+                if (iframe) {
+                    retryCount   = 0;
+                    giscusLoaded = true;
+                    setupThemeObserver();
+                }
             };
 
             container.appendChild(script);
@@ -459,6 +531,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
 
             giscusLoaded    = false;
             isSpaNavigation = true;
+            retryCount      = 0; // resetear contador en cada navegación
 
             themeObserver?.disconnect();        themeObserver = null;
             intersectionObserver?.disconnect(); intersectionObserver = null;
