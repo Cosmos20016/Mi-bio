@@ -400,9 +400,23 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
 
         document.addEventListener('astro:before-swap', cleanup);
 
+        // Cubre SPA navigations y también la carga inicial cuando
+        // View Transitions está activo (Astro dispara este evento siempre).
         document.addEventListener('astro:page-load', () => {
             if (getContainer()) mountGiscus();
         });
+
+        // Seguro extra para carga directa / hard refresh: si el DOM ya
+        // está listo cuando este script ejecuta, montamos directamente.
+        // Si astro:page-load ya corrió antes, giscusLoaded = true y
+        // mountGiscus() retorna en la primera línea (no-op, sin doble carga).
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                if (getContainer()) mountGiscus();
+            });
+        } else {
+            if (getContainer()) mountGiscus();
+        }
     </script>
 
     <style>
