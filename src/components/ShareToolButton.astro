@@ -30,61 +30,44 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
   </button>
 </div>
 
-<!--
-  FIX PRINCIPAL:
-  El problema era que Astro View Transitions puede omitir la re-ejecución
-  de is:inline scripts cuando el contenido del script coincide entre páginas
-  (deduplicación interna). El botón aparecía en el DOM pero setup() nunca corría.
-
-  SOLUCIÓN: Registry global + listener astro:page-load como inicializador primario.
-  - Cada instancia registra su btnId en window.__shareRegistry al parsearse.
-  - Un único listener global en astro:page-load inicializa todos los botones
-    registrados. Esto funciona aunque el script no se re-ejecute.
-  - initBtn() corre también inmediatamente para cubrir la recarga completa.
--->
 <script is:inline data-btn-id={uniqueId}>
 (function () {
 
-  // ── Capturar btnId de forma síncrona (currentScript solo válido aquí) ──
+  // ── 1. Captura síncrona del btnId ────────────────────────────────────────
   var s     = document.currentScript;
   var btnId = s ? s.getAttribute('data-btn-id') : null;
   if (!btnId) return;
 
-  // ── Registry global: mapa de todos los botones presentes en la página ──
-  if (!window.__shareRegistry) window.__shareRegistry = {};
-  window.__shareRegistry[btnId] = true;
-
-  // ── Listener global astro:page-load (registrado UNA sola vez) ──────────
-  // Este es el FIX: inicializa todos los botones tras cualquier navegación SPA,
-  // sin depender de que is:inline se re-ejecute.
-  if (!window.__sharePageLoadBound) {
-    window.__sharePageLoadBound = true;
+  // ── 2. Listener global de astro:page-load (registrado UNA sola vez) ──────
+  //
+  // ESTE ES EL FIX REAL:
+  // El error del intento anterior era usar un "registry" que se vaciaba en
+  // astro:before-swap. Cuando el script no se re-ejecuta (deduplicación de
+  // Astro en View Transitions), nadie volvía a rellenar el registry, así que
+  // astro:page-load no inicializaba nada.
+  //
+  // La solución correcta: en astro:page-load hacemos querySelectorAll para
+  // encontrar TODOS los botones presentes en el DOM nuevo, sin depender de
+  // ningún registry. El listener se registra una sola vez y nunca se elimina.
+  //
+  if (!window.__shareGlobalBound) {
+    window.__shareGlobalBound = true;
 
     document.addEventListener('astro:page-load', function () {
-      var reg = window.__shareRegistry || {};
-      Object.keys(reg).forEach(function (id) {
-        initBtn(id);
+      document.querySelectorAll('.share-tool-button[id]').forEach(function (btn) {
+        initBtn(btn.id);
       });
     });
   }
 
-  // ── Cleanup al salir de la página ──────────────────────────────────────
-  document.addEventListener('astro:before-swap', function cleanup() {
-    document.removeEventListener('astro:before-swap', cleanup);
-
+  // ── 3. Cleanup de ESTA instancia al salir de la página ──────────────────
+  document.addEventListener('astro:before-swap', function onBeforeSwap() {
+    document.removeEventListener('astro:before-swap', onBeforeSwap);
     var btn = document.getElementById(btnId);
     if (btn && btn._shareDestroy) btn._shareDestroy();
-
-    // Limpiar este ID del registry
-    if (window.__shareRegistry) delete window.__shareRegistry[btnId];
-
-    // Si registry vacío, reset del flag para que se re-registre si es necesario
-    if (window.__shareRegistry && !Object.keys(window.__shareRegistry).length) {
-      window.__sharePageLoadBound = false;
-    }
   });
 
-  // ── Posicionar popup en desktop ─────────────────────────────────────────
+  // ── 4. Posicionamiento del popup en desktop ──────────────────────────────
   function positionPopup(popup, btn) {
     var r = btn.getBoundingClientRect();
     var w = 300;
@@ -92,11 +75,11 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     popup.style.left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8)) + 'px';
   }
 
-  // ── Inicializar un botón por ID ─────────────────────────────────────────
+  // ── 5. Inicialización de un botón ────────────────────────────────────────
   function initBtn(id) {
     var btn = document.getElementById(id);
-    if (!btn) return;                           // No existe en esta página → skip
-    if (btn._shareDestroy) btn._shareDestroy(); // Limpiar init anterior si la hay
+    if (!btn) return;
+    if (btn._shareDestroy) btn._shareDestroy(); // Evitar doble init
 
     var toolName  = btn.dataset.toolName        || '';
     var toolDesc  = btn.dataset.toolDescription || '';
@@ -107,7 +90,7 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     var hasNativeShare = typeof navigator.share === 'function';
     var isTouchDevice  = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 
-    // ── Crear portal en <body> ────────────────────────────────────────────
+    // Portal en <body>
     var portal = document.createElement('div');
     portal.id        = id + '-portal';
     portal.className = 'share-popup-portal';
@@ -167,13 +150,11 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     function onBtnClick(e) {
       e.preventDefault();
       e.stopPropagation();
-
       if (isTouchDevice && hasNativeShare) {
         navigator.share({ title: toolName, text: shareText, url: absUrl })
           .catch(function (err) { if (err.name !== 'AbortError') openPortal(); });
         return;
       }
-
       portal.classList.contains('share-popup-visible') ? closePortal() : openPortal();
     }
     btn.addEventListener('click', onBtnClick);
@@ -182,7 +163,6 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
       e.preventDefault();
       e.stopPropagation();
       var p = this.getAttribute('data-p');
-
       if (p === 'whatsapp') {
         window.open('https://wa.me/?text=' + encodeURIComponent(shareText + ' ' + absUrl), '_blank', 'noopener,noreferrer');
         closePortal();
@@ -200,7 +180,6 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
         var copySpan = el.querySelector('.spp-copy-text');
         var iconDef  = el.querySelector('.spp-copy-default');
         var iconChk  = el.querySelector('.spp-copy-check');
-
         function showOk() {
           copySpan.textContent  = '¡Copiado!';
           iconDef.style.display = 'none';
@@ -213,7 +192,6 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
             el.style.background   = '';
           }, 2000);
         }
-
         function fallback() {
           try {
             var ta = document.createElement('textarea');
@@ -225,13 +203,11 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
             document.body.removeChild(ta);
           } catch (_) { alert('No se pudo copiar el enlace'); }
         }
-
         (navigator.clipboard && navigator.clipboard.writeText)
           ? navigator.clipboard.writeText(absUrl).then(showOk).catch(fallback)
           : fallback();
       }
     }
-
     portal.querySelectorAll('.spp-option').forEach(function (opt) {
       opt.addEventListener('click', onOptionClick);
     });
@@ -241,7 +217,7 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
         portal.classList.contains('share-popup-visible') &&
         !e.target.closest('.share-tool-button-wrapper') &&
         !e.target.closest('.share-popup-portal')
-      ) { closePortal(); }
+      ) closePortal();
     }
     document.addEventListener('click', onDocClick);
 
@@ -259,7 +235,7 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     };
   }
 
-  // ── Inicialización inmediata (recarga completa o script re-ejecutado) ───
+  // ── 6. Init inmediato (carga completa de página) ─────────────────────────
   initBtn(btnId);
 
 })();
