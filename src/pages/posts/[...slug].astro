@@ -226,12 +226,6 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         )}
     </nav>
 
-    <!--
-        transition:name="giscus" + transition:animate="none" le indica a Astro
-        que trate este elemento como NUEVO en cada navegación en vez de hacer
-        morphing del anterior. Sin esto, el iframe de la página vieja sobrevive
-        al swap y se ve en la nueva página hasta que Giscus lo reemplaza.
-    -->
     <section
         id="giscus-container"
         transition:name="giscus"
@@ -241,47 +235,14 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
     ></section>
 
     <script>
-        // ─────────────────────────────────────────────────────────────────────
-        // GISCUS — Astro View Transitions
-        //
-        // Diseño deliberadamente minimalista:
-        //
-        //  • Un solo hook: astro:page-load. Se dispara tanto en carga directa
-        //    (URL directa, hard refresh) como en cada SPA navigation. Cubre
-        //    todos los casos sin lógica adicional.
-        //
-        //  • ?v=Date.now() en el src siempre. Giscus guarda una bandera
-        //    interna en `window` la primera vez que ejecuta su script. En
-        //    navegaciones SPA el browser puede reutilizar el script del caché;
-        //    Giscus detecta su bandera y se salta la inicialización → el
-        //    container queda vacío → "solo funciona al recargar".
-        //    El timestamp fuerza al browser a tratarlo como recurso nuevo y
-        //    Giscus siempre arranca limpio.
-        //
-        //  • onload → giscusLoaded = true de inmediato, sin esperar al iframe.
-        //    Giscus crea el iframe solo después de ejecutarse. Esperar al
-        //    iframe con un MutationObserver + timeout abría una ventana donde
-        //    un cleanup() en medio podía dejar el estado corrupto.
-        //
-        //  • loadGeneration: cada cleanup() lo incrementa. Los callbacks de
-        //    onload y onerror capturan `gen` al inicio de mountGiscus() y se
-        //    descartan si `gen !== loadGeneration` (navegación anterior).
-        //
-        //  • Retry solo en onerror (fallo real de red o servidor). Sin
-        //    iframeTimeout, sin detección de "fallo silencioso", sin fallback
-        //    de endpoint. Menos código = menos carreras de condición.
-        // ─────────────────────────────────────────────────────────────────────
-
         const GISCUS_ORIGIN = 'https://giscus-personal-woft.vercel.app';
         const MAX_RETRIES   = 3;
-        const RETRY_DELAYS  = [1500, 3000, 6000]; // ms, backoff progresivo
+        const RETRY_DELAYS  = [1500, 3000, 6000];
 
-        let giscusLoaded:   boolean                    = false;
-        let retryCount:     number                     = 0;
-        let loadGeneration: number                     = 0;
-        let themeObserver:  MutationObserver | null    = null;
-
-        // ── Helpers ───────────────────────────────────────────────────────────
+        let giscusLoaded:   boolean                 = false;
+        let retryCount:     number                  = 0;
+        let loadGeneration: number                  = 0;
+        let themeObserver:  MutationObserver | null = null;
 
         function currentTheme(): string {
             return document.documentElement.classList.contains('dark')
@@ -292,8 +253,6 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         function getContainer(): HTMLElement | null {
             return document.getElementById('giscus-container');
         }
-
-        // ── Observer de tema ──────────────────────────────────────────────────
 
         function setupThemeObserver(): void {
             themeObserver?.disconnect();
@@ -311,8 +270,6 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             });
         }
 
-        // ── UI de error con reintento real ────────────────────────────────────
-
         function showErrorUI(container: HTMLElement): void {
             container.innerHTML = `
                 <div class="flex flex-col items-center justify-center py-8 gap-3 text-red-500">
@@ -328,13 +285,17 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             });
         }
 
-        // ── Montar Giscus ─────────────────────────────────────────────────────
-
         function mountGiscus(): void {
             if (giscusLoaded) return;
 
             const container = getContainer();
             if (!container) return;
+
+            // Guard contra doble inyección: astro:page-load y DOMContentLoaded
+            // se disparan casi al mismo tiempo en la carga inicial. Sin este
+            // guard, el segundo borra con innerHTML='' el script que inyectó
+            // el primero antes de que su onload dispare → Giscus nunca monta.
+            if (container.querySelector('script[src*="giscus"]')) return;
 
             const gen = loadGeneration;
 
@@ -357,11 +318,9 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             script.async       = true;
 
             script.onerror = () => {
-                if (gen !== loadGeneration) return; // callback de página anterior, ignorar
-
+                if (gen !== loadGeneration) return;
                 if (retryCount < MAX_RETRIES) {
                     const delay = RETRY_DELAYS[retryCount++];
-                    console.warn(`[Giscus] Fallo de red. Reintento ${retryCount}/${MAX_RETRIES} en ${delay}ms…`);
                     window.setTimeout(mountGiscus, delay);
                 } else {
                     retryCount = 0;
@@ -371,8 +330,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             };
 
             script.onload = () => {
-                if (gen !== loadGeneration) return; // callback de página anterior, ignorar
-
+                if (gen !== loadGeneration) return;
                 retryCount   = 0;
                 giscusLoaded = true;
                 setupThemeObserver();
@@ -381,35 +339,24 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             container.appendChild(script);
         }
 
-        // ── Limpieza antes del swap de View Transitions ───────────────────────
-
         function cleanup(): void {
-            loadGeneration++; // invalida onload/onerror de la carga anterior
-
+            loadGeneration++;
             giscusLoaded = false;
             retryCount   = 0;
-
             themeObserver?.disconnect();
             themeObserver = null;
-
             const container = getContainer();
             if (container) container.innerHTML = '';
         }
 
-        // ── Registro de eventos ───────────────────────────────────────────────
-
         document.addEventListener('astro:before-swap', cleanup);
 
-        // Cubre SPA navigations y también la carga inicial cuando
-        // View Transitions está activo (Astro dispara este evento siempre).
+        // Cubre SPA navigations
         document.addEventListener('astro:page-load', () => {
             if (getContainer()) mountGiscus();
         });
 
-        // Seguro extra para carga directa / hard refresh: si el DOM ya
-        // está listo cuando este script ejecuta, montamos directamente.
-        // Si astro:page-load ya corrió antes, giscusLoaded = true y
-        // mountGiscus() retorna en la primera línea (no-op, sin doble carga).
+        // Cubre carga directa y hard refresh
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
                 if (getContainer()) mountGiscus();
@@ -420,10 +367,57 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
     </script>
 
     <style>
+        /* ── Contenedor ─────────────────────────────────────────────────────── */
+        #giscus-container {
+            width: 100%;
+            max-width: 100%;
+            background: transparent !important;
+            contain: layout;
+            overflow: visible;
+            min-height: 200px;
+        }
+
+        /* ── iframe ─────────────────────────────────────────────────────────── */
         #giscus-container :global(iframe.giscus-frame) {
             width: 100% !important;
+            max-width: 100% !important;
+            min-height: 250px;
             border: none !important;
+            background: transparent !important;
             display: block;
+            pointer-events: auto !important;
+            touch-action: pan-y pan-x !important;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* ── Modo claro ─────────────────────────────────────────────────────── */
+        :global(:not(.dark)) #giscus-container {
+            background-color: var(--card-bg, white) !important;
+        }
+
+        :global(:not(.dark)) #giscus-container :global(iframe.giscus-frame) {
+            color-scheme: light;
+        }
+
+        /* ── Modo oscuro ─────────────────────────────────────────────────────── */
+        :global(.dark) #giscus-container {
+            background-color: var(--card-bg, transparent) !important;
+        }
+
+        :global(.dark) #giscus-container :global(iframe.giscus-frame) {
+            color-scheme: dark;
+        }
+
+        /* ── Móvil ──────────────────────────────────────────────────────────── */
+        @media (max-width: 767px) {
+            #giscus-container {
+                padding: 1rem;
+                border-radius: var(--radius-large);
+            }
+
+            #giscus-container :global(iframe.giscus-frame) {
+                min-height: 300px;
+            }
         }
     </style>
 </MainGridLayout>
