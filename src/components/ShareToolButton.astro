@@ -30,66 +30,88 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
   </button>
 </div>
 
-<!-- 
-  FIX 1: Capturamos currentScript INMEDIATAMENTE (síncrono) antes de cualquier
-  operación asíncrona, porque currentScript es null dentro de callbacks.
+<!--
+  FIX PRINCIPAL:
+  El problema era que Astro View Transitions puede omitir la re-ejecución
+  de is:inline scripts cuando el contenido del script coincide entre páginas
+  (deduplicación interna). El botón aparecía en el DOM pero setup() nunca corría.
+
+  SOLUCIÓN: Registry global + listener astro:page-load como inicializador primario.
+  - Cada instancia registra su btnId en window.__shareRegistry al parsearse.
+  - Un único listener global en astro:page-load inicializa todos los botones
+    registrados. Esto funciona aunque el script no se re-ejecute.
+  - initBtn() corre también inmediatamente para cubrir la recarga completa.
 -->
 <script is:inline data-btn-id={uniqueId}>
 (function () {
-  // ─── FIX 1: Captura segura del ID ────────────────────────────────────────
-  // document.currentScript es el método correcto; el fallback con querySelectorAll
-  // era frágil y podía coger el script de otro botón en cargas paralelas.
-  var currentScript = document.currentScript;
-  var btnId = currentScript
-    ? currentScript.getAttribute('data-btn-id')
-    : null;
 
-  if (!btnId) return; // Seguridad: sin ID no hacemos nada
+  // ── Capturar btnId de forma síncrona (currentScript solo válido aquí) ──
+  var s     = document.currentScript;
+  var btnId = s ? s.getAttribute('data-btn-id') : null;
+  if (!btnId) return;
 
-  // ─── Posicionar popup fixed bajo el botón ─────────────────────────────────
+  // ── Registry global: mapa de todos los botones presentes en la página ──
+  if (!window.__shareRegistry) window.__shareRegistry = {};
+  window.__shareRegistry[btnId] = true;
+
+  // ── Listener global astro:page-load (registrado UNA sola vez) ──────────
+  // Este es el FIX: inicializa todos los botones tras cualquier navegación SPA,
+  // sin depender de que is:inline se re-ejecute.
+  if (!window.__sharePageLoadBound) {
+    window.__sharePageLoadBound = true;
+
+    document.addEventListener('astro:page-load', function () {
+      var reg = window.__shareRegistry || {};
+      Object.keys(reg).forEach(function (id) {
+        initBtn(id);
+      });
+    });
+  }
+
+  // ── Cleanup al salir de la página ──────────────────────────────────────
+  document.addEventListener('astro:before-swap', function cleanup() {
+    document.removeEventListener('astro:before-swap', cleanup);
+
+    var btn = document.getElementById(btnId);
+    if (btn && btn._shareDestroy) btn._shareDestroy();
+
+    // Limpiar este ID del registry
+    if (window.__shareRegistry) delete window.__shareRegistry[btnId];
+
+    // Si registry vacío, reset del flag para que se re-registre si es necesario
+    if (window.__shareRegistry && !Object.keys(window.__shareRegistry).length) {
+      window.__sharePageLoadBound = false;
+    }
+  });
+
+  // ── Posicionar popup en desktop ─────────────────────────────────────────
   function positionPopup(popup, btn) {
     var r = btn.getBoundingClientRect();
     var w = 300;
-    var top  = r.bottom + 8;
-    var left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8));
-    popup.style.top  = top  + 'px';
-    popup.style.left = left + 'px';
+    popup.style.top  = (r.bottom + 8) + 'px';
+    popup.style.left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8)) + 'px';
   }
 
-  // ─── FIX 2: Referencia del listener astro:before-swap por instancia ───────
-  // Guardamos la función para poder removeEventListener correctamente
-  // y no acumularla en cada re-ejecución de setup().
-  var astroSwapListener = null;
-  var astroPreparationListener = null;
+  // ── Inicializar un botón por ID ─────────────────────────────────────────
+  function initBtn(id) {
+    var btn = document.getElementById(id);
+    if (!btn) return;                           // No existe en esta página → skip
+    if (btn._shareDestroy) btn._shareDestroy(); // Limpiar init anterior si la hay
 
-  function setup() {
-    var btn = document.getElementById(btnId);
-    if (!btn) return;
-
-    // Limpieza de instancia previa (navegación sin recarga completa)
-    if (typeof btn._shareDestroy === 'function') btn._shareDestroy();
-
-    // ── Datos ──────────────────────────────────────────────────────────────
     var toolName  = btn.dataset.toolName        || '';
     var toolDesc  = btn.dataset.toolDescription || '';
     var toolUrl   = btn.dataset.toolUrl         || '';
     var absUrl    = window.location.origin + toolUrl;
     var shareText = '¡Mira esta herramienta gratuita: ' + toolName + '! ' + toolDesc + ' 🚀';
 
-    // ─── FIX 3: Detección de share nativo más robusta ─────────────────────
-    // canShare puede no existir en Safari antiguo o algunos Android browsers.
-    // Intentamos share y capturamos el error; no dependemos de canShare.
     var hasNativeShare = typeof navigator.share === 'function';
     var isTouchDevice  = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 
-    // ── Portal en <body> (escapa overflow:hidden de padres) ───────────────
+    // ── Crear portal en <body> ────────────────────────────────────────────
     var portal = document.createElement('div');
-    portal.id        = btnId + '-portal';
+    portal.id        = id + '-portal';
     portal.className = 'share-popup-portal';
-
-    var hue = getComputedStyle(document.documentElement).getPropertyValue('--hue').trim() || '250';
-    portal.style.setProperty('--hue', hue);
-    if (document.documentElement.classList.contains('dark')) portal.classList.add('dark');
+    syncTheme(portal);
 
     portal.innerHTML = [
       '<div class="spp-inner">',
@@ -119,68 +141,43 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
 
     document.body.appendChild(portal);
 
-    // ── Abrir / Cerrar ────────────────────────────────────────────────────
-    function closePortal() {
-      portal.classList.remove('share-popup-visible');
+    function syncTheme(el) {
+      var hue = getComputedStyle(document.documentElement).getPropertyValue('--hue').trim() || '250';
+      el.style.setProperty('--hue', hue);
+      el.classList.toggle('dark', document.documentElement.classList.contains('dark'));
     }
 
+    function closePortal() { portal.classList.remove('share-popup-visible'); }
+
     function openPortal() {
-      // FIX 4: Al abrir, cerramos otros portales llamando su propio destroy parcial
-      // en vez de solo hacer .remove() que dejaba listeners huérfanos.
       document.querySelectorAll('.share-popup-portal').forEach(function (p) {
-        if (p !== portal) {
-          p.classList.remove('share-popup-visible');
-          p.remove();
-        }
+        if (p !== portal) { p.classList.remove('share-popup-visible'); p.remove(); }
       });
-
-      // Re-sync tema y --hue
-      var h = getComputedStyle(document.documentElement).getPropertyValue('--hue').trim() || '250';
-      portal.style.setProperty('--hue', h);
-      portal.classList.toggle('dark', document.documentElement.classList.contains('dark'));
-
+      syncTheme(portal);
       positionPopup(portal, btn);
       portal.classList.add('share-popup-visible');
     }
 
-    // ── Reposicionar en scroll/resize ─────────────────────────────────────
     function onScrollResize() {
-      if (portal.classList.contains('share-popup-visible')) {
-        positionPopup(portal, btn);
-      }
+      if (portal.classList.contains('share-popup-visible')) positionPopup(portal, btn);
     }
     window.addEventListener('scroll', onScrollResize, { passive: true });
     window.addEventListener('resize', onScrollResize);
 
-    // ── Botón principal ───────────────────────────────────────────────────
     function onBtnClick(e) {
       e.preventDefault();
       e.stopPropagation();
 
-      // FIX 3: Share nativo sin depender de canShare
-      // Solo en móvil táctil y si la API existe
       if (isTouchDevice && hasNativeShare) {
-        var shareData = { title: toolName, text: shareText, url: absUrl };
-        navigator.share(shareData).catch(function (err) {
-          // AbortError = usuario canceló → no abrir popup
-          // Cualquier otro error → mostrar popup de fallback
-          if (err.name !== 'AbortError') {
-            openPortal();
-          }
-        });
+        navigator.share({ title: toolName, text: shareText, url: absUrl })
+          .catch(function (err) { if (err.name !== 'AbortError') openPortal(); });
         return;
       }
 
-      // Desktop o sin soporte nativo: toggle popup
-      if (portal.classList.contains('share-popup-visible')) {
-        closePortal();
-      } else {
-        openPortal();
-      }
+      portal.classList.contains('share-popup-visible') ? closePortal() : openPortal();
     }
     btn.addEventListener('click', onBtnClick);
 
-    // ── Opciones del popup ────────────────────────────────────────────────
     function onOptionClick(e) {
       e.preventDefault();
       e.stopPropagation();
@@ -232,7 +229,6 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
         (navigator.clipboard && navigator.clipboard.writeText)
           ? navigator.clipboard.writeText(absUrl).then(showOk).catch(fallback)
           : fallback();
-        // Portal se mantiene abierto para mostrar el feedback ✓
       }
     }
 
@@ -240,62 +236,31 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
       opt.addEventListener('click', onOptionClick);
     });
 
-    // ── Cerrar al hacer clic fuera ────────────────────────────────────────
     function onDocClick(e) {
       if (
         portal.classList.contains('share-popup-visible') &&
         !e.target.closest('.share-tool-button-wrapper') &&
         !e.target.closest('.share-popup-portal')
-      ) {
-        closePortal();
-      }
+      ) { closePortal(); }
     }
     document.addEventListener('click', onDocClick);
 
-    // ── Escape ────────────────────────────────────────────────────────────
-    function onKeydown(e) {
-      if (e.key === 'Escape') closePortal();
-    }
+    function onKeydown(e) { if (e.key === 'Escape') closePortal(); }
     document.addEventListener('keydown', onKeydown);
 
-    // ── FIX 5: Cleanup total, sin fugas de listeners ──────────────────────
-    function destroy() {
+    btn._shareDestroy = function () {
       portal.remove();
       btn.removeEventListener('click', onBtnClick);
       document.removeEventListener('click', onDocClick);
       document.removeEventListener('keydown', onKeydown);
       window.removeEventListener('scroll', onScrollResize);
       window.removeEventListener('resize', onScrollResize);
-      // FIX 5 cont: eliminar los listeners de Astro registrados en ESTE setup
-      if (astroSwapListener) {
-        document.removeEventListener('astro:before-swap', astroSwapListener);
-        astroSwapListener = null;
-      }
-      if (astroPreparationListener) {
-        document.removeEventListener('astro:before-preparation', astroPreparationListener);
-        astroPreparationListener = null;
-      }
       btn._shareDestroy = null;
-    }
-
-    btn._shareDestroy = destroy;
-
-    // FIX 5 cont: guardamos referencias para poder removeEventListener
-    astroSwapListener = destroy;
-    astroPreparationListener = destroy;
-    document.addEventListener('astro:before-swap', astroSwapListener);
-    document.addEventListener('astro:before-preparation', astroPreparationListener);
+    };
   }
 
-  // ── Inicializar ───────────────────────────────────────────────────────────
-  if (document.getElementById(btnId)) {
-    setup();
-  } else {
-    document.addEventListener('astro:page-load', function h() {
-      document.removeEventListener('astro:page-load', h);
-      setup();
-    });
-  }
+  // ── Inicialización inmediata (recarga completa o script re-ejecutado) ───
+  initBtn(btnId);
 
 })();
 </script>
@@ -347,7 +312,6 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
 </style>
 
 <style is:global>
-  /* ── Portal popup base ──────────────────────────────────────────────────── */
   .share-popup-portal {
     position: fixed;
     width: 300px;
@@ -376,7 +340,6 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     transition: opacity 0.18s ease, transform 0.18s ease;
   }
 
-  /* ── Grid de opciones ───────────────────────────────────────────────────── */
   .spp-inner {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -426,7 +389,6 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
   .spp-copy-btn { color: oklch(0.5 0.14 var(--hue, 250)); }
   .share-popup-portal.dark .spp-copy-btn { color: oklch(0.75 0.12 var(--hue, 250)); }
 
-  /* ── Mobile: bottom sheet ───────────────────────────────────────────────── */
   @media (max-width: 640px) {
     .share-popup-portal {
       position: fixed !important;
