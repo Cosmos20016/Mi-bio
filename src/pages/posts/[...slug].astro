@@ -254,12 +254,18 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             var MIN_CHARS   = 80; // umbral: atribuye solo selecciones significativas
 
             document.addEventListener('copy', function (e) {
-                // Comprueba que el evento venga desde el contenido del artículo
                 var articleBody = document.querySelector('[itemprop="articleBody"]');
                 if (!articleBody) return;
 
                 var selection = window.getSelection();
                 if (!selection || selection.isCollapsed) return;
+
+                // Verificar que la selección esté DENTRO del cuerpo del artículo
+                // (evita añadir atribución al copiar desde nav, footer o comentarios)
+                var anchorNode = selection.anchorNode;
+                if (!anchorNode) return;
+                var anchorEl = anchorNode.nodeType === 3 ? anchorNode.parentElement : anchorNode;
+                if (!articleBody.contains(anchorEl)) return;
 
                 var selectedText = selection.toString();
                 if (selectedText.trim().length < MIN_CHARS) return; // citas cortas: sin atribución
@@ -395,6 +401,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
 
                 var canvas = document.createElement('canvas');
                 var ctx    = canvas.getContext('2d');
+                if (!ctx) return; // guarda: el navegador no soporta canvas 2D
 
                 function render() {
                     var w = img.naturalWidth  || img.width  || 800;
@@ -446,21 +453,47 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                 var articleBody = document.querySelector('[itemprop="articleBody"]');
                 if (!articleBody) return;
                 articleBody.querySelectorAll('img').forEach(function (img) {
-                    // Ignorar iconos pequeños (< 100 px de ancho) y el cover del post
+                    // Ignorar el cover del post (está fuera del articleBody pero por si acaso)
                     if (img.id === 'post-cover') return;
-                    if (img.width > 0 && img.width < 100) return;
+                    // Ignorar iconos pequeños: usar naturalWidth si ya cargó,
+                    // o el atributo width/height del HTML como fallback para imágenes no cargadas.
+                    // img.width (CSS rendered) puede ser 0 antes de la carga, por eso no es fiable.
+                    var intrinsicW = img.naturalWidth
+                        || parseInt(img.getAttribute('width') || '0', 10)
+                        || 0;
+                    if (intrinsicW > 0 && intrinsicW < 100) return;
                     img.crossOrigin = 'anonymous';
                     protectImage(img);
                 });
             }
 
+            // Bandera para evitar doble ejecución en carga inicial:
+            // tanto DOMContentLoaded/inline como astro:page-load disparan al inicio.
+            var _imagesProtectedOnLoad = false;
+
+            function protectAllImagesOnce() {
+                if (_imagesProtectedOnLoad) { _imagesProtectedOnLoad = false; return; }
+                _imagesProtectedOnLoad = true;
+                protectAllImages();
+            }
+
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', protectAllImages);
             } else {
+                // Carga directa: ejecutar ahora y marcar para saltarse el astro:page-load inicial
+                _imagesProtectedOnLoad = true;
                 protectAllImages();
             }
-            // Re-ejecutar en navegaciones SPA de Astro (View Transitions)
-            document.addEventListener('astro:page-load', protectAllImages);
+            // Re-ejecutar en navegaciones SPA de Astro (View Transitions).
+            // En la carga inicial, astro:page-load llega milisegundos después del bloque anterior;
+            // la bandera evita procesarlas dos veces.
+            document.addEventListener('astro:page-load', function () {
+                if (_imagesProtectedOnLoad) {
+                    _imagesProtectedOnLoad = false; // consume el token de "ya se ejecutó"
+                    return;
+                }
+                protectAllImages();
+            });
 
         })();
     </script>
