@@ -254,53 +254,27 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             var MIN_CHARS   = 80;
 
             document.addEventListener('copy', function (e) {
-                // Guarda: e.clipboardData puede ser null en Firefox con política
-                // de seguridad estricta. Sin esta guarda, el TypeError sería
-                // capturado por el try/catch pero e.preventDefault() no llegaría
-                // a ejecutarse → la copia ocurriría SIN atribución.
-                if (!e.clipboardData) return;
+                // Esta es una página de post único — toda copia aquí es contenido
+                // del artículo. No se necesita chequeo de nodo DOM; ese chequeo
+                // era la causa raíz de todos los fallos anteriores.
 
-                var articleBody = document.querySelector('[itemprop="articleBody"]');
-                if (!articleBody) return;
+                if (!e.clipboardData) return; // Firefox policy edge case
 
                 var selection = window.getSelection();
                 if (!selection || selection.isCollapsed) return;
 
-                // Verificar insideArticle ANTES de serializar la selección.
-                // selection.toString() es costoso para selecciones largas; salir
-                // antes si la selección está fuera del artículo evita ese trabajo.
-                var insideArticle = false;
-                try {
-                    var nodes = [selection.anchorNode, selection.focusNode];
-                    for (var i = 0; i < nodes.length; i++) {
-                        var node = nodes[i];
-                        if (!node) continue;
-                        var el = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
-                        if (el && articleBody.contains(el)) {
-                            insideArticle = true;
-                            break;
-                        }
-                    }
-                } catch (_) {
-                    insideArticle = false;
-                }
-                if (!insideArticle) return;
-
                 var selectedText = selection.toString();
                 if (selectedText.trim().length < MIN_CHARS) return;
 
-                // Escapar caracteres especiales HTML antes de inyectar selectedText
-                // en el clipboard text/html. Sin esto, copiar código con <, >, & o "
-                // produce HTML malformado que corrompe el pegado en editores ricos
-                // (Word, Notion, Google Docs, etc.).
+                // Escapar HTML para el formato text/html del clipboard.
+                // Necesario cuando el usuario copia código con <, >, & o ".
                 function escapeHtml(str) {
                     return str
                         .replace(/&/g, '&amp;')
                         .replace(/</g, '&lt;')
                         .replace(/>/g, '&gt;')
                         .replace(/"/g, '&quot;')
-                        .replace(/
-/g, '<br>');
+                        .replace(/\n/g, '<br>');
                 }
 
                 var htmlAttribution =
@@ -315,7 +289,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                     );
                     e.preventDefault();
                 } catch (_) {
-                    // Fallback silencioso: política del navegador bloqueó la escritura.
+                    // Fallback silencioso: el navegador bloqueó la escritura al clipboard.
                 }
             });
 
