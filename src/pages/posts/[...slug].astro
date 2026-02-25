@@ -238,7 +238,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
          PROTECCIÓN DE CONTENIDO
          1. Atribución automática al copiar
          2. Bloqueo de atajos de teclado de DevTools
-         3. Marca de agua en imágenes del artículo
+         3. Protección de imágenes del artículo
     ════════════════════════════════════════════════════════════════════════ -->
     <script is:inline>
         (function () {
@@ -254,20 +254,21 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             var MIN_CHARS   = 80;
 
             document.addEventListener('copy', function (e) {
+                // Guarda: e.clipboardData puede ser null en Firefox con política
+                // de seguridad estricta. Sin esta guarda, el TypeError sería
+                // capturado por el try/catch pero e.preventDefault() no llegaría
+                // a ejecutarse → la copia ocurriría SIN atribución.
+                if (!e.clipboardData) return;
+
                 var articleBody = document.querySelector('[itemprop="articleBody"]');
                 if (!articleBody) return;
 
                 var selection = window.getSelection();
                 if (!selection || selection.isCollapsed) return;
 
-                var selectedText = selection.toString();
-                if (selectedText.trim().length < MIN_CHARS) return;
-
-                // Comprobar que al menos uno de los extremos de la selección
-                // esté dentro del cuerpo del artículo. Se evalúan anchorNode y
-                // focusNode para cubrir selecciones que cruzar límites del DOM.
-                // El chequeo se envuelve en try/catch porque parentElement puede
-                // ser null en nodos de nivel documento (edge case en algunos navegadores).
+                // Verificar insideArticle ANTES de serializar la selección.
+                // selection.toString() es costoso para selecciones largas; salir
+                // antes si la selección está fuera del artículo evita ese trabajo.
                 var insideArticle = false;
                 try {
                     var nodes = [selection.anchorNode, selection.focusNode];
@@ -285,6 +286,23 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                 }
                 if (!insideArticle) return;
 
+                var selectedText = selection.toString();
+                if (selectedText.trim().length < MIN_CHARS) return;
+
+                // Escapar caracteres especiales HTML antes de inyectar selectedText
+                // en el clipboard text/html. Sin esto, copiar código con <, >, & o "
+                // produce HTML malformado que corrompe el pegado en editores ricos
+                // (Word, Notion, Google Docs, etc.).
+                function escapeHtml(str) {
+                    return str
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/
+/g, '<br>');
+                }
+
                 var htmlAttribution =
                     '<br><br><em>— Extraído de <a href="https://' +
                     SITE_URL + '">' + SITE_URL + '</a></em>';
@@ -293,11 +311,11 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                     e.clipboardData.setData('text/plain', selectedText + ATTRIBUTION);
                     e.clipboardData.setData(
                         'text/html',
-                        '<span>' + selectedText.replace(/\n/g, '<br>') + '</span>' + htmlAttribution
+                        '<span>' + escapeHtml(selectedText) + '</span>' + htmlAttribution
                     );
                     e.preventDefault();
                 } catch (_) {
-                    // Fallback silencioso: el navegador no permitió editar el clipboard.
+                    // Fallback silencioso: política del navegador bloqueó la escritura.
                 }
             });
 
@@ -544,4 +562,4 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             }
         }
     </style>
-</MainGridLayout>
+</MainGridLayout>w
