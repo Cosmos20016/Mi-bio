@@ -234,6 +234,237 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         aria-label="Comentarios del artículo"
     ></section>
 
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         PROTECCIÓN DE CONTENIDO
+         1. Atribución automática al copiar
+         2. Bloqueo de atajos de teclado de DevTools
+         3. Marca de agua en imágenes del artículo
+    ════════════════════════════════════════════════════════════════════════ -->
+    <script is:inline>
+        (function () {
+            'use strict';
+
+            /* ── 1. ATRIBUCIÓN AUTOMÁTICA AL COPIAR ──────────────────────────
+               Permite copiar libremente pero añade la fuente al final del
+               texto copiado. Solo aplica dentro del cuerpo del artículo
+               para no interferir con otras partes de la página (nav, código, etc.).
+            ─────────────────────────────────────────────────────────────────── */
+            var SITE_URL    = 'Kevinborja.com';
+            var ATTRIBUTION = '\n\n— Extraído de ' + SITE_URL;
+            var MIN_CHARS   = 80; // umbral: atribuye solo selecciones significativas
+
+            document.addEventListener('copy', function (e) {
+                // Comprueba que el evento venga desde el contenido del artículo
+                var articleBody = document.querySelector('[itemprop="articleBody"]');
+                if (!articleBody) return;
+
+                var selection = window.getSelection();
+                if (!selection || selection.isCollapsed) return;
+
+                var selectedText = selection.toString();
+                if (selectedText.trim().length < MIN_CHARS) return; // citas cortas: sin atribución
+
+                // Versión enriquecida para pegar en editores con formato
+                var htmlAttribution =
+                    '<br><br><em>— Extraído de <a href="https://' +
+                    SITE_URL + '">' + SITE_URL + '</a></em>';
+
+                try {
+                    e.clipboardData.setData('text/plain', selectedText + ATTRIBUTION);
+                    e.clipboardData.setData(
+                        'text/html',
+                        '<span>' + selectedText.replace(/\n/g, '<br>') + '</span>' + htmlAttribution
+                    );
+                    e.preventDefault();
+                } catch (_) {
+                    // Si el navegador no permite manipular el clipboard (poco probable),
+                    // simplemente dejamos pasar el evento original sin error.
+                }
+            });
+
+            /* ── 2. BLOQUEO DE ATAJOS DE TECLADO DE DEVTOOLS ─────────────────
+               Atajos bloqueados:
+                 · F12
+                 · Ctrl/Cmd + Shift + I  (Elements / Sources)
+                 · Ctrl/Cmd + Shift + J  (Console)
+                 · Ctrl/Cmd + Shift + C  (Inspector de elementos)
+                 · Ctrl/Cmd + U          (Ver código fuente)
+               El click derecho NO se toca: solo se bloquea la apertura
+               de DevTools por teclado, sin afectar la experiencia del usuario.
+            ─────────────────────────────────────────────────────────────────── */
+            document.addEventListener('keydown', function (e) {
+                var key  = e.key;
+                var ctrl = e.ctrlKey || e.metaKey; // compatible macOS (Cmd) y Windows (Ctrl)
+
+                // F12
+                if (key === 'F12') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
+
+                // Ctrl/Cmd + Shift + I / J / C
+                if (ctrl && e.shiftKey) {
+                    var upper = key.toUpperCase();
+                    if (upper === 'I' || upper === 'J' || upper === 'C') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return;
+                    }
+                }
+
+                // Ctrl/Cmd + U  (ver fuente)
+                if (ctrl && key.toUpperCase() === 'U') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }, true); // captura en fase de captura para mayor fiabilidad
+
+            /* ── 3. MARCA DE AGUA EN IMÁGENES ────────────────────────────────
+               Técnica: reemplaza cada <img> del artículo por un <canvas>
+               con la imagen pintada + marca de agua superpuesta.
+               Al guardar con "click derecho → Guardar imagen" o arrastrar,
+               el usuario obtiene la versión con marca de agua, nunca el original.
+
+               Comportamiento en pantalla: la marca sutil diagonal es casi
+               imperceptible durante la lectura; la etiqueta de esquina la hace
+               visible solo al examinarla con atención o al descargar.
+
+               Limitación CORS: imágenes externas (CDN distinto) necesitan el
+               header "Access-Control-Allow-Origin: *" en el servidor de origen
+               para poder pintarse en canvas. Las imágenes del propio dominio
+               funcionan siempre sin configuración extra.
+            ─────────────────────────────────────────────────────────────────── */
+            var WM_TEXT    = '© Kevinborja.com';
+            var WM_PADDING = 12; // px desde el borde inferior-derecho
+
+            function drawWatermark(ctx, w, h) {
+                ctx.save();
+
+                // ── Texto diagonal centrado (muy sutil, apenas visible al leer) ──
+                ctx.font        = 'bold ' + Math.max(12, Math.round(w * 0.022)) + 'px sans-serif';
+                ctx.globalAlpha = 0.18;
+                ctx.fillStyle   = '#ffffff';
+                ctx.translate(w / 2, h / 2);
+                ctx.rotate(-Math.PI / 6);
+                ctx.textAlign    = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(WM_TEXT, 0, 0);
+                ctx.restore();
+
+                ctx.save();
+                // ── Etiqueta sólida esquina inferior-derecha ───────────────────
+                ctx.font         = 'bold 13px sans-serif';
+                ctx.textAlign    = 'right';
+                ctx.textBaseline = 'bottom';
+                var x = w - WM_PADDING;
+                var y = h - WM_PADDING;
+                // Pill de fondo semitransparente para legibilidad
+                var metrics  = ctx.measureText(WM_TEXT);
+                var tw       = metrics.width;
+                var th       = 18;
+                var rx       = x - tw - 8;
+                var ry       = y - th + 2;
+                var rw       = tw + 16;
+                var rh       = th + 4;
+                var radius   = 4;
+                ctx.globalAlpha = 0.55;
+                ctx.fillStyle   = '#000000';
+                ctx.beginPath();
+                ctx.moveTo(rx + radius, ry);
+                ctx.lineTo(rx + rw - radius, ry);
+                ctx.quadraticCurveTo(rx + rw, ry, rx + rw, ry + radius);
+                ctx.lineTo(rx + rw, ry + rh - radius);
+                ctx.quadraticCurveTo(rx + rw, ry + rh, rx + rw - radius, ry + rh);
+                ctx.lineTo(rx + radius, ry + rh);
+                ctx.quadraticCurveTo(rx, ry + rh, rx, ry + rh - radius);
+                ctx.lineTo(rx, ry + radius);
+                ctx.quadraticCurveTo(rx, ry, rx + radius, ry);
+                ctx.closePath();
+                ctx.fill();
+                // Texto blanco sobre el pill
+                ctx.globalAlpha = 1;
+                ctx.fillStyle   = 'rgba(255,255,255,0.92)';
+                ctx.fillText(WM_TEXT, x, y);
+                ctx.restore();
+            }
+
+            function protectImage(img) {
+                if (img.dataset.wmProtected) return;
+                img.dataset.wmProtected = '1';
+
+                var canvas = document.createElement('canvas');
+                var ctx    = canvas.getContext('2d');
+
+                function render() {
+                    var w = img.naturalWidth  || img.width  || 800;
+                    var h = img.naturalHeight || img.height || 600;
+
+                    canvas.width  = w;
+                    canvas.height = h;
+
+                    // Clonar estilos del <img> original para que encaje en el layout
+                    canvas.className      = img.className;
+                    canvas.style.cssText  = img.style.cssText;
+                    canvas.style.maxWidth = '100%';
+                    canvas.style.height   = 'auto';
+                    canvas.style.display  = img.style.display || 'block';
+                    canvas.style.cursor   = 'default';
+                    canvas.setAttribute('role',       'img');
+                    canvas.setAttribute('aria-label', img.alt || 'Imagen del artículo');
+
+                    // Bloquear arrastre y menú contextual solo sobre esta imagen
+                    canvas.addEventListener('dragstart',   function (e) { e.preventDefault(); });
+                    canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+                    ctx.drawImage(img, 0, 0, w, h);
+                    drawWatermark(ctx, w, h);
+
+                    if (img.parentNode) {
+                        img.parentNode.replaceChild(canvas, img);
+                    }
+                }
+
+                if (img.complete && img.naturalWidth > 0) {
+                    render();
+                } else {
+                    img.addEventListener('load', render);
+                    img.addEventListener('error', function () {
+                        // Si la carga falla solo bloqueamos arrastre y contextmenu en el <img>
+                        img.addEventListener('dragstart',   function (e) { e.preventDefault(); });
+                        img.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+                    });
+                    if (!img.src) return;
+                    var src = img.src;
+                    img.crossOrigin = 'anonymous';
+                    img.src = '';
+                    img.src = src;
+                }
+            }
+
+            function protectAllImages() {
+                var articleBody = document.querySelector('[itemprop="articleBody"]');
+                if (!articleBody) return;
+                articleBody.querySelectorAll('img').forEach(function (img) {
+                    // Ignorar iconos pequeños (< 100 px de ancho) y el cover del post
+                    if (img.id === 'post-cover') return;
+                    if (img.width > 0 && img.width < 100) return;
+                    img.crossOrigin = 'anonymous';
+                    protectImage(img);
+                });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', protectAllImages);
+            } else {
+                protectAllImages();
+            }
+            // Re-ejecutar en navegaciones SPA de Astro (View Transitions)
+            document.addEventListener('astro:page-load', protectAllImages);
+
+        })();
+    </script>
+
     <script>
         const GISCUS_ORIGIN = 'https://giscus-personal-woft.vercel.app';
         const MAX_RETRIES   = 3;
@@ -291,10 +522,6 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             const container = getContainer();
             if (!container) return;
 
-            // Guard contra doble inyección: astro:page-load y DOMContentLoaded
-            // se disparan casi al mismo tiempo en la carga inicial. Sin este
-            // guard, el segundo borra con innerHTML='' el script que inyectó
-            // el primero antes de que su onload dispare → Giscus nunca monta.
             if (container.querySelector('script[src*="giscus"]')) return;
 
             const gen = loadGeneration;
@@ -351,12 +578,10 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
 
         document.addEventListener('astro:before-swap', cleanup);
 
-        // Cubre SPA navigations
         document.addEventListener('astro:page-load', () => {
             if (getContainer()) mountGiscus();
         });
 
-        // Cubre carga directa y hard refresh
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
                 if (getContainer()) mountGiscus();
