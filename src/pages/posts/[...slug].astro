@@ -34,6 +34,7 @@ const jsonLd = {
     headline: entry.data.title,
     description: entry.data.description || entry.data.title,
     keywords: entry.data.tags,
+    url: new URL(`/posts/${entry.slug}/`, Astro.site).href,
     image: entry.data.image
         ? new URL(
                 entry.data.image.startsWith("/")
@@ -56,6 +57,7 @@ const jsonLd = {
     dateModified: entry.data.updated
         ? formatDateToYYYYMMDD(entry.data.updated)
         : formatDateToYYYYMMDD(entry.data.published),
+    articleSection: entry.data.category ?? null,
     mainEntityOfPage: {
         "@type": "WebPage",
         "@id": new URL(`/posts/${entry.slug}/`, Astro.site).href,
@@ -79,18 +81,20 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
 >
     <script is:inline slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>
 
+    <!-- Barra de progreso de lectura: posición fixed, no ocupa espacio en el layout -->
+    <div id="reading-progress" aria-hidden="true" role="presentation"></div>
+
     <article
         class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative mb-4"
         itemscope
         itemtype="https://schema.org/BlogPosting"
     >
-        <div
-            id="post-container"
-            class:list={["card-base z-10 px-6 md:px-9 pt-6 pb-4 relative w-full", {}]}
-        >
+        <div id="post-container" class="card-base z-10 px-6 md:px-9 pt-6 pb-4 relative w-full">
+
+            <!-- FIX: Eliminado role="complementary" — era semánticamente incorrecto.
+                 complementary = landmark de sidebar independiente, no metadatos inline. -->
             <div
                 class="flex flex-row text-black/30 dark:text-white/30 gap-5 mb-3 transition onload-animation"
-                role="complementary"
                 aria-label="Información del artículo"
             >
                 <div class="flex flex-row items-center">
@@ -98,7 +102,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                         class="transition h-6 w-6 rounded-md bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50 flex items-center justify-center mr-2"
                         aria-hidden="true"
                     >
-                        <Icon name="material-symbols:notes-rounded"></Icon>
+                        <Icon name="material-symbols:notes-rounded" />
                     </div>
                     <div class="text-sm">
                         <span itemprop="wordCount">{remarkPluginFrontmatter.words}</span>
@@ -110,10 +114,13 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                         class="transition h-6 w-6 rounded-md bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50 flex items-center justify-center mr-2"
                         aria-hidden="true"
                     >
-                        <Icon name="material-symbols:schedule-outline-rounded"></Icon>
+                        <Icon name="material-symbols:schedule-outline-rounded" />
                     </div>
                     <div class="text-sm">
-                        <span itemprop="timeRequired" content={`PT${remarkPluginFrontmatter.minutes}M`}>
+                        <span
+                            itemprop="timeRequired"
+                            content={`PT${remarkPluginFrontmatter.minutes}M`}
+                        >
                             {remarkPluginFrontmatter.minutes}
                         </span>
                         {" " + i18n(remarkPluginFrontmatter.minutes === 1 ? I18nKey.minuteCount : I18nKey.minutesCount)}
@@ -144,7 +151,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                     updated={entry.data.updated}
                     tags={entry.data.tags}
                     category={entry.data.category}
-                ></PostMetadata>
+                />
                 {!entry.data.image && (
                     <div class="border-[var(--line-divider)] border-dashed border-b-[1px] mb-5"></div>
                 )}
@@ -172,7 +179,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                     slug={entry.slug}
                     pubDate={entry.data.published}
                     class="mb-6 rounded-xl license-container onload-animation"
-                ></License>
+                />
             )}
         </div>
     </article>
@@ -226,6 +233,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         )}
     </nav>
 
+    <!-- FIX: Padding unificado solo en Tailwind. Eliminado el @media que duplicaba padding en mobile. -->
     <section
         id="giscus-container"
         transition:name="giscus"
@@ -234,6 +242,9 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         aria-label="Comentarios del artículo"
     ></section>
 
+    <!-- ─────────────────────────────────────────────────────────────────────
+         Protecciones de contenido + UX de lectura
+    ───────────────────────────────────────────────────────────────────────── -->
     <script is:inline>
         (function () {
             'use strict';
@@ -254,17 +265,14 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
 
             document.addEventListener('copy', function (e) {
                 if (!e.clipboardData) return;
-
                 var selection = window.getSelection();
                 if (!selection || selection.isCollapsed) return;
-
                 var selectedText = selection.toString();
                 if (selectedText.trim().length < MIN_CHARS) return;
 
                 var htmlAttribution =
                     '<br><br><em>— Extraído de <a href="https://' +
                     SITE_URL + '">' + SITE_URL + '</a></em>';
-
                 try {
                     e.clipboardData.setData('text/plain', selectedText + ATTRIBUTION);
                     e.clipboardData.setData(
@@ -275,37 +283,10 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                 } catch (_) {}
             });
 
-            /* ── Bloqueo de atajos de DevTools ── */
-            document.addEventListener('keydown', function (e) {
-                var key  = e.key;
-                var ctrl = e.ctrlKey || e.metaKey;
-
-                if (key === 'F12') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return;
-                }
-
-                if (ctrl && e.shiftKey) {
-                    var upper = key.toUpperCase();
-                    if (upper === 'I' || upper === 'J' || upper === 'C') {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        return;
-                    }
-                }
-
-                if (ctrl && key.toUpperCase() === 'U') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-            }, true);
-
-            /* ── Protección de imágenes ── */
+            /* ── Protección de imágenes del artículo ── */
             function lockImages() {
                 var articleBody = document.querySelector('[itemprop="articleBody"]');
                 if (!articleBody) return;
-
                 articleBody.querySelectorAll('img').forEach(function (img) {
                     if (img.dataset.imgLocked) return;
                     img.dataset.imgLocked = '1';
@@ -314,74 +295,153 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                 });
             }
 
-            /* ── Protección de SVG mediante Canvas ──
-               Cualquier <svg> con el atributo [data-protect] será convertido
-               a <canvas> en tiempo de ejecución. El resultado visual es idéntico
-               pero el inspector del navegador solo verá píxeles, no el marcado SVG.
-               Uso: <svg data-protect ...>...</svg>
+            /* ── Protección SVG via Canvas ──
+               Uso: añade data-protect al SVG que quieres proteger.
+               <svg data-protect viewBox="0 0 200 80">...</svg>
+               Se preserva el aria-label / <title> del SVG para accesibilidad.
             ── */
             function protectSVGs() {
                 document.querySelectorAll('svg[data-protect]').forEach(function (svg) {
                     if (svg.dataset.svgProtected) return;
                     svg.dataset.svgProtected = '1';
 
-                    var vb      = svg.viewBox && svg.viewBox.baseVal;
-                    var rect    = svg.getBoundingClientRect();
-                    var w       = (vb && vb.width)  || rect.width  || 300;
-                    var h       = (vb && vb.height) || rect.height || 150;
-                    var dpr     = window.devicePixelRatio || 1;
+                    var vb   = svg.viewBox && svg.viewBox.baseVal;
+                    var rect = svg.getBoundingClientRect();
+                    var w    = (vb && vb.width  > 0 ? vb.width  : null) || rect.width  || 300;
+                    var h    = (vb && vb.height > 0 ? vb.height : null) || rect.height || 150;
+                    var dpr  = window.devicePixelRatio || 1;
 
-                    var canvas       = document.createElement('canvas');
-                    canvas.width     = Math.round(w * dpr);
-                    canvas.height    = Math.round(h * dpr);
-                    canvas.style.cssText = svg.getAttribute('style') || '';
-                    canvas.style.width   = w + 'px';
-                    canvas.style.height  = h + 'px';
+                    var svgTitle    = svg.querySelector('title');
+                    var accessLabel = svg.getAttribute('aria-label')
+                        || (svgTitle ? svgTitle.textContent.trim() : null);
 
-                    // Copiar clases del SVG original al canvas
-                    canvas.className = svg.className && svg.className.baseVal
-                        ? svg.className.baseVal
-                        : (svg.getAttribute('class') || '');
+                    var canvas         = document.createElement('canvas');
+                    canvas.width       = Math.round(w * dpr);
+                    canvas.height      = Math.round(h * dpr);
+                    canvas.style.width = w + 'px';
+                    canvas.style.height = h + 'px';
+                    canvas.className   = svg.getAttribute('class') || '';
+
+                    if (accessLabel) {
+                        canvas.setAttribute('role', 'img');
+                        canvas.setAttribute('aria-label', accessLabel);
+                    } else {
+                        canvas.setAttribute('aria-hidden', 'true');
+                    }
 
                     var ctx  = canvas.getContext('2d');
-                    var data = new XMLSerializer().serializeToString(svg);
-                    var blob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' });
-                    var url  = URL.createObjectURL(blob);
-                    var img  = new Image();
+                    var blob = new Blob(
+                        [new XMLSerializer().serializeToString(svg)],
+                        { type: 'image/svg+xml;charset=utf-8' }
+                    );
+                    var url = URL.createObjectURL(blob);
+                    var img = new Image();
 
                     img.onload = function () {
                         ctx.scale(dpr, dpr);
                         ctx.drawImage(img, 0, 0, w, h);
                         URL.revokeObjectURL(url);
-                        if (svg.parentNode) {
-                            svg.parentNode.replaceChild(canvas, svg);
-                        }
+                        if (svg.parentNode) svg.parentNode.replaceChild(canvas, svg);
                     };
-
-                    img.onerror = function () {
-                        URL.revokeObjectURL(url);
-                    };
-
+                    img.onerror = function () { URL.revokeObjectURL(url); };
                     img.src = url;
                 });
             }
 
-            function initProtections() {
+            /* ── Indicador de progreso de lectura ──
+               Cálculo: 0 % al llegar al inicio del artículo, 100 % al llegar al final.
+               Usa requestAnimationFrame + transform:scaleX → solo composite layer,
+               cero repaints, sin jank ni layout thrashing.
+            ── */
+            function initReadingProgress() {
+                var bar     = document.getElementById('reading-progress');
+                var article = document.querySelector('[itemprop="articleBody"]');
+                if (!bar || !article) return;
+
+                var rafId = 0;
+
+                function update() {
+                    rafId = 0;
+                    var articleTop    = article.getBoundingClientRect().top + window.scrollY;
+                    var articleHeight = article.offsetHeight;
+                    var scrolled      = window.scrollY - articleTop;
+                    var range         = articleHeight - window.innerHeight;
+                    var progress      = range > 0
+                        ? Math.max(0, Math.min(1, scrolled / range))
+                        : (scrolled > 0 ? 1 : 0);
+                    bar.style.transform = 'scaleX(' + progress + ')';
+                }
+
+                function onScroll() {
+                    if (!rafId) rafId = requestAnimationFrame(update);
+                }
+
+                window.addEventListener('scroll', onScroll, { passive: true });
+                update();
+
+                document.addEventListener('astro:before-swap', function cleanup() {
+                    window.removeEventListener('scroll', onScroll);
+                    document.removeEventListener('astro:before-swap', cleanup);
+                }, { once: true });
+            }
+
+            /* ── Botón "Copiar" en bloques de código ── */
+            function initCodeCopyButtons() {
+                var articleBody = document.querySelector('[itemprop="articleBody"]');
+                if (!articleBody) return;
+
+                articleBody.querySelectorAll('pre').forEach(function (pre) {
+                    if (pre.dataset.copyInit) return;
+                    pre.dataset.copyInit = '1';
+
+                    var wrapper     = document.createElement('div');
+                    wrapper.className = 'code-block-wrapper';
+
+                    var btn         = document.createElement('button');
+                    btn.className   = 'code-copy-btn';
+                    btn.textContent = 'Copiar';
+                    btn.setAttribute('aria-label', 'Copiar código');
+                    btn.setAttribute('type', 'button');
+
+                    btn.addEventListener('click', function () {
+                        var code = pre.querySelector('code');
+                        var text = code ? code.innerText : pre.innerText;
+                        navigator.clipboard.writeText(text).then(function () {
+                            btn.textContent = '¡Copiado!';
+                            btn.classList.add('copied');
+                            setTimeout(function () {
+                                btn.textContent = 'Copiar';
+                                btn.classList.remove('copied');
+                            }, 2000);
+                        }).catch(function () {});
+                    });
+
+                    pre.parentNode.insertBefore(wrapper, pre);
+                    wrapper.appendChild(pre);
+                    wrapper.appendChild(btn);
+                });
+            }
+
+            /* ── Punto de entrada único ── */
+            function initAll() {
                 lockImages();
                 protectSVGs();
+                initReadingProgress();
+                initCodeCopyButtons();
             }
 
             if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initProtections);
+                document.addEventListener('DOMContentLoaded', initAll);
             } else {
-                initProtections();
+                initAll();
             }
 
-            document.addEventListener('astro:page-load', initProtections);
+            document.addEventListener('astro:page-load', initAll);
 
         })();
     </script>
 
+    <!-- ─── Giscus ─── -->
     <script>
         const GISCUS_ORIGIN = 'https://giscus-personal-woft.vercel.app';
         const MAX_RETRIES   = 3;
@@ -435,7 +495,6 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
 
         function mountGiscus(): void {
             if (giscusLoaded) return;
-
             const container = getContainer();
             if (!container) return;
             if (container.querySelector('script[src*="giscus"]')) return;
@@ -444,7 +503,10 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             container.innerHTML = '';
 
             const script = document.createElement('script');
-            script.src = `${GISCUS_ORIGIN}/es/client.js?v=${Date.now()}`;
+            // FIX: Date.now() como cache buster impedía que el CDN cacheara el script,
+            // forzando una descarga nueva en cada visita. cleanup() ya vacía el
+            // container en cada navegación SPA — no se necesita cache busting.
+            script.src = `${GISCUS_ORIGIN}/es/client.js`;
             script.setAttribute('data-repo',              'Cosmos20016/Gestion-de-comentarios');
             script.setAttribute('data-repo-id',           'R_kgDOPSHLmA');
             script.setAttribute('data-category',          'Announcements');
@@ -462,8 +524,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             script.onerror = () => {
                 if (gen !== loadGeneration) return;
                 if (retryCount < MAX_RETRIES) {
-                    const delay = RETRY_DELAYS[retryCount++];
-                    window.setTimeout(mountGiscus, delay);
+                    window.setTimeout(mountGiscus, RETRY_DELAYS[retryCount++]);
                 } else {
                     retryCount = 0;
                     const c = getContainer();
@@ -492,7 +553,6 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         }
 
         document.addEventListener('astro:before-swap', cleanup);
-
         document.addEventListener('astro:page-load', () => {
             if (getContainer()) mountGiscus();
         });
@@ -507,6 +567,71 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
     </script>
 
     <style>
+        /* ── Barra de progreso de lectura ── */
+        #reading-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--primary);
+            transform: scaleX(0);
+            transform-origin: left center;
+            z-index: 9999;
+            pointer-events: none;
+            will-change: transform;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #reading-progress {
+                transition: none;
+            }
+        }
+
+        /* ── Botones de copia en bloques de código ── */
+        .code-block-wrapper {
+            position: relative;
+        }
+
+        .code-copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            padding: 0.2rem 0.6rem;
+            font-size: 0.7rem;
+            line-height: 1.4;
+            border-radius: 0.35rem;
+            border: 1px solid color-mix(in srgb, var(--primary) 40%, transparent);
+            background: color-mix(in srgb, var(--primary) 10%, transparent);
+            color: var(--primary);
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.15s ease, background 0.15s ease;
+            font-family: inherit;
+        }
+
+        .code-block-wrapper:hover .code-copy-btn,
+        .code-copy-btn:focus-visible {
+            opacity: 1;
+        }
+
+        .code-copy-btn.copied {
+            background: color-mix(in srgb, var(--primary) 25%, transparent);
+            opacity: 1;
+        }
+
+        .code-copy-btn:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .code-copy-btn {
+                transition: none;
+            }
+        }
+
+        /* ── Giscus ── */
         #giscus-container {
             width: 100%;
             max-width: 100%;
@@ -545,11 +670,6 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         }
 
         @media (max-width: 767px) {
-            #giscus-container {
-                padding: 1rem;
-                border-radius: var(--radius-large);
-            }
-
             #giscus-container :global(iframe.giscus-frame) {
                 min-height: 300px;
             }
