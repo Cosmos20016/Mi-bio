@@ -230,52 +230,36 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         id="giscus-container"
         transition:name="giscus"
         transition:animate="none"
-        class="card-base rounded-[var(--radius-large)] px-6 md:px-9 py-6 mt-6"
+        class="card-base rounded-[var(--radius-large)] px-6 md:px-9 py-6"
         aria-label="Comentarios del artículo"
     ></section>
 
-    <!-- ═══════════════════════════════════════════════════════════════════════
-         PROTECCIÓN DE CONTENIDO
-         1. Atribución automática al copiar
-         2. Bloqueo de atajos de teclado de DevTools
-         3. Protección de imágenes del artículo
-    ════════════════════════════════════════════════════════════════════════ -->
     <script is:inline>
         (function () {
             'use strict';
 
-            /* ── 1. ATRIBUCIÓN AUTOMÁTICA AL COPIAR ──────────────────────────
-               Permite copiar libremente pero añade la fuente al final del
-               texto copiado. Solo aplica dentro del cuerpo del artículo
-               para no interferir con otras partes de la página (nav, código, etc.).
-            ─────────────────────────────────────────────────────────────────── */
+            /* ── Atribución automática al copiar ── */
             var SITE_URL    = 'Kevinborja.com';
             var ATTRIBUTION = '\n\n— Extraído de ' + SITE_URL;
             var MIN_CHARS   = 80;
 
-            document.addEventListener('copy', function (e) {
-                // Esta es una página de post único — toda copia aquí es contenido
-                // del artículo. No se necesita chequeo de nodo DOM; ese chequeo
-                // era la causa raíz de todos los fallos anteriores.
+            function escapeHtml(str) {
+                return str
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/\n/g, '<br>');
+            }
 
-                if (!e.clipboardData) return; // Firefox policy edge case
+            document.addEventListener('copy', function (e) {
+                if (!e.clipboardData) return;
 
                 var selection = window.getSelection();
                 if (!selection || selection.isCollapsed) return;
 
                 var selectedText = selection.toString();
                 if (selectedText.trim().length < MIN_CHARS) return;
-
-                // Escapar HTML para el formato text/html del clipboard.
-                // Necesario cuando el usuario copia código con <, >, & o ".
-                function escapeHtml(str) {
-                    return str
-                        .replace(/&/g, '&amp;')
-                        .replace(/</g, '&lt;')
-                        .replace(/>/g, '&gt;')
-                        .replace(/"/g, '&quot;')
-                        .replace(/\n/g, '<br>');
-                }
 
                 var htmlAttribution =
                     '<br><br><em>— Extraído de <a href="https://' +
@@ -288,20 +272,10 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                         '<span>' + escapeHtml(selectedText) + '</span>' + htmlAttribution
                     );
                     e.preventDefault();
-                } catch (_) {
-                    // Fallback silencioso: el navegador bloqueó la escritura al clipboard.
-                }
+                } catch (_) {}
             });
 
-            /* ── 2. BLOQUEO DE ATAJOS DE TECLADO DE DEVTOOLS ─────────────────
-               Atajos bloqueados:
-                 · F12
-                 · Ctrl/Cmd + Shift + I  (Elements / Sources)
-                 · Ctrl/Cmd + Shift + J  (Console)
-                 · Ctrl/Cmd + Shift + C  (Inspector de elementos)
-                 · Ctrl/Cmd + U          (Ver código fuente)
-               El click derecho NO se toca en ningún momento.
-            ─────────────────────────────────────────────────────────────────── */
+            /* ── Bloqueo de atajos de DevTools ── */
             document.addEventListener('keydown', function (e) {
                 var key  = e.key;
                 var ctrl = e.ctrlKey || e.metaKey;
@@ -327,31 +301,83 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                 }
             }, true);
 
-            /* ── 3. PROTECCIÓN DE IMÁGENES ────────────────────────────────────
-               Bloquea el arrastre y el menú contextual directamente sobre cada
-               <img> del artículo, impidiendo "Guardar imagen" y drag-and-drop.
-               Solución ligera sin canvas: las imágenes se renderizan con
-               normalidad y no se toca el DOM estructural del post.
-            ─────────────────────────────────────────────────────────────────── */
+            /* ── Protección de imágenes ── */
             function lockImages() {
                 var articleBody = document.querySelector('[itemprop="articleBody"]');
                 if (!articleBody) return;
 
                 articleBody.querySelectorAll('img').forEach(function (img) {
-                    if (img.dataset.imgLocked) return; // evitar listeners duplicados
+                    if (img.dataset.imgLocked) return;
                     img.dataset.imgLocked = '1';
                     img.addEventListener('dragstart',   function (e) { e.preventDefault(); });
                     img.addEventListener('contextmenu', function (e) { e.preventDefault(); });
                 });
             }
 
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', lockImages);
-            } else {
-                lockImages();
+            /* ── Protección de SVG mediante Canvas ──
+               Cualquier <svg> con el atributo [data-protect] será convertido
+               a <canvas> en tiempo de ejecución. El resultado visual es idéntico
+               pero el inspector del navegador solo verá píxeles, no el marcado SVG.
+               Uso: <svg data-protect ...>...</svg>
+            ── */
+            function protectSVGs() {
+                document.querySelectorAll('svg[data-protect]').forEach(function (svg) {
+                    if (svg.dataset.svgProtected) return;
+                    svg.dataset.svgProtected = '1';
+
+                    var vb      = svg.viewBox && svg.viewBox.baseVal;
+                    var rect    = svg.getBoundingClientRect();
+                    var w       = (vb && vb.width)  || rect.width  || 300;
+                    var h       = (vb && vb.height) || rect.height || 150;
+                    var dpr     = window.devicePixelRatio || 1;
+
+                    var canvas       = document.createElement('canvas');
+                    canvas.width     = Math.round(w * dpr);
+                    canvas.height    = Math.round(h * dpr);
+                    canvas.style.cssText = svg.getAttribute('style') || '';
+                    canvas.style.width   = w + 'px';
+                    canvas.style.height  = h + 'px';
+
+                    // Copiar clases del SVG original al canvas
+                    canvas.className = svg.className && svg.className.baseVal
+                        ? svg.className.baseVal
+                        : (svg.getAttribute('class') || '');
+
+                    var ctx  = canvas.getContext('2d');
+                    var data = new XMLSerializer().serializeToString(svg);
+                    var blob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' });
+                    var url  = URL.createObjectURL(blob);
+                    var img  = new Image();
+
+                    img.onload = function () {
+                        ctx.scale(dpr, dpr);
+                        ctx.drawImage(img, 0, 0, w, h);
+                        URL.revokeObjectURL(url);
+                        if (svg.parentNode) {
+                            svg.parentNode.replaceChild(canvas, svg);
+                        }
+                    };
+
+                    img.onerror = function () {
+                        URL.revokeObjectURL(url);
+                    };
+
+                    img.src = url;
+                });
             }
-            // Re-ejecutar en navegaciones SPA de Astro (View Transitions)
-            document.addEventListener('astro:page-load', lockImages);
+
+            function initProtections() {
+                lockImages();
+                protectSVGs();
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initProtections);
+            } else {
+                initProtections();
+            }
+
+            document.addEventListener('astro:page-load', initProtections);
 
         })();
     </script>
@@ -412,11 +438,9 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
 
             const container = getContainer();
             if (!container) return;
-
             if (container.querySelector('script[src*="giscus"]')) return;
 
             const gen = loadGeneration;
-
             container.innerHTML = '';
 
             const script = document.createElement('script');
@@ -483,7 +507,6 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
     </script>
 
     <style>
-        /* ── Contenedor ─────────────────────────────────────────────────────── */
         #giscus-container {
             width: 100%;
             max-width: 100%;
@@ -493,7 +516,6 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             min-height: 200px;
         }
 
-        /* ── iframe ─────────────────────────────────────────────────────────── */
         #giscus-container :global(iframe.giscus-frame) {
             width: 100% !important;
             max-width: 100% !important;
@@ -506,7 +528,6 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             -webkit-overflow-scrolling: touch;
         }
 
-        /* ── Modo claro ─────────────────────────────────────────────────────── */
         :global(:not(.dark)) #giscus-container {
             background-color: var(--card-bg, white) !important;
         }
@@ -515,7 +536,6 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             color-scheme: light;
         }
 
-        /* ── Modo oscuro ─────────────────────────────────────────────────────── */
         :global(.dark) #giscus-container {
             background-color: var(--card-bg, transparent) !important;
         }
@@ -524,7 +544,6 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             color-scheme: dark;
         }
 
-        /* ── Móvil ──────────────────────────────────────────────────────────── */
         @media (max-width: 767px) {
             #giscus-container {
                 padding: 1rem;
