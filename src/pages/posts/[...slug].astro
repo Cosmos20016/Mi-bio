@@ -81,11 +81,6 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
 >
     <script is:inline slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>
 
-    <!-- Barra de progreso High-End (Optimizada para GPU) -->
-    <div class="reading-progress-wrapper" aria-hidden="true">
-        <div id="reading-progress-bar"></div>
-    </div>
-
     <article
         class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative mb-4"
         itemscope
@@ -161,7 +156,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                     id="post-cover"
                     src={entry.data.image}
                     basePath={path.join("content/posts/", getDir(entry.id))}
-                    class="mb-8 rounded-xl banner-container onload-animation premium-image"
+                    class="mb-8 rounded-xl banner-container onload-animation"
                     itemprop="image"
                 />
             )}
@@ -190,17 +185,17 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         {nextUrl ? (
             <a
                 href={nextUrl}
-                class="w-full font-bold overflow-hidden active:scale-[0.98] transition-transform group nav-link-premium"
+                class="w-full font-bold overflow-hidden active:scale-95 transition-transform"
                 aria-label={`Anterior: ${entry.data.nextTitle}`}
                 rel="prev"
             >
-                <div class="btn-card rounded-2xl w-full h-[3.75rem] max-w-full px-4 flex items-center !justify-start gap-4 transition-colors premium-nav-card">
+                <div class="btn-card rounded-2xl w-full h-[3.75rem] max-w-full px-4 flex items-center !justify-start gap-4">
                     <Icon
                         name="material-symbols:chevron-left-rounded"
-                        class="text-[2rem] text-[var(--primary)] flex-shrink-0 transition-transform duration-300 ease-out nav-icon-left"
+                        class="text-[2rem] text-[var(--primary)] flex-shrink-0"
                         aria-hidden="true"
                     />
-                    <span class="overflow-hidden transition-colors overflow-ellipsis whitespace-nowrap max-w-[calc(100%_-_3rem)] text-black/75 dark:text-white/75 nav-text">
+                    <span class="overflow-hidden transition overflow-ellipsis whitespace-nowrap max-w-[calc(100%_-_3rem)] text-black/75 dark:text-white/75">
                         {entry.data.nextTitle}
                     </span>
                 </div>
@@ -212,17 +207,17 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         {prevUrl ? (
             <a
                 href={prevUrl}
-                class="w-full font-bold overflow-hidden active:scale-[0.98] transition-transform group nav-link-premium"
+                class="w-full font-bold overflow-hidden active:scale-95 transition-transform"
                 aria-label={`Siguiente: ${entry.data.prevTitle}`}
                 rel="next"
             >
-                <div class="btn-card rounded-2xl w-full h-[3.75rem] max-w-full px-4 flex items-center !justify-end gap-4 transition-colors premium-nav-card">
-                    <span class="overflow-hidden transition-colors overflow-ellipsis whitespace-nowrap max-w-[calc(100%_-_3rem)] text-black/75 dark:text-white/75 nav-text">
+                <div class="btn-card rounded-2xl w-full h-[3.75rem] max-w-full px-4 flex items-center !justify-end gap-4">
+                    <span class="overflow-hidden transition overflow-ellipsis whitespace-nowrap max-w-[calc(100%_-_3rem)] text-black/75 dark:text-white/75">
                         {entry.data.prevTitle}
                     </span>
                     <Icon
                         name="material-symbols:chevron-right-rounded"
-                        class="text-[2rem] text-[var(--primary)] flex-shrink-0 transition-transform duration-300 ease-out nav-icon-right"
+                        class="text-[2rem] text-[var(--primary)] flex-shrink-0"
                         aria-hidden="true"
                     />
                 </div>
@@ -288,6 +283,8 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                 });
             }
 
+            // Protección SVG: añade data-protect al SVG que quieras proteger.
+            // Preserva aria-label / <title> del original para accesibilidad.
             function protectSVGs() {
                 document.querySelectorAll('svg[data-protect]').forEach(function (svg) {
                     if (svg.dataset.svgProtected) return;
@@ -336,39 +333,9 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                 });
             }
 
-            // --- LÓGICA DE RENDIMIENTO PREMIUM (Agentic/Senior Level) ---
-            function initPremiumScroll() {
-                const progressBar = document.getElementById('reading-progress-bar');
-                if (!progressBar) return;
-
-                let ticking = false;
-
-                function updateProgress() {
-                    const winScroll = window.scrollY || document.documentElement.scrollTop;
-                    const height = document.documentElement.scrollHeight - window.innerHeight;
-                    // Prevenir valores negativos o mayores a 1 para evitar bugs en la GPU
-                    const scrolled = height > 0 ? Math.min(Math.max(winScroll / height, 0), 1) : 0;
-                    
-                    progressBar.style.transform = `scaleX(${scrolled})`;
-                    ticking = false;
-                }
-
-                // Uso estricto de rAF (requestAnimationFrame) para asegurar 60/120fps fluidos
-                window.addEventListener('scroll', function() {
-                    if (!ticking) {
-                        window.requestAnimationFrame(updateProgress);
-                        ticking = true;
-                    }
-                }, { passive: true });
-
-                // Inicializar en carga
-                updateProgress();
-            }
-
             function initAll() {
                 lockImages();
                 protectSVGs();
-                initPremiumScroll();
             }
 
             if (document.readyState === 'loading') {
@@ -387,25 +354,25 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         const MAX_RETRIES   = 3;
         const RETRY_DELAYS  = [1500, 3000, 6000];
 
-        let giscusLoaded          = false;
-        let retryCount            = 0;
-        let loadGeneration        = 0;
-        let themeObserver = null;
+        let giscusLoaded:   boolean                 = false;
+        let retryCount:     number                  = 0;
+        let loadGeneration: number                  = 0;
+        let themeObserver:  MutationObserver | null = null;
 
-        function currentTheme() {
+        function currentTheme(): string {
             return document.documentElement.classList.contains('dark')
                 ? 'transparent_dark'
                 : 'light';
         }
 
-        function getContainer() {
+        function getContainer(): HTMLElement | null {
             return document.getElementById('giscus-container');
         }
 
-        function setupThemeObserver() {
+        function setupThemeObserver(): void {
             themeObserver?.disconnect();
             themeObserver = new MutationObserver(() => {
-                const iframe = document.querySelector('iframe.giscus-frame');
+                const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
                 if (!iframe?.contentWindow) return;
                 iframe.contentWindow.postMessage(
                     { giscus: { setConfig: { theme: currentTheme() } } },
@@ -418,7 +385,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             });
         }
 
-        function showErrorUI(container) {
+        function showErrorUI(container: HTMLElement): void {
             container.innerHTML = `
                 <div class="flex flex-col items-center justify-center py-8 gap-3 text-red-500">
                     <span class="text-sm">Error al cargar los comentarios</span>
@@ -433,7 +400,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             });
         }
 
-        function mountGiscus() {
+        function mountGiscus(): void {
             if (giscusLoaded) return;
             const container = getContainer();
             if (!container) return;
@@ -479,7 +446,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             container.appendChild(script);
         }
 
-        function cleanup() {
+        function cleanup(): void {
             loadGeneration++;
             giscusLoaded = false;
             retryCount   = 0;
@@ -503,71 +470,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         }
     </script>
 
-    <!-- ARQUITECTURA CSS DE ALTO RENDIMIENTO Y RESPONSIVE -->
-    <style is:global>
-        /* 
-         * 1. Barra de lectura acelerada por GPU
-         * Usamos translate/scale en lugar de width para evitar repintado de pantalla.
-         */
-        .reading-progress-wrapper {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 3px; /* Sutil pero visible */
-            z-index: 99999;
-            pointer-events: none;
-            background-color: transparent;
-        }
-
-        #reading-progress-bar {
-            height: 100%;
-            width: 100%;
-            background-color: var(--primary);
-            transform-origin: left center;
-            transform: scaleX(0);
-            will-change: transform;
-            /* Suavizado matemático para que no se sienta rígido */
-            transition: transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        /* 
-         * 2. Manejo estricto de Hover solo para dispositivos con ratón (Desktop)
-         * Previene que los efectos se queden atascados al tocar en Android/iOS.
-         */
-        @media (hover: hover) and (pointer: fine) {
-            .nav-link-premium:hover .premium-nav-card {
-                background-color: var(--btn-regular-bg); /* Respetando la variable base del tema */
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-            }
-            .dark .nav-link-premium:hover .premium-nav-card {
-                box-shadow: 0 4px 20px rgba(255, 255, 255, 0.02);
-            }
-            
-            /* Movimiento sutil de las flechas (Micro-interacción) */
-            .nav-link-premium:hover .nav-icon-left {
-                transform: translateX(-4px);
-            }
-            .nav-link-premium:hover .nav-icon-right {
-                transform: translateX(4px);
-            }
-
-            /* Texto más vibrante al pasar el ratón */
-            .nav-link-premium:hover .nav-text {
-                color: var(--primary);
-            }
-
-            /* Efecto muy sutil para la imagen principal */
-            .premium-image img {
-                transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-                will-change: transform;
-            }
-            .premium-image:hover img {
-                transform: scale(1.02);
-            }
-        }
-
-        /* Giscus Estilos Base Intactos */
+    <style>
         #giscus-container {
             width: 100%;
             max-width: 100%;
