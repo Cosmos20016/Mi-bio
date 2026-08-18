@@ -23,8 +23,8 @@ const toolMetadata = {
       Saltar al contenido principal
     </a>
 
-    <!-- Navegación superior mejorada con ARIA -->
-    <nav class="tool-nav" aria-label="Navegación de herramientas">
+    <!-- Navegación superior mejorada con ARIA conectada al motor premium-reveal -->
+    <nav class="tool-nav premium-reveal" aria-label="Navegación de herramientas">
       <a 
         class="tool-nav-back" 
         href={url("/herramientas/")}
@@ -41,8 +41,8 @@ const toolMetadata = {
       </div>
     </nav>
 
-    <!-- Header de la herramienta -->
-    <header class="tool-page-header">
+    <!-- Header de la herramienta conectado al motor premium-reveal -->
+    <header class="tool-page-header premium-reveal">
       <div class="tool-page-icon-wrapper" aria-hidden="true">
         <span class="tool-page-icon">{toolMetadata.icon}</span>
       </div>
@@ -68,8 +68,8 @@ const toolMetadata = {
       </div>
     </header>
 
-    <!-- Componente principal -->
-    <section id="main-content" aria-label="Aplicación de teleprompter">
+    <!-- Componente principal conectado al motor premium-reveal -->
+    <section id="main-content" class="premium-reveal" aria-label="Aplicación de teleprompter">
       <Teleprompter client:only="svelte" />
     </section>
   </article>
