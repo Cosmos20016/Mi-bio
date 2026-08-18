@@ -82,7 +82,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
     <script is:inline slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>
 
     <article
-        class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative mb-4"
+        class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative mb-4 premium-reveal"
         itemscope
         itemtype="https://schema.org/BlogPosting"
     >
@@ -179,7 +179,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
     </article>
 
     <nav
-        class="flex flex-col md:flex-row justify-between mb-4 gap-4 overflow-hidden w-full"
+        class="flex flex-col md:flex-row justify-between mb-4 gap-4 overflow-hidden w-full premium-reveal"
         aria-label="Navegación entre artículos"
     >
         {nextUrl ? (
@@ -231,7 +231,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         id="giscus-container"
         transition:name="giscus"
         transition:animate="none"
-        class="card-base rounded-[var(--radius-large)] px-6 md:px-9 py-6"
+        class="card-base rounded-[var(--radius-large)] px-6 md:px-9 py-6 premium-reveal"
         aria-label="Comentarios del artículo"
     ></section>
 
@@ -283,8 +283,6 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                 });
             }
 
-            // Protección SVG: añade data-protect al SVG que quieras proteger.
-            // Preserva aria-label / <title> del original para accesibilidad.
             function protectSVGs() {
                 document.querySelectorAll('svg[data-protect]').forEach(function (svg) {
                     if (svg.dataset.svgProtected) return;
@@ -333,9 +331,26 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
                 });
             }
 
+            function initScrollReveal() {
+                if (!('IntersectionObserver' in window)) return;
+                var observer = new IntersectionObserver(function(entries) {
+                    entries.forEach(function(entry) {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('is-revealed');
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                }, { threshold: 0.05, rootMargin: '0px 0px -50px 0px' });
+
+                document.querySelectorAll('.premium-reveal').forEach(function(el) {
+                    observer.observe(el);
+                });
+            }
+
             function initAll() {
                 lockImages();
                 protectSVGs();
+                initScrollReveal();
             }
 
             if (document.readyState === 'loading') {
@@ -354,25 +369,25 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         const MAX_RETRIES   = 3;
         const RETRY_DELAYS  = [1500, 3000, 6000];
 
-        let giscusLoaded:   boolean                 = false;
-        let retryCount:     number                  = 0;
-        let loadGeneration: number                  = 0;
-        let themeObserver:  MutationObserver | null = null;
+        let giscusLoaded          = false;
+        let retryCount            = 0;
+        let loadGeneration        = 0;
+        let themeObserver = null;
 
-        function currentTheme(): string {
+        function currentTheme() {
             return document.documentElement.classList.contains('dark')
                 ? 'transparent_dark'
                 : 'light';
         }
 
-        function getContainer(): HTMLElement | null {
+        function getContainer() {
             return document.getElementById('giscus-container');
         }
 
-        function setupThemeObserver(): void {
+        function setupThemeObserver() {
             themeObserver?.disconnect();
             themeObserver = new MutationObserver(() => {
-                const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
+                const iframe = document.querySelector('iframe.giscus-frame');
                 if (!iframe?.contentWindow) return;
                 iframe.contentWindow.postMessage(
                     { giscus: { setConfig: { theme: currentTheme() } } },
@@ -385,7 +400,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             });
         }
 
-        function showErrorUI(container: HTMLElement): void {
+        function showErrorUI(container) {
             container.innerHTML = `
                 <div class="flex flex-col items-center justify-center py-8 gap-3 text-red-500">
                     <span class="text-sm">Error al cargar los comentarios</span>
@@ -400,7 +415,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             });
         }
 
-        function mountGiscus(): void {
+        function mountGiscus() {
             if (giscusLoaded) return;
             const container = getContainer();
             if (!container) return;
@@ -446,7 +461,7 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
             container.appendChild(script);
         }
 
-        function cleanup(): void {
+        function cleanup() {
             loadGeneration++;
             giscusLoaded = false;
             retryCount   = 0;
@@ -511,6 +526,27 @@ const prevUrl = entry.data.prevSlug ? getPostUrlBySlug(entry.data.prevSlug) : nu
         @media (max-width: 767px) {
             #giscus-container :global(iframe.giscus-frame) {
                 min-height: 300px;
+            }
+        }
+
+        /* Animación suave de aparición (Scroll Reveal) */
+        .premium-reveal {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s cubic-bezier(0.25, 1, 0.5, 1), transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+            will-change: opacity, transform;
+        }
+
+        .premium-reveal.is-revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        @media (prefers-reduced-motion: reduce) {
+            .premium-reveal {
+                transition: none !important;
+                opacity: 1 !important;
+                transform: none !important;
             }
         }
     </style>
