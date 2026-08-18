@@ -30,8 +30,8 @@ const tools = [
   <main id="main-tools">
     <section class="tools-hub">
 
-      <!-- HEADER -->
-      <header class="tools-header">
+      <!-- HEADER + Clase premium-reveal -->
+      <header class="tools-header premium-reveal">
         <div class="header-icon-wrap" aria-hidden="true">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="header-icon">
             <defs>
@@ -83,8 +83,8 @@ const tools = [
         </div>
       </header>
 
-      <!-- GRID -->
-      <div class="tools-grid" role="list">
+      <!-- GRID + Clase premium-reveal -->
+      <div class="tools-grid premium-reveal" role="list">
         {tools.map((tool, i) => (
           <a
             class="tool-card"
@@ -161,7 +161,8 @@ const tools = [
         ))}
       </div>
 
-      <footer class="tools-footer">
+      <!-- FOOTER + Clase premium-reveal -->
+      <footer class="tools-footer premium-reveal">
         <div class="footer-card">
           <span class="footer-icon" aria-hidden="true">🔒</span>
           <p>
@@ -266,169 +267,40 @@ const tools = [
 
 /* =============================================
    DOTS — animación premium
-   =============================================
-   Principios aplicados:
-
-   • Duración irracional por dot (2.9 / 4.1 / 3.6 / 5.2s):
-     los cuatro nunca coinciden — el patrón global no se
-     repite igual en varios minutos.
-
-   • Easing único por dot: cada uno tiene "carácter" propio.
-     d1 rebota levemente, d2 llega suave, d3 acelera al final,
-     d4 tiene un resorte elástico.
-
-   • Keyframe stops irregulares (20 / 52 / 76%…): el
-     movimiento se siente orgánico, no de bucle mecánico.
-
-   • Arco de 4 puntos con desvío intermedio: el dot no va y
-     vuelve en línea recta. Describe una curva que da
-     sensación de órbita y peso real.
-
-   • Glow en el pico exacto: drop-shadow que aparece solo
-     en el fotograma de máxima opacidad y desaparece al
-     regresar al reposo. Cada dot "enciende" al llegar.
-
-   • Scale mínimo < 1 en reposo (0.75–0.82): el dot "respira"
-     desde abajo, no solo crece — lo que da mayor amplitud
-     visual sin agrandar el recorrido real.
-
-   • transform-origin al centro exacto de cada círculo:
-     el scale crece HACIA FUERA, nunca hacia la estrella.
    ============================================= */
+.d1 { transform-origin: 35px 30px; animation: dotArc1 2.9s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite 0s; }
+.d2 { transform-origin: 65px 30px; animation: dotArc2 4.1s cubic-bezier(0.22, 1, 0.36, 1) infinite 1.1s; }
+.d3 { transform-origin: 35px 52px; animation: dotArc3 3.6s cubic-bezier(0.55, 0, 0.45, 1) infinite 2.3s; }
+.d4 { transform-origin: 65px 52px; animation: dotArc4 5.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite 0.6s; }
 
-.d1 {
-  transform-origin: 35px 30px;
-  animation: dotArc1 2.9s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite 0s;
-}
-.d2 {
-  transform-origin: 65px 30px;
-  animation: dotArc2 4.1s cubic-bezier(0.22, 1, 0.36, 1) infinite 1.1s;
-}
-.d3 {
-  transform-origin: 35px 52px;
-  animation: dotArc3 3.6s cubic-bezier(0.55, 0, 0.45, 1) infinite 2.3s;
-}
-.d4 {
-  transform-origin: 65px 52px;
-  animation: dotArc4 5.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite 0.6s;
-}
-
-/* d1 — arriba-izquierda · rápida y nerviosa */
 @keyframes dotArc1 {
-  0%   {
-    opacity: 0.28;
-    transform: scale(0.8) translate(0, 0);
-    filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0));
-  }
-  20%  {
-    opacity: 0.55;
-    transform: scale(1.05) translate(-0.8px, -1px);
-  }
-  52%  {
-    opacity: 1;
-    transform: scale(1.25) translate(-2.8px, -2.6px);
-    filter: drop-shadow(0 0 4px oklch(0.75 0.22 var(--hue) / 0.8));
-  }
-  76%  {
-    opacity: 0.5;
-    transform: scale(1.08) translate(-1.6px, -1.8px);
-    filter: drop-shadow(0 0 1.5px oklch(0.75 0.22 var(--hue) / 0.25));
-  }
-  100% {
-    opacity: 0.28;
-    transform: scale(0.8) translate(0, 0);
-    filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0));
-  }
+  0%   { opacity: 0.28; transform: scale(0.8) translate(0, 0); filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0)); }
+  20%  { opacity: 0.55; transform: scale(1.05) translate(-0.8px, -1px); }
+  52%  { opacity: 1; transform: scale(1.25) translate(-2.8px, -2.6px); filter: drop-shadow(0 0 4px oklch(0.75 0.22 var(--hue) / 0.8)); }
+  76%  { opacity: 0.5; transform: scale(1.08) translate(-1.6px, -1.8px); filter: drop-shadow(0 0 1.5px oklch(0.75 0.22 var(--hue) / 0.25)); }
+  100% { opacity: 0.28; transform: scale(0.8) translate(0, 0); filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0)); }
 }
-
-/* d2 — arriba-derecha · lenta y elegante */
 @keyframes dotArc2 {
-  0%   {
-    opacity: 0.32;
-    transform: scale(0.82) translate(0, 0);
-    filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0));
-  }
-  18%  {
-    opacity: 0.48;
-    transform: scale(1.04) translate(0.6px, -1.2px);
-  }
-  55%  {
-    opacity: 1;
-    transform: scale(1.35) translate(3px, -2.8px);
-    filter: drop-shadow(0 0 5px oklch(0.75 0.22 var(--hue) / 0.85));
-  }
-  80%  {
-    opacity: 0.55;
-    transform: scale(1.1) translate(2px, -1.6px);
-    filter: drop-shadow(0 0 1.5px oklch(0.75 0.22 var(--hue) / 0.2));
-  }
-  100% {
-    opacity: 0.32;
-    transform: scale(0.82) translate(0, 0);
-    filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0));
-  }
+  0%   { opacity: 0.32; transform: scale(0.82) translate(0, 0); filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0)); }
+  18%  { opacity: 0.48; transform: scale(1.04) translate(0.6px, -1.2px); }
+  55%  { opacity: 1; transform: scale(1.35) translate(3px, -2.8px); filter: drop-shadow(0 0 5px oklch(0.75 0.22 var(--hue) / 0.85)); }
+  80%  { opacity: 0.55; transform: scale(1.1) translate(2px, -1.6px); filter: drop-shadow(0 0 1.5px oklch(0.75 0.22 var(--hue) / 0.2)); }
+  100% { opacity: 0.32; transform: scale(0.82) translate(0, 0); filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0)); }
 }
-
-/* d3 — abajo-izquierda · media, desvío lateral */
 @keyframes dotArc3 {
-  0%   {
-    opacity: 0.3;
-    transform: scale(0.78) translate(0, 0);
-    filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0));
-  }
-  25%  {
-    opacity: 0.52;
-    transform: scale(1.06) translate(-1.2px, 0.6px);
-  }
-  58%  {
-    opacity: 1;
-    transform: scale(1.28) translate(-2.6px, 3px);
-    filter: drop-shadow(0 0 4px oklch(0.75 0.22 var(--hue) / 0.75));
-  }
-  82%  {
-    opacity: 0.45;
-    transform: scale(1.07) translate(-1.8px, 2px);
-    filter: drop-shadow(0 0 1px oklch(0.75 0.22 var(--hue) / 0.18));
-  }
-  100% {
-    opacity: 0.3;
-    transform: scale(0.78) translate(0, 0);
-    filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0));
-  }
+  0%   { opacity: 0.3; transform: scale(0.78) translate(0, 0); filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0)); }
+  25%  { opacity: 0.52; transform: scale(1.06) translate(-1.2px, 0.6px); }
+  58%  { opacity: 1; transform: scale(1.28) translate(-2.6px, 3px); filter: drop-shadow(0 0 4px oklch(0.75 0.22 var(--hue) / 0.75)); }
+  82%  { opacity: 0.45; transform: scale(1.07) translate(-1.8px, 2px); filter: drop-shadow(0 0 1px oklch(0.75 0.22 var(--hue) / 0.18)); }
+  100% { opacity: 0.3; transform: scale(0.78) translate(0, 0); filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0)); }
 }
-
-/* d4 — abajo-derecha · la más lenta, ancla del conjunto */
-/* Easing con resorte: llega con un leve overshoot que da peso */
 @keyframes dotArc4 {
-  0%   {
-    opacity: 0.25;
-    transform: scale(0.75) translate(0, 0);
-    filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0));
-  }
-  14%  {
-    opacity: 0.38;
-    transform: scale(0.95) translate(0.4px, 0.6px);
-  }
-  40%  {
-    opacity: 0.72;
-    transform: scale(1.12) translate(1.8px, 2px);
-    filter: drop-shadow(0 0 2.5px oklch(0.75 0.22 var(--hue) / 0.4));
-  }
-  62%  {
-    opacity: 1;
-    transform: scale(1.2) translate(2.8px, 2.8px);
-    filter: drop-shadow(0 0 5px oklch(0.75 0.22 var(--hue) / 0.9));
-  }
-  84%  {
-    opacity: 0.48;
-    transform: scale(1.06) translate(1.4px, 1.8px);
-    filter: drop-shadow(0 0 1px oklch(0.75 0.22 var(--hue) / 0.15));
-  }
-  100% {
-    opacity: 0.25;
-    transform: scale(0.75) translate(0, 0);
-    filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0));
-  }
+  0%   { opacity: 0.25; transform: scale(0.75) translate(0, 0); filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0)); }
+  14%  { opacity: 0.38; transform: scale(0.95) translate(0.4px, 0.6px); }
+  40%  { opacity: 0.72; transform: scale(1.12) translate(1.8px, 2px); filter: drop-shadow(0 0 2.5px oklch(0.75 0.22 var(--hue) / 0.4)); }
+  62%  { opacity: 1; transform: scale(1.2) translate(2.8px, 2.8px); filter: drop-shadow(0 0 5px oklch(0.75 0.22 var(--hue) / 0.9)); }
+  84%  { opacity: 0.48; transform: scale(1.06) translate(1.4px, 1.8px); filter: drop-shadow(0 0 1px oklch(0.75 0.22 var(--hue) / 0.15)); }
+  100% { opacity: 0.25; transform: scale(0.75) translate(0, 0); filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0)); }
 }
 
 /* =============================================
@@ -548,7 +420,7 @@ const tools = [
 }
 
 /* =============================================
-   CARD
+   CARD (Optimizada para GPU)
    ============================================= */
 .tool-card {
   position: relative;
@@ -570,6 +442,8 @@ const tools = [
   animation: cardIn 0.5s var(--ease-out) both;
   animation-delay: calc(0.1s * var(--i));
   isolation: isolate;
+  /* GPU Acceleration para evitar tirones en móviles */
+  will-change: transform, opacity, box-shadow;
 }
 
 @media (min-width: 768px) { .tool-card { padding: 2rem; } }
@@ -594,12 +468,31 @@ const tools = [
   z-index: 0;
 }
 
-.tool-card:hover .card-glow { opacity: 1; }
-
-.tool-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--card-shadow-hover);
-  border-color: oklch(0.7 0.15 var(--hue-tool, var(--hue)) / 0.3);
+/* Efectos de Hover Premium: Limitados a dispositivos con ratón para evitar Sticky Hover en táctiles */
+@media (hover: hover) and (pointer: fine) {
+  .tool-card:hover .card-glow { opacity: 1; }
+  .tool-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--card-shadow-hover);
+    border-color: oklch(0.7 0.15 var(--hue-tool, var(--hue)) / 0.3);
+  }
+  :global(.dark) .tool-card:hover {
+    border-color: oklch(0.7 0.15 var(--hue-tool, var(--hue)) / 0.4);
+  }
+  .tool-card:hover .card-icon { transform: scale(1.06) rotate(-2deg); }
+  
+  .tool-card:hover .feature-tag {
+    background: oklch(0.7 0.15 var(--hue-tool, var(--hue)) / 0.1);
+    color: oklch(0.5 0.18 var(--hue-tool, var(--hue)));
+    border-color: oklch(0.7 0.15 var(--hue-tool, var(--hue)) / 0.2);
+  }
+  :global(.dark) .tool-card:hover .feature-tag {
+    background: oklch(0.7 0.15 var(--hue-tool, var(--hue)) / 0.15);
+    color: oklch(0.75 0.15 var(--hue-tool, var(--hue)));
+  }
+  
+  .tool-card:hover .card-cta { border-color: oklch(0.7 0.15 var(--hue-tool, var(--hue)) / 0.3); }
+  .tool-card:hover .cta-arrow { transform: translateX(5px); }
 }
 
 .tool-card:focus-visible {
@@ -607,14 +500,8 @@ const tools = [
   outline-offset: 3px;
 }
 
-:global(.dark) .tool-card:hover {
-  border-color: oklch(0.7 0.15 var(--hue-tool, var(--hue)) / 0.4);
-}
-
-@media (hover: none) {
-  .tool-card:hover  { transform: none; }
-  .tool-card:active { transform: scale(0.985); }
-}
+/* Feedback táctil impecable para móviles */
+.tool-card:active { transform: scale(0.985); }
 
 .card-badge {
   position: absolute;
@@ -655,8 +542,6 @@ const tools = [
   z-index: 1;
   transition: transform 0.4s var(--ease-spring);
 }
-
-.tool-card:hover .card-icon { transform: scale(1.06) rotate(-2deg); }
 
 :global(.dark) .card-icon {
   background: oklch(0.7 0.15 var(--hue-tool, var(--hue)) / 0.15);
@@ -806,16 +691,6 @@ const tools = [
   transition: background 0.2s, color 0.2s;
 }
 
-.tool-card:hover .feature-tag {
-  background: oklch(0.7 0.15 var(--hue-tool, var(--hue)) / 0.1);
-  color: oklch(0.5 0.18 var(--hue-tool, var(--hue)));
-  border-color: oklch(0.7 0.15 var(--hue-tool, var(--hue)) / 0.2);
-}
-:global(.dark) .tool-card:hover .feature-tag {
-  background: oklch(0.7 0.15 var(--hue-tool, var(--hue)) / 0.15);
-  color: oklch(0.75 0.15 var(--hue-tool, var(--hue)));
-}
-
 .feature-dot {
   font-size: 0.5rem;
   color: oklch(0.65 0.2 var(--hue-tool, var(--hue)));
@@ -834,9 +709,6 @@ const tools = [
   z-index: 1;
   transition: border-color 0.3s;
 }
-.tool-card:hover .card-cta {
-  border-color: oklch(0.7 0.15 var(--hue-tool, var(--hue)) / 0.3);
-}
 
 .cta-text {
   font-size: 0.88rem;
@@ -852,7 +724,6 @@ const tools = [
   transition: transform 0.35s var(--ease-spring);
 }
 :global(.dark) .cta-arrow { color: oklch(0.72 0.16 var(--hue-tool, var(--hue))); }
-.tool-card:hover .cta-arrow { transform: translateX(5px); }
 
 /* =============================================
    FOOTER
