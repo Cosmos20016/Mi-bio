@@ -7,9 +7,9 @@
 	import { onDestroy, onMount } from "svelte";
 
 	// =========================================================================
-	// CONSTANTES Y CONFIGURACIÓN
+	// CONSTANTES Y CONFIGURACIÓN INMUTABLE
 	// =========================================================================
-	const STORAGE_KEY_STATE = "teleprompter:state:v3";
+	const STORAGE_KEY_STATE = "teleprompter:state:v4";
 	const STORAGE_KEY_SCRIPTS = "teleprompter:scripts";
 	const STORAGE_KEY_LAST_SCRIPT = "teleprompter:lastScript";
 	const STORAGE_KEY_ONBOARDING = "teleprompter:onboarding:done";
@@ -24,7 +24,7 @@
 	const JUMP_ACTION_PX = 240;
 
 	// =========================================================================
-	// TIPOS EXPLÍCITOS
+	// TIPADO FUERTE Y CONTRATOS DE DATOS
 	// =========================================================================
 	interface SavedScript {
 		id: string;
@@ -53,7 +53,7 @@
 	}
 
 	// =========================================================================
-	// ESTADO DEL COMPONENTE
+	// ESTADO REACTIVO DEL TELEPROMPTER
 	// =========================================================================
 	let text = `Pega aquí tu guion...\n\nTip: Usa párrafos cortos para una lectura más cómoda.`;
 	let speed = 60;
@@ -83,7 +83,7 @@
 	let isDark = false;
 
 	// =========================================================================
-	// REFS Y CONTROLADORES DE HARDWARE
+	// REFERENCIAS AL DOM Y HARDWARE
 	// =========================================================================
 	let scrollContainer: HTMLDivElement | null = null;
 	let content: HTMLDivElement | null = null;
@@ -108,9 +108,10 @@
 	let touchStartY = 0;
 	let lastTapTimestamp = 0;
 	let isFormatting = false;
+	let activeLineIndex = 0;
 
 	// =========================================================================
-	// DECLARACIONES REACTIVAS DERIVADAS
+	// REACTIVIDAD DERIVADA Y DERIVACIONES DE LECTURA
 	// =========================================================================
 	$: lines = text.split("\n");
 	$: if (lineElements.length !== lines.length) {
@@ -127,10 +128,8 @@
 				: `~${estimatedSeconds}s`
 			: "";
 
-	let activeLineIndex = 0;
-
 	// =========================================================================
-	// UTILIDADES MATEMÁTICAS Y DE SEGURIDAD
+	// UTILIDADES DE CONTROL Y ADAPTADOR DE STORAGE SEGURO
 	// =========================================================================
 	const clamp = (value: number, min: number, max: number): number =>
 		Math.min(Math.max(value, min), max);
@@ -160,7 +159,7 @@
 	};
 
 	// =========================================================================
-	// AUTO-ORGANIZADOR PROFESIONAL DE GUIONES (PÁRRAFOS ÓPTIMOS)
+	// AUTO-ORGANIZADOR PROFESIONAL DE GUIONES (PÁRRAFOS Y CADENCIA)
 	// =========================================================================
 	const autoFormatScript = (): void => {
 		if (!text.trim() || isFormatting) return;
@@ -171,46 +170,46 @@
 		const structuredParagraphs: string[] = [];
 
 		for (const paragraph of rawParagraphs) {
-			const trimmedParagraph = paragraph.trim();
-			if (!trimmedParagraph) continue;
+			const trimmed = paragraph.trim();
+			if (!trimmed) continue;
 
-			const rawLines = trimmedParagraph.split("\n");
-			let coalescedParagraph = "";
+			const rawLines = trimmed.split("\n");
+			let joined = "";
 
-			for (const rawLine of rawLines) {
-				const singleLine = rawLine.trim();
+			for (const rLine of rawLines) {
+				const singleLine = rLine.trim();
 				if (!singleLine) continue;
 
-				if (coalescedParagraph && !coalescedParagraph.endsWith("\n") && !/^[-*•\d+.]\s/.test(singleLine)) {
-					coalescedParagraph += ` ${singleLine}`;
+				if (joined && !joined.endsWith("\n") && !/^[-*•\d+.]\s/.test(singleLine)) {
+					joined += ` ${singleLine}`;
 				} else {
-					coalescedParagraph += (coalescedParagraph ? "\n" : "") + singleLine;
+					joined += (joined ? "\n" : "") + singleLine;
 				}
 			}
 
-			if (coalescedParagraph.length > 130 && !coalescedParagraph.includes("\n")) {
-				const matchedSentences = coalescedParagraph.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g) || [coalescedParagraph];
-				let currentSentenceChunk = "";
+			if (joined.length > 130 && !joined.includes("\n")) {
+				const sentences = joined.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g) || [joined];
+				let chunk = "";
 
-				for (const sentence of matchedSentences) {
-					const cleanSentence = sentence.trim();
-					if (!cleanSentence) continue;
+				for (const s of sentences) {
+					const sTrim = s.trim();
+					if (!sTrim) continue;
 
-					if (!currentSentenceChunk) {
-						currentSentenceChunk = cleanSentence;
-					} else if ((currentSentenceChunk + " " + cleanSentence).length <= 150) {
-						currentSentenceChunk += ` ${cleanSentence}`;
+					if (!chunk) {
+						chunk = sTrim;
+					} else if ((chunk + " " + sTrim).length <= 150) {
+						chunk += ` ${sTrim}`;
 					} else {
-						structuredParagraphs.push(currentSentenceChunk);
-						currentSentenceChunk = cleanSentence;
+						structuredParagraphs.push(chunk);
+						chunk = sTrim;
 					}
 				}
 
-				if (currentSentenceChunk) {
-					structuredParagraphs.push(currentSentenceChunk);
+				if (chunk) {
+					structuredParagraphs.push(chunk);
 				}
 			} else {
-				structuredParagraphs.push(coalescedParagraph);
+				structuredParagraphs.push(joined);
 			}
 		}
 
@@ -222,16 +221,16 @@
 	};
 
 	const handlePaste = (e: ClipboardEvent): void => {
-		const pastedData = e.clipboardData?.getData("text");
-		if (pastedData && pastedData.length > 250) {
-			if (pastedData.split("\n").some((line) => line.length > 160)) {
+		const pasted = e.clipboardData?.getData("text");
+		if (pasted && pasted.length > 250) {
+			if (pasted.split("\n").some((l) => l.length > 160)) {
 				setTimeout(autoFormatScript, 60);
 			}
 		}
 	};
 
 	// =========================================================================
-	// MÉTRICAS EN FRÍO (ZERO LAYOUT THRASHING)
+	// CÁLCULO DE MÉTRICAS EN MEMORIA FRÍA (ZERO REFLOWS)
 	// =========================================================================
 	const calculateMetrics = (): void => {
 		if (!scrollContainer || !content) return;
@@ -288,7 +287,25 @@
 	};
 
 	// =========================================================================
-	// MOTOR DE ANIMACIÓN Y RENDERIZADO FLUIDO (60/120 FPS)
+	// CONTROL ATÓMICO DE AUTO-CENTRAR (SIN SALTOS DE POSICIÓN)
+	// =========================================================================
+	const toggleAutoCenter = (): void => {
+		const prevMax = cachedMaxScroll;
+		const ratio = prevMax > 0 ? scrollAccumulator / prevMax : 0;
+		autoCenter = !autoCenter;
+		setTimeout(() => {
+			calculateMetrics();
+			if (cachedMaxScroll > 0) {
+				const targetScroll = ratio * cachedMaxScroll;
+				scrollAccumulator = targetScroll;
+				if (scrollContainer) scrollContainer.scrollTop = targetScroll;
+				updateProgressFromScroll(targetScroll);
+			}
+		}, 60);
+	};
+
+	// =========================================================================
+	// MOTOR DE ANIMACIÓN Y RENDERIZADO FLUIDO (GPU DRIVEN)
 	// =========================================================================
 	const tick = (timestamp: number): void => {
 		if (!isPlaying || !scrollContainer) {
@@ -460,7 +477,7 @@
 	};
 
 	// =========================================================================
-	// FULLSCREEN ROBUSTO CON SOPORTE SAFARI IOS
+	// SISTEMA FULLSCREEN ROBUSTO CON FALLBACK PSEUDO-FULLSCREEN
 	// =========================================================================
 	const toggleFullscreen = async (): Promise<void> => {
 		if (!fullscreenTarget) return;
@@ -473,11 +490,11 @@
 			webkitRequestFullscreen?: () => Promise<void>;
 		};
 
-		const isCurrentlyFullscreen = Boolean(doc.fullscreenElement || doc.webkitFullscreenElement);
+		const isNativeFullscreen = Boolean(doc.fullscreenElement || doc.webkitFullscreenElement);
 
 		if (target.requestFullscreen) {
 			try {
-				if (!isCurrentlyFullscreen) {
+				if (!isNativeFullscreen) {
 					await target.requestFullscreen();
 				} else {
 					await doc.exitFullscreen();
@@ -486,7 +503,7 @@
 			} catch {}
 		} else if (target.webkitRequestFullscreen) {
 			try {
-				if (!isCurrentlyFullscreen) {
+				if (!isNativeFullscreen) {
 					await target.webkitRequestFullscreen();
 				} else if (doc.webkitExitFullscreen) {
 					await doc.webkitExitFullscreen();
@@ -495,13 +512,13 @@
 			} catch {}
 		}
 
-		// Fallback para iOS Safari: Pseudo-Fullscreen visual
+		// Fallback para iOS Safari y WebKit móvil
 		isPseudoFullscreen = !isPseudoFullscreen;
 		setTimeout(calculateMetrics, 200);
 	};
 
 	// =========================================================================
-	// INTERACCIÓN Y ENTRADAS DE USUARIO
+	// MANEJO DE ENTRADAS Y EVENTOS
 	// =========================================================================
 	const adjustSpeed = (delta: number): void => {
 		speed = Math.round(clamp(speed + delta, SPEED_MIN, SPEED_MAX));
@@ -619,7 +636,7 @@
 	};
 
 	// =========================================================================
-	// GESTOR DE GUIONES Y PERSISTENCIA ATÓMICA
+	// PERSISTENCIA Y SINCRONIZACIÓN DE SCRIPTS
 	// =========================================================================
 	const loadScripts = (): void => {
 		const serialized = safeStorage.get(STORAGE_KEY_SCRIPTS);
@@ -753,7 +770,7 @@
 	};
 
 	// =========================================================================
-	// HELPERS VISUALES
+	// FORMATEO VISUAL Y HELPERS DE UI
 	// =========================================================================
 	const getSpeedLabel = (spd: number): string => {
 		if (spd < 40) return "Muy lento";
@@ -819,7 +836,7 @@
 	};
 
 	// =========================================================================
-	// CICLO DE VIDA DEL COMPONENTE
+	// REGISTRO DEL CICLO DE VIDA
 	// =========================================================================
 	$: if (
 		isReady &&
@@ -903,7 +920,6 @@
 		stopThemeWatch = null;
 	});
 </script>
-
 <div
 	class="teleprompter-wrapper"
 	class:clean={ultraClean}
@@ -1291,10 +1307,7 @@
 						<button
 							class="toggle-btn"
 							class:active={autoCenter}
-							on:click={() => {
-								autoCenter = !autoCenter;
-								setTimeout(calculateMetrics, 50);
-							}}
+							on:click={toggleAutoCenter}
 							title="Mantiene el texto centrado en la pantalla"
 						>
 							Auto-centrar
@@ -1330,6 +1343,7 @@
 							class="toggle-btn"
 							class:active={dimOutside}
 							on:click={() => (dimOutside = !dimOutside)}
+							title="Oscurece los extremos superior e inferior para concentrar la vista"
 						>
 							Oscurecer bordes
 						</button>
@@ -1371,7 +1385,6 @@
 			on:keydown={(e) => {
 				if (e.key === 'Enter' || e.key === ' ') {
 					e.preventDefault();
-					const rect = e.currentTarget.getBoundingClientRect();
 					scrollToProgressRatio(0.5);
 				}
 			}}
@@ -1395,10 +1408,12 @@
 			style={`padding: ${autoCenter ? "35vh 2rem 50vh" : "2.5rem 2rem"};`}
 			tabindex="-1"
 		>
-			<!-- CONTENEDOR CON TRANSFORMACIÓN EN EJE AISLADO -->
+			<!-- ENLACE REACTIVO DIRECTO AL ÁRBOL DE RENDERIZADO (ESPEJO INFALIBLE) -->
 			<div
 				class="teleprompter-content"
 				class:mirror={isMirror}
+				style:transform={isMirror ? "scaleX(-1)" : "none"}
+				style:transform-origin="center center"
 				style={`font-size:${fontSize}px; line-height:${lineHeight}; letter-spacing: 0.01em;`}
 				bind:this={content}
 			>
@@ -1414,7 +1429,8 @@
 			</div>
 		</div>
 
-		{#if focusMode && dimOutside}
+		<!-- VIÑETA TOTALMENTE DESACOPLADA DE FOCUS MODE -->
+		{#if dimOutside}
 			<div class="teleprompter-dim pointer-none"></div>
 		{/if}
 
@@ -1456,7 +1472,6 @@
 		{/if}
 	</div>
 </div>
-
 <style>
 	.teleprompter-wrapper {
 		display: flex;
@@ -1482,13 +1497,15 @@
 		height: 70vh;
 	}
 
-	/* SOPORTE PSEUDO-FULLSCREEN PARA SAFARI IOS */
+	/* =========================================================================
+	   FALLBACK PSEUDO-FULLSCREEN PARA SAFARI IOS / WEBKIT MÓVIL
+	   ========================================================================= */
 	.teleprompter-wrapper.pseudo-fullscreen {
 		position: fixed !important;
 		inset: 0 !important;
 		width: 100vw !important;
 		height: 100vh !important;
-		z-index: 9999 !important;
+		z-index: 99999 !important;
 		background: #000000 !important;
 		padding: 0 !important;
 		margin: 0 !important;
@@ -1506,6 +1523,9 @@
 		min-height: unset !important;
 	}
 
+	/* =========================================================================
+	   ONBOARDING Y MODAL DE AYUDA
+	   ========================================================================= */
 	.teleprompter-onboarding-overlay {
 		position: fixed;
 		inset: 0;
@@ -1912,6 +1932,9 @@
 		margin-top: 1rem;
 	}
 
+	/* =========================================================================
+	   ENCABEZADO Y ACCIONES PRINCIPALES
+	   ========================================================================= */
 	.teleprompter-header {
 		display: flex;
 		align-items: center;
@@ -2088,6 +2111,9 @@
 		color: oklch(0.75 0.14 var(--hue));
 	}
 
+	/* =========================================================================
+	   PANEL DE CONTROL Y GESTIÓN DE GUIONES
+	   ========================================================================= */
 	.teleprompter-panel {
 		background: rgba(255, 255, 255, 0.8);
 		backdrop-filter: blur(10px);
@@ -2528,6 +2554,9 @@
 		color: oklch(0.75 0.14 var(--hue));
 	}
 
+	/* =========================================================================
+	   PANTALLA DE PROYECCIÓN Y EFECTO GLOW CORREGIDO
+	   ========================================================================= */
 	.teleprompter-screen {
 		position: relative;
 		background: linear-gradient(135deg, #f8fafc, #f1f5f9);
@@ -2536,7 +2565,7 @@
 		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
 		height: 65vh;
 		min-height: 500px;
-		transition: all 0.3s ease;
+		transition: box-shadow 0.3s ease, border-color 0.3s ease, height 0.3s ease;
 	}
 
 	:global(.dark) .teleprompter-screen,
@@ -2552,16 +2581,10 @@
 		}
 	}
 
-	.teleprompter-screen.glow::before {
-		content: "";
-		position: absolute;
-		inset: -2px;
-		background: linear-gradient(135deg, oklch(0.75 0.14 var(--hue)), oklch(0.70 0.16 calc(var(--hue) + 60)));
-		border-radius: inherit;
-		opacity: 0.3;
-		z-index: -1;
-		filter: blur(20px);
-		animation: glowPulse 3s ease-in-out infinite;
+	/* GLOW ATÓMICO DIRECTO SIN OCLUSIÓN DE STACKING CONTEXT */
+	.teleprompter-screen.glow {
+		box-shadow: 0 0 35px oklch(0.70 0.14 var(--hue) / 0.45), inset 0 0 15px oklch(0.70 0.14 var(--hue) / 0.2) !important;
+		border: 1px solid oklch(0.70 0.14 var(--hue) / 0.6) !important;
 	}
 
 	.teleprompter-screen.is-fullscreen {
@@ -2624,6 +2647,9 @@
 		box-shadow: 0 0 30px oklch(0.70 0.14 var(--hue) / 0.6);
 	}
 
+	/* =========================================================================
+	   CONTENEDOR DE SCROLL NATIVO LIBRE DE TRAP DE GPU
+	   ========================================================================= */
 	.teleprompter-frame {
 		height: 100%;
 		overflow-y: auto;
@@ -2667,19 +2693,24 @@
 		background: rgba(255, 255, 255, 0.5);
 	}
 
-	/* REGLA DEFINITIVA PARA MODO ESPEJO HORIZONTAL (TECLA M Y BOTÓN) */
+	/* =========================================================================
+	   REGLAS DE MODO ESPEJO INFALIBLES (TECLA M Y BOTÓN)
+	   ========================================================================= */
 	.teleprompter-content {
 		color: #0f172a;
 		text-align: center;
 		user-select: none;
 		width: 100%;
 		margin: 0 auto;
+		box-sizing: border-box;
 		transform-origin: center center !important;
-		transition: transform 0.2s ease;
+		-webkit-transform-origin: center center !important;
+		transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
 	}
 
 	.teleprompter-content.mirror {
 		transform: scaleX(-1) !important;
+		-webkit-transform: scaleX(-1) !important;
 		display: block;
 		backface-visibility: hidden;
 		-webkit-font-smoothing: antialiased;
@@ -2718,19 +2749,42 @@
 		filter: blur(0.5px);
 	}
 
+	/* =========================================================================
+	   OSCURECER BORDES (VIÑETA CINEMATOGRÁFICA DESACOPLADA)
+	   ========================================================================= */
 	.teleprompter-dim {
 		position: absolute;
 		inset: 0;
-		background: radial-gradient(ellipse at center, transparent 20%, rgba(0, 0, 0, 0.6) 70%);
+		background: linear-gradient(
+			to bottom,
+			rgba(241, 245, 249, 0.95) 0%,
+			rgba(241, 245, 249, 0.7) 12%,
+			transparent 26%,
+			transparent 74%,
+			rgba(241, 245, 249, 0.7) 88%,
+			rgba(241, 245, 249, 0.95) 100%
+		);
 		pointer-events: none;
-		z-index: 4;
+		z-index: 15;
+		transition: opacity 0.3s ease;
 	}
 
 	:global(.dark) .teleprompter-dim,
 	.dark .teleprompter-dim {
-		background: radial-gradient(ellipse at center, transparent 20%, rgba(0, 0, 0, 0.8) 70%);
+		background: linear-gradient(
+			to bottom,
+			rgba(15, 23, 42, 0.98) 0%,
+			rgba(15, 23, 42, 0.75) 12%,
+			transparent 26%,
+			transparent 74%,
+			rgba(15, 23, 42, 0.75) 88%,
+			rgba(15, 23, 42, 0.98) 100%
+		);
 	}
 
+	/* =========================================================================
+	   CONTROLES FLOTANTES Y BARRA INFERIOR
+	   ========================================================================= */
 	.teleprompter-float {
 		position: absolute;
 		bottom: 1.5rem;
@@ -2858,6 +2912,9 @@
 		bottom: 5rem;
 	}
 
+	/* =========================================================================
+	   OVERLAY CUENTA REGRESIVA
+	   ========================================================================= */
 	.teleprompter-countdown {
 		position: absolute;
 		inset: 0;
@@ -2886,6 +2943,9 @@
 		cursor: default;
 	}
 
+	/* =========================================================================
+	   ANIMACIONES
+	   ========================================================================= */
 	@keyframes fadeIn {
 		from { opacity: 0; }
 		to { opacity: 1; }
@@ -2906,16 +2966,14 @@
 		50% { opacity: 0.6; }
 	}
 
-	@keyframes glowPulse {
-		0%, 100% { opacity: 0.3; }
-		50% { opacity: 0.5; }
-	}
-
 	@keyframes countdownPulse {
 		0%, 100% { transform: scale(1); }
 		50% { transform: scale(1.1); }
 	}
 
+	/* =========================================================================
+	   ADAPTABILIDAD RESPONSIVE
+	   ========================================================================= */
 	@media (max-width: 768px) {
 		.teleprompter-header {
 			flex-direction: column;
