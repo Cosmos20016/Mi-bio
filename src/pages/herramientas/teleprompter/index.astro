@@ -4,26 +4,59 @@ import Teleprompter from "@components/teleprompter/Teleprompter.svelte";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { url } from "@utils/url-utils";
 
-// Metadata para SEO
+// ============================================
+// Metadata para SEO (centralizada)
+// ============================================
+const SITE_URL = "https://kevinborja.com";
+const TOOL_URL = "/herramientas/teleprompter/";
+const FULL_TOOL_URL = `${SITE_URL}${TOOL_URL}`;
+
 const toolMetadata = {
   name: "Teleprompter Studio",
-  description: "Tu estudio profesional de lectura en pantalla con velocidad precisa, modo espejo y más",
+  shortDescription: "Tu estudio profesional de lectura en pantalla con velocidad precisa, modo espejo y más",
+  description: "Tu estudio profesional de lectura en pantalla. Velocidad precisa, modo espejo, focus mode, atajos de teclado, countdown personalizable y pantalla completa.",
   icon: "📺",
-  features: ["Pro", "Pantalla completa", "Atajos"]
+  features: ["Pro", "Pantalla completa", "Atajos"],
+  keywords: ["teleprompter", "teleprompter online", "teleprompter gratis", "television prompter", "lector de guion", "presentation tool"]
+} as const;
+
+// JSON-LD Schema.org para SoftwareApplication
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: toolMetadata.name,
+  description: toolMetadata.description,
+  url: FULL_TOOL_URL,
+  applicationCategory: "MultimediaApplication",
+  operatingSystem: "Web Browser",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD"
+  },
+  featureList: toolMetadata.features.join(", "),
+  browserRequirements: "Requires modern browser with JavaScript enabled",
+  inLanguage: "es"
 };
 ---
 
 <MainGridLayout 
   title={toolMetadata.name} 
-  description={toolMetadata.description}
+  description={toolMetadata.shortDescription}
+  image={`${SITE_URL}/og-images/teleprompter.png`}
+  url={FULL_TOOL_URL}
+  keywords={toolMetadata.keywords.join(", ")}
 >
+  <!-- JSON-LD Schema.org para SEO avanzado -->
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
+
   <article class="tool-page">
     <!-- Skip link para accesibilidad -->
     <a href="#main-content" class="skip-link">
       Saltar al contenido principal
     </a>
 
-    <!-- Navegación superior mejorada con ARIA conectada al motor premium-reveal -->
+    <!-- Navegación superior -->
     <nav class="tool-nav premium-reveal" aria-label="Navegación de herramientas">
       <a 
         class="tool-nav-back" 
@@ -33,7 +66,7 @@ const toolMetadata = {
         <span class="tool-nav-arrow" aria-hidden="true">←</span>
         <span>Herramientas</span>
       </a>
-      <div class="tool-nav-breadcrumb" role="navigation" aria-label="Ruta de navegación">
+      <div class="tool-nav-breadcrumb" aria-label="Ruta de navegación">
         <span class="breadcrumb-sep" aria-hidden="true">/</span>
         <span class="breadcrumb-current" aria-current="page">
           {toolMetadata.name}
@@ -41,7 +74,7 @@ const toolMetadata = {
       </div>
     </nav>
 
-    <!-- Header de la herramienta conectado al motor premium-reveal -->
+    <!-- Header de la herramienta -->
     <header class="tool-page-header premium-reveal">
       <div class="tool-page-icon-wrapper" aria-hidden="true">
         <span class="tool-page-icon">{toolMetadata.icon}</span>
@@ -49,7 +82,7 @@ const toolMetadata = {
       <div class="tool-page-content">
         <h1 class="tool-page-title">{toolMetadata.name}</h1>
         <p class="tool-page-description">
-          Tu estudio profesional de lectura en pantalla. Velocidad precisa, modo espejo, focus mode, atajos de teclado, countdown personalizable y pantalla completa.
+          {toolMetadata.description}
         </p>
         <div class="tool-page-header-actions">
           <ul class="tool-page-badges" role="list" aria-label="Características de la herramienta">
@@ -61,14 +94,14 @@ const toolMetadata = {
           </ul>
           <ShareToolButton 
             toolName={toolMetadata.name}
-            toolDescription={toolMetadata.description}
-            toolUrl="/herramientas/teleprompter/"
+            toolDescription={toolMetadata.shortDescription}
+            toolUrl={TOOL_URL}
           />
         </div>
       </div>
     </header>
 
-    <!-- Componente principal conectado al motor premium-reveal -->
+    <!-- Componente principal -->
     <section id="main-content" class="premium-reveal" aria-label="Aplicación de teleprompter">
       <Teleprompter client:only="svelte" />
     </section>
@@ -80,7 +113,7 @@ const toolMetadata = {
      Variables y configuración base
      ============================================ */
   .tool-page {
-    /* Colores base */
+    /* Fallbacks seguros */
     --hue-fallback: 250;
     --card-bg-fallback: #ffffff;
     --radius-large-fallback: 1rem;
@@ -95,9 +128,9 @@ const toolMetadata = {
     
     /* Interacción */
     --touch-target-min: 2.75rem;
-    --transition-fast: 0.15s ease;
-    --transition-normal: 0.2s ease;
-    --transition-smooth: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: 150ms ease;
+    --transition-normal: 200ms ease;
+    --transition-smooth: 200ms cubic-bezier(0.4, 0, 0.2, 1);
     
     /* Layout */
     display: flex;
@@ -175,15 +208,10 @@ const toolMetadata = {
     /* Optimizaciones móviles */
     -webkit-tap-highlight-color: oklch(0.6 0.18 var(--hue, var(--hue-fallback)) / 0.1);
     user-select: none;
-  }
-
-  /* Performance optimization */
-  .tool-nav-back:hover {
-    will-change: transform;
-  }
-
-  .tool-nav-back:not(:hover) {
-    will-change: auto;
+    
+    /* GPU promotion una sola vez (NO toggle en hover) */
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   /* Focus visible para navegación por teclado */
@@ -199,7 +227,7 @@ const toolMetadata = {
   .tool-nav-back:hover {
     background: oklch(0.95 0.025 var(--hue, var(--hue-fallback)));
     color: oklch(0.5 0.14 var(--hue, var(--hue-fallback)));
-    transform: translateX(-2px);
+    transform: translateZ(0) translateX(-2px);
   }
 
   :global(.dark) .tool-nav-back:hover {
@@ -208,13 +236,14 @@ const toolMetadata = {
   }
 
   .tool-nav-back:active {
-    transform: translateX(-1px) scale(0.98);
+    transform: translateZ(0) translateX(-1px) scale(0.98);
   }
 
   .tool-nav-arrow {
     transition: transform var(--transition-smooth);
     font-size: 1rem;
     line-height: 1;
+    display: inline-block;
   }
 
   .tool-nav-back:hover .tool-nav-arrow {
@@ -259,10 +288,8 @@ const toolMetadata = {
     border-radius: var(--radius-large, var(--radius-large-fallback));
     border: 1px solid var(--color-border-light);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-    container-type: inline-size;
-    
-    /* Prevenir overflow */
     overflow: hidden;
+    /* ⚠️ QUITÉ container-type por compatibilidad Safari */
   }
 
   :global(.dark) .tool-page-header {
@@ -280,15 +307,8 @@ const toolMetadata = {
     border-radius: 1rem;
     background: oklch(0.95 0.03 var(--hue, var(--hue-fallback)));
     transition: transform var(--transition-normal);
-  }
-
-  /* Performance optimization para hover */
-  .tool-page-header:hover .tool-page-icon-wrapper {
-    will-change: transform;
-  }
-
-  .tool-page-header:not(:hover) .tool-page-icon-wrapper {
-    will-change: auto;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   :global(.dark) .tool-page-icon-wrapper {
@@ -296,7 +316,7 @@ const toolMetadata = {
   }
 
   .tool-page-header:hover .tool-page-icon-wrapper {
-    transform: scale(1.05);
+    transform: translateZ(0) scale(1.05);
   }
 
   .tool-page-icon {
@@ -313,35 +333,33 @@ const toolMetadata = {
     font-size: 1.75rem;
     font-weight: 800;
     letter-spacing: -0.01em;
+    line-height: 1.2;
+    margin: 0 0 0.35rem 0;
+    
+    /* Color fallback SIEMPRE visible */
+    color: oklch(0.6 0.18 var(--hue, var(--hue-fallback)));
+    
+    /* Gradiente moderno */
     background: linear-gradient(
       135deg,
       oklch(0.65 0.16 var(--hue, var(--hue-fallback))),
       oklch(0.6 0.18 calc(var(--hue, var(--hue-fallback)) + 40))
     );
     -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin: 0 0 0.35rem 0;
-    line-height: 1.2;
-    color: oklch(0.6 0.18 var(--hue, var(--hue-fallback)));
-  }
-
-  @supports (background-clip: text) or (-webkit-background-clip: text) {
-    .tool-page-title {
-      color: transparent;
-    }
+    -webkit-text-fill-color: transparent;
   }
 
   :global(.dark) .tool-page-title {
+    color: oklch(0.7 0.16 var(--hue, var(--hue-fallback)));
     background: linear-gradient(
       135deg,
       oklch(0.75 0.14 var(--hue, var(--hue-fallback))),
       oklch(0.7 0.16 calc(var(--hue, var(--hue-fallback)) + 40))
     );
     -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
     background-clip: text;
-    color: oklch(0.7 0.16 var(--hue, var(--hue-fallback)));
+    -webkit-text-fill-color: transparent;
   }
 
   .tool-page-description {
@@ -388,7 +406,9 @@ const toolMetadata = {
     line-height: 1.4;
     transition: 
       background-color var(--transition-normal),
+      color var(--transition-normal),
       transform var(--transition-fast);
+    display: inline-block;
   }
 
   .tool-page-badges li:hover .tool-page-badge {
@@ -548,16 +568,6 @@ const toolMetadata = {
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
-
-    .tool-nav-arrow,
-    .tool-page-icon-wrapper,
-    .tool-page-badge {
-      transition: none !important;
-    }
-
-    .skip-link {
-      transition: none !important;
-    }
   }
 
   /* ============================================
@@ -575,15 +585,6 @@ const toolMetadata = {
 
     .tool-page-badge {
       border: 1px solid currentColor;
-    }
-  }
-
-  /* ============================================
-     Dark mode específico
-     ============================================ */
-  @media (prefers-color-scheme: dark) {
-    :global(:root:not(.light)) .tool-page {
-      /* Optimizaciones adicionales para dark mode */
     }
   }
 
@@ -607,6 +608,7 @@ const toolMetadata = {
     .tool-page-title {
       color: #000 !important;
       -webkit-text-fill-color: #000 !important;
+      background: none !important;
     }
 
     .tool-page {
@@ -615,13 +617,12 @@ const toolMetadata = {
   }
 
   /* ============================================
-     Optimizaciones para GPU
+     Optimizaciones para GPU (solo desktop con mouse)
      ============================================ */
   @media (hover: hover) and (pointer: fine) {
     .tool-nav-back,
     .tool-page-icon-wrapper,
     .tool-page-badge {
-      backface-visibility: hidden;
       -webkit-font-smoothing: antialiased;
     }
   }
