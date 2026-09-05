@@ -6,20 +6,36 @@ interface Props {
 }
 
 const { toolName, toolDescription, toolUrl } = Astro.props;
-const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
+
+// ID determinístico (estable entre SSR y cliente) basado en toolUrl
+const uniqueId = `share-btn-${toolUrl.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`;
 ---
 
 <div class="share-tool-button-wrapper">
   <button
     id={uniqueId}
+    type="button"
     class="share-tool-button"
-    aria-label="Compartir herramienta"
+    aria-label={`Compartir ${toolName}`}
+    aria-haspopup="dialog"
+    aria-expanded="false"
+    aria-controls={`${uniqueId}-portal`}
     data-tool-name={toolName}
     data-tool-description={toolDescription}
     data-tool-url={toolUrl}
   >
-    <svg class="share-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <svg
+      class="share-icon"
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
       <circle cx="18" cy="5" r="3"></circle>
       <circle cx="6" cy="12" r="3"></circle>
       <circle cx="18" cy="19" r="3"></circle>
@@ -30,220 +46,404 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
   </button>
 </div>
 
-<script is:inline data-btn-id={uniqueId}>
-(function () {
+<script is:inline define:vars={{ uniqueId, toolName, toolDescription, toolUrl }}>
+  (function () {
+    'use strict';
 
-  // ── 1. Captura síncrona del btnId ────────────────────────────────────────
-  var s     = document.currentScript;
-  var btnId = s ? s.getAttribute('data-btn-id') : null;
+    // ============================================
+    // 1. Estado global (registrado UNA sola vez)
+    // ============================================
+    if (!window.__shareGlobalBound) {
+      window.__shareGlobalBound = true;
+      window.__shareInstances = new Map();
 
-  // ── 2. Listener global de astro:page-load (registrado UNA sola vez) ──────
-  //
-  // IMPORTANTE: este bloque debe ir ANTES del early return de btnId.
-  //
-  // BUG que había: en SPA navigation, Astro re-ejecuta scripts is:inline
-  // pero document.currentScript devuelve null. El IIFE hacía early return
-  // antes de llegar aquí, así que __shareGlobalBound nunca se registraba
-  // y astro:page-load nunca inicializaba los botones nuevos.
-  //
-  // FIX: registrar el listener global primero, independientemente de si
-  // btnId está disponible o no. El querySelectorAll encuentra todos los
-  // botones del DOM nuevo sin necesitar currentScript.
-  //
-  if (!window.__shareGlobalBound) {
-    window.__shareGlobalBound = true;
-
-    document.addEventListener('astro:page-load', function () {
-      document.querySelectorAll('.share-tool-button[id]').forEach(function (btn) {
-        initBtn(btn.id);
+      // Limpieza al navegar (Astro SPA)
+      document.addEventListener('astro:before-swap', function () {
+        window.__shareInstances.forEach(function (destroy) {
+          try { destroy(); } catch (e) {}
+        });
+        window.__shareInstances.clear();
       });
-    });
-  }
 
-  // Early return solo para la lógica per-instancia (cleanup y init directo).
-  // El global handler de arriba ya está registrado y cubrirá la inicialización.
-  if (!btnId) return;
+      // Re-inicialización en cada page-load
+      document.addEventListener('astro:page-load', function () {
+        document.querySelectorAll('.share-tool-button[id]').forEach(function (btn) {
+          initBtn(btn.id);
+        });
+      });
+    }
 
-  // ── 3. Cleanup de ESTA instancia al salir de la página ──────────────────
-  document.addEventListener('astro:before-swap', function onBeforeSwap() {
-    document.removeEventListener('astro:before-swap', onBeforeSwap);
-    var btn = document.getElementById(btnId);
-    if (btn && btn._shareDestroy) btn._shareDestroy();
-  });
+    // ============================================
+    // 2. Inicialización de esta instancia
+    // ============================================
+    initBtn(uniqueId);
 
-  // ── 4. Posicionamiento del popup en desktop ──────────────────────────────
-  function positionPopup(popup, btn) {
-    var r = btn.getBoundingClientRect();
-    var w = 300;
-    popup.style.top  = (r.bottom + 8) + 'px';
-    popup.style.left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8)) + 'px';
-  }
+    // ============================================
+    // 3. Funciones de plataforma (helper)
+    // ============================================
+    function getShareUrl(platform, url, text) {
+      const encodedUrl = encodeURIComponent(url);
+      const encodedText = encodeURIComponent(text);
+      switch (platform) {
+        case 'whatsapp':
+          return 'https://wa.me/?text=' + encodedText + '%20' + encodedUrl;
+        case 'facebook':
+          return 'https://www.facebook.com/sharer/sharer.php?u=' + encodedUrl;
+        case 'twitter':
+          return 'https://twitter.com/intent/tweet?url=' + encodedUrl + '&text=' + encodedText;
+        case 'telegram':
+          return 'https://t.me/share/url?url=' + encodedUrl + '&text=' + encodedText;
+        case 'linkedin':
+          return 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodedUrl;
+        default:
+          return url;
+      }
+    }
 
-  // ── 5. Inicialización de un botón ────────────────────────────────────────
-  function initBtn(id) {
-    var btn = document.getElementById(id);
-    if (!btn) return;
-    if (btn._shareDestroy) btn._shareDestroy(); // Evitar doble init
+    function openWindow(url) {
+      try {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      } catch (e) {
+        // Popup bloqueado: fallback con location
+        window.location.href = url;
+      }
+    }
 
-    var toolName  = btn.dataset.toolName        || '';
-    var toolDesc  = btn.dataset.toolDescription || '';
-    var toolUrl   = btn.dataset.toolUrl         || '';
-    var absUrl    = window.location.origin + toolUrl;
-    var shareText = '¡Mira esta herramienta gratuita: ' + toolName + '! ' + toolDesc + ' 🚀';
-
-    var hasNativeShare = typeof navigator.share === 'function';
-    var isTouchDevice  = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-
-    // Portal en <body>
-    var portal = document.createElement('div');
-    portal.id        = id + '-portal';
-    portal.className = 'share-popup-portal';
-    syncTheme(portal);
-
-    portal.innerHTML = [
-      '<div class="spp-inner">',
-        '<button class="spp-option" data-p="whatsapp">',
-          '<svg width="24" height="24" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>',
-          '<span>WhatsApp</span>',
-        '</button>',
-        '<button class="spp-option" data-p="facebook">',
-          '<svg width="24" height="24" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>',
-          '<span>Facebook</span>',
-        '</button>',
-        '<button class="spp-option" data-p="twitter">',
-          '<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="spp-x-icon"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
-          '<span>X (Twitter)</span>',
-        '</button>',
-        '<button class="spp-option" data-p="telegram">',
-          '<svg width="24" height="24" viewBox="0 0 24 24" fill="#0088cc"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>',
-          '<span>Telegram</span>',
-        '</button>',
-        '<button class="spp-option spp-copy-btn" data-p="copy">',
-          '<svg class="spp-copy-default" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>',
-          '<svg class="spp-copy-check" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polyline points="20 6 9 17 4 12"></polyline></svg>',
-          '<span class="spp-copy-text">Copiar enlace</span>',
-        '</button>',
-      '</div>'
-    ].join('');
-
-    document.body.appendChild(portal);
-
+    // ============================================
+    // 4. SyncTheme (extrae --hue del root)
+    // ============================================
     function syncTheme(el) {
-      var hue = getComputedStyle(document.documentElement).getPropertyValue('--hue').trim() || '250';
+      const hue = getComputedStyle(document.documentElement)
+        .getPropertyValue('--hue')
+        .trim() || '250';
       el.style.setProperty('--hue', hue);
       el.classList.toggle('dark', document.documentElement.classList.contains('dark'));
     }
 
-    function closePortal() { portal.classList.remove('share-popup-visible'); }
+    // ============================================
+    // 5. Inicialización del botón
+    // ============================================
+    function initBtn(id) {
+      const btn = document.getElementById(id);
+      if (!btn) return;
 
-    function openPortal() {
-      document.querySelectorAll('.share-popup-portal').forEach(function (p) {
-        if (p !== portal) { p.classList.remove('share-popup-visible'); p.remove(); }
-      });
-      syncTheme(portal);
-      positionPopup(portal, btn);
-      portal.classList.add('share-popup-visible');
-    }
-
-    function onScrollResize() {
-      if (portal.classList.contains('share-popup-visible')) positionPopup(portal, btn);
-    }
-    window.addEventListener('scroll', onScrollResize, { passive: true });
-    window.addEventListener('resize', onScrollResize);
-
-    function onBtnClick(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      if (isTouchDevice && hasNativeShare) {
-        navigator.share({ title: toolName, text: shareText, url: absUrl })
-          .catch(function (err) { if (err.name !== 'AbortError') openPortal(); });
-        return;
+      // Cleanup si ya estaba inicializado (evitar duplicados)
+      const existing = window.__shareInstances.get(id);
+      if (existing) {
+        existing();
       }
-      portal.classList.contains('share-popup-visible') ? closePortal() : openPortal();
-    }
-    btn.addEventListener('click', onBtnClick);
 
-    function onOptionClick(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      var p = this.getAttribute('data-p');
-      if (p === 'whatsapp') {
-        window.open('https://wa.me/?text=' + encodeURIComponent(shareText + ' ' + absUrl), '_blank', 'noopener,noreferrer');
+      const dataName = btn.dataset.toolName || toolName || '';
+      const dataDesc = btn.dataset.toolDescription || toolDescription || '';
+      const dataUrl = btn.dataset.toolUrl || toolUrl || '';
+      const absUrl = window.location.origin + dataUrl;
+      const shareText = `¡Mira esta herramienta gratuita: ${dataName}! ${dataDesc} 🚀`;
+
+      const hasNativeShare =
+        typeof navigator.share === 'function' &&
+        (typeof navigator.canShare !== 'function' || (() => {
+          try {
+            return navigator.canShare({ url: absUrl });
+          } catch {
+            return false;
+          }
+        })());
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // Crear portal
+      const portal = document.createElement('div');
+      portal.id = id + '-portal';
+      portal.className = 'share-popup-portal';
+      portal.setAttribute('role', 'dialog');
+      portal.setAttribute('aria-label', 'Compartir');
+      syncTheme(portal);
+
+      portal.innerHTML = `
+        <div class="spp-inner">
+          <button type="button" class="spp-option" data-platform="whatsapp" aria-label="Compartir en WhatsApp">
+            <span class="spp-icon" style="background:#25D366">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="white" aria-hidden="true">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+              </svg>
+            </span>
+            <span>WhatsApp</span>
+          </button>
+          <button type="button" class="spp-option" data-platform="facebook" aria-label="Compartir en Facebook">
+            <span class="spp-icon" style="background:#1877F2">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="white" aria-hidden="true">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+              </svg>
+            </span>
+            <span>Facebook</span>
+          </button>
+          <button type="button" class="spp-option" data-platform="twitter" aria-label="Compartir en X (Twitter)">
+            <span class="spp-icon spp-icon-x">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              </svg>
+            </span>
+            <span>X (Twitter)</span>
+          </button>
+          <button type="button" class="spp-option" data-platform="telegram" aria-label="Compartir en Telegram">
+            <span class="spp-icon" style="background:#0088cc">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="white" aria-hidden="true">
+                <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+              </svg>
+            </span>
+            <span>Telegram</span>
+          </button>
+          <button type="button" class="spp-option" data-platform="linkedin" aria-label="Compartir en LinkedIn">
+            <span class="spp-icon" style="background:#0A66C2">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="white" aria-hidden="true">
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+              </svg>
+            </span>
+            <span>LinkedIn</span>
+          </button>
+          <button type="button" class="spp-option spp-copy-btn" data-platform="copy" aria-label="Copiar enlace">
+            <span class="spp-icon spp-icon-copy">
+              <svg class="spp-copy-default" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <svg class="spp-copy-check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </span>
+            <span class="spp-copy-text">Copiar enlace</span>
+          </button>
+        </div>
+      `;
+
+      document.body.appendChild(portal);
+
+      // ============================================
+      // 6. Posicionamiento inteligente del popup
+      // ============================================
+      function positionPopup() {
+        if (window.innerWidth <= 640) return; // CSS lo posiciona en mobile
+
+        const r = btn.getBoundingClientRect();
+        const popupWidth = 300;
+        const margin = 8;
+        const scrollY = window.scrollY;
+
+        // Posición vertical: preferentemente debajo del botón
+        let top = r.bottom + scrollY + 8;
+        const popupHeight = portal.offsetHeight || 200;
+
+        // Si no cabe abajo, posicionar arriba
+        if (r.bottom + popupHeight + margin > window.innerHeight) {
+          top = r.top + scrollY - popupHeight - 8;
+          if (top < scrollY + margin) {
+            top = scrollY + margin; // Último recurso: top
+          }
+        }
+
+        // Posición horizontal: alineado a la derecha del botón, pero sin salirse
+        let left = r.right - popupWidth;
+        if (left < margin) left = margin;
+        if (left + popupWidth > window.innerWidth - margin) {
+          left = window.innerWidth - popupWidth - margin;
+        }
+
+        portal.style.top = top + 'px';
+        portal.style.left = left + 'px';
+      }
+
+      // ============================================
+      // 7. Open / Close
+      // ============================================
+      let isOpen = false;
+
+      function openPortal() {
+        // Cerrar otros portales abiertos
+        document.querySelectorAll('.share-popup-portal').forEach(function (p) {
+          if (p !== portal && p._shareCloseFn) p._shareCloseFn();
+        });
+
+        syncTheme(portal);
+        positionPopup();
+        portal.classList.add('share-popup-visible');
+        btn.setAttribute('aria-expanded', 'true');
+        isOpen = true;
+
+        // Focus trap: foco al primer botón del popup
+        const firstOption = portal.querySelector('.spp-option');
+        if (firstOption && !reducedMotion) {
+          // Solo si no se activó reduced motion
+          setTimeout(() => firstOption.focus(), 50);
+        }
+      }
+
+      function closePortal() {
+        portal.classList.remove('share-popup-visible');
+        btn.setAttribute('aria-expanded', 'false');
+        isOpen = false;
+        // Devolver foco al botón
+        if (document.activeElement && portal.contains(document.activeElement)) {
+          btn.focus();
+        }
+      }
+
+      portal._shareCloseFn = closePortal;
+
+      // ============================================
+      // 8. Event handlers
+      // ============================================
+      function onBtnClick(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (isTouchDevice && hasNativeShare) {
+          navigator.share({
+            title: dataName,
+            text: shareText,
+            url: absUrl
+          }).catch(function (err) {
+            if (err && err.name !== 'AbortError') {
+              isOpen ? closePortal() : openPortal();
+            }
+          });
+          return;
+        }
+        isOpen ? closePortal() : openPortal();
+      }
+
+      function onOptionClick(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const platform = this.getAttribute('data-platform');
+
+        if (platform === 'copy') {
+          copyToClipboard(this, absUrl);
+          return;
+        }
+
+        const shareUrl = getShareUrl(platform, absUrl, shareText);
+        openWindow(shareUrl);
         closePortal();
-      } else if (p === 'facebook') {
-        window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(absUrl), '_blank', 'noopener,noreferrer');
-        closePortal();
-      } else if (p === 'twitter') {
-        window.open('https://twitter.com/intent/tweet?url=' + encodeURIComponent(absUrl) + '&text=' + encodeURIComponent(shareText), '_blank', 'noopener,noreferrer');
-        closePortal();
-      } else if (p === 'telegram') {
-        window.open('https://t.me/share/url?url=' + encodeURIComponent(absUrl) + '&text=' + encodeURIComponent(shareText), '_blank', 'noopener,noreferrer');
-        closePortal();
-      } else if (p === 'copy') {
-        var el       = this;
-        var copySpan = el.querySelector('.spp-copy-text');
-        var iconDef  = el.querySelector('.spp-copy-default');
-        var iconChk  = el.querySelector('.spp-copy-check');
+      }
+
+      function copyToClipboard(button, text) {
+        const textEl = button.querySelector('.spp-copy-text');
+        const iconDef = button.querySelector('.spp-copy-default');
+        const iconChk = button.querySelector('.spp-copy-check');
+
         function showOk() {
-          copySpan.textContent  = '¡Copiado!';
-          iconDef.style.display = 'none';
-          iconChk.style.display = 'block';
-          el.style.background   = 'oklch(0.95 0.05 145)';
+          if (textEl) textEl.textContent = '¡Copiado!';
+          if (iconDef) iconDef.style.display = 'none';
+          if (iconChk) iconChk.style.display = 'block';
+          button.classList.add('spp-copy-success');
           setTimeout(function () {
-            copySpan.textContent  = 'Copiar enlace';
-            iconDef.style.display = '';
-            iconChk.style.display = 'none';
-            el.style.background   = '';
+            if (textEl) textEl.textContent = 'Copiar enlace';
+            if (iconDef) iconDef.style.display = '';
+            if (iconChk) iconChk.style.display = 'none';
+            button.classList.remove('spp-copy-success');
           }, 2000);
         }
+
         function fallback() {
           try {
-            var ta = document.createElement('textarea');
-            ta.value = absUrl;
-            ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none;top:0;left:0';
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;';
             document.body.appendChild(ta);
-            ta.focus(); ta.select();
-            document.execCommand('copy') ? showOk() : alert('No se pudo copiar el enlace');
+            ta.focus();
+            ta.select();
+            const ok = document.execCommand('copy');
             document.body.removeChild(ta);
-          } catch (_) { alert('No se pudo copiar el enlace'); }
+            if (ok) showOk();
+          } catch (e) {
+            // Silenciar: el usuario puede copiar manualmente
+          }
         }
-        (navigator.clipboard && navigator.clipboard.writeText)
-          ? navigator.clipboard.writeText(absUrl).then(showOk).catch(fallback)
-          : fallback();
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text)
+            .then(showOk)
+            .catch(fallback);
+        } else {
+          fallback();
+        }
       }
+
+      function onScrollResize() {
+        if (isOpen) positionPopup();
+      }
+
+      function onDocClick(e) {
+        if (
+          isOpen &&
+          !e.target.closest('.share-tool-button-wrapper') &&
+          !e.target.closest('.share-popup-portal')
+        ) {
+          closePortal();
+        }
+      }
+
+      function onKeydown(e) {
+        if (!isOpen) return;
+
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          closePortal();
+        }
+
+        // Focus trap con Tab
+        if (e.key === 'Tab') {
+          const focusable = portal.querySelectorAll('.spp-option');
+          if (focusable.length === 0) return;
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            btn.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            btn.focus();
+          }
+        }
+      }
+
+      // Event listeners
+      btn.addEventListener('click', onBtnClick);
+      portal.querySelectorAll('.spp-option').forEach(function (opt) {
+        opt.addEventListener('click', onOptionClick);
+      });
+      document.addEventListener('click', onDocClick);
+      document.addEventListener('keydown', onKeydown);
+      window.addEventListener('scroll', onScrollResize, { passive: true });
+      window.addEventListener('resize', onScrollResize);
+
+      // ============================================
+      // 9. Cleanup (registrado en el Map global)
+      // ============================================
+      const destroy = function () {
+        if (portal.parentNode) portal.parentNode.removeChild(portal);
+        btn.removeEventListener('click', onBtnClick);
+        document.removeEventListener('click', onDocClick);
+        document.removeEventListener('keydown', onKeydown);
+        window.removeEventListener('scroll', onScrollResize);
+        window.removeEventListener('resize', onScrollResize);
+        portal._shareCloseFn = null;
+        window.__shareInstances.delete(id);
+      };
+
+      window.__shareInstances.set(id, destroy);
     }
-    portal.querySelectorAll('.spp-option').forEach(function (opt) {
-      opt.addEventListener('click', onOptionClick);
-    });
-
-    function onDocClick(e) {
-      if (
-        portal.classList.contains('share-popup-visible') &&
-        !e.target.closest('.share-tool-button-wrapper') &&
-        !e.target.closest('.share-popup-portal')
-      ) closePortal();
-    }
-    document.addEventListener('click', onDocClick);
-
-    function onKeydown(e) { if (e.key === 'Escape') closePortal(); }
-    document.addEventListener('keydown', onKeydown);
-
-    btn._shareDestroy = function () {
-      portal.remove();
-      btn.removeEventListener('click', onBtnClick);
-      document.removeEventListener('click', onDocClick);
-      document.removeEventListener('keydown', onKeydown);
-      window.removeEventListener('scroll', onScrollResize);
-      window.removeEventListener('resize', onScrollResize);
-      btn._shareDestroy = null;
-    };
-  }
-
-  // ── 6. Init inmediato (carga completa de página / currentScript disponible) ─
-  initBtn(btnId);
-
-})();
+  })();
 </script>
+
+<noscript>
+  <style>
+    /* En modo no-JS, mostramos enlaces directos en lugar del botón */
+    .share-tool-button-wrapper { display: none; }
+  </style>
+</noscript>
 
 <style>
   .share-tool-button-wrapper {
@@ -265,10 +465,11 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     color: oklch(0.45 0.14 var(--hue));
     border: none;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
     touch-action: manipulation;
+    font-family: inherit;
   }
 
   :global(.dark) .share-tool-button {
@@ -287,29 +488,45 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     color: oklch(0.85 0.14 var(--hue));
   }
 
-  .share-tool-button:active { transform: scale(0.95); }
-  .share-icon { width: 14px; height: 14px; }
+  .share-tool-button:active {
+    transform: scale(0.95);
+  }
+
+  .share-tool-button:focus-visible {
+    outline: 2px solid oklch(0.6 0.18 var(--hue));
+    outline-offset: 2px;
+  }
+
+  .share-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
 </style>
 
 <style is:global>
+  /* ============================================
+     Popup Portal
+     ============================================ */
   .share-popup-portal {
     position: fixed;
     width: 300px;
     background: oklch(0.99 0.005 var(--hue, 250));
     border-radius: 1rem;
     padding: 0.75rem;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
     z-index: 99999;
     opacity: 0;
     transform: translateY(-8px) scale(0.97);
     pointer-events: none;
     visibility: hidden;
     transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s;
+    /* ⚠️ top/left se setean inline en JS, no aquí */
   }
 
   .share-popup-portal.dark {
     background: oklch(0.19 0.015 var(--hue, 250));
-    box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
   }
 
   .share-popup-portal.share-popup-visible {
@@ -320,6 +537,9 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     transition: opacity 0.18s ease, transform 0.18s ease;
   }
 
+  /* ============================================
+     Grid de opciones
+     ============================================ */
   .spp-inner {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -331,7 +551,7 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.45rem;
+    gap: 0.5rem;
     padding: 0.875rem 0.4rem;
     border: none;
     border-radius: 0.75rem;
@@ -345,6 +565,7 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     user-select: none;
     touch-action: manipulation;
     white-space: nowrap;
+    font-family: inherit;
   }
 
   .share-popup-portal.dark .spp-option {
@@ -361,40 +582,84 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
     background: oklch(0.28 0.03 var(--hue, 250));
   }
 
-  .spp-option:active { transform: translateY(0); }
+  .spp-option:active {
+    transform: translateY(0);
+  }
 
-  .spp-x-icon { color: #14171A; }
-  .share-popup-portal.dark .spp-x-icon { color: #E7E9EA; }
+  .spp-option:focus-visible {
+    outline: 2px solid oklch(0.6 0.18 var(--hue, 250));
+    outline-offset: 2px;
+  }
 
-  .spp-copy-btn { color: oklch(0.5 0.14 var(--hue, 250)); }
-  .share-popup-portal.dark .spp-copy-btn { color: oklch(0.75 0.12 var(--hue, 250)); }
+  /* ============================================
+     Iconos (wrapper para background coloreado)
+     ============================================ */
+  .spp-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: white;
+    flex-shrink: 0;
+  }
 
+  .spp-icon-x {
+    background: #000;
+    color: #fff;
+  }
+
+  .share-popup-portal.dark .spp-icon-x {
+    background: #fff;
+    color: #000;
+  }
+
+  .spp-icon-copy {
+    background: oklch(0.5 0.14 var(--hue, 250));
+    position: relative;
+  }
+
+  .spp-icon-copy .spp-copy-check {
+    display: none;
+  }
+
+  .spp-copy-success .spp-icon-copy {
+    background: oklch(0.65 0.15 145);
+  }
+
+  .spp-copy-success {
+    background: oklch(0.95 0.05 145) !important;
+  }
+
+  /* ============================================
+     Mobile: bottom sheet
+     ============================================ */
   @media (max-width: 640px) {
     .share-popup-portal {
-      position: fixed !important;
       top: auto !important;
-      bottom: 0 !important;
       left: 0 !important;
-      right: 0 !important;
       width: 100% !important;
       max-width: 100%;
       border-radius: 1.25rem 1.25rem 0 0;
       padding: 1.25rem 1rem calc(1.5rem + env(safe-area-inset-bottom));
-      max-height: 72vh;
+      max-height: 80vh;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       transform: translateY(110%) !important;
-      transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1),
-                  opacity 0.15s ease,
-                  visibility 0s linear 0.28s;
+      transition:
+        transform 0.28s cubic-bezier(0.32, 0.72, 0, 1),
+        opacity 0.15s ease,
+        visibility 0s linear 0.28s;
     }
 
     .share-popup-portal.share-popup-visible {
       transform: translateY(0) !important;
       opacity: 1;
       visibility: visible;
-      transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1),
-                  opacity 0.15s ease;
+      transition:
+        transform 0.28s cubic-bezier(0.32, 0.72, 0, 1),
+        opacity 0.15s ease;
     }
 
     .spp-inner {
@@ -406,6 +671,19 @@ const uniqueId = `share-btn-${Math.random().toString(36).slice(2, 11)}`;
       padding: 1rem 0.5rem;
       min-height: 76px;
       font-size: 0.75rem;
+    }
+  }
+
+  /* ============================================
+     Reduced motion
+     ============================================ */
+  @media (prefers-reduced-motion: reduce) {
+    .share-popup-portal,
+    .share-popup-portal.share-popup-visible,
+    .spp-option,
+    .share-tool-button {
+      transition: opacity 0.01ms !important;
+      transform: none !important;
     }
   }
 </style>
