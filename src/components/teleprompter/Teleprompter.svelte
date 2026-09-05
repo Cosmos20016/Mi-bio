@@ -24,7 +24,7 @@
 	const JUMP_ACTION_PX = 240;
 
 	// =========================================================================
-	// TIPADO FUERTE Y CONTRATOS DE DATOS
+	// CONTRATOS DE TIPOS EXPLÍCITOS
 	// =========================================================================
 	interface SavedScript {
 		id: string;
@@ -53,7 +53,7 @@
 	}
 
 	// =========================================================================
-	// ESTADO REACTIVO DEL TELEPROMPTER
+	// ESTADO REACTIVO DEL COMPONENTE
 	// =========================================================================
 	let text = `Pega aquí tu guion...\n\nTip: Usa párrafos cortos para una lectura más cómoda.`;
 	let speed = 60;
@@ -83,7 +83,7 @@
 	let isDark = false;
 
 	// =========================================================================
-	// REFERENCIAS AL DOM Y HARDWARE
+	// REFS Y CONTROLADORES DE ANIMACIÓN
 	// =========================================================================
 	let scrollContainer: HTMLDivElement | null = null;
 	let content: HTMLDivElement | null = null;
@@ -111,7 +111,7 @@
 	let activeLineIndex = 0;
 
 	// =========================================================================
-	// REACTIVIDAD DERIVADA Y DERIVACIONES DE LECTURA
+	// REACTIVIDAD DERIVADA (MÉTRICAS DE LECTURA)
 	// =========================================================================
 	$: lines = text.split("\n");
 	$: if (lineElements.length !== lines.length) {
@@ -129,7 +129,7 @@
 			: "";
 
 	// =========================================================================
-	// UTILIDADES DE CONTROL Y ADAPTADOR DE STORAGE SEGURO
+	// ADAPTADOR DE STORAGE SEGURO
 	// =========================================================================
 	const clamp = (value: number, min: number, max: number): number =>
 		Math.min(Math.max(value, min), max);
@@ -159,7 +159,78 @@
 	};
 
 	// =========================================================================
-	// AUTO-ORGANIZADOR PROFESIONAL DE GUIONES (PÁRRAFOS Y CADENCIA)
+	// CONTROLADOR ATÓMICO Y GUARDS DEL MODO ESPEJO
+	// =========================================================================
+	const toggleMirror = (forceState?: boolean): void => {
+		isMirror = typeof forceState === "boolean" ? forceState : !isMirror;
+		applyMirrorToDOM();
+		scheduleSave();
+	};
+
+	const applyMirrorToDOM = (): void => {
+		if (!content) return;
+		const transformValue = isMirror ? "scaleX(-1)" : "none";
+		content.style.setProperty("transform", transformValue, "important");
+		content.style.setProperty("-webkit-transform", transformValue, "important");
+		content.style.setProperty("transform-origin", "center center", "important");
+		content.classList.toggle("mirror", isMirror);
+		assertMirrorState();
+	};
+
+	const assertMirrorState = (): void => {
+		if (!content || typeof window === "undefined") return;
+		requestAnimationFrame(() => {
+			if (!content) return;
+			const computed = window.getComputedStyle(content).transform;
+			const hasMirroredMatrix = computed !== "none" && computed.includes("-1");
+			if (isMirror && !hasMirroredMatrix) {
+				content.style.cssText += `; transform: scaleX(-1) !important; -webkit-transform: scaleX(-1) !important; transform-origin: center center !important;`;
+			}
+		});
+	};
+
+	// =========================================================================
+	// CONTROLADORES DE MODOS Y EFECTOS
+	// =========================================================================
+	const toggleDimOutside = (): void => {
+		dimOutside = !dimOutside;
+		scheduleSave();
+	};
+
+	const toggleGlow = (): void => {
+		glow = !glow;
+		scheduleSave();
+	};
+
+	const toggleFocusMode = (): void => {
+		focusMode = !focusMode;
+		setTimeout(calculateMetrics, 50);
+		scheduleSave();
+	};
+
+	const toggleAutoCenter = (): void => {
+		const prevMax = cachedMaxScroll;
+		const ratio = prevMax > 0 ? scrollAccumulator / prevMax : 0;
+		autoCenter = !autoCenter;
+		setTimeout(() => {
+			calculateMetrics();
+			if (cachedMaxScroll > 0) {
+				const targetScroll = ratio * cachedMaxScroll;
+				scrollAccumulator = targetScroll;
+				if (scrollContainer) scrollContainer.scrollTop = targetScroll;
+				updateProgressFromScroll(targetScroll);
+			}
+			scheduleSave();
+		}, 60);
+	};
+
+	const toggleSmooth = (): void => {
+		smooth = !smooth;
+		scheduleSave();
+	};
+
+	// =========================================================================
+	// AUTO-ORGANIZADOR DE GUIONES PROFESIONAL
 	// =========================================================================
 	const autoFormatScript = (): void => {
 		if (!text.trim() || isFormatting) return;
@@ -205,9 +276,7 @@
 					}
 				}
 
-				if (chunk) {
-					structuredParagraphs.push(chunk);
-				}
+				if (chunk) structuredParagraphs.push(chunk);
 			} else {
 				structuredParagraphs.push(joined);
 			}
@@ -230,7 +299,7 @@
 	};
 
 	// =========================================================================
-	// CÁLCULO DE MÉTRICAS EN MEMORIA FRÍA (ZERO REFLOWS)
+	// MÉTRICAS EN MEMORIA Y SEGUIMIENTO GEOMÉTRICO
 	// =========================================================================
 	const calculateMetrics = (): void => {
 		if (!scrollContainer || !content) return;
@@ -287,25 +356,7 @@
 	};
 
 	// =========================================================================
-	// CONTROL ATÓMICO DE AUTO-CENTRAR (SIN SALTOS DE POSICIÓN)
-	// =========================================================================
-	const toggleAutoCenter = (): void => {
-		const prevMax = cachedMaxScroll;
-		const ratio = prevMax > 0 ? scrollAccumulator / prevMax : 0;
-		autoCenter = !autoCenter;
-		setTimeout(() => {
-			calculateMetrics();
-			if (cachedMaxScroll > 0) {
-				const targetScroll = ratio * cachedMaxScroll;
-				scrollAccumulator = targetScroll;
-				if (scrollContainer) scrollContainer.scrollTop = targetScroll;
-				updateProgressFromScroll(targetScroll);
-			}
-		}, 60);
-	};
-
-	// =========================================================================
-	// MOTOR DE ANIMACIÓN Y RENDERIZADO FLUIDO (GPU DRIVEN)
+	// MOTOR DE SCROLL CONTINUO DE ALTA FLUIDEZ
 	// =========================================================================
 	const tick = (timestamp: number): void => {
 		if (!isPlaying || !scrollContainer) {
@@ -477,7 +528,7 @@
 	};
 
 	// =========================================================================
-	// SISTEMA FULLSCREEN ROBUSTO CON FALLBACK PSEUDO-FULLSCREEN
+	// FULLSCREEN ROBUSTO CON FALLBACK WEBKIT MÓVIL
 	// =========================================================================
 	const toggleFullscreen = async (): Promise<void> => {
 		if (!fullscreenTarget) return;
@@ -512,13 +563,12 @@
 			} catch {}
 		}
 
-		// Fallback para iOS Safari y WebKit móvil
 		isPseudoFullscreen = !isPseudoFullscreen;
 		setTimeout(calculateMetrics, 200);
 	};
 
 	// =========================================================================
-	// MANEJO DE ENTRADAS Y EVENTOS
+	// ENTRADAS DE USUARIO Y ATADOS DE TECLADO
 	// =========================================================================
 	const adjustSpeed = (delta: number): void => {
 		speed = Math.round(clamp(speed + delta, SPEED_MIN, SPEED_MAX));
@@ -602,12 +652,11 @@
 				break;
 			case "KeyM":
 				event.preventDefault();
-				isMirror = !isMirror;
+				toggleMirror();
 				break;
 			case "KeyF":
 				event.preventDefault();
-				focusMode = !focusMode;
-				setTimeout(calculateMetrics, 50);
+				toggleFocusMode();
 				break;
 			case "KeyR":
 				event.preventDefault();
@@ -770,7 +819,7 @@
 	};
 
 	// =========================================================================
-	// FORMATEO VISUAL Y HELPERS DE UI
+	// HELPERS VISUALES
 	// =========================================================================
 	const getSpeedLabel = (spd: number): string => {
 		if (spd < 40) return "Muy lento";
@@ -820,6 +869,7 @@
 		focusMode = true;
 		autoCenter = true;
 		countdownDuration = 3;
+		applyMirrorToDOM();
 		scheduleSave();
 		setTimeout(calculateMetrics, 60);
 	};
@@ -836,8 +886,12 @@
 	};
 
 	// =========================================================================
-	// REGISTRO DEL CICLO DE VIDA
+	// INICIALIZACIÓN Y MONTAJE SEGURO
 	// =========================================================================
+	$: if (isReady && content) {
+		applyMirrorToDOM();
+	}
+
 	$: if (
 		isReady &&
 		(text || speed || fontSize || lineHeight || isMirror || autoCenter ||
@@ -896,7 +950,10 @@
 		window.addEventListener("orientationchange", () => setTimeout(calculateMetrics, 200));
 
 		isReady = true;
-		setTimeout(calculateMetrics, 80);
+		setTimeout(() => {
+			calculateMetrics();
+			applyMirrorToDOM();
+		}, 80);
 
 		return () => {
 			document.removeEventListener("fullscreenchange", onFullscreenChange);
@@ -1299,7 +1356,7 @@
 						<button
 							class="toggle-btn"
 							class:active={isMirror}
-							on:click={() => (isMirror = !isMirror)}
+							on:click={() => toggleMirror()}
 							title="Invierte el texto horizontalmente para cristales divisores o cámaras frontales"
 						>
 							Espejo (M)
@@ -1315,7 +1372,7 @@
 						<button
 							class="toggle-btn"
 							class:active={smooth}
-							on:click={() => (smooth = !smooth)}
+							on:click={toggleSmooth}
 							title="Transición suave entre velocidades"
 						>
 							Suave
@@ -1323,7 +1380,7 @@
 						<button
 							class="toggle-btn"
 							class:active={glow}
-							on:click={() => (glow = !glow)}
+							on:click={toggleGlow}
 							title="Efecto de brillo en la pantalla"
 						>
 							Glow
@@ -1331,10 +1388,7 @@
 						<button
 							class="toggle-btn"
 							class:active={focusMode}
-							on:click={() => {
-								focusMode = !focusMode;
-								setTimeout(calculateMetrics, 50);
-							}}
+							on:click={toggleFocusMode}
 							title="Resalta la línea actual y oscurece el resto"
 						>
 							Focus (F)
@@ -1342,7 +1396,7 @@
 						<button
 							class="toggle-btn"
 							class:active={dimOutside}
-							on:click={() => (dimOutside = !dimOutside)}
+							on:click={toggleDimOutside}
 							title="Oscurece los extremos superior e inferior para concentrar la vista"
 						>
 							Oscurecer bordes
@@ -1408,12 +1462,10 @@
 			style={`padding: ${autoCenter ? "35vh 2rem 50vh" : "2.5rem 2rem"};`}
 			tabindex="-1"
 		>
-			<!-- ENLACE REACTIVO DIRECTO AL ÁRBOL DE RENDERIZADO (ESPEJO INFALIBLE) -->
+			<!-- CONTENEDOR CON REGLAS DE ESPEJO INLINE Y DE CLASE -->
 			<div
 				class="teleprompter-content"
 				class:mirror={isMirror}
-				style:transform={isMirror ? "scaleX(-1)" : "none"}
-				style:transform-origin="center center"
 				style={`font-size:${fontSize}px; line-height:${lineHeight}; letter-spacing: 0.01em;`}
 				bind:this={content}
 			>
@@ -1454,7 +1506,7 @@
 					<span class="mini-speed">{speed}</span>
 				</div>
 			{/if}
-			<button class="btn-float" class:active={isMirror} on:click={() => (isMirror = !isMirror)} title="Espejo (M)" aria-label="Activar o desactivar modo espejo">M</button>
+			<button class="btn-float" class:active={isMirror} on:click={() => toggleMirror()} title="Espejo (M)" aria-label="Activar o desactivar modo espejo">M</button>
 			<button class="btn-float" on:click={toggleFullscreen} title="Pantalla completa" aria-label="Activar o desactivar pantalla completa">⛶</button>
 		</div>
 
