@@ -25,143 +25,148 @@ import { remarkReadingTime } from "./src/plugins/remark-reading-time.mjs";
 import { pluginCustomCopyButton } from "./src/plugins/expressive-code/custom-copy-button.js";
 
 export default defineConfig({
-	site: "https://kevinborja.com/",
-	base: "/",
-	trailingSlash: "always",
-	integrations: [
-		tailwind({
-			nesting: true,
-		}),
-		swup({
-			theme: false,
-			animationClass: "transition-swup-",
-			containers: ["main", "#toc"],
-			smoothScrolling: true,
-			cache: true,
-			preload: true,
-			accessibility: true,
-			updateHead: true,
-			updateBodyClass: false,
-			globalInstance: true,
-		}),
-		icon({
-			include: {
-				"fa6-brands": ["*"],
-				"fa6-regular": ["*"],
-				"fa6-solid": ["*"],
-			},
-		}),
-		expressiveCode({
-			themes: [expressiveCodeConfig.theme, expressiveCodeConfig.theme],
-			plugins: [
-				pluginCollapsibleSections(),
-				pluginLineNumbers(),
-				pluginLanguageBadge(),
-				pluginCustomCopyButton(),
-			],
-			defaultProps: {
-				wrap: true,
-				overridesByLang: {
-					shellsession: {
-						showLineNumbers: false,
-					},
-				},
-			},
-			styleOverrides: {
-				codeBackground: "var(--codeblock-bg)",
-				borderRadius: "0.75rem",
-				borderColor: "none",
-				codeFontSize: "0.875rem",
-				codeFontFamily: "'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-				codeLineHeight: "1.5rem",
-				frames: {
-					editorBackground: "var(--codeblock-bg)",
-					terminalBackground: "var(--codeblock-bg)",
-					terminalTitlebarBackground: "var(--codeblock-topbar-bg)",
-					editorTabBarBackground: "var(--codeblock-topbar-bg)",
-					editorActiveTabBackground: "none",
-					editorActiveTabIndicatorBottomColor: "var(--primary)",
-					editorActiveTabIndicatorTopColor: "none",
-					editorTabBarBorderBottomColor: "var(--codeblock-topbar-bg)",
-					terminalTitlebarBorderBottomColor: "none",
-				},
-				textMarkers: {
-					delHue: 0,
-					insHue: 180,
-					markHue: 250,
-				},
-			},
-			frames: {
-				showCopyToClipboardButton: false,
-			},
-		}),
-		svelte(),
-		sitemap(),
-	],
-	markdown: {
-		remarkPlugins: [
-			remarkMath,
-			remarkReadingTime,
-			remarkExcerpt,
-			remarkGithubAdmonitionsToDirectives,
-			remarkDirective,
-			remarkSectionize,
-			parseDirectiveNode,
-		],
-		rehypePlugins: [
-			rehypeKatex,
-			rehypeSlug,
-			[
-				rehypeComponents,
-				{
-					components: {
-						github: GithubCardComponent,
-						note: (x, y) => AdmonitionComponent(x, y, "note"),
-						tip: (x, y) => AdmonitionComponent(x, y, "tip"),
-						important: (x, y) => AdmonitionComponent(x, y, "important"),
-						caution: (x, y) => AdmonitionComponent(x, y, "caution"),
-						warning: (x, y) => AdmonitionComponent(x, y, "warning"),
-					},
-				},
-			],
-			[
-				rehypeAutolinkHeadings,
-				{
-					behavior: "append",
-					properties: {
-						className: ["anchor"],
-					},
-					content: {
-						type: "element",
-						tagName: "span",
-						properties: {
-							className: ["anchor-icon"],
-							"data-pagefind-ignore": true,
-						},
-						children: [
-							{
-								type: "text",
-								value: "#",
-							},
-						],
-					},
-				},
-			],
-		],
-	},
-	vite: {
-		build: {
-			rollupOptions: {
-				onwarn(warning, warn) {
-					if (
-						warning.message.includes("is dynamically imported by") &&
-						warning.message.includes("but also statically imported by")
-					) {
-						return;
-					}
-					warn(warning);
-				},
-			},
-		},
-	},
+  site: "https://kevinborja.com/",
+  base: "/",
+  trailingSlash: "always",
+  integrations: [
+    tailwind({
+      nesting: true,
+    }),
+    // ✅ FIX 1: Usar el id correcto de tu <main>
+    swup({
+      theme: false,
+      animationClass: "transition-swup-",
+      containers: ["#swup-container", "#toc"], // ✅ Antes era ["main", "#toc"]
+      smoothScrolling: true,
+      cache: false, // ✅ FIX 2: Desactivar cache para que las páginas se re-rendericen correctamente
+      preload: true,
+      accessibility: true,
+      // ✅ FIX 3: NO reemplazar <head> para no romper hidratación de Svelte
+      updateHead: false,
+      updateBodyClass: false,
+      globalInstance: true,
+      // ✅ FIX 4: Ignorar forms y scripts para que Svelte no se rompa
+      ignoreForms: true,
+    }),
+    icon({
+      include: {
+        "fa6-brands": ["*"],
+        "fa6-regular": ["*"],
+        "fa6-solid": ["*"],
+      },
+    }),
+    expressiveCode({
+      themes: [expressiveCodeConfig.theme, expressiveCodeConfig.theme],
+      plugins: [
+        pluginCollapsibleSections(),
+        pluginLineNumbers(),
+        pluginLanguageBadge(),
+        pluginCustomCopyButton(),
+      ],
+      defaultProps: {
+        wrap: true,
+        overridesByLang: {
+          shellsession: {
+            showLineNumbers: false,
+          },
+        },
+      },
+      styleOverrides: {
+        codeBackground: "var(--codeblock-bg)",
+        borderRadius: "0.75rem",
+        borderColor: "none",
+        codeFontSize: "0.875rem",
+        codeFontFamily:
+          "'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+        codeLineHeight: "1.5rem",
+        frames: {
+          editorBackground: "var(--codeblock-bg)",
+          terminalBackground: "var(--codeblock-bg)",
+          terminalTitlebarBackground: "var(--codeblock-topbar-bg)",
+          editorTabBarBackground: "var(--codeblock-topbar-bg)",
+          editorActiveTabBackground: "none",
+          editorActiveTabIndicatorBottomColor: "var(--primary)",
+          editorActiveTabIndicatorTopColor: "none",
+          editorTabBarBorderBottomColor: "var(--codeblock-topbar-bg)",
+          terminalTitlebarBorderBottomColor: "none",
+        },
+        textMarkers: {
+          delHue: 0,
+          insHue: 180,
+          markHue: 250,
+        },
+      },
+      frames: {
+        showCopyToClipboardButton: false,
+      },
+    }),
+    svelte(),
+    sitemap(),
+  ],
+  markdown: {
+    remarkPlugins: [
+      remarkMath,
+      remarkReadingTime,
+      remarkExcerpt,
+      remarkGithubAdmonitionsToDirectives,
+      remarkDirective,
+      remarkSectionize,
+      parseDirectiveNode,
+    ],
+    rehypePlugins: [
+      rehypeKatex,
+      rehypeSlug,
+      [
+        rehypeComponents,
+        {
+          components: {
+            github: GithubCardComponent,
+            note: (x, y) => AdmonitionComponent(x, y, "note"),
+            tip: (x, y) => AdmonitionComponent(x, y, "tip"),
+            important: (x, y) => AdmonitionComponent(x, y, "important"),
+            caution: (x, y) => AdmonitionComponent(x, y, "caution"),
+            warning: (x, y) => AdmonitionComponent(x, y, "warning"),
+          },
+        },
+      ],
+      [
+        rehypeAutolinkHeadings,
+        {
+          behavior: "append",
+          properties: {
+            className: ["anchor"],
+          },
+          content: {
+            type: "element",
+            tagName: "span",
+            properties: {
+              className: ["anchor-icon"],
+              "data-pagefind-ignore": true,
+            },
+            children: [
+              {
+                type: "text",
+                value: "#",
+              },
+            ],
+          },
+        },
+      ],
+    ],
+  },
+  vite: {
+    build: {
+      rollupOptions: {
+        onwarn(warning, warn) {
+          if (
+            warning.message.includes("is dynamically imported by") &&
+            warning.message.includes("but also statically imported by")
+          ) {
+            return;
+          }
+          warn(warning);
+        },
+      },
+    },
+  },
 });
