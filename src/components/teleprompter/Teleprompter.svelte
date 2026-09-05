@@ -1,32 +1,406 @@
 <script lang="ts">
+	import {
+		applyStoredThemeToDocument,
+		getStoredTheme,
+		watchSystemThemeChanges,
+	} from "@utils/setting-utils.ts";
 	import { onDestroy, onMount } from "svelte";
 
-	// ============================================
-	// Constantes de configuración
-	// ============================================
-	const STORAGE_KEY = "teleprompter:state:v4";
-	const SCRIPTS_KEY = "teleprompter:scripts:v1";
-	const LAST_SCRIPT_KEY = "teleprompter:lastScript:v1";
-	const ONBOARDING_KEY = "teleprompter:onboarding:done:v1";
+	const storageKey = "teleprompter:state:v3";
 
-	const SPEED_MIN = 10;
-	const SPEED_MAX = 400;
-	const SPEED_DEFAULT = 60;
-	const FONT_SIZE_MIN = 22;
-	const FONT_SIZE_MAX = 64;
-	const FONT_SIZE_DEFAULT = 34;
-	const LINE_HEIGHT_MIN = 1.2;
-	const LINE_HEIGHT_MAX = 2.2;
-	const LINE_HEIGHT_DEFAULT = 1.6;
-	const MAX_SCRIPTS = 20;
+	// Core state
+	let text = `Pega aquí tu guion...
 
-	const TAP_THRESHOLD = 280;
+Tip: Usa párrafos cortos para una lectura más cómoda.`;
+	let speed = 60;
+	let fontSize = 34;
+	let lineHeight = 1.6;
+	let isPlaying = false;
+	let isMirror = false;
+	let autoCenter = true;
+	let smooth = true;
+	let showControls = true;
+	let progress = 0;
+	let glow = true;
+	let focusMode = false;
+	let dimOutside = true;
+	let isFullscreen = false;
+	let isMobile = false;
+	let allowMobile = false;
+	let showMobileBanner = false;
+	let isReady = false;
+	let ultraClean = false;
+	let countdown = 0;
+	let isCountingDown = false;
+	let showOnboarding = false;
+	let helpTab = "quickstart";
+	let currentScript: string | null = null;
+	let countdownDuration = 3;
+
+	// Dark mode reactive detection
+	let isDark = false;
+
+	// ✅ FIX: refs ahora aceptan null (corrección clave para SSR)
+	let scrollContainer: HTMLDivElement | null = null;
+	let content: HTMLDivElement | null = null;
+	let fullscreenTarget: HTMLDivElement | null = null;
+	let raf: number | null = null;
+	let lastTime: number | null = null;
+	let observer: IntersectionObserver | null = null;
+	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+	let stopThemeWatch: (() => void) | null = null;
+	let countdownTimer: ReturnType<typeof setInterval> | null = null;
+	let darkModeObserver: MutationObserver | null = null;
+	let lineElements: Array<HTMLParagraphElement | null> = [];
+	let activeLineIndex = 0;
+	let lines: string[] = [];
+
+	const speedMin = 10;
+	const speedMax = 400;
+	let targetSpeed = speed;
+	let currentSpeed = 0;
+	let cachedMaxScroll = 0;
+	let progressUpdateTimer: ReturnType<typeof setInterval> | null = null;
+	let scrollAccumulator = 0;
+
+	let touchStartY = 0;
+	let lastTapTime = 0;
+	const TAP_THRESHOLD = 300;
 	const SWIPE_THRESHOLD = 30;
-	const DOUBLE_TAP_WINDOW = 320;
 
-	// ============================================
-	// Types
-	// ============================================
+	const clamp = (value: number, min: number, max: number) =>
+		Math.min(Math.max(value, min), max);
+
+	$: lines = text.split("\n");
+	$: if (lineElements.length !== lines.length) {
+		lineElements = lines.map((_, i) => lineElements[i] || null);
+	}
+
+	$: wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+	$: charCount = text.length;
+	$: estimatedMinutes = wordCount > 0 ? Math.floor(wordCount / 150) : 0;
+	$: estimatedSeconds =
+		wordCount > 0 ? Math.ceil((wordCount / 150) * 60) % 60 : 0;
+	$: readingTimeLabel =
+		wordCount > 0
+			? estimatedMinutes > 0
+				? `~${estimatedMinutes}m ${estimatedSeconds}s`
+				: `~${estimatedSeconds}s`
+			: "";
+
+	const updateProgress = () => {
+		if (!scrollContainer || !content) return;
+		const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
+		progress =
+			maxScroll <= 0 ? 0 : clamp(scrollContainer.scrollTop / maxScroll, 0, 1);
+		updateActiveLine();
+	};
+
+	const getFocusCenter = () => {
+		if (!scrollContainer) return 0;
+		const viewport = scrollContainer.clientHeight;
+		const focusOffset = focusMode ? viewport * 0.45 + 50 : viewport / 2;
+		return scrollContainer.scrollTop + focusOffset;
+	};
+
+	const updateActiveLine = () => {
+		if (!scrollContainer || !lineElements.length) return;
+		const focusCenter = getFocusCenter();
+		let closestIndex = 0;
+		let closestDistance = Number.POSITIVE_INFINITY;
+		lineElements.forEach((line, index) => {
+			if (!line) return;
+			const lineCenter = line.offsetTop + line.offsetHeight / 2;
+			const distance = Math.abs(lineCenter - focusCenter);
+			if (distance < closestDistance) {
+				closestDistance = distance;
+				closestIndex = index;
+			}
+		});
+		activeLineIndex = closestIndex;
+	};
+
+	const tick = (timestamp: number) => {
+		if (!isPlaying || !scrollContainer) {
+			raf = null;
+			lastTime = null;
+			return;
+		}
+
+		if (lastTime === null) {
+			lastTime = timestamp;
+			scrollAccumulator = scrollContainer.scrollTop;
+			raf = requestAnimationFrame(tick);
+			return;
+		}
+
+		const elapsed = timestamp - lastTime;
+		if (elapsed <= 0) {
+			raf = requestAnimationFrame(tick);
+			return;
+		}
+
+		const delta = Math.min(elapsed / 1000, 0.1);
+		lastTime = timestamp;
+
+		if (smooth) {
+			const smoothing = 1 - Math.exp(-delta * 10);
+			currentSpeed += (targetSpeed - currentSpeed) * smoothing;
+		} else {
+			currentSpeed = targetSpeed;
+		}
+
+		if (Math.abs(currentSpeed - targetSpeed) < 0.5) {
+			currentSpeed = targetSpeed;
+		}
+
+		scrollAccumulator += currentSpeed * delta;
+
+		if (scrollAccumulator >= cachedMaxScroll) {
+			scrollContainer.scrollTop = cachedMaxScroll;
+			scrollAccumulator = cachedMaxScroll;
+			stopProgressTimer();
+			isPlaying = false;
+			raf = null;
+			lastTime = null;
+			progress = 1;
+			return;
+		}
+
+		const targetScroll = Math.round(scrollAccumulator);
+		if (targetScroll !== scrollContainer.scrollTop) {
+			scrollContainer.scrollTop = targetScroll;
+		}
+
+		raf = requestAnimationFrame(tick);
+	};
+
+	const startProgressTimer = () => {
+		stopProgressTimer();
+		progressUpdateTimer = setInterval(() => {
+			if (!scrollContainer || !content) return;
+			progress =
+				cachedMaxScroll <= 0
+					? 0
+					: clamp(scrollContainer.scrollTop / cachedMaxScroll, 0, 1);
+			updateActiveLine();
+		}, 250);
+	};
+
+	const stopProgressTimer = () => {
+		if (progressUpdateTimer) {
+			clearInterval(progressUpdateTimer);
+			progressUpdateTimer = null;
+		}
+	};
+
+	const startPlayback = () => {
+		if (!scrollContainer || !content) return;
+		if (raf) cancelAnimationFrame(raf);
+
+		speed = Math.round(clamp(speed, speedMin, speedMax));
+		targetSpeed = speed;
+		currentSpeed = 0;
+
+		cachedMaxScroll = Math.max(
+			content.scrollHeight - scrollContainer.clientHeight,
+			0,
+		);
+
+		if (cachedMaxScroll <= 0) return;
+
+		scrollAccumulator = scrollContainer.scrollTop;
+
+		isPlaying = true;
+		lastTime = null;
+
+		startProgressTimer();
+
+		raf = requestAnimationFrame(tick);
+	};
+
+	const cancelCountdown = () => {
+		if (countdownTimer) clearInterval(countdownTimer);
+		countdownTimer = null;
+		countdown = 0;
+		isCountingDown = false;
+	};
+
+	const beginCountdown = () => {
+		if (isCountingDown) return;
+		if (countdownDuration <= 0) {
+			startPlayback();
+			return;
+		}
+		cancelCountdown();
+		countdown = countdownDuration;
+		isCountingDown = true;
+		countdownTimer = setInterval(() => {
+			countdown -= 1;
+			if (countdown <= 0) {
+				cancelCountdown();
+				startPlayback();
+			}
+		}, 1000);
+	};
+
+	const start = () => {
+		if (isPlaying || isCountingDown) return;
+		beginCountdown();
+	};
+
+	const pause = () => {
+		isPlaying = false;
+		cancelCountdown();
+		if (raf) {
+			cancelAnimationFrame(raf);
+			raf = null;
+		}
+		lastTime = null;
+		currentSpeed = 0;
+		scrollAccumulator = scrollContainer?.scrollTop ?? 0;
+		stopProgressTimer();
+		updateProgress();
+	};
+
+	const toggle = () => {
+		if (isPlaying) {
+			pause();
+		} else if (isCountingDown) {
+			cancelCountdown();
+		} else {
+			start();
+		}
+	};
+
+	const reset = () => {
+		pause();
+		if (scrollContainer) {
+			scrollContainer.scrollTop = 0;
+			scrollAccumulator = 0;
+		}
+		updateProgress();
+	};
+
+	const clearText = () => {
+		pause();
+		text = "";
+		if (scrollContainer) {
+			scrollContainer.scrollTop = 0;
+			scrollAccumulator = 0;
+		}
+		updateProgress();
+	};
+
+	const jump = (amount: number) => {
+		if (!scrollContainer || !content) return;
+		const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
+		const next = scrollContainer.scrollTop + amount;
+		scrollContainer.scrollTop = clamp(next, 0, maxScroll);
+		scrollAccumulator = scrollContainer.scrollTop;
+		updateProgress();
+	};
+
+	const scrollToProgress = (value: number) => {
+		if (!scrollContainer || !content) return;
+		const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
+		scrollContainer.scrollTop = clamp(value, 0, 1) * Math.max(maxScroll, 0);
+		scrollAccumulator = scrollContainer.scrollTop;
+		updateProgress();
+	};
+
+	const toggleFullscreen = async () => {
+		if (!fullscreenTarget) return;
+		try {
+			if (!document.fullscreenElement) {
+				await fullscreenTarget.requestFullscreen();
+			} else {
+				await document.exitFullscreen();
+			}
+		} catch (e) {
+			console.warn("[Teleprompter] Fullscreen no disponible:", e);
+		}
+	};
+
+	const handleWheel = (event: WheelEvent) => {
+		if (!isPlaying) {
+			return;
+		}
+		event.preventDefault();
+		const baseIncrement = Math.max(8, speed * 0.1);
+		const delta = event.deltaY > 0 ? baseIncrement : -baseIncrement;
+		adjustSpeed(delta);
+	};
+
+	const adjustSpeed = (amount: number) => {
+		speed = Math.round(clamp(speed + amount, speedMin, speedMax));
+		targetSpeed = speed;
+	};
+
+	const onSpeedInput = () => {
+		speed = Math.round(clamp(speed, speedMin, speedMax));
+		targetSpeed = speed;
+	};
+
+	const loadState = () => {
+		try {
+			const raw = localStorage.getItem(storageKey);
+			if (!raw) return;
+			const data = JSON.parse(raw);
+			if (typeof data !== "object" || data === null) return;
+
+			try { if (data.text) text = data.text; } catch {}
+			try { if (data.speed) speed = data.speed; } catch {}
+			try { if (data.fontSize) fontSize = data.fontSize; } catch {}
+			try { if (data.lineHeight) lineHeight = data.lineHeight; } catch {}
+			try { if (typeof data.isMirror === "boolean") isMirror = data.isMirror; } catch {}
+			try { if (typeof data.autoCenter === "boolean") autoCenter = data.autoCenter; } catch {}
+			try { if (typeof data.smooth === "boolean") smooth = data.smooth; } catch {}
+			try { if (typeof data.glow === "boolean") glow = data.glow; } catch {}
+			try { if (typeof data.focusMode === "boolean") focusMode = data.focusMode; } catch {}
+			try { if (typeof data.dimOutside === "boolean") dimOutside = data.dimOutside; } catch {}
+			try { if (typeof data.ultraClean === "boolean") ultraClean = data.ultraClean; } catch {}
+			try { if (typeof data.countdownDuration === "number") countdownDuration = data.countdownDuration; } catch {}
+
+			speed = Math.round(clamp(speed, speedMin, speedMax));
+			targetSpeed = speed;
+			currentSpeed = 0;
+		} catch (e) {
+			console.warn("[Teleprompter] Estado corrupto, usando valores por defecto:", e);
+			try {
+				localStorage.removeItem(storageKey);
+			} catch {}
+		}
+	};
+
+	const scheduleSave = () => {
+		if (!isReady) return;
+		if (saveTimeout) clearTimeout(saveTimeout);
+		const delay = text.length > 5000 ? 500 : 300;
+		saveTimeout = setTimeout(() => {
+			try {
+				const payload = {
+					text, speed, fontSize, lineHeight,
+					isMirror, autoCenter, smooth, glow,
+					focusMode, dimOutside, ultraClean, countdownDuration,
+				};
+				localStorage.setItem(storageKey, JSON.stringify(payload));
+
+				if (currentScript && text.trim()) {
+					saveCurrentScript();
+				}
+			} catch (e) {
+				console.warn("[Teleprompter] Error al guardar:", e);
+				if (e instanceof DOMException && e.name === "QuotaExceededError") {
+					try {
+						const scriptsToDelete = scripts.slice(10);
+						scriptsToDelete.forEach((s) => deleteScript(s.id));
+					} catch {}
+				}
+			}
+		}, delay);
+	};
+
 	interface SavedScript {
 		id: string;
 		name: string;
@@ -35,43 +409,87 @@
 		updatedAt: string;
 	}
 
-	type HelpTab = "quickstart" | "youtube" | "shortcuts" | "tips";
-	type StatusKind = "idle" | "counting" | "playing" | "paused" | "ended";
+	let scripts: SavedScript[] = [];
 
-	// ============================================
-	// Utilidades puras
-	// ============================================
-	const clamp = (value: number, min: number, max: number): number =>
-		Math.min(Math.max(value, min), max);
-
-	const formatTime = (seconds: number): string => {
-		if (seconds < 60) return `${seconds}s`;
-		const m = Math.floor(seconds / 60);
-		const s = seconds % 60;
-		return `${m}:${s.toString().padStart(2, "0")}`;
+	const loadScripts = () => {
+		try {
+			const raw = localStorage.getItem("teleprompter:scripts");
+			if (!raw) {
+				scripts = [];
+				return;
+			}
+			const data = JSON.parse(raw);
+			if (Array.isArray(data)) {
+				scripts = data;
+			} else {
+				scripts = [];
+			}
+		} catch (e) {
+			console.warn("[Teleprompter] Scripts corruptos, inicializando vacío:", e);
+			scripts = [];
+			try {
+				localStorage.removeItem("teleprompter:scripts");
+			} catch {}
+		}
 	};
 
-	const formatDateTime = (iso: string): string => {
-		const d = new Date(iso);
-		return d.toLocaleDateString("es-ES", {
-			day: "numeric",
-			month: "short",
-			hour: "2-digit",
-			minute: "2-digit",
-		});
+	const saveScripts = (scriptsToSave: SavedScript[]) => {
+		localStorage.setItem("teleprompter:scripts", JSON.stringify(scriptsToSave));
+		scripts = scriptsToSave;
 	};
 
-	const formatRelative = (iso: string): string => {
-		const diff = Date.now() - new Date(iso).getTime();
-		const m = Math.floor(diff / 60000);
-		const h = Math.floor(diff / 3600000);
-		const d = Math.floor(diff / 86400000);
-		if (m < 1) return "Ahora";
-		if (m < 60) return `Hace ${m} min`;
-		if (h < 24) return `Hace ${h} h`;
-		if (d === 1) return "Ayer";
-		if (d < 7) return `Hace ${d} días`;
-		return new Date(iso).toLocaleDateString("es-ES", { month: "short", day: "numeric" });
+	const saveCurrentScript = () => {
+		if (!text.trim()) return;
+		const now = new Date().toISOString();
+
+		if (currentScript) {
+			const index = scripts.findIndex((s) => s.id === currentScript);
+			if (index >= 0) {
+				scripts[index].text = text;
+				scripts[index].updatedAt = now;
+				saveScripts(scripts);
+			}
+		} else {
+			const newScript: SavedScript = {
+				id: Date.now().toString(),
+				name: `Guion ${scripts.length + 1}`,
+				text,
+				createdAt: now,
+				updatedAt: now,
+			};
+			const updated = [newScript, ...scripts];
+
+			if (updated.length > 20) {
+				updated.splice(20);
+			}
+
+			saveScripts(updated);
+			currentScript = newScript.id;
+			localStorage.setItem("teleprompter:lastScript", currentScript);
+		}
+	};
+
+	const loadScript = (id: string) => {
+		const script = scripts.find((s) => s.id === id);
+		if (script) {
+			text = script.text;
+			currentScript = id;
+			localStorage.setItem("teleprompter:lastScript", id);
+		}
+	};
+
+	const deleteScript = (id: string) => {
+		const updated = scripts.filter((s) => s.id !== id);
+		saveScripts(updated);
+		if (currentScript === id) {
+			currentScript = null;
+			text = "";
+		}
+	};
+
+	const newScript = () => {
+		currentScript = null;
+		text = "";
 	};
 
 	const getSpeedLabel = (spd: number): string => {
@@ -82,727 +500,55 @@
 		return "Muy rápido";
 	};
 
-	// ============================================
-	// Estado reactivo
-	// ============================================
-	let text = `Pega aquí tu guion...
+	const getStatus = (): string => {
+		if (isPlaying) return "Al aire 🔴";
+		if (isCountingDown) return "Cuenta regresiva...";
+		if (progress >= 0.99) return "Fin de guion ✓";
+		if (progress > 0) return "En pausa ⏸";
+		return "En línea";
+	};
 
-Tip: Usa párrafos cortos para una lectura más cómoda.`;
+	const getStatusColor = (): string => {
+		if (isPlaying) return "oklch(0.60 0.15 220)";
+		if (isCountingDown) return "oklch(0.65 0.15 60)";
+		if (progress >= 0.99) return "oklch(0.50 0.05 var(--hue))";
+		return "oklch(0.60 0.15 150)";
+	};
 
-	let speed = SPEED_DEFAULT;
-	let fontSize = FONT_SIZE_DEFAULT;
-	let lineHeight = LINE_HEIGHT_DEFAULT;
-	let countdownDuration = 3;
+	const getSpeedColor = (): string => {
+		const ratio = (speed - speedMin) / (speedMax - speedMin);
+		if (ratio < 0.33) return "oklch(0.65 0.15 150)";
+		if (ratio < 0.66) return "oklch(0.70 0.15 60)";
+		return "oklch(0.65 0.18 25)";
+	};
 
-	let isPlaying = false;
-	let isCountingDown = false;
-	let countdown = 0;
-	let isMirror = false;
-	let autoCenter = true;
-	let smooth = true;
-	let showControls = true;
-	let progress = 0;
-	let glow = true;
-	let focusMode = false;
-	let dimOutside = true;
-	let isFullscreen = false;
-	let ultraClean = false;
-	let isReady = false;
-	let isMobile = false;
-	let showMobileBanner = false;
-	let showOnboarding = false;
-	let helpTab: HelpTab = "quickstart";
+	const formatRelativeTime = (isoDate: string): string => {
+		const date = new Date(isoDate);
+		const now = new Date();
+		const diffMs = now.getTime() - date.getTime();
+		const diffMins = Math.floor(diffMs / 60000);
+		const diffHours = Math.floor(diffMs / 3600000);
+		const diffDays = Math.floor(diffMs / 86400000);
 
-	let isDark = false;
-	let wakeLock: WakeLockSentinel | null = null;
-	let wakeLockSupported = false;
+		if (diffMins < 1) return "Ahora";
+		if (diffMins < 60) return `Hace ${diffMins} min`;
+		if (diffHours < 24) return `Hace ${diffHours} h`;
+		if (diffDays === 1) return "Ayer";
+		if (diffDays < 7) return `Hace ${diffDays} días`;
+		return date.toLocaleDateString("es-ES", { month: "short", day: "numeric" });
+	};
 
-	// Scripts
-	let scripts: SavedScript[] = [];
-	let currentScript: string | null = null;
-
-	// Scroll engine
-	let scrollContainer: HTMLDivElement;
-	let content: HTMLDivElement;
-	let fullscreenTarget: HTMLDivElement;
-	let raf: number | null = null;
-	let lastTime: number | null = null;
-	let targetSpeed = speed;
-	let currentSpeed = 0;
-	let cachedMaxScroll = 0;
-	let scrollAccumulator = 0;
-	let progressTimer: ReturnType<typeof setInterval> | null = null;
-	let countdownTimer: ReturnType<typeof setInterval> | null = null;
-	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
-
-	// Touch state
-	let touchStartY = 0;
-	let lastTapTime = 0;
-	let tapTimeout: ReturnType<typeof setTimeout> | null = null;
-
-	// Observers
-	let darkModeObserver: MutationObserver | null = null;
-	let saveCountdownHandle: number | null = null;
-
-	// ============================================
-	// Derivados
-	// ============================================
-	$: lines = text.split("\n");
-	$: lineElements = lines.map((_, i) => lineElements[i] ?? null);
-	$: wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
-	$: charCount = text.length;
-	$: estimatedTotalSeconds = wordCount > 0 ? Math.ceil((wordCount / 150) * 60) : 0;
-	$: estimatedMinutes = Math.floor(estimatedTotalSeconds / 60);
-	$: estimatedSeconds = estimatedTotalSeconds % 60;
-	$: readingTimeLabel =
-		wordCount === 0
-			? ""
-			: estimatedMinutes > 0
-				? `~${estimatedMinutes}m ${estimatedSeconds}s`
-				: `~${estimatedSeconds}s`;
-
-	$: statusKind = ((): StatusKind => {
-		if (isCountingDown) return "counting";
-		if (isPlaying) return "playing";
-		if (progress >= 0.995) return "ended";
-		if (progress > 0) return "paused";
-		return "idle";
-	})();
-
-	$: statusText = {
-		idle: "En línea",
-		counting: "Cuenta regresiva…",
-		playing: "Al aire 🔴",
-		paused: "En pausa ⏸",
-		ended: "Fin de guion ✓",
-	}[statusKind];
-
-	$: statusColor = {
-		idle: "oklch(0.60 0.15 150)",
-		counting: "oklch(0.65 0.15 60)",
-		playing: "oklch(0.60 0.15 25)",
-		paused: "oklch(0.60 0.15 220)",
-		ended: "oklch(0.55 0.05 var(--hue, 250))",
-	}[statusKind];
-
-	$: speedRatio = (speed - SPEED_MIN) / (SPEED_MAX - SPEED_MIN);
-	$: speedColor =
-		speedRatio < 0.33
-			? "oklch(0.65 0.15 150)"
-			: speedRatio < 0.66
-				? "oklch(0.70 0.15 60)"
-				: "oklch(0.65 0.18 25)";
-
-	// ============================================
-	// Persistencia
-	// ============================================
-	function loadState(): void {
-		try {
-			const raw = localStorage.getItem(STORAGE_KEY);
-			if (!raw) return;
-			const data = JSON.parse(raw);
-			if (!data || typeof data !== "object") return;
-
-			if (typeof data.text === "string" && data.text.length < 200000) {
-				text = data.text;
-			}
-			if (typeof data.speed === "number") {
-				speed = clamp(data.speed, SPEED_MIN, SPEED_MAX);
-				targetSpeed = speed;
-			}
-			if (typeof data.fontSize === "number") {
-				fontSize = clamp(data.fontSize, FONT_SIZE_MIN, FONT_SIZE_MAX);
-			}
-			if (typeof data.lineHeight === "number") {
-				lineHeight = clamp(data.lineHeight, LINE_HEIGHT_MIN, LINE_HEIGHT_MAX);
-			}
-			if (typeof data.isMirror === "boolean") isMirror = data.isMirror;
-			if (typeof data.autoCenter === "boolean") autoCenter = data.autoCenter;
-			if (typeof data.smooth === "boolean") smooth = data.smooth;
-			if (typeof data.glow === "boolean") glow = data.glow;
-			if (typeof data.focusMode === "boolean") focusMode = data.focusMode;
-			if (typeof data.dimOutside === "boolean") dimOutside = dimOutside;
-			if (typeof data.ultraClean === "boolean") ultraClean = data.ultraClean;
-			if (typeof data.countdownDuration === "number") {
-				countdownDuration = clamp(data.countdownDuration, 0, 10);
-			}
-		} catch (err) {
-			console.warn("[Teleprompter] Estado corrupto, reiniciando", err);
-			try {
-				localStorage.removeItem(STORAGE_KEY);
-			} catch {}
-		}
-	}
-
-	function loadScripts(): void {
-		try {
-			const raw = localStorage.getItem(SCRIPTS_KEY);
-			if (!raw) {
-				scripts = [];
-				return;
-			}
-			const parsed = JSON.parse(raw);
-			scripts = Array.isArray(parsed) ? parsed : [];
-		} catch (err) {
-			console.warn("[Teleprompter] Scripts corruptos, reiniciando", err);
-			scripts = [];
-			try {
-				localStorage.removeItem(SCRIPTS_KEY);
-			} catch {}
-		}
-	}
-
-	function saveScripts(list: SavedScript[]): void {
-		try {
-			localStorage.setItem(SCRIPTS_KEY, JSON.stringify(list));
-			scripts = list;
-		} catch (err) {
-			console.warn("[Teleprompter] No se pudieron guardar scripts", err);
-		}
-	}
-
-	function scheduleSave(): void {
-		if (!isReady) return;
-		if (saveTimeout) clearTimeout(saveTimeout);
-		const delay = text.length > 5000 ? 600 : 350;
-		saveTimeout = setTimeout(() => {
-			try {
-				const payload = {
-					text,
-					speed,
-					fontSize,
-					lineHeight,
-					isMirror,
-					autoCenter,
-					smooth,
-					glow,
-					focusMode,
-					dimOutside,
-					ultraClean,
-					countdownDuration,
-				};
-				localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-			} catch (err) {
-				if (err instanceof DOMException && err.name === "QuotaExceededError") {
-					// Limpiar scripts antiguos
-					const reduced = scripts.slice(0, 10);
-					saveScripts(reduced);
-				}
-			}
-		}, delay);
-	}
-
-	// Reaccionar a cambios en configuración (no en cada frame)
-	$: if (isReady) {
-		void text;
-		void speed;
-		void fontSize;
-		void lineHeight;
-		void isMirror;
-		void autoCenter;
-		void smooth;
-		void glow;
-		void focusMode;
-		void dimOutside;
-		void ultraClean;
-		void countdownDuration;
-		scheduleSave();
-	}
-
-	// ============================================
-	// Scripts
-	// ============================================
-	function saveCurrentScript(): void {
-		const trimmed = text.trim();
-		if (!trimmed) return;
-		const now = new Date().toISOString();
-		if (currentScript) {
-			const idx = scripts.findIndex((s) => s.id === currentScript);
-			if (idx >= 0) {
-				scripts[idx] = { ...scripts[idx], text, updatedAt: now };
-				saveScripts([...scripts]);
-			}
-		} else {
-			const newScript: SavedScript = {
-				id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-				name: `Guion ${scripts.length + 1}`,
-				text,
-				createdAt: now,
-				updatedAt: now,
-			};
-			const updated = [newScript, ...scripts].slice(0, MAX_SCRIPTS);
-			saveScripts(updated);
-			currentScript = newScript.id;
-			try {
-				localStorage.setItem(LAST_SCRIPT_KEY, currentScript);
-			} catch {}
-		}
-	}
-
-	function loadScript(id: string): void {
-		const script = scripts.find((s) => s.id === id);
-		if (!script) return;
-		pause();
-		text = script.text;
-		currentScript = script.id;
-		try {
-			localStorage.setItem(LAST_SCRIPT_KEY, script.id);
-		} catch {}
-		// Reset scroll
-		queueMicrotask(() => {
-			if (scrollContainer) {
-				scrollContainer.scrollTop = 0;
-				scrollAccumulator = 0;
-				updateProgress();
-			}
+	const formatDateTime = (isoDate: string): string => {
+		const date = new Date(isoDate);
+		return date.toLocaleDateString("es-ES", {
+			day: "numeric",
+			month: "short",
+			hour: "2-digit",
+			minute: "2-digit",
 		});
-	}
+	};
 
-	function deleteScript(id: string): void {
-		const updated = scripts.filter((s) => s.id !== id);
-		saveScripts(updated);
-		if (currentScript === id) {
-			currentScript = null;
-			try {
-				localStorage.removeItem(LAST_SCRIPT_KEY);
-			} catch {}
-		}
-	}
-
-	function newScript(): void {
-		pause();
-		currentScript = null;
-		text = "";
-		if (scrollContainer) {
-			scrollContainer.scrollTop = 0;
-			scrollAccumulator = 0;
-			updateProgress();
-		}
-		try {
-			localStorage.removeItem(LAST_SCRIPT_KEY);
-		} catch {}
-	}
-
-	function onScriptSelect(e: Event): void {
-		const value = (e.target as HTMLSelectElement).value;
-		if (!value) {
-			newScript();
-		} else {
-			loadScript(value);
-		}
-	}
-
-	// ============================================
-	// Scroll engine (60fps, time-based, no jank)
-	// ============================================
-	function recalcMaxScroll(): void {
-		if (!scrollContainer || !content) return;
-		cachedMaxScroll = Math.max(
-			content.scrollHeight - scrollContainer.clientHeight,
-			0,
-		);
-	}
-
-	function updateProgress(): void {
-		if (!scrollContainer) return;
-		if (cachedMaxScroll <= 0) {
-			progress = 0;
-			return;
-		}
-		progress = clamp(scrollContainer.scrollTop / cachedMaxScroll, 0, 1);
-	}
-
-	function tick(timestamp: number): void {
-		if (!isPlaying || !scrollContainer) {
-			raf = null;
-			lastTime = null;
-			return;
-		}
-		if (lastTime === null) {
-			lastTime = timestamp;
-			scrollAccumulator = scrollContainer.scrollTop;
-			raf = requestAnimationFrame(tick);
-			return;
-		}
-		const elapsed = timestamp - lastTime;
-		if (elapsed <= 0) {
-			raf = requestAnimationFrame(tick);
-			return;
-		}
-		// Clamp delta para evitar saltos grandes al volver de background
-		const delta = Math.min(elapsed / 1000, 0.1);
-		lastTime = timestamp;
-
-		// Interpolación suave
-		if (smooth) {
-			const k = 1 - Math.exp(-delta * 10);
-			currentSpeed += (targetSpeed - currentSpeed) * k;
-			if (Math.abs(currentSpeed - targetSpeed) < 0.5) {
-				currentSpeed = targetSpeed;
-			}
-		} else {
-			currentSpeed = targetSpeed;
-		}
-
-		scrollAccumulator += currentSpeed * delta;
-
-		// Final del guion
-		if (scrollAccumulator >= cachedMaxScroll) {
-			scrollContainer.scrollTop = cachedMaxScroll;
-			scrollAccumulator = cachedMaxScroll;
-			progress = 1;
-			pause();
-			releaseWakeLock();
-			return;
-		}
-
-		// Solo aplicar si cambia al menos 1px (evita reflows innecesarios)
-		const targetScroll = Math.round(scrollAccumulator);
-		if (targetScroll !== scrollContainer.scrollTop) {
-			scrollContainer.scrollTop = targetScroll;
-		}
-		raf = requestAnimationFrame(tick);
-	}
-
-	function startProgressTimer(): void {
-		stopProgressTimer();
-		progressTimer = setInterval(() => {
-			updateProgress();
-		}, 200);
-	}
-
-	function stopProgressTimer(): void {
-		if (progressTimer) {
-			clearInterval(progressTimer);
-			progressTimer = null;
-		}
-	}
-
-	// ============================================
-	// Control de reproducción
-	// ============================================
-	async function requestWakeLock(): Promise<void> {
-		if (!wakeLockSupported) return;
-		try {
-			wakeLock = await navigator.wakeLock.request("screen");
-		} catch (err) {
-			console.warn("[Teleprompter] Wake Lock no disponible", err);
-		}
-	}
-
-	function releaseWakeLock(): void {
-		if (wakeLock) {
-			wakeLock.release().catch(() => {});
-			wakeLock = null;
-		}
-	}
-
-	function startPlayback(): void {
-		if (!scrollContainer || !content) return;
-		if (raf) cancelAnimationFrame(raf);
-
-		speed = Math.round(clamp(speed, SPEED_MIN, SPEED_MAX));
-		targetSpeed = speed;
-		currentSpeed = 0;
-
-		recalcMaxScroll();
-		if (cachedMaxScroll <= 0) return;
-
-		scrollAccumulator = scrollContainer.scrollTop;
-		isPlaying = true;
-		lastTime = null;
-		startProgressTimer();
-		requestWakeLock();
-		raf = requestAnimationFrame(tick);
-	}
-
-	function beginCountdown(): void {
-		if (isCountingDown) return;
-		if (countdownDuration <= 0) {
-			startPlayback();
-			return;
-		}
-		countdown = countdownDuration;
-		isCountingDown = true;
-		countdownTimer = setInterval(() => {
-			countdown -= 1;
-			if (countdown <= 0) {
-				clearInterval(countdownTimer!);
-				countdownTimer = null;
-				isCountingDown = false;
-				startPlayback();
-			}
-		}, 1000);
-	}
-
-	function cancelCountdown(): void {
-		if (countdownTimer) {
-			clearInterval(countdownTimer);
-			countdownTimer = null;
-		}
-		isCountingDown = false;
-		countdown = 0;
-	}
-
-	function start(): void {
-		if (isPlaying || isCountingDown) return;
-		beginCountdown();
-	}
-
-	function pause(): void {
-		isPlaying = false;
-		cancelCountdown();
-		if (raf) {
-			cancelAnimationFrame(raf);
-			raf = null;
-		}
-		lastTime = null;
-		currentSpeed = 0;
-		if (scrollContainer) {
-			scrollAccumulator = scrollContainer.scrollTop;
-		}
-		stopProgressTimer();
-		releaseWakeLock();
-		updateProgress();
-	}
-
-	function toggle(): void {
-		if (isPlaying) {
-			pause();
-		} else if (isCountingDown) {
-			cancelCountdown();
-		} else {
-			start();
-		}
-	}
-
-	function reset(): void {
-		pause();
-		if (scrollContainer) {
-			scrollContainer.scrollTop = 0;
-			scrollAccumulator = 0;
-		}
-		updateProgress();
-	}
-
-	function clearText(): void {
-		pause();
-		text = "";
-		if (scrollContainer) {
-			scrollContainer.scrollTop = 0;
-			scrollAccumulator = 0;
-		}
-		updateProgress();
-	}
-
-	function jump(amount: number): void {
-		if (!scrollContainer || !content) return;
-		const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
-		const next = clamp(scrollContainer.scrollTop + amount, 0, maxScroll);
-		scrollContainer.scrollTop = next;
-		scrollAccumulator = next;
-		updateProgress();
-	}
-
-	function scrollToProgress(value: number): void {
-		if (!scrollContainer || !content) return;
-		const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
-		const next = clamp(value, 0, 1) * maxScroll;
-		scrollContainer.scrollTop = next;
-		scrollAccumulator = next;
-		updateProgress();
-	}
-
-	function adjustSpeed(amount: number): void {
-		speed = Math.round(clamp(speed + amount, SPEED_MIN, SPEED_MAX));
-		targetSpeed = speed;
-	}
-
-	// ============================================
-	// Fullscreen
-	// ============================================
-	async function toggleFullscreen(): Promise<void> {
-		if (!fullscreenTarget) return;
-		try {
-			if (!document.fullscreenElement) {
-				await fullscreenTarget.requestFullscreen({ navigationUI: "hide" });
-			} else {
-				await document.exitFullscreen();
-			}
-		} catch (err) {
-			console.warn("[Teleprompter] Fullscreen no disponible", err);
-		}
-	}
-
-	// ============================================
-	// Tiempo restante estimado
-	// ============================================
-	let timeRemaining = "";
-	$: {
-		if (cachedMaxScroll > 0 && scrollContainer && speed > 0) {
-			const remainingPx = Math.max(0, cachedMaxScroll - scrollContainer.scrollTop);
-			const seconds = Math.ceil(remainingPx / speed);
-			timeRemaining = formatTime(seconds);
-		} else {
-			timeRemaining = "";
-		}
-	}
-
-	// ============================================
-	// Touch / Mouse
-	// ============================================
-	function handleTouchStart(e: TouchEvent): void {
-		const target = e.target as HTMLElement;
-		if (target.tagName === "TEXTAREA" || target.closest("button, input, select, .teleprompter-panel")) {
-			return;
-		}
-		touchStartY = e.touches[0].clientY;
-	}
-
-	function handleTouchMove(e: TouchEvent): void {
-		if (!isPlaying) return;
-		const target = e.target as HTMLElement;
-		if (target.tagName === "TEXTAREA") return;
-		const deltaY = touchStartY - e.touches[0].clientY;
-		if (Math.abs(deltaY) > SWIPE_THRESHOLD) {
-			const step = Math.sign(deltaY) * Math.max(2, Math.abs(deltaY) / 10);
-			adjustSpeed(step);
-			touchStartY = e.touches[0].clientY;
-		}
-	}
-
-	function handleWheel(e: WheelEvent): void {
-		if (!isPlaying) return;
-		e.preventDefault();
-		const baseIncrement = Math.max(8, speed * 0.1);
-		adjustSpeed(e.deltaY > 0 ? baseIncrement : -baseIncrement);
-	}
-
-	function handleFrameClick(e: MouseEvent): void {
-		const target = e.target as HTMLElement;
-		if (
-			target.tagName === "TEXTAREA" ||
-			target.closest("button, input, select, .teleprompter-panel, .teleprompter-float, .teleprompter-progress-top")
-		) {
-			return;
-		}
-		const now = Date.now();
-		if (now - lastTapTime < DOUBLE_TAP_WINDOW) {
-			// Doble tap
-			lastTapTime = 0;
-			if (tapTimeout) {
-				clearTimeout(tapTimeout);
-				tapTimeout = null;
-			}
-			toggleFullscreen();
-			return;
-		}
-		lastTapTime = now;
-		tapTimeout = setTimeout(() => {
-			tapTimeout = null;
-			if (lastTapTime !== 0) {
-				toggle();
-				lastTapTime = 0;
-			}
-		}, TAP_THRESHOLD);
-	}
-
-	// ============================================
-	// Atajos de teclado
-	// ============================================
-	function onKey(e: KeyboardEvent): void {
-		const target = e.target as HTMLElement;
-		const inField =
-			target.tagName === "TEXTAREA" ||
-			target.tagName === "INPUT" ||
-			target.tagName === "SELECT" ||
-			target.isContentEditable;
-
-		switch (e.code) {
-			case "Space":
-			case "Enter":
-			case "NumpadEnter":
-				if (inField && target.tagName !== "BUTTON") return;
-				e.preventDefault();
-				toggle();
-				break;
-			case "ArrowUp":
-				if (inField) return;
-				e.preventDefault();
-				jump(-120);
-				break;
-			case "ArrowDown":
-				if (inField) return;
-				e.preventDefault();
-				jump(120);
-				break;
-			case "PageUp":
-				if (inField) return;
-				e.preventDefault();
-				jump(-320);
-				break;
-			case "PageDown":
-				if (inField) return;
-				e.preventDefault();
-				jump(320);
-				break;
-			case "Home":
-				if (inField) return;
-				e.preventDefault();
-				reset();
-				break;
-			case "KeyM":
-				if (inField) return;
-				isMirror = !isMirror;
-				break;
-			case "KeyF":
-				if (inField) return;
-				focusMode = !focusMode;
-				break;
-			case "KeyR":
-				if (inField) return;
-				reset();
-				break;
-			case "KeyX":
-				if (inField) return;
-				toggleFullscreen();
-				break;
-			case "KeyL":
-				if (inField) return;
-				ultraClean = !ultraClean;
-				break;
-			case "Equal":
-			case "NumpadAdd":
-				if (inField) return;
-				e.preventDefault();
-				adjustSpeed(4);
-				break;
-			case "Minus":
-			case "NumpadSubtract":
-				if (inField) return;
-				e.preventDefault();
-				adjustSpeed(-4);
-				break;
-			case "Escape":
-				if (showOnboarding) {
-					showOnboarding = false;
-					dismissOnboarding();
-				}
-				break;
-		}
-	}
-
-	// ============================================
-	// Onboarding
-	// ============================================
-	function dismissOnboarding(): void {
-		showOnboarding = false;
-		try {
-			localStorage.setItem(ONBOARDING_KEY, "true");
-		} catch {}
-	}
-
-	function applyYouTubeSettings(): void {
+	const applyYouTubeSettings = () => {
 		speed = 60;
 		fontSize = 40;
 		lineHeight = 1.75;
@@ -811,335 +557,432 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		autoCenter = true;
 		countdownDuration = 3;
 		targetSpeed = speed;
-		helpTab = "quickstart";
+		scheduleSave();
+	};
+
+	const getEstimatedTimeRemaining = (): string => {
+		if (!scrollContainer || !content || speed === 0) return "";
+		const maxScroll = content.scrollHeight - scrollContainer.clientHeight;
+		const remaining = maxScroll - scrollContainer.scrollTop;
+		if (remaining <= 0) return "0s";
+		const seconds = Math.ceil(remaining / speed);
+		if (seconds < 60) return `${seconds}s`;
+		const minutes = Math.floor(seconds / 60);
+		const secs = seconds % 60;
+		return `${minutes}:${secs.toString().padStart(2, "0")}`;
+	};
+
+	const handleTouchStart = (e: TouchEvent) => {
+		if (!isMobile && !("ontouchstart" in window)) return;
+		if ((e.target as HTMLElement)?.tagName === "TEXTAREA") return;
+
+		touchStartY = e.touches[0].clientY;
+	};
+
+	const handleTouchMove = (e: TouchEvent) => {
+		if (!isMobile && !("ontouchstart" in window)) return;
+		if (!isPlaying) return;
+		if ((e.target as HTMLElement)?.tagName === "TEXTAREA") return;
+
+		const deltaY = touchStartY - e.touches[0].clientY;
+
+		if (Math.abs(deltaY) > SWIPE_THRESHOLD) {
+			const speedAdjustment =
+				Math.sign(deltaY) * Math.max(2, Math.abs(deltaY) / 10);
+			adjustSpeed(speedAdjustment);
+			touchStartY = e.touches[0].clientY;
+		}
+	};
+
+	const handleFrameClick = (e: MouseEvent) => {
+		if ((e.target as HTMLElement)?.tagName === "TEXTAREA") return;
+		if ((e.target as HTMLElement)?.closest(".teleprompter-panel")) return;
+		if ((e.target as HTMLElement)?.closest(".teleprompter-float")) return;
+
+		const now = Date.now();
+		if (now - lastTapTime < TAP_THRESHOLD) {
+			toggleFullscreen();
+			lastTapTime = 0;
+		} else {
+			lastTapTime = now;
+			setTimeout(() => {
+				if (lastTapTime !== 0) {
+					toggle();
+					lastTapTime = 0;
+				}
+			}, TAP_THRESHOLD);
+		}
+	};
+
+	const onKey = (event: KeyboardEvent) => {
+		if (event.target && (event.target as HTMLElement).tagName === "TEXTAREA") return;
+		switch (event.code) {
+			case "Space":
+			case "Enter":
+			case "NumpadEnter":
+				event.preventDefault();
+				toggle();
+				break;
+			case "ArrowUp":
+				event.preventDefault();
+				jump(-120);
+				break;
+			case "ArrowDown":
+				event.preventDefault();
+				jump(120);
+				break;
+			case "PageUp":
+				event.preventDefault();
+				jump(-320);
+				break;
+			case "PageDown":
+				event.preventDefault();
+				jump(320);
+				break;
+			case "KeyM":
+				isMirror = !isMirror;
+				break;
+			case "KeyF":
+				focusMode = !focusMode;
+				break;
+			case "KeyR":
+				reset();
+				break;
+			case "KeyX":
+				toggleFullscreen();
+				break;
+			case "KeyL":
+				ultraClean = !ultraClean;
+				break;
+			case "Equal":
+			case "NumpadAdd":
+				adjustSpeed(4);
+				break;
+			case "Minus":
+			case "NumpadSubtract":
+				adjustSpeed(-4);
+				break;
+		}
+	};
+
+	$: if (
+		isReady &&
+		(text ||
+			speed ||
+			fontSize ||
+			lineHeight ||
+			isMirror ||
+			autoCenter ||
+			smooth ||
+			glow ||
+			focusMode ||
+			dimOutside ||
+			ultraClean ||
+			countdownDuration)
+	) {
+		scheduleSave();
 	}
 
-	// ============================================
-	// Recalc on resize y font/line changes
-	// ============================================
-	$: if (isReady && content && scrollContainer) {
-		void fontSize;
-		void lineHeight;
-		queueMicrotask(() => {
-			recalcMaxScroll();
-			updateProgress();
+	$: if (isPlaying && content && scrollContainer && (fontSize || lineHeight)) {
+		requestAnimationFrame(() => {
+			if (!scrollContainer || !content) return;
+			cachedMaxScroll = Math.max(
+				content.scrollHeight - scrollContainer.clientHeight,
+				0,
+			);
 		});
 	}
 
-	function onResize(): void {
-		if (!scrollContainer || !content) return;
-		const prevMax = cachedMaxScroll;
-		recalcMaxScroll();
-		if (isPlaying && scrollContainer) {
-			scrollAccumulator = Math.min(scrollAccumulator, cachedMaxScroll);
-		}
-		updateProgress();
-	}
-
-	// ============================================
-	// Lifecycle
-	// ============================================
 	onMount(() => {
-		// Dark mode
 		isDark = document.documentElement.classList.contains("dark");
-		darkModeObserver = new MutationObserver(() => {
-			isDark = document.documentElement.classList.contains("dark");
+		darkModeObserver = new MutationObserver((mutations) => {
+			for (const mutation of mutations) {
+				if (mutation.attributeName === "class") {
+					isDark = document.documentElement.classList.contains("dark");
+				}
+			}
 		});
 		darkModeObserver.observe(document.documentElement, {
 			attributes: true,
 			attributeFilter: ["class"],
 		});
 
-		// Mobile
+		window.addEventListener("keydown", onKey);
 		const mql = window.matchMedia("(max-width: 768px)");
 		isMobile = mql.matches;
 		showMobileBanner = isMobile;
-		const mqlHandler = (e: MediaQueryListEvent) => {
-			isMobile = e.matches;
-			showMobileBanner = e.matches;
-		};
-		mql.addEventListener("change", mqlHandler);
+		allowMobile = true;
 
-		// Wake Lock
-		wakeLockSupported = "wakeLock" in navigator;
+		applyStoredThemeToDocument();
+		stopThemeWatch = watchSystemThemeChanges(getStoredTheme());
 
-		// Keyboard
-		window.addEventListener("keydown", onKey);
-
-		// Fullscreen
-		const onFsChange = () => {
-			isFullscreen = Boolean(document.fullscreenElement);
-			if (!isFullscreen) {
-				// Al salir de fullscreen, pausar y liberar wake lock
-				pause();
-			}
-		};
-		document.addEventListener("fullscreenchange", onFsChange);
-
-		// Visibilidad: liberar wake lock al ocultar
-		const onVisibility = () => {
-			if (document.hidden && wakeLock) {
-				releaseWakeLock();
-			} else if (!document.hidden && isPlaying) {
-				requestWakeLock();
-			}
-		};
-		document.addEventListener("visibilitychange", onVisibility);
-
-		// Resize
-		const resizeHandler = () => onResize();
-		const orientationHandler = () => setTimeout(onResize, 300);
-		window.addEventListener("resize", resizeHandler);
-		window.addEventListener("orientationchange", orientationHandler);
-
-		// Cargar estado
 		loadState();
 		loadScripts();
 
-		const lastId = (() => {
-			try {
-				return localStorage.getItem(LAST_SCRIPT_KEY);
-			} catch {
-				return null;
-			}
-		})();
-		if (lastId) {
-			loadScript(lastId);
+		const lastScriptId = localStorage.getItem("teleprompter:lastScript");
+		if (lastScriptId) {
+			loadScript(lastScriptId);
 		}
 
-		// Onboarding
-		try {
-			const done = localStorage.getItem(ONBOARDING_KEY);
-			if (!done) showOnboarding = true;
-		} catch {}
+		const onboardingDone = localStorage.getItem("teleprompter:onboarding:done");
+		if (!onboardingDone) {
+			showOnboarding = true;
+		}
+
+		updateProgress();
+		observer?.disconnect();
+		observer = new IntersectionObserver(() => updateProgress());
+		if (scrollContainer) observer.observe(scrollContainer);
+
+		const onFullscreenChange = () => {
+			isFullscreen = Boolean(document.fullscreenElement);
+		};
+		document.addEventListener("fullscreenchange", onFullscreenChange);
+
+		const onResize = () => {
+			if (isPlaying && scrollContainer && content) {
+				cachedMaxScroll = Math.max(
+					content.scrollHeight - scrollContainer.clientHeight,
+					0,
+				);
+				scrollAccumulator = Math.min(scrollAccumulator, cachedMaxScroll);
+			}
+		};
+		const orientationHandler = () => setTimeout(onResize, 300);
+		window.addEventListener("resize", onResize);
+		window.addEventListener("orientationchange", orientationHandler);
 
 		isReady = true;
-		updateProgress();
 
 		return () => {
-			window.removeEventListener("keydown", onKey);
-			document.removeEventListener("fullscreenchange", onFsChange);
-			document.removeEventListener("visibilitychange", onVisibility);
-			window.removeEventListener("resize", resizeHandler);
+			document.removeEventListener("fullscreenchange", onFullscreenChange);
+			window.removeEventListener("resize", onResize);
 			window.removeEventListener("orientationchange", orientationHandler);
-			mql.removeEventListener("change", mqlHandler);
 		};
 	});
 
 	onDestroy(() => {
+		window.removeEventListener("keydown", onKey);
 		pause();
 		stopProgressTimer();
-		cancelCountdown();
+		observer?.disconnect();
+		darkModeObserver?.disconnect();
 		if (saveTimeout) clearTimeout(saveTimeout);
-		if (tapTimeout) clearTimeout(tapTimeout);
-		releaseWakeLock();
-		if (darkModeObserver) {
-			darkModeObserver.disconnect();
-			darkModeObserver = null;
-		}
+		stopThemeWatch?.();
+		stopThemeWatch = null;
+		if (countdownTimer) clearInterval(countdownTimer);
 	});
 </script>
 
 <div class="teleprompter-wrapper" class:clean={ultraClean} class:dark={isDark}>
-	<!-- ============================================
-       Onboarding
-       ============================================ -->
 	{#if showOnboarding}
-		<div
-			class="teleprompter-onboarding-overlay"
-			on:click|self={dismissOnboarding}
-			role="presentation"
-		>
-			<div
-				class="teleprompter-onboarding-card"
-				role="dialog"
-				aria-modal="true"
-				aria-labelledby="onboarding-title"
-			>
+		<div class="teleprompter-onboarding-overlay">
+			<div class="teleprompter-onboarding-card premium">
 				<div class="onboarding-header">
-					<div class="logo-gradient" aria-hidden="true">🎬</div>
-					<h2 id="onboarding-title">Teleprompter Premium</h2>
+					<div class="logo-gradient">🎬</div>
+					<h2>Bienvenido al Teleprompter Premium</h2>
 					<p class="subtitle">Tu estudio profesional de lectura en pantalla</p>
 				</div>
 
-				<div class="help-tabs" role="tablist">
-					{#each [
-						{ id: "quickstart", label: "Inicio rápido" },
-						{ id: "youtube", label: "Ajustes YouTube" },
-						{ id: "shortcuts", label: "Atajos" },
-						{ id: "tips", label: "Tips Pro" },
-					] as tab}
-						<button
-							class="tab-btn"
-							class:active={helpTab === tab.id}
-							on:click={() => (helpTab = tab.id)}
-							role="tab"
-							aria-selected={helpTab === tab.id}
-						>
-							{tab.label}
-						</button>
-					{/each}
+				<div class="help-tabs">
+					<button
+						class="tab-btn"
+						class:active={helpTab === 'quickstart'}
+						on:click={() => helpTab = 'quickstart'}
+					>
+						Inicio rápido
+					</button>
+					<button
+						class="tab-btn"
+						class:active={helpTab === 'youtube'}
+						on:click={() => helpTab = 'youtube'}
+					>
+						Ajustes YouTube
+					</button>
+					<button
+						class="tab-btn"
+						class:active={helpTab === 'shortcuts'}
+						on:click={() => helpTab = 'shortcuts'}
+					>
+						Atajos
+					</button>
+					<button
+						class="tab-btn"
+						class:active={helpTab === 'tips'}
+						on:click={() => helpTab = 'tips'}
+					>
+						Tips Pro
+					</button>
 				</div>
 
-				<div class="tab-content" role="tabpanel">
-					{#key helpTab}
+				<div class="tab-content">
+					{#if helpTab === 'quickstart'}
 						<div class="tab-panel">
-							{#if helpTab === "quickstart"}
-								<div class="onboarding-step">
-									<div class="step-icon">📝</div>
-									<h3>1. Pega tu guion</h3>
-									<p>Escribe o pega el texto en el área designada</p>
-								</div>
-								<div class="onboarding-step">
-									<div class="step-icon">⚙️</div>
-									<h3>2. Ajusta a tu ritmo</h3>
-									<p>Velocidad, tamaño y opciones según tu preferencia</p>
-								</div>
-								<div class="onboarding-step">
-									<div class="step-icon">▶️</div>
-									<h3>3. Empieza a leer</h3>
-									<p>Presiona Play o Espacio para iniciar</p>
-								</div>
-							{:else if helpTab === "youtube"}
-								<h3>⚙️ Configuración recomendada para YouTube</h3>
-								<p class="tab-desc">
-									Ajustes optimizados para grabar videos con lectura natural y profesional.
-								</p>
-								<div class="settings-list">
-									<div class="setting-item">
-										<span class="setting-label">🐢 Velocidad</span>
-										<span class="setting-value">50-70 px/seg</span>
-									</div>
-									<div class="setting-item">
-										<span class="setting-label">📏 Fuente</span>
-										<span class="setting-value">38-42px</span>
-									</div>
-									<div class="setting-item">
-										<span class="setting-label">📐 Interlineado</span>
-										<span class="setting-value">1.7-1.8</span>
-									</div>
-									<div class="setting-item">
-										<span class="setting-label">🎯 Focus mode</span>
-										<span class="setting-value">Activado</span>
-									</div>
-									<div class="setting-item">
-										<span class="setting-label">⏱️ Countdown</span>
-										<span class="setting-value">3 segundos</span>
-									</div>
-								</div>
-								<button class="btn-youtube-apply" on:click={applyYouTubeSettings}>
-									✨ Aplicar ajustes YouTube
-								</button>
-							{:else if helpTab === "shortcuts"}
-								<h3>⌨️ Atajos de teclado</h3>
-								<div class="shortcuts-table">
-									<div class="shortcut-row">
-										<span class="shortcut-key">Espacio / Enter</span>
-										<span class="shortcut-desc">Play / Pausa</span>
-									</div>
-									<div class="shortcut-row">
-										<span class="shortcut-key">R / Home</span>
-										<span class="shortcut-desc">Reiniciar</span>
-									</div>
-									<div class="shortcut-row">
-										<span class="shortcut-key">↑ / ↓</span>
-										<span class="shortcut-desc">Saltar ±120px</span>
-									</div>
-									<div class="shortcut-row">
-										<span class="shortcut-key">PageUp / PageDown</span>
-										<span class="shortcut-desc">Saltar ±320px</span>
-									</div>
-									<div class="shortcut-row">
-										<span class="shortcut-key">+ / −</span>
-										<span class="shortcut-desc">Velocidad ±4</span>
-									</div>
-									<div class="shortcut-row">
-										<span class="shortcut-key">M</span>
-										<span class="shortcut-desc">Modo espejo</span>
-									</div>
-									<div class="shortcut-row">
-										<span class="shortcut-key">F</span>
-										<span class="shortcut-desc">Focus mode</span>
-									</div>
-									<div class="shortcut-row">
-										<span class="shortcut-key">X</span>
-										<span class="shortcut-desc">Pantalla completa</span>
-									</div>
-									<div class="shortcut-row">
-										<span class="shortcut-key">L</span>
-										<span class="shortcut-desc">Modo limpio</span>
-									</div>
-									<div class="shortcut-row">
-										<span class="shortcut-key">Esc</span>
-										<span class="shortcut-desc">Cerrar ayuda</span>
-									</div>
-								</div>
-							{:else if helpTab === "tips"}
-								<h3>💡 Consejos profesionales</h3>
-								<div class="tips-list">
-									<div class="tip-item-pro">
-										<span class="tip-number">1</span>
-										<div class="tip-content">
-											<strong>Practica el guion 2-3 veces antes de grabar</strong>
-											<p>Para una lectura natural y fluida</p>
-										</div>
-									</div>
-									<div class="tip-item-pro">
-										<span class="tip-number">2</span>
-										<div class="tip-content">
-											<strong>Usa párrafos cortos de 2-3 líneas</strong>
-											<p>Facilita la lectura y el ritmo</p>
-										</div>
-									</div>
-									<div class="tip-item-pro">
-										<span class="tip-number">3</span>
-										<div class="tip-content">
-											<strong>Mira a la cámara, no al texto</strong>
-											<p>Posiciona el teleprompter cerca del lente</p>
-										</div>
-									</div>
-									<div class="tip-item-pro">
-										<span class="tip-number">4</span>
-										<div class="tip-content">
-											<strong>Encuentra tu velocidad natural</strong>
-											<p>No esperes al texto ni corras detrás de él</p>
-										</div>
-									</div>
-									<div class="tip-item-pro">
-										<span class="tip-number">5</span>
-										<div class="tip-content">
-											<strong>Focus mode reduce fatiga visual</strong>
-											<p>Ideal para sesiones de grabación largas</p>
-										</div>
-									</div>
-								</div>
-							{/if}
+							<div class="onboarding-step">
+								<div class="step-icon">📝</div>
+								<h3>1. Pega tu guion</h3>
+								<p>Escribe o pega el texto que deseas leer en el área de texto</p>
+							</div>
+							<div class="onboarding-step">
+								<div class="step-icon">⚙️</div>
+								<h3>2. Ajusta a tu ritmo</h3>
+								<p>Personaliza velocidad, tamaño de fuente y otras opciones según tu preferencia</p>
+							</div>
+							<div class="onboarding-step">
+								<div class="step-icon">▶️</div>
+								<h3>3. Empieza a grabar</h3>
+								<p>Presiona Play o Espacio para comenzar la lectura profesional</p>
+							</div>
 						</div>
-					{/key}
+					{:else if helpTab === 'youtube'}
+						<div class="tab-panel youtube-settings">
+							<h3>⚙️ Configuración recomendada para YouTube</h3>
+							<p class="tab-desc">Estos ajustes te ayudarán a grabar videos profesionales con lectura natural:</p>
+
+							<div class="settings-list">
+								<div class="setting-item">
+									<span class="setting-label">🐢 Velocidad:</span>
+									<span class="setting-value">50-70 px/seg (lectura natural sin parecer robot)</span>
+								</div>
+								<div class="setting-item">
+									<span class="setting-label">📏 Tamaño fuente:</span>
+									<span class="setting-value">38-42px (legible a distancia del monitor)</span>
+								</div>
+								<div class="setting-item">
+									<span class="setting-label">📐 Interlineado:</span>
+									<span class="setting-value">1.7-1.8 (espaciado cómodo para los ojos)</span>
+								</div>
+								<div class="setting-item">
+									<span class="setting-label">🔄 Modo espejo:</span>
+									<span class="setting-value">Activado para cámara frontal / desactivado para trasera</span>
+								</div>
+								<div class="setting-item">
+									<span class="setting-label">🎯 Focus mode:</span>
+									<span class="setting-value">Activado (resalta la línea que estás leyendo)</span>
+								</div>
+								<div class="setting-item">
+									<span class="setting-label">🎯 Auto-centrar:</span>
+									<span class="setting-value">Activado siempre</span>
+								</div>
+								<div class="setting-item">
+									<span class="setting-label">⏱️ Countdown:</span>
+									<span class="setting-value">3 segundos (te da tiempo de prepararte)</span>
+								</div>
+							</div>
+
+							<button class="btn-youtube-apply" on:click={() => {
+								applyYouTubeSettings();
+								helpTab = 'quickstart';
+							}}>
+								✨ Aplicar ajustes YouTube
+							</button>
+						</div>
+					{:else if helpTab === 'shortcuts'}
+						<div class="tab-panel shortcuts-panel">
+							<h3>⌨️ Atajos de teclado</h3>
+							<div class="shortcuts-table">
+								<div class="shortcut-row">
+									<span class="shortcut-key">Espacio / Enter</span>
+									<span class="shortcut-desc">Play / Pausa</span>
+								</div>
+								<div class="shortcut-row">
+									<span class="shortcut-key">R</span>
+									<span class="shortcut-desc">Reiniciar desde el inicio</span>
+								</div>
+								<div class="shortcut-row">
+									<span class="shortcut-key">↑ / ↓</span>
+									<span class="shortcut-desc">Ajustar velocidad ±10</span>
+								</div>
+								<div class="shortcut-row">
+									<span class="shortcut-key">Shift + ↑ / ↓</span>
+									<span class="shortcut-desc">Ajustar velocidad ±1 (preciso)</span>
+								</div>
+								<div class="shortcut-row">
+									<span class="shortcut-key">[ / ]</span>
+									<span class="shortcut-desc">Cambiar tamaño de fuente</span>
+								</div>
+								<div class="shortcut-row">
+									<span class="shortcut-key">M</span>
+									<span class="shortcut-desc">Activar/desactivar modo espejo</span>
+								</div>
+								<div class="shortcut-row">
+									<span class="shortcut-key">F</span>
+									<span class="shortcut-desc">Activar/desactivar Focus Mode</span>
+								</div>
+								<div class="shortcut-row">
+									<span class="shortcut-key">X</span>
+									<span class="shortcut-desc">Pantalla completa</span>
+								</div>
+								<div class="shortcut-row">
+									<span class="shortcut-key">L</span>
+									<span class="shortcut-desc">Modo limpio (oculta todo excepto texto)</span>
+								</div>
+							</div>
+						</div>
+					{:else if helpTab === 'tips'}
+						<div class="tab-panel tips-panel">
+							<h3>💡 Consejos profesionales</h3>
+							<div class="tips-list">
+								<div class="tip-item-pro">
+									<span class="tip-number">1</span>
+									<div class="tip-content">
+										<strong>Practica el guion 2-3 veces antes de grabar</strong>
+										<p>Familiarízate con el texto para una lectura más natural y fluida</p>
+									</div>
+								</div>
+								<div class="tip-item-pro">
+									<span class="tip-number">2</span>
+									<div class="tip-content">
+										<strong>Usa párrafos cortos de 2-3 líneas</strong>
+										<p>Facilita la lectura y evita perder el hilo de tu discurso</p>
+									</div>
+								</div>
+								<div class="tip-item-pro">
+									<span class="tip-number">3</span>
+									<div class="tip-content">
+										<strong>Mira a la cámara, no al texto</strong>
+										<p>Posiciona el teleprompter cerca de la cámara y usa visión periférica</p>
+									</div>
+								</div>
+								<div class="tip-item-pro">
+									<span class="tip-number">4</span>
+									<div class="tip-content">
+										<strong>Ajusta la velocidad ideal para ti</strong>
+										<p>No debes esperar al texto ni correr detrás de él. Encuentra tu ritmo natural</p>
+									</div>
+								</div>
+								<div class="tip-item-pro">
+									<span class="tip-number">5</span>
+									<div class="tip-content">
+										<strong>Usa el Focus Mode para grabaciones largas</strong>
+										<p>Resalta la línea actual y reduce la fatiga visual durante sesiones extensas</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					{/if}
 				</div>
 
-				<button class="btn-onboarding" on:click={dismissOnboarding}>
+				<button
+					class="btn-onboarding premium-btn"
+					on:click={() => {
+						showOnboarding = false;
+						localStorage.setItem("teleprompter:onboarding:done", "true");
+					}}
+				>
 					Comenzar
 				</button>
 			</div>
 		</div>
 	{/if}
 
-	<!-- ============================================
-       Header
-       ============================================ -->
-	<header class="teleprompter-header">
-		<div class="header-info">
+	<div class="teleprompter-header">
+		<div>
 			<h1 class="teleprompter-title">Teleprompter</h1>
 			<p class="teleprompter-subtitle">Tu estudio profesional de lectura en pantalla</p>
-			<div class="status-row" aria-live="polite">
-				<span
-					class="status-indicator"
-					style:background-color={statusColor}
-					class:playing={isPlaying}
-					aria-hidden="true"
-				></span>
-				<span class="teleprompter-status">{statusText}</span>
+			<div class="status-row">
+				<div class="status-indicator" style={`background-color: ${getStatusColor()}`}></div>
+				<p class="teleprompter-status">{getStatus()}</p>
 				{#if wordCount > 0}
 					<span class="word-count">· {wordCount} palabras · {readingTimeLabel}</span>
 				{/if}
@@ -1150,9 +993,8 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 				class="btn-help"
 				on:click={() => (showOnboarding = true)}
 				title="Ver tutorial"
-				aria-label="Abrir tutorial"
 			>
-				<span class="help-icon" aria-hidden="true">?</span>
+				<span class="help-icon">?</span>
 				<span class="help-badge">Ayuda</span>
 			</button>
 			<button
@@ -1173,70 +1015,47 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 				{ultraClean ? "Salir modo limpio" : "Modo limpio (L)"}
 			</button>
 		</div>
-	</header>
+	</div>
 
 	{#if showMobileBanner}
-		<div class="mobile-tip-banner" role="status">
+		<div class="mobile-tip-banner">
 			<div class="mobile-tip-content">
-				<span class="mobile-tip-icon" aria-hidden="true">💡</span>
-				<p>
-					<strong>👆 Toca</strong> para pausar · <strong>👆👆</strong> pantalla completa
-				</p>
+				<span class="mobile-tip-icon">💡</span>
+				<p>Para una experiencia completa, usa una pantalla más grande. <strong>👆 Toca</strong> para pausar · <strong>👆👆</strong> pantalla completa</p>
 			</div>
-			<button
-				class="mobile-tip-close"
-				on:click={() => (showMobileBanner = false)}
-				aria-label="Cerrar sugerencia"
-			>
-				✕
-			</button>
+			<button class="mobile-tip-close" on:click={() => showMobileBanner = false} aria-label="Cerrar">✕</button>
 		</div>
 	{/if}
 
-	<!-- ============================================
-       Panel
-       ============================================ -->
 	<div class="teleprompter-panel">
 		<div class="script-manager">
 			<label for="script-selector" class="manager-label">Guion guardado:</label>
 			<div class="script-controls">
 				<select
 					id="script-selector"
-					value={currentScript ?? ""}
-					on:change={onScriptSelect}
+					bind:value={currentScript}
+					on:change={(e) => {
+						const id = (e.target as HTMLSelectElement).value;
+						if (id) loadScript(id);
+					}}
 				>
 					<option value="">-- Nuevo guion --</option>
-					{#each scripts as script (script.id)}
+					{#each scripts as script}
 						<option value={script.id}>
 							{script.name} · {formatDateTime(script.updatedAt)}
 						</option>
 					{/each}
 				</select>
-				<button
-					class="btn-icon"
-					on:click={saveCurrentScript}
-					title="Guardar guion actual"
-					aria-label="Guardar guion actual"
+				<button class="btn-icon" on:click={saveCurrentScript} title="Guardar guion actual"
+				>💾</button
 				>
-					💾
-				</button>
-				<button
-					class="btn-icon"
-					on:click={newScript}
-					title="Nuevo guion"
-					aria-label="Crear nuevo guion"
-				>
-					➕
-				</button>
+				<button class="btn-icon" on:click={newScript} title="Nuevo guion">➕</button>
 				{#if currentScript}
 					<button
 						class="btn-icon"
-						on:click={() => currentScript && deleteScript(currentScript)}
-						title="Eliminar guion"
-						aria-label="Eliminar guion actual"
+						on:click={() => deleteScript(currentScript!)}
+						title="Eliminar guion">🗑️</button
 					>
-						🗑️
-					</button>
 				{/if}
 			</div>
 		</div>
@@ -1246,7 +1065,6 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			bind:value={text}
 			rows={6}
 			placeholder="Escribe o pega aquí tu guion..."
-			aria-label="Texto del guion"
 		></textarea>
 
 		{#if showControls}
@@ -1254,41 +1072,39 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 				<div class="controls-grid">
 					<div class="control-group">
 						<div class="control-label-row">
-							<label for="speed-range">Velocidad</label>
+							<label title="Velocidad ideal: 40-80 px/seg para lectura natural"
+							>Velocidad</label
+							>
 							<span class="speed-label">{getSpeedLabel(speed)}</span>
 						</div>
 						<input
-							id="speed-range"
 							type="range"
 							class="custom-range"
-							min={SPEED_MIN}
-							max={SPEED_MAX}
+							min={speedMin}
+							max={speedMax}
 							step="1"
 							bind:value={speed}
-							aria-label="Velocidad de scroll"
+							on:input={onSpeedInput}
 						/>
 						<div class="control-value-row">
 							<span class="control-value">{speed} px/seg</span>
 							<div
 								class="speed-indicator-bar"
-								style:width="{speedRatio * 100}%"
-								style:background-color={speedColor}
+								style={`width: ${((speed - speedMin) / (speedMax - speedMin)) * 100}%; background-color: ${getSpeedColor()}`}
 							></div>
 						</div>
 					</div>
 
 					<div class="control-group">
 						<div class="control-label-row">
-							<label for="font-range">Tamaño</label>
+							<label>Tamaño</label>
 						</div>
 						<input
-							id="font-range"
 							type="range"
 							class="custom-range"
-							min={FONT_SIZE_MIN}
-							max={FONT_SIZE_MAX}
+							min="22"
+							max="64"
 							bind:value={fontSize}
-							aria-label="Tamaño de fuente"
 						/>
 						<div class="control-value-row">
 							<span class="control-value">{fontSize}px</span>
@@ -1297,17 +1113,15 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 					<div class="control-group">
 						<div class="control-label-row">
-							<label for="line-range">Interlineado</label>
+							<label>Interlineado</label>
 						</div>
 						<input
-							id="line-range"
 							type="range"
 							class="custom-range"
-							min={LINE_HEIGHT_MIN}
-							max={LINE_HEIGHT_MAX}
+							min="1.2"
+							max="2.2"
 							step="0.05"
 							bind:value={lineHeight}
-							aria-label="Interlineado"
 						/>
 						<div class="control-value-row">
 							<span class="control-value">{lineHeight.toFixed(2)}</span>
@@ -1316,13 +1130,9 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 					<div class="control-group">
 						<div class="control-label-row">
-							<label for="countdown-select">Countdown</label>
+							<label>Countdown</label>
 						</div>
-						<select
-							id="countdown-select"
-							class="countdown-select"
-							bind:value={countdownDuration}
-						>
+						<select class="countdown-select" bind:value={countdownDuration}>
 							<option value={0}>Sin countdown</option>
 							<option value={1}>1 segundo</option>
 							<option value={2}>2 segundos</option>
@@ -1339,61 +1149,44 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 							class="toggle-btn"
 							class:active={isMirror}
 							on:click={() => (isMirror = !isMirror)}
-							title="Para cámaras frontales"
+							title="Activa para cámaras frontales que invierten la imagen"
+						>Espejo (M)</button
 						>
-							Espejo (M)
-						</button>
 						<button
 							class="toggle-btn"
 							class:active={autoCenter}
 							on:click={() => (autoCenter = !autoCenter)}
-							title="Mantiene el texto centrado"
+							title="Mantiene el texto centrado en la pantalla">Auto-centrar</button
 						>
-							Auto-centrar
-						</button>
 						<button
 							class="toggle-btn"
 							class:active={smooth}
 							on:click={() => (smooth = !smooth)}
-							title="Transición suave de velocidad"
+							title="Transición suave entre velocidades">Suave</button
 						>
-							Suave
-						</button>
 						<button
 							class="toggle-btn"
 							class:active={glow}
 							on:click={() => (glow = !glow)}
-							title="Efecto de brillo"
+							title="Efecto de brillo en la pantalla">Glow</button
 						>
-							Glow
-						</button>
 						<button
 							class="toggle-btn"
 							class:active={focusMode}
 							on:click={() => (focusMode = !focusMode)}
-							title="Resalta la línea actual"
+							title="Resalta la línea actual y oscurece el resto">Focus (F)</button
 						>
-							Focus (F)
-						</button>
 						<button
 							class="toggle-btn"
 							class:active={dimOutside}
-							on:click={() => (dimOutside = !dimOutside)}
+							on:click={() => (dimOutside = !dimOutside)}>Oscurecer bordes</button
 						>
-							Oscurecer bordes
-						</button>
 					</div>
 				</div>
 
 				<div class="control-actions">
 					<button class="btn-play" on:click={toggle}>
-						{#if isPlaying}
-							⏸ Pausar
-						{:else if isCountingDown}
-							⏹ Cancelar
-						{:else}
-							▶ Reproducir
-						{/if}
+						{isPlaying ? "⏸ Pausar" : isCountingDown ? "⏹ Cancelar" : "▶ Reproducir"}
 					</button>
 					<button class="btn-action" on:click={reset}>Reiniciar (R)</button>
 					<button class="btn-action" on:click={clearText}>Vaciar</button>
@@ -1404,9 +1197,6 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		{/if}
 	</div>
 
-	<!-- ============================================
-       Screen
-       ============================================ -->
 	<div
 		class="teleprompter-screen"
 		class:mirror={isMirror}
@@ -1421,27 +1211,30 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			aria-valuenow={Math.round(progress * 100)}
 			aria-valuemin="0"
 			aria-valuemax="100"
-			aria-label="Progreso del guion"
 			tabindex="0"
 			on:click={(e) => {
 				const rect = e.currentTarget.getBoundingClientRect();
 				const clickX = e.clientX - rect.left;
-				scrollToProgress(clickX / rect.width);
+				const progressValue = clickX / rect.width;
+				scrollToProgress(progressValue);
 			}}
 			on:keydown={(e) => {
-				if (e.key === "Enter" || e.key === " ") {
+				if (e.key === 'Enter' || e.key === ' ') {
 					e.preventDefault();
-					scrollToProgress(0.5);
+					const rect = e.currentTarget.getBoundingClientRect();
+					const clickX = rect.width / 2;
+					const progressValue = clickX / rect.width;
+					scrollToProgress(progressValue);
 				}
 			}}
 		>
-			<div class="progress-bar" style:width="{progress * 100}%"></div>
-			{#if timeRemaining && (isPlaying || progress > 0)}
-				<div class="time-remaining" aria-live="off">⏱ {timeRemaining}</div>
+			<div class="progress-bar" style={`width: ${progress * 100}%`}></div>
+			{#if isPlaying || progress > 0}
+				<div class="time-remaining">{getEstimatedTimeRemaining()}</div>
 			{/if}
 		</div>
 
-		<div class="reading-position-marker" aria-hidden="true"></div>
+		<div class="reading-position-marker"></div>
 
 		<div
 			class="teleprompter-frame"
@@ -1450,14 +1243,12 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			on:click={handleFrameClick}
 			on:touchstart={handleTouchStart}
 			on:touchmove={handleTouchMove}
-			style:padding={autoCenter ? "35vh 2rem 50vh" : "2.5rem 2rem"}
+			style={`padding: ${autoCenter ? "35vh 2rem 50vh" : "2.5rem 2rem"};`}
 			tabindex="-1"
 		>
 			<div
 				class="teleprompter-content"
-				style:font-size="{fontSize}px"
-				style:line-height={lineHeight}
-				style:letter-spacing="0.01em"
+				style={`font-size:${fontSize}px; line-height:${lineHeight}; letter-spacing: 0.01em;`}
 				bind:this={content}
 			>
 				{#each lines as line, index}
@@ -1466,113 +1257,67 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 						class:dimmed={focusMode && index !== activeLineIndex}
 						bind:this={lineElements[index]}
 					>
-						{line || "\u00A0"}
+						{line}
 					</p>
 				{/each}
 			</div>
 		</div>
 
 		{#if focusMode && dimOutside}
-			<div class="teleprompter-dim" aria-hidden="true"></div>
+			<div class="teleprompter-dim"></div>
 		{/if}
 
 		<div class="teleprompter-float">
-			<button
-				class="btn-float btn-float-primary"
-				class:playing={isPlaying}
-				on:click={toggle}
-				title={isPlaying ? "Pausar" : "Reproducir"}
-				aria-label={isPlaying ? "Pausar reproducción" : "Iniciar reproducción"}
-			>
-				{#if isPlaying}
-					⏸
-				{:else if isCountingDown}
-					⏹
-				{:else}
-					▶
-				{/if}
+			<button class="btn-float" on:click={toggle} title={isPlaying ? "Pausar" : "Reproducir"} aria-label={isPlaying ? "Pausar reproducción" : "Iniciar reproducción"}>
+				{isPlaying ? "⏸" : isCountingDown ? "⏹" : "▶"}
 			</button>
-			<button
-				class="btn-float"
-				on:click={() => jump(-120)}
-				title="Saltar arriba"
-				aria-label="Saltar hacia arriba"
-			>
-				↑
-			</button>
-			<button
-				class="btn-float"
-				on:click={() => jump(120)}
-				title="Saltar abajo"
-				aria-label="Saltar hacia abajo"
-			>
-				↓
-			</button>
+			<button class="btn-float" on:click={() => jump(-120)} title="Saltar arriba" aria-label="Saltar hacia arriba">↑</button>
+			<button class="btn-float" on:click={() => jump(120)} title="Saltar abajo" aria-label="Saltar hacia abajo">↓</button>
 			{#if isFullscreen}
 				<div class="float-speed-control">
 					<input
 						type="range"
 						class="mini-range"
-						min={SPEED_MIN}
-						max={SPEED_MAX}
+						min={speedMin}
+						max={speedMax}
 						step="1"
 						bind:value={speed}
-						aria-label="Velocidad"
+						aria-label="Control de velocidad"
 					/>
 					<span class="mini-speed">{speed}</span>
 				</div>
 			{/if}
-			<button
-				class="btn-float"
-				on:click={() => (isMirror = !isMirror)}
-				title="Espejo"
-				aria-label="Modo espejo"
+			<button class="btn-float" on:click={() => (isMirror = !isMirror)} title="Espejo" aria-label="Activar o desactivar modo espejo"
+			>M</button
 			>
-				M
-			</button>
-			<button
-				class="btn-float"
-				on:click={toggleFullscreen}
-				title="Pantalla completa"
-				aria-label="Pantalla completa"
+			<button class="btn-float" on:click={toggleFullscreen} title="Pantalla completa" aria-label="Activar o desactivar pantalla completa"
+			>⛶</button
 			>
-				⛶
-			</button>
 		</div>
 
-		<footer class="teleprompter-footer">
+		<div class="teleprompter-footer">
 			<div class="shortcut">
-				Espacio/Enter = Play · ↑/↓/Page = Saltos · M = Espejo · F = Focus · L = Limpio · R = Reset · X = Fullscreen · +/- = Velocidad
+				Espacio/Enter = Play · ↑/↓/Page = Saltos · M = Espejo · F = Focus · L = Ultra limpio · R
+				= Reset · X = Fullscreen · Rueda = velocidad · +/- = Velocidad
 			</div>
-		</footer>
+		</div>
 
 		{#if isCountingDown}
-			<div class="teleprompter-countdown" role="status" aria-live="assertive">
+			<div class="teleprompter-countdown">
 				<span>{countdown}</span>
 			</div>
 		{/if}
 	</div>
 </div>
 
-<script context="module" lang="ts">
-	// Variable reactiva no usada removida
-	let activeLineIndex = 0;
-</script>
-
 <style>
-	/* ============================================
-     Variables locales
-     ============================================ */
 	.teleprompter-wrapper {
-		--hue: 250;
-		--card-bg: #ffffff;
-		--radius-large: 1rem;
-
 		display: flex;
 		flex-direction: column;
-		gap: 1.25rem;
+		gap: 1.5rem;
 		position: relative;
 		color: #0f172a;
+		transition: all 0.3s ease;
 	}
 
 	:global(.dark) .teleprompter-wrapper,
@@ -1582,44 +1327,36 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 	.teleprompter-wrapper.clean .teleprompter-header,
 	.teleprompter-wrapper.clean .teleprompter-panel,
-	.teleprompter-wrapper.clean .teleprompter-footer,
-	.teleprompter-wrapper.clean .mobile-tip-banner {
+	.teleprompter-wrapper.clean .teleprompter-footer {
 		display: none;
 	}
 
 	.teleprompter-wrapper.clean .teleprompter-screen {
-		height: 80vh;
+		height: 70vh;
 	}
 
-	/* ============================================
-     Onboarding
-     ============================================ */
 	.teleprompter-onboarding-overlay {
 		position: fixed;
 		inset: 0;
 		background: rgba(0, 0, 0, 0.75);
 		backdrop-filter: blur(12px);
-		-webkit-backdrop-filter: blur(12px);
 		z-index: 50;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		padding: 1.5rem;
-		animation: fadeIn 0.3s ease;
+		animation: fadeIn 0.4s ease;
 	}
 
 	.teleprompter-onboarding-card {
-		max-width: 720px;
-		width: 100%;
+		max-width: 640px;
 		background: rgba(255, 255, 255, 0.98);
 		border-radius: 1.5rem;
-		padding: 2rem;
+		padding: 2.5rem;
 		box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
 		border: 1px solid rgba(255, 255, 255, 0.2);
 		display: grid;
-		gap: 1.25rem;
-		max-height: 90vh;
-		overflow-y: auto;
+		gap: 1.5rem;
 		animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
 
@@ -1629,18 +1366,93 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		border-color: rgba(148, 163, 184, 0.2);
 	}
 
+	.onboarding-step {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+		gap: 0.5rem;
+		opacity: 0;
+		animation: fadeInUp 0.5s ease forwards;
+	}
+
+	.onboarding-step:nth-child(1) {
+		animation-delay: 0.1s;
+	}
+	.onboarding-step:nth-child(2) {
+		animation-delay: 0.2s;
+	}
+	.onboarding-step:nth-child(3) {
+		animation-delay: 0.3s;
+	}
+
+	.step-icon {
+		font-size: 2.5rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.onboarding-step h3 {
+		font-size: 1.25rem;
+		font-weight: 700;
+		color: #0f172a;
+	}
+
+	:global(.dark) .onboarding-step h3,
+	.dark .onboarding-step h3 {
+		color: #e2e8f0;
+	}
+
+	.onboarding-step p {
+		color: #475569;
+		line-height: 1.5;
+	}
+
+	:global(.dark) .onboarding-step p,
+	.dark .onboarding-step p {
+		color: #94a3b8;
+	}
+
+	.btn-onboarding {
+		background: linear-gradient(135deg, oklch(0.70 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30)));
+		color: white;
+		border: none;
+		border-radius: 0.75rem;
+		padding: 0.85rem 2rem;
+		font-weight: 700;
+		font-size: 1.05rem;
+		cursor: pointer;
+		transition: transform 0.2s ease, box-shadow 0.3s ease;
+		box-shadow: 0 8px 20px oklch(0.70 0.14 var(--hue) / 0.35);
+		animation: fadeInUp 0.5s ease forwards 0.4s;
+		opacity: 0;
+	}
+
+	.btn-onboarding:hover {
+		transform: translateY(-2px) scale(1.02);
+		box-shadow: 0 12px 28px oklch(0.70 0.14 var(--hue) / 0.45);
+	}
+
+	.btn-onboarding:active {
+		transform: translateY(0) scale(0.98);
+	}
+
+	.teleprompter-onboarding-card.premium {
+		max-width: 800px;
+	}
+
 	.onboarding-header {
 		text-align: center;
+		margin-bottom: 1.5rem;
 	}
 
 	.logo-gradient {
-		font-size: 3.5rem;
-		margin-bottom: 0.75rem;
+		font-size: 4rem;
+		margin-bottom: 1rem;
 		animation: scaleIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
 
 	.onboarding-header h2 {
-		font-size: 1.75rem;
+		font-size: 2rem;
 		font-weight: 800;
 		background: linear-gradient(135deg, oklch(0.70 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30)));
 		-webkit-background-clip: text;
@@ -1650,7 +1462,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	}
 
 	.onboarding-header .subtitle {
-		font-size: 1rem;
+		font-size: 1.1rem;
 		color: #64748b;
 		font-weight: 500;
 	}
@@ -1662,14 +1474,10 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 	.help-tabs {
 		display: flex;
-		gap: 0.25rem;
+		gap: 0.5rem;
 		border-bottom: 2px solid oklch(0.90 0.02 var(--hue));
+		margin-bottom: 1.5rem;
 		overflow-x: auto;
-		scrollbar-width: none;
-	}
-
-	.help-tabs::-webkit-scrollbar {
-		display: none;
 	}
 
 	:global(.dark) .help-tabs,
@@ -1680,15 +1488,14 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	.tab-btn {
 		background: transparent;
 		border: none;
-		padding: 0.75rem 1rem;
-		font-size: 0.9rem;
+		padding: 0.75rem 1.25rem;
+		font-size: 0.95rem;
 		font-weight: 600;
 		color: #64748b;
 		cursor: pointer;
-		transition: color 0.2s ease, border-color 0.2s ease;
+		transition: all 0.2s ease;
 		border-bottom: 3px solid transparent;
 		white-space: nowrap;
-		margin-bottom: -2px;
 	}
 
 	.tab-btn:hover {
@@ -1714,7 +1521,8 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	}
 
 	.tab-content {
-		min-height: 240px;
+		min-height: 300px;
+		animation: fadeIn 0.3s ease;
 	}
 
 	.tab-panel {
@@ -1723,8 +1531,8 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 	.tab-desc {
 		color: #64748b;
-		margin-bottom: 1.25rem;
-		line-height: 1.5;
+		margin-bottom: 1.5rem;
+		line-height: 1.6;
 	}
 
 	:global(.dark) .tab-desc,
@@ -1732,71 +1540,28 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		color: #94a3b8;
 	}
 
-	.onboarding-step {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		text-align: center;
-		gap: 0.4rem;
-		padding: 0.75rem 0;
-	}
-
-	.step-icon {
-		font-size: 2.25rem;
-		margin-bottom: 0.4rem;
-	}
-
-	.onboarding-step h3 {
-		font-size: 1.1rem;
-		font-weight: 700;
-		color: #0f172a;
-	}
-
-	:global(.dark) .onboarding-step h3,
-	.dark .onboarding-step h3 {
-		color: #e2e8f0;
-	}
-
-	.onboarding-step p {
-		color: #475569;
-		line-height: 1.5;
-		font-size: 0.95rem;
-	}
-
-	:global(.dark) .onboarding-step p,
-	.dark .onboarding-step p {
-		color: #94a3b8;
-	}
-
-	.youtube-settings h3,
-	.shortcuts-panel h3,
-	.tips-panel h3 {
-		font-size: 1.25rem;
+	.youtube-settings h3 {
+		font-size: 1.5rem;
 		font-weight: 700;
 		color: #0f172a;
 		margin-bottom: 1rem;
 	}
 
 	:global(.dark) .youtube-settings h3,
-	:global(.dark) .shortcuts-panel h3,
-	:global(.dark) .tips-panel h3,
-	.dark .youtube-settings h3,
-	.dark .shortcuts-panel h3,
-	.dark .tips-panel h3 {
+	.dark .youtube-settings h3 {
 		color: #e2e8f0;
 	}
 
-	.settings-list,
-	.tips-list {
+	.settings-list {
 		display: grid;
-		gap: 0.6rem;
-		margin-bottom: 1.25rem;
+		gap: 0.75rem;
+		margin-bottom: 1.5rem;
 	}
 
 	.setting-item {
 		display: flex;
 		gap: 0.75rem;
-		padding: 0.7rem 0.9rem;
+		padding: 0.75rem;
 		background: oklch(0.97 0.01 var(--hue));
 		border-radius: 0.5rem;
 		border-left: 3px solid oklch(0.70 0.14 var(--hue));
@@ -1810,7 +1575,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	.setting-label {
 		font-weight: 700;
 		color: #0f172a;
-		min-width: 110px;
+		min-width: 140px;
 	}
 
 	:global(.dark) .setting-label,
@@ -1820,7 +1585,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 	.setting-value {
 		color: #475569;
-		line-height: 1.4;
+		line-height: 1.5;
 	}
 
 	:global(.dark) .setting-value,
@@ -1830,20 +1595,20 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 	.btn-youtube-apply {
 		width: 100%;
-		background: linear-gradient(135deg, #ff0000, #cc0000);
+		background: linear-gradient(135deg, #FF0000, #CC0000);
 		color: white;
 		border: none;
 		border-radius: 0.75rem;
-		padding: 0.85rem 1.5rem;
+		padding: 1rem 2rem;
 		font-weight: 700;
-		font-size: 1rem;
+		font-size: 1.05rem;
 		cursor: pointer;
 		transition: transform 0.2s ease, box-shadow 0.3s ease;
 		box-shadow: 0 8px 20px rgba(255, 0, 0, 0.3);
 	}
 
 	.btn-youtube-apply:hover {
-		transform: translateY(-2px);
+		transform: translateY(-2px) scale(1.02);
 		box-shadow: 0 12px 28px rgba(255, 0, 0, 0.4);
 	}
 
@@ -1851,16 +1616,28 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		transform: translateY(0) scale(0.98);
 	}
 
+	.shortcuts-panel h3 {
+		font-size: 1.5rem;
+		font-weight: 700;
+		color: #0f172a;
+		margin-bottom: 1.5rem;
+	}
+
+	:global(.dark) .shortcuts-panel h3,
+	.dark .shortcuts-panel h3 {
+		color: #e2e8f0;
+	}
+
 	.shortcuts-table {
 		display: grid;
-		gap: 0.4rem;
+		gap: 0.5rem;
 	}
 
 	.shortcut-row {
 		display: grid;
-		grid-template-columns: minmax(140px, auto) 1fr;
-		gap: 0.75rem;
-		padding: 0.6rem 0.75rem;
+		grid-template-columns: 180px 1fr;
+		gap: 1rem;
+		padding: 0.75rem;
 		background: oklch(0.97 0.01 var(--hue));
 		border-radius: 0.5rem;
 		align-items: center;
@@ -1872,13 +1649,13 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	}
 
 	.shortcut-key {
-		font-family: ui-monospace, "SF Mono", Monaco, "Courier New", monospace;
+		font-family: 'Monaco', 'Courier New', monospace;
 		font-weight: 700;
 		color: oklch(0.60 0.14 var(--hue));
 		background: oklch(0.94 0.01 var(--hue));
-		padding: 0.3rem 0.6rem;
+		padding: 0.35rem 0.75rem;
 		border-radius: 0.375rem;
-		font-size: 0.85rem;
+		font-size: 0.9rem;
 		text-align: center;
 	}
 
@@ -1890,7 +1667,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 	.shortcut-desc {
 		color: #475569;
-		font-size: 0.9rem;
+		font-size: 0.95rem;
 	}
 
 	:global(.dark) .shortcut-desc,
@@ -1898,10 +1675,27 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		color: #94a3b8;
 	}
 
+	.tips-panel h3 {
+		font-size: 1.5rem;
+		font-weight: 700;
+		color: #0f172a;
+		margin-bottom: 1.5rem;
+	}
+
+	:global(.dark) .tips-panel h3,
+	.dark .tips-panel h3 {
+		color: #e2e8f0;
+	}
+
+	.tips-list {
+		display: grid;
+		gap: 1rem;
+	}
+
 	.tip-item-pro {
 		display: flex;
-		gap: 0.85rem;
-		padding: 0.85rem;
+		gap: 1rem;
+		padding: 1rem;
 		background: oklch(0.97 0.01 var(--hue));
 		border-radius: 0.75rem;
 		border-left: 4px solid oklch(0.70 0.14 var(--hue));
@@ -1916,22 +1710,20 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		min-width: 1.75rem;
-		height: 1.75rem;
+		min-width: 2rem;
+		height: 2rem;
 		background: oklch(0.70 0.14 var(--hue));
 		color: white;
 		border-radius: 50%;
 		font-weight: 800;
-		font-size: 0.9rem;
-		flex-shrink: 0;
+		font-size: 1rem;
 	}
 
 	.tip-content strong {
 		display: block;
 		color: #0f172a;
-		margin-bottom: 0.25rem;
+		margin-bottom: 0.35rem;
 		font-weight: 700;
-		font-size: 0.95rem;
 	}
 
 	:global(.dark) .tip-content strong,
@@ -1941,8 +1733,8 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 	.tip-content p {
 		color: #64748b;
-		line-height: 1.45;
-		font-size: 0.9rem;
+		line-height: 1.5;
+		font-size: 0.95rem;
 		margin: 0;
 	}
 
@@ -1951,36 +1743,10 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		color: #94a3b8;
 	}
 
-	.btn-onboarding {
-		background: linear-gradient(
-			135deg,
-			oklch(0.70 0.14 var(--hue)),
-			oklch(0.65 0.16 calc(var(--hue) + 30))
-		);
-		color: white;
-		border: none;
-		border-radius: 0.75rem;
-		padding: 0.85rem 2rem;
-		font-weight: 700;
-		font-size: 1rem;
-		cursor: pointer;
-		transition: transform 0.2s ease, box-shadow 0.3s ease;
-		box-shadow: 0 8px 20px oklch(0.70 0.14 var(--hue) / 0.35);
-		justify-self: end;
+	.premium-btn {
+		margin-top: 1rem;
 	}
 
-	.btn-onboarding:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 12px 28px oklch(0.70 0.14 var(--hue) / 0.45);
-	}
-
-	.btn-onboarding:active {
-		transform: translateY(0) scale(0.98);
-	}
-
-	/* ============================================
-     Header
-     ============================================ */
 	.teleprompter-header {
 		display: flex;
 		align-items: center;
@@ -1989,28 +1755,19 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		flex-wrap: wrap;
 	}
 
-	.header-info {
-		min-width: 0;
-	}
-
 	.teleprompter-title {
-		font-size: 1.85rem;
+		font-size: 2rem;
 		font-weight: 700;
-		background: linear-gradient(
-			135deg,
-			oklch(0.70 0.14 var(--hue)),
-			oklch(0.65 0.16 calc(var(--hue) + 30))
-		);
+		background: linear-gradient(135deg, oklch(0.70 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30)));
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
 		background-clip: text;
-		margin-bottom: 0.2rem;
-		line-height: 1.1;
+		margin-bottom: 0.25rem;
 	}
 
 	.teleprompter-subtitle {
 		color: #475569;
-		font-size: 0.95rem;
+		font-size: 1rem;
 		line-height: 1.4;
 	}
 
@@ -2024,7 +1781,6 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		align-items: center;
 		gap: 0.5rem;
 		margin-top: 0.5rem;
-		flex-wrap: wrap;
 	}
 
 	.status-indicator {
@@ -2032,15 +1788,12 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		height: 8px;
 		border-radius: 50%;
 		transition: background-color 0.3s ease;
-	}
-
-	.status-indicator.playing {
-		animation: pulse 1.6s ease-in-out infinite;
+		animation: pulse 2s ease-in-out infinite;
 	}
 
 	.teleprompter-status {
-		color: #475569;
-		font-size: 0.88rem;
+		color: #64748b;
+		font-size: 0.9rem;
 		font-weight: 600;
 	}
 
@@ -2049,34 +1802,25 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		color: #94a3b8;
 	}
 
-	.word-count {
-		font-size: 0.85rem;
-		color: #64748b;
-	}
-
-	:global(.dark) .word-count,
-	.dark .word-count {
-		color: #94a3b8;
-	}
-
 	.teleprompter-header-actions {
 		display: flex;
-		gap: 0.5rem;
+		gap: 0.75rem;
 		flex-wrap: wrap;
 		align-items: center;
 	}
 
 	.btn-help {
+		position: relative;
 		display: flex;
 		align-items: center;
-		gap: 0.4rem;
-		padding: 0.5rem 0.9rem;
+		gap: 0.5rem;
+		padding: 0.5rem 1rem;
 		background: oklch(0.95 0.02 var(--hue));
 		color: oklch(0.50 0.12 var(--hue));
 		border: 1px solid oklch(0.85 0.05 var(--hue));
 		border-radius: 999px;
 		font-weight: 600;
-		font-size: 0.85rem;
+		font-size: 0.9rem;
 		cursor: pointer;
 		transition: all 0.2s ease;
 	}
@@ -2097,32 +1841,29 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 18px;
-		height: 18px;
+		width: 20px;
+		height: 20px;
 		border-radius: 50%;
 		background: oklch(0.70 0.14 var(--hue));
 		color: white;
 		font-weight: 700;
-		font-size: 0.8rem;
+		font-size: 0.85rem;
 	}
 
-	@media (max-width: 480px) {
-		.help-badge {
-			display: none;
-		}
+	.help-badge {
+		font-size: 0.85rem;
 	}
 
 	.btn-plain {
-		padding: 0.5rem 0.9rem;
+		padding: 0.5rem 1rem;
 		background: transparent;
 		color: #475569;
 		border: 1px solid #cbd5e1;
 		border-radius: 0.5rem;
-		font-size: 0.85rem;
+		font-size: 0.9rem;
 		font-weight: 500;
 		cursor: pointer;
 		transition: all 0.2s ease;
-		white-space: nowrap;
 	}
 
 	:global(.dark) .btn-plain,
@@ -2157,110 +1898,14 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		color: oklch(0.75 0.14 var(--hue));
 	}
 
-	@media (max-width: 640px) {
-		.btn-plain {
-			font-size: 0.8rem;
-			padding: 0.45rem 0.7rem;
-		}
-	}
-
-	/* ============================================
-     Mobile tip banner
-     ============================================ */
-	.mobile-tip-banner {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem;
-		padding: 0.6rem 0.9rem;
-		background: oklch(0.94 0.03 var(--hue));
-		border: 1px solid oklch(0.88 0.05 var(--hue));
-		border-radius: 0.75rem;
-		font-size: 0.8rem;
-		line-height: 1.4;
-		color: oklch(0.40 0.08 var(--hue));
-		animation: fadeIn 0.4s ease;
-	}
-
-	:global(.dark) .mobile-tip-banner,
-	.dark .mobile-tip-banner {
-		background: oklch(0.22 0.03 var(--hue));
-		border-color: oklch(0.32 0.05 var(--hue));
-		color: oklch(0.78 0.06 var(--hue));
-	}
-
-	.mobile-tip-content {
-		display: flex;
-		align-items: flex-start;
-		gap: 0.5rem;
-		flex: 1;
-		min-width: 0;
-	}
-
-	.mobile-tip-icon {
-		font-size: 1rem;
-		flex-shrink: 0;
-		line-height: 1.3;
-	}
-
-	.mobile-tip-content p {
-		margin: 0;
-		font-size: inherit;
-		line-height: inherit;
-	}
-
-	.mobile-tip-content strong {
-		color: oklch(0.50 0.12 var(--hue));
-		font-weight: 600;
-	}
-
-	:global(.dark) .mobile-tip-content strong,
-	.dark .mobile-tip-content strong {
-		color: oklch(0.72 0.12 var(--hue));
-	}
-
-	.mobile-tip-close {
-		background: none;
-		border: none;
-		color: oklch(0.55 0.05 var(--hue));
-		font-size: 0.9rem;
-		cursor: pointer;
-		padding: 0.25rem;
-		border-radius: 0.375rem;
-		line-height: 1;
-		flex-shrink: 0;
-		transition: all 0.2s ease;
-	}
-
-	.mobile-tip-close:hover {
-		background: oklch(0.88 0.04 var(--hue));
-		color: oklch(0.40 0.08 var(--hue));
-	}
-
-	:global(.dark) .mobile-tip-close,
-	.dark .mobile-tip-close {
-		color: oklch(0.60 0.05 var(--hue));
-	}
-
-	:global(.dark) .mobile-tip-close:hover,
-	.dark .mobile-tip-close:hover {
-		background: oklch(0.30 0.04 var(--hue));
-		color: oklch(0.80 0.06 var(--hue));
-	}
-
-	/* ============================================
-     Panel
-     ============================================ */
 	.teleprompter-panel {
 		background: rgba(255, 255, 255, 0.8);
 		backdrop-filter: blur(10px);
-		-webkit-backdrop-filter: blur(10px);
 		border-radius: 1.25rem;
-		padding: 1.25rem;
+		padding: 1.5rem;
 		border: 1px solid rgba(0, 0, 0, 0.08);
 		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-		display: grid;
-		gap: 1rem;
+		transition: all 0.3s ease;
 	}
 
 	:global(.dark) .teleprompter-panel,
@@ -2273,12 +1918,13 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	.script-manager {
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: 0.75rem;
+		margin-bottom: 1rem;
 	}
 
 	.manager-label {
 		font-weight: 600;
-		font-size: 0.85rem;
+		font-size: 0.9rem;
 		color: #334155;
 	}
 
@@ -2296,7 +1942,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	.script-controls select {
 		flex: 1;
 		min-width: 200px;
-		padding: 0.55rem 0.9rem;
+		padding: 0.6rem 1rem;
 		background: white;
 		color: #0f172a;
 		border: 1px solid #cbd5e1;
@@ -2324,11 +1970,11 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	}
 
 	.btn-icon {
-		padding: 0.55rem 0.85rem;
+		padding: 0.6rem 0.9rem;
 		background: oklch(0.95 0.02 var(--hue));
 		border: 1px solid #cbd5e1;
 		border-radius: 0.5rem;
-		font-size: 1rem;
+		font-size: 1.1rem;
 		cursor: pointer;
 		transition: all 0.2s ease;
 	}
@@ -2348,17 +1994,18 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 	.teleprompter-input {
 		width: 100%;
-		min-height: 110px;
-		padding: 0.9rem;
+		min-height: 120px;
+		padding: 1rem;
 		background: white;
 		color: #0f172a;
 		border: 1px solid #cbd5e1;
 		border-radius: 0.75rem;
 		font-family: inherit;
-		font-size: 0.95rem;
+		font-size: 1rem;
 		line-height: 1.5;
 		resize: vertical;
 		transition: all 0.2s ease;
+		margin-bottom: 1rem;
 	}
 
 	:global(.dark) .teleprompter-input,
@@ -2383,26 +2030,29 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		box-shadow: 0 0 0 3px oklch(0.70 0.14 var(--hue) / 0.1);
 	}
 
-	/* ============================================
-     Controls
-     ============================================ */
 	.teleprompter-controls {
 		display: flex;
 		flex-direction: column;
-		gap: 1.25rem;
+		gap: 1.5rem;
 	}
 
 	.controls-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-		gap: 1rem;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+		gap: 1.25rem;
+	}
+
+	@media (min-width: 768px) {
+		.controls-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
 	}
 
 	.control-group {
 		background: rgba(255, 255, 255, 0.5);
 		border: 1px solid rgba(0, 0, 0, 0.06);
 		border-radius: 0.75rem;
-		padding: 0.9rem;
+		padding: 1rem;
 		transition: all 0.2s ease;
 	}
 
@@ -2427,32 +2077,27 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		margin-bottom: 0.6rem;
-		gap: 0.5rem;
+		margin-bottom: 0.75rem;
 	}
 
-	.control-group > label,
-	.control-label-row > label {
+	.control-group label {
 		font-weight: 600;
-		font-size: 0.85rem;
+		font-size: 0.9rem;
 		color: #334155;
 	}
 
-	:global(.dark) .control-group > label,
-	:global(.dark) .control-label-row > label,
-	.dark .control-group > label,
-	.dark .control-label-row > label {
+	:global(.dark) .control-group label,
+	.dark .control-group label {
 		color: #cbd5e1;
 	}
 
 	.speed-label {
-		font-size: 0.8rem;
+		font-size: 0.85rem;
 		font-weight: 500;
 		color: oklch(0.60 0.12 var(--hue));
 		padding: 0.15rem 0.5rem;
 		background: oklch(0.95 0.03 var(--hue));
 		border-radius: 999px;
-		white-space: nowrap;
 	}
 
 	:global(.dark) .speed-label,
@@ -2466,11 +2111,10 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		justify-content: space-between;
 		align-items: center;
 		margin-top: 0.5rem;
-		gap: 0.5rem;
 	}
 
 	.control-value {
-		font-size: 0.85rem;
+		font-size: 0.9rem;
 		font-weight: 600;
 		color: #475569;
 	}
@@ -2485,7 +2129,6 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		border-radius: 999px;
 		transition: all 0.3s ease;
 		max-width: 60px;
-		flex: 1;
 	}
 
 	.custom-range {
@@ -2551,7 +2194,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 	.countdown-select {
 		width: 100%;
-		padding: 0.55rem 0.9rem;
+		padding: 0.6rem 1rem;
 		background: white;
 		color: #0f172a;
 		border: 1px solid #cbd5e1;
@@ -2578,25 +2221,23 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		box-shadow: 0 0 0 3px oklch(0.70 0.14 var(--hue) / 0.1);
 	}
 
-	/* Toggles */
 	.control-group.toggles {
 		grid-column: 1 / -1;
 	}
 
 	.toggle-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-		gap: 0.6rem;
-		margin-top: 0.5rem;
+		grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+		gap: 0.75rem;
 	}
 
 	.toggle-btn {
-		padding: 0.6rem 0.9rem;
+		padding: 0.65rem 1rem;
 		background: white;
 		color: #475569;
 		border: 1px solid #cbd5e1;
 		border-radius: 999px;
-		font-size: 0.85rem;
+		font-size: 0.9rem;
 		font-weight: 500;
 		cursor: pointer;
 		transition: all 0.2s ease;
@@ -2634,26 +2275,21 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		background: oklch(0.65 0.16 var(--hue));
 	}
 
-	/* Action buttons */
 	.control-actions {
 		display: flex;
-		gap: 0.6rem;
+		gap: 0.75rem;
 		flex-wrap: wrap;
 	}
 
 	.btn-play {
 		flex: 1;
-		min-width: 160px;
-		padding: 0.9rem 1.25rem;
-		background: linear-gradient(
-			135deg,
-			oklch(0.70 0.14 var(--hue)),
-			oklch(0.65 0.16 calc(var(--hue) + 30))
-		);
+		min-width: 180px;
+		padding: 1rem 1.5rem;
+		background: linear-gradient(135deg, oklch(0.70 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30)));
 		color: white;
 		border: none;
 		border-radius: 0.75rem;
-		font-size: 1rem;
+		font-size: 1.05rem;
 		font-weight: 700;
 		cursor: pointer;
 		transition: all 0.2s ease;
@@ -2670,16 +2306,15 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	}
 
 	.btn-action {
-		padding: 0.7rem 1.1rem;
+		padding: 0.75rem 1.25rem;
 		background: white;
 		color: #475569;
 		border: 1px solid #cbd5e1;
 		border-radius: 0.5rem;
-		font-size: 0.85rem;
+		font-size: 0.9rem;
 		font-weight: 500;
 		cursor: pointer;
 		transition: all 0.2s ease;
-		white-space: nowrap;
 	}
 
 	:global(.dark) .btn-action,
@@ -2703,33 +2338,26 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		color: oklch(0.75 0.14 var(--hue));
 	}
 
-	/* ============================================
-     Screen
-     ============================================ */
 	.teleprompter-screen {
 		position: relative;
 		background: linear-gradient(135deg, #f8fafc, #f1f5f9);
 		border-radius: 1.25rem;
 		overflow: hidden;
-		box-shadow:
-			0 8px 32px rgba(0, 0, 0, 0.08),
-			inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
 		height: 65vh;
-		min-height: 480px;
+		min-height: 500px;
 		transition: all 0.3s ease;
 	}
 
 	:global(.dark) .teleprompter-screen,
 	.dark .teleprompter-screen {
 		background: linear-gradient(135deg, #0f172a, #1e293b);
-		box-shadow:
-			0 8px 32px rgba(0, 0, 0, 0.5),
-			inset 0 0 0 1px rgba(148, 163, 184, 0.1);
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(148, 163, 184, 0.1);
 	}
 
 	@media (max-width: 768px) {
 		.teleprompter-screen {
-			min-height: 340px;
+			min-height: 350px;
 			height: 60vh;
 		}
 	}
@@ -2749,20 +2377,19 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	.teleprompter-screen.is-fullscreen {
 		border-radius: 0;
 		height: 100vh;
-		min-height: 100vh;
+		min-height: unset;
 	}
 
 	.teleprompter-screen.mirror {
 		transform: scaleX(-1);
 	}
 
-	/* Progress bar */
 	.teleprompter-progress-top {
 		position: absolute;
 		top: 0;
 		left: 0;
 		right: 0;
-		height: 4px;
+		height: 3px;
 		background: rgba(0, 0, 0, 0.1);
 		z-index: 10;
 		cursor: pointer;
@@ -2776,26 +2403,24 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	.progress-bar {
 		height: 100%;
 		background: linear-gradient(90deg, oklch(0.70 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 60)));
-		transition: width 0.2s linear;
+		transition: width 0.3s ease;
 		box-shadow: 0 0 10px oklch(0.70 0.14 var(--hue) / 0.5);
 	}
 
 	.time-remaining {
 		position: absolute;
-		top: 0.7rem;
+		top: 0.75rem;
 		right: 1rem;
-		padding: 0.3rem 0.7rem;
-		background: rgba(0, 0, 0, 0.7);
+		padding: 0.35rem 0.75rem;
+		background: rgba(0, 0, 0, 0.6);
 		color: white;
-		font-size: 0.8rem;
+		font-size: 0.85rem;
 		font-weight: 600;
 		border-radius: 999px;
 		backdrop-filter: blur(8px);
-		-webkit-backdrop-filter: blur(8px);
 		z-index: 11;
 	}
 
-	/* Reading marker */
 	.reading-position-marker {
 		position: absolute;
 		top: 50%;
@@ -2813,7 +2438,6 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		box-shadow: 0 0 30px oklch(0.70 0.14 var(--hue) / 0.6);
 	}
 
-	/* Frame */
 	.teleprompter-frame {
 		height: 100%;
 		overflow-y: auto;
@@ -2821,6 +2445,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		scroll-behavior: auto;
 		scrollbar-width: thin;
 		scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+		will-change: transform;
 	}
 
 	:global(.dark) .teleprompter-frame,
@@ -2855,12 +2480,11 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		background: rgba(255, 255, 255, 0.5);
 	}
 
-	/* Content */
 	.teleprompter-content {
 		color: #0f172a;
 		text-align: center;
 		user-select: none;
-		-webkit-user-select: none;
+		transition: all 0.3s ease;
 	}
 
 	:global(.dark) .teleprompter-content,
@@ -2871,17 +2495,13 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	.teleprompter-content p {
 		margin: 0.75rem 0;
 		padding: 0.5rem 1rem;
-		transition:
-			opacity 0.3s ease,
-			background 0.2s ease,
-			transform 0.2s ease;
+		transition: opacity 0.3s ease, background 0.2s ease;
 		border-radius: 0.5rem;
 		line-height: inherit;
-		min-height: 1em;
 	}
 
 	.teleprompter-content p.active {
-		background: rgba(0, 0, 0, 0.04);
+		background: rgba(0, 0, 0, 0.03);
 		border-left: 4px solid oklch(0.70 0.14 var(--hue));
 		padding-left: calc(1rem - 4px);
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -2889,15 +2509,14 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 	:global(.dark) .teleprompter-content p.active,
 	.dark .teleprompter-content p.active {
-		background: rgba(255, 255, 255, 0.06);
+		background: rgba(255, 255, 255, 0.05);
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 	}
 
-	.teleprompter-content p.dimmed {
+	.teleprompter-screen.focus .teleprompter-content p.dimmed {
 		opacity: 0.3;
 	}
 
-	/* Dim overlay */
 	.teleprompter-dim {
 		position: absolute;
 		inset: 0;
@@ -2908,22 +2527,20 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 	:global(.dark) .teleprompter-dim,
 	.dark .teleprompter-dim {
-		background: radial-gradient(ellipse at center, transparent 20%, rgba(0, 0, 0, 0.85) 70%);
+		background: radial-gradient(ellipse at center, transparent 20%, rgba(0, 0, 0, 0.8) 70%);
 	}
 
-	/* Floating controls */
 	.teleprompter-float {
 		position: absolute;
-		bottom: 1.25rem;
+		bottom: 1.5rem;
 		left: 50%;
 		transform: translateX(-50%);
 		display: flex;
-		gap: 0.4rem;
+		gap: 0.5rem;
 		align-items: center;
-		padding: 0.5rem;
-		background: rgba(0, 0, 0, 0.75);
+		padding: 0.75rem;
+		background: rgba(0, 0, 0, 0.7);
 		backdrop-filter: blur(12px);
-		-webkit-backdrop-filter: blur(12px);
 		border-radius: 999px;
 		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 		z-index: 20;
@@ -2937,8 +2554,8 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	}
 
 	.btn-float {
-		width: 40px;
-		height: 40px;
+		width: 42px;
+		height: 42px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -2946,11 +2563,10 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		color: white;
 		border: 1px solid rgba(255, 255, 255, 0.2);
 		border-radius: 50%;
-		font-size: 1rem;
+		font-size: 1.1rem;
 		font-weight: 600;
 		cursor: pointer;
 		transition: all 0.2s ease;
-		flex-shrink: 0;
 	}
 
 	.btn-float:hover {
@@ -2960,32 +2576,15 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		box-shadow: 0 4px 12px oklch(0.70 0.14 var(--hue) / 0.4);
 	}
 
-	.btn-float-primary {
-		width: 48px;
-		height: 48px;
-		font-size: 1.2rem;
-		background: oklch(0.70 0.14 var(--hue));
-		border-color: oklch(0.70 0.14 var(--hue));
-	}
-
-	.btn-float-primary:hover {
-		background: oklch(0.65 0.16 var(--hue));
-	}
-
-	.btn-float-primary.playing {
-		background: oklch(0.60 0.18 25);
-		border-color: oklch(0.60 0.18 25);
-	}
-
 	.float-speed-control {
 		display: flex;
 		align-items: center;
-		gap: 0.4rem;
-		padding: 0 0.4rem;
+		gap: 0.5rem;
+		padding: 0 0.5rem;
 	}
 
 	.mini-range {
-		width: 90px;
+		width: 100px;
 		height: 4px;
 		-webkit-appearance: none;
 		appearance: none;
@@ -3018,22 +2617,20 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 	.mini-speed {
 		color: white;
-		font-size: 0.8rem;
+		font-size: 0.85rem;
 		font-weight: 600;
-		min-width: 30px;
+		min-width: 35px;
 	}
 
-	/* Footer */
 	.teleprompter-footer {
 		position: absolute;
-		bottom: 0.75rem;
+		bottom: 1rem;
 		left: 1rem;
 		right: 1rem;
 		text-align: center;
 		z-index: 1;
 		opacity: 0.5;
 		transition: opacity 0.3s ease;
-		pointer-events: none;
 	}
 
 	.teleprompter-footer:hover {
@@ -3041,7 +2638,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	}
 
 	.shortcut {
-		font-size: 0.72rem;
+		font-size: 0.8rem;
 		color: #64748b;
 		font-weight: 500;
 	}
@@ -3052,10 +2649,9 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	}
 
 	.teleprompter-screen.is-fullscreen .teleprompter-footer {
-		bottom: 4.5rem;
+		bottom: 5rem;
 	}
 
-	/* Countdown */
 	.teleprompter-countdown {
 		position: absolute;
 		inset: 0;
@@ -3064,7 +2660,6 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		justify-content: center;
 		background: rgba(0, 0, 0, 0.85);
 		backdrop-filter: blur(8px);
-		-webkit-backdrop-filter: blur(8px);
 		z-index: 30;
 		animation: fadeIn 0.3s ease;
 	}
@@ -3075,78 +2670,38 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		color: white;
 		text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 		animation: countdownPulse 1s ease-in-out infinite;
-		font-variant-numeric: tabular-nums;
 	}
 
-	/* ============================================
-     Animations
-     ============================================ */
 	@keyframes fadeIn {
-		from {
-			opacity: 0;
-		}
-		to {
-			opacity: 1;
-		}
+		from { opacity: 0; }
+		to { opacity: 1; }
 	}
 
 	@keyframes scaleIn {
-		from {
-			opacity: 0;
-			transform: scale(0.9);
-		}
-		to {
-			opacity: 1;
-			transform: scale(1);
-		}
+		from { opacity: 0; transform: scale(0.9); }
+		to { opacity: 1; transform: scale(1); }
 	}
 
 	@keyframes fadeInUp {
-		from {
-			opacity: 0;
-			transform: translateY(12px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
+		from { opacity: 0; transform: translateY(20px); }
+		to { opacity: 1; transform: translateY(0); }
 	}
 
 	@keyframes pulse {
-		0%,
-		100% {
-			opacity: 1;
-			transform: scale(1);
-		}
-		50% {
-			opacity: 0.5;
-			transform: scale(1.1);
-		}
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0.6; }
 	}
 
 	@keyframes glowPulse {
-		0%,
-		100% {
-			opacity: 0.3;
-		}
-		50% {
-			opacity: 0.5;
-		}
+		0%, 100% { opacity: 0.3; }
+		50% { opacity: 0.5; }
 	}
 
 	@keyframes countdownPulse {
-		0%,
-		100% {
-			transform: scale(1);
-		}
-		50% {
-			transform: scale(1.15);
-		}
+		0%, 100% { transform: scale(1); }
+		50% { transform: scale(1.1); }
 	}
 
-	/* ============================================
-     Responsive
-     ============================================ */
 	@media (max-width: 768px) {
 		.teleprompter-header {
 			flex-direction: column;
@@ -3171,19 +2726,15 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		}
 
 		.teleprompter-float {
-			bottom: 0.85rem;
-			padding: 0.4rem;
-			gap: 0.3rem;
+			bottom: 1rem;
+			padding: 0.5rem;
+			gap: 0.35rem;
 		}
 
 		.btn-float {
-			width: 42px;
-			height: 42px;
-		}
-
-		.btn-float-primary {
-			width: 50px;
-			height: 50px;
+			width: 44px;
+			height: 44px;
+			font-size: 1.1rem;
 		}
 
 		.teleprompter-countdown span {
@@ -3203,12 +2754,12 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		}
 
 		.teleprompter-panel {
-			padding: 0.85rem;
+			padding: 0.75rem;
 		}
 
 		.teleprompter-float {
-			bottom: 0.4rem;
-			padding: 0.35rem;
+			bottom: 0.5rem;
+			padding: 0.4rem;
 		}
 
 		.btn-float {
@@ -3217,23 +2768,107 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			font-size: 0.9rem;
 		}
 
-		.btn-float-primary {
-			width: 42px;
-			height: 42px;
-		}
-
 		.teleprompter-footer {
 			display: none;
 		}
 	}
 
-	@media (prefers-reduced-motion: reduce) {
-		*,
-		*::before,
-		*::after {
-			animation-duration: 0.01ms !important;
-			animation-iteration-count: 1 !important;
-			transition-duration: 0.01ms !important;
+	.word-count {
+		margin-left: 0.5rem;
+		font-size: 0.85rem;
+		color: oklch(0.55 0.02 var(--hue));
+	}
+
+	:global(.dark) .word-count,
+	.dark .word-count {
+		color: oklch(0.70 0.02 var(--hue));
+	}
+
+	.mobile-tip-banner {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.65rem 1rem;
+		background: oklch(0.94 0.03 var(--hue));
+		border: 1px solid oklch(0.88 0.05 var(--hue));
+		border-radius: 0.75rem;
+		font-size: 0.82rem;
+		line-height: 1.4;
+		color: oklch(0.40 0.08 var(--hue));
+		animation: fadeIn 0.4s ease;
+	}
+
+	:global(.dark) .mobile-tip-banner,
+	.dark .mobile-tip-banner {
+		background: oklch(0.22 0.03 var(--hue));
+		border-color: oklch(0.32 0.05 var(--hue));
+		color: oklch(0.78 0.06 var(--hue));
+	}
+
+	.mobile-tip-content {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.5rem;
+		flex: 1;
+		min-width: 0;
+	}
+
+	.mobile-tip-icon {
+		font-size: 1.1rem;
+		flex-shrink: 0;
+		line-height: 1.3;
+	}
+
+	.mobile-tip-content p {
+		margin: 0;
+		color: inherit;
+		font-size: inherit;
+		line-height: inherit;
+	}
+
+	.mobile-tip-content p strong {
+		color: oklch(0.50 0.12 var(--hue));
+		font-weight: 600;
+	}
+
+	:global(.dark) .mobile-tip-content p strong,
+	.dark .mobile-tip-content p strong {
+		color: oklch(0.72 0.12 var(--hue));
+	}
+
+	.mobile-tip-close {
+		background: none;
+		border: none;
+		color: oklch(0.55 0.05 var(--hue));
+		font-size: 1rem;
+		cursor: pointer;
+		padding: 0.25rem;
+		border-radius: 0.375rem;
+		line-height: 1;
+		flex-shrink: 0;
+		transition: all 0.2s ease;
+	}
+
+	.mobile-tip-close:hover {
+		background: oklch(0.88 0.04 var(--hue));
+		color: oklch(0.40 0.08 var(--hue));
+	}
+
+	:global(.dark) .mobile-tip-close,
+	.dark .mobile-tip-close {
+		color: oklch(0.60 0.05 var(--hue));
+	}
+
+	:global(.dark) .mobile-tip-close:hover,
+	.dark .mobile-tip-close:hover {
+		background: oklch(0.30 0.04 var(--hue));
+		color: oklch(0.80 0.06 var(--hue));
+	}
+
+	@media (min-width: 769px) {
+		.mobile-tip-banner {
+			display: none;
 		}
 	}
 </style>
