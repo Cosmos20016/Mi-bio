@@ -6,12 +6,56 @@
 	} from "@utils/setting-utils.ts";
 	import { onDestroy, onMount } from "svelte";
 
-	const storageKey = "teleprompter:state:v3";
+	// =========================================================================
+	// CONSTANTES Y CONFIGURACIÓN
+	// =========================================================================
+	const STORAGE_KEY_STATE = "teleprompter:state:v3";
+	const STORAGE_KEY_SCRIPTS = "teleprompter:scripts";
+	const STORAGE_KEY_LAST_SCRIPT = "teleprompter:lastScript";
+	const STORAGE_KEY_ONBOARDING = "teleprompter:onboarding:done";
 
-	// Core state
-	let text = `Pega aquí tu guion...
+	const SPEED_MIN = 10;
+	const SPEED_MAX = 400;
+	const WORDS_PER_MINUTE = 150;
+	const TAP_THRESHOLD_MS = 300;
+	const SWIPE_THRESHOLD_PX = 30;
+	const JUMP_SHORT_PX = 120;
+	const JUMP_LONG_PX = 320;
+	const JUMP_ACTION_PX = 240;
 
-Tip: Usa párrafos cortos para una lectura más cómoda.`;
+	// =========================================================================
+	// TIPOS EXPLÍCITOS
+	// =========================================================================
+	interface SavedScript {
+		id: string;
+		name: string;
+		text: string;
+		createdAt: string;
+		updatedAt: string;
+	}
+
+	interface TeleprompterPersistedState {
+		text: string;
+		speed: number;
+		fontSize: number;
+		lineHeight: number;
+		isMirror: boolean;
+		autoCenter: boolean;
+		smooth: boolean;
+		glow: boolean;
+		focusMode: boolean;
+		dimOutside: boolean;
+		countdownDuration: number;
+	}
+
+	interface LineMetric {
+		center: number;
+	}
+
+	// =========================================================================
+	// ESTADO DEL COMPONENTE
+	// =========================================================================
+	let text = `Pega aquí tu guion...\n\nTip: Usa párrafos cortos para una lectura más cómoda.`;
 	let speed = 60;
 	let fontSize = 34;
 	let lineHeight = 1.6;
@@ -25,65 +69,57 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	let focusMode = false;
 	let dimOutside = true;
 	let isFullscreen = false;
+	let isPseudoFullscreen = false;
 	let isMobile = false;
-	let allowMobile = false;
 	let showMobileBanner = false;
 	let isReady = false;
 	let ultraClean = false;
 	let countdown = 0;
 	let isCountingDown = false;
 	let showOnboarding = false;
-	let helpTab = "quickstart";
+	let helpTab: "quickstart" | "youtube" | "shortcuts" | "tips" = "quickstart";
 	let currentScript: string | null = null;
 	let countdownDuration = 3;
-
-	// Dark mode reactive detection
 	let isDark = false;
 
-	// Refs (seguros para SSR)
+	// =========================================================================
+	// REFS Y CONTROLADORES DE HARDWARE
+	// =========================================================================
 	let scrollContainer: HTMLDivElement | null = null;
 	let content: HTMLDivElement | null = null;
 	let fullscreenTarget: HTMLDivElement | null = null;
-	let raf: number | null = null;
-	let lastTime: number | null = null;
-	let observer: IntersectionObserver | null = null;
-	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
-	let stopThemeWatch: (() => void) | null = null;
+	let lineElements: Array<HTMLParagraphElement | null> = [];
+
+	let rafId: number | null = null;
+	let lastFrameTimestamp: number | null = null;
 	let countdownTimer: ReturnType<typeof setInterval> | null = null;
+	let saveDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+	let stopThemeWatch: (() => void) | null = null;
 	let darkModeObserver: MutationObserver | null = null;
 	let resizeObserver: ResizeObserver | null = null;
-	let lineElements: Array<HTMLParagraphElement | null> = [];
-	let activeLineIndex = 0;
-	let lines: string[] = [];
-	let lineMetrics: Array<{ center: number }> = [];
 
-	const speedMin = 10;
-	const speedMax = 400;
-	
-	// Reactividad para velocidad en tiempo real
-	$: targetSpeed = speed;
+	let lines: string[] = [];
+	let lineMetrics: LineMetric[] = [];
+	let scripts: SavedScript[] = [];
+
 	let currentSpeed = 0;
 	let cachedMaxScroll = 0;
-	let progressUpdateTimer: ReturnType<typeof setInterval> | null = null;
 	let scrollAccumulator = 0;
-
 	let touchStartY = 0;
-	let lastTapTime = 0;
-	const TAP_THRESHOLD = 300;
-	const SWIPE_THRESHOLD = 30;
+	let lastTapTimestamp = 0;
+	let isFormatting = false;
 
-	const clamp = (value: number, min: number, max: number) =>
-		Math.min(Math.max(value, min), max);
-
+	// =========================================================================
+	// DECLARACIONES REACTIVAS DERIVADAS
+	// =========================================================================
 	$: lines = text.split("\n");
 	$: if (lineElements.length !== lines.length) {
 		lineElements = lines.map((_, i) => lineElements[i] || null);
 	}
 
 	$: wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
-	$: estimatedMinutes = wordCount > 0 ? Math.floor(wordCount / 150) : 0;
-	$: estimatedSeconds =
-		wordCount > 0 ? Math.ceil((wordCount / 150) * 60) % 60 : 0;
+	$: estimatedMinutes = wordCount > 0 ? Math.floor(wordCount / WORDS_PER_MINUTE) : 0;
+	$: estimatedSeconds = wordCount > 0 ? Math.ceil((wordCount / WORDS_PER_MINUTE) * 60) % 60 : 0;
 	$: readingTimeLabel =
 		wordCount > 0
 			? estimatedMinutes > 0
@@ -91,83 +127,119 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 				: `~${estimatedSeconds}s`
 			: "";
 
-	// =========================================================
-	// AUTO-ORGANIZADOR PROFESIONAL DE GUIONES
-	// =========================================================
-	let isFormatting = false;
+	let activeLineIndex = 0;
 
-	const autoFormatScript = () => {
+	// =========================================================================
+	// UTILIDADES MATEMÁTICAS Y DE SEGURIDAD
+	// =========================================================================
+	const clamp = (value: number, min: number, max: number): number =>
+		Math.min(Math.max(value, min), max);
+
+	const safeStorage = {
+		get(key: string): string | null {
+			try {
+				return typeof window !== "undefined" ? localStorage.getItem(key) : null;
+			} catch {
+				return null;
+			}
+		},
+		set(key: string, value: string): boolean {
+			try {
+				if (typeof window === "undefined") return false;
+				localStorage.setItem(key, value);
+				return true;
+			} catch {
+				return false;
+			}
+		},
+		remove(key: string): void {
+			try {
+				if (typeof window !== "undefined") localStorage.removeItem(key);
+			} catch {}
+		}
+	};
+
+	// =========================================================================
+	// AUTO-ORGANIZADOR PROFESIONAL DE GUIONES (PÁRRAFOS ÓPTIMOS)
+	// =========================================================================
+	const autoFormatScript = (): void => {
 		if (!text.trim() || isFormatting) return;
 		isFormatting = true;
 
-		let clean = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-		clean = clean.replace(/[ \t]+/g, " ");
+		const cleanText = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/[ \t]+/g, " ");
+		const rawParagraphs = cleanText.split(/\n\s*\n/);
+		const structuredParagraphs: string[] = [];
 
-		const rawParagraphs = clean.split(/\n\s*\n/);
-		const processed: string[] = [];
+		for (const paragraph of rawParagraphs) {
+			const trimmedParagraph = paragraph.trim();
+			if (!trimmedParagraph) continue;
 
-		for (const p of rawParagraphs) {
-			const trimmed = p.trim();
-			if (!trimmed) continue;
+			const rawLines = trimmedParagraph.split("\n");
+			let coalescedParagraph = "";
 
-			const linesInP = trimmed.split("\n");
-			let joinedP = "";
-			for (let i = 0; i < linesInP.length; i++) {
-				const l = linesInP[i].trim();
-				if (!l) continue;
-				if (joinedP && !joinedP.endsWith("\n") && !/^[-*•\d+.]\s/.test(l)) {
-					joinedP += " " + l;
+			for (const rawLine of rawLines) {
+				const singleLine = rawLine.trim();
+				if (!singleLine) continue;
+
+				if (coalescedParagraph && !coalescedParagraph.endsWith("\n") && !/^[-*•\d+.]\s/.test(singleLine)) {
+					coalescedParagraph += ` ${singleLine}`;
 				} else {
-					joinedP += (joinedP ? "\n" : "") + l;
+					coalescedParagraph += (coalescedParagraph ? "\n" : "") + singleLine;
 				}
 			}
 
-			if (joinedP.length > 130 && !joinedP.includes("\n")) {
-				const sentences = joinedP.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g) || [joinedP];
-				let chunk = "";
-				for (const s of sentences) {
-					const sTrim = s.trim();
-					if (!sTrim) continue;
-					if (!chunk) {
-						chunk = sTrim;
-					} else if ((chunk + " " + sTrim).length <= 150) {
-						chunk += " " + sTrim;
+			if (coalescedParagraph.length > 130 && !coalescedParagraph.includes("\n")) {
+				const matchedSentences = coalescedParagraph.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g) || [coalescedParagraph];
+				let currentSentenceChunk = "";
+
+				for (const sentence of matchedSentences) {
+					const cleanSentence = sentence.trim();
+					if (!cleanSentence) continue;
+
+					if (!currentSentenceChunk) {
+						currentSentenceChunk = cleanSentence;
+					} else if ((currentSentenceChunk + " " + cleanSentence).length <= 150) {
+						currentSentenceChunk += ` ${cleanSentence}`;
 					} else {
-						processed.push(chunk);
-						chunk = sTrim;
+						structuredParagraphs.push(currentSentenceChunk);
+						currentSentenceChunk = cleanSentence;
 					}
 				}
-				if (chunk) processed.push(chunk);
+
+				if (currentSentenceChunk) {
+					structuredParagraphs.push(currentSentenceChunk);
+				}
 			} else {
-				processed.push(joinedP);
+				structuredParagraphs.push(coalescedParagraph);
 			}
 		}
 
-		text = processed.join("\n\n");
+		text = structuredParagraphs.join("\n\n");
 		setTimeout(() => {
 			calculateMetrics();
 			isFormatting = false;
 		}, 80);
 	};
 
-	const handlePaste = (e: ClipboardEvent) => {
-		const pasted = e.clipboardData?.getData("text");
-		if (pasted && pasted.length > 250) {
-			if (pasted.split("\n").some((l) => l.length > 160)) {
+	const handlePaste = (e: ClipboardEvent): void => {
+		const pastedData = e.clipboardData?.getData("text");
+		if (pastedData && pastedData.length > 250) {
+			if (pastedData.split("\n").some((line) => line.length > 160)) {
 				setTimeout(autoFormatScript, 60);
 			}
 		}
 	};
 
-	// =========================================================
-	// MÉTRICAS EN MEMORIA (ZERO LAYOUT THRASHING)
-	// =========================================================
-	const calculateMetrics = () => {
+	// =========================================================================
+	// MÉTRICAS EN FRÍO (ZERO LAYOUT THRASHING)
+	// =========================================================================
+	const calculateMetrics = (): void => {
 		if (!scrollContainer || !content) return;
+
 		cachedMaxScroll = Math.max(content.scrollHeight - scrollContainer.clientHeight, 0);
 
 		if (!focusMode) {
-			updateProgress();
+			updateProgressFromScroll(scrollContainer.scrollTop);
 			return;
 		}
 
@@ -176,95 +248,84 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			return { center: el.offsetTop + el.offsetHeight / 2 };
 		});
 
-		updateProgress();
+		updateProgressFromScroll(scrollContainer.scrollTop);
 	};
 
-	$: if (isReady && scrollContainer && content && (text || fontSize || lineHeight || autoCenter)) {
-		setTimeout(calculateMetrics, 60);
-	}
+	const updateActiveLineFromMemory = (currentScrollTop: number): void => {
+		if (!scrollContainer || lineMetrics.length === 0 || !focusMode) return;
 
-	const getFocusCenter = (currentScrollTop: number) => {
-		if (!scrollContainer) return 0;
-		const viewport = scrollContainer.clientHeight;
-		const focusOffset = focusMode ? viewport * 0.45 + 50 : viewport / 2;
-		return currentScrollTop + focusOffset;
-	};
+		const viewportHeight = scrollContainer.clientHeight;
+		const opticalCenter = currentScrollTop + (viewportHeight * 0.45 + 50);
 
-	const updateActiveLineFromMemory = (currentScrollTop: number) => {
-		if (!scrollContainer || !lineMetrics.length || !focusMode) return;
-		const focusCenter = getFocusCenter(currentScrollTop);
 		let closestIndex = 0;
-		let closestDistance = Number.POSITIVE_INFINITY;
+		let minDistance = Number.POSITIVE_INFINITY;
+
 		for (let i = 0; i < lineMetrics.length; i++) {
-			const distance = Math.abs(lineMetrics[i].center - focusCenter);
-			if (distance < closestDistance) {
-				closestDistance = distance;
+			const distance = Math.abs(lineMetrics[i].center - opticalCenter);
+			if (distance < minDistance) {
+				minDistance = distance;
 				closestIndex = i;
 			}
 		}
+
 		activeLineIndex = closestIndex;
 	};
 
-	const updateProgress = () => {
-		if (!scrollContainer || cachedMaxScroll <= 0) {
+	const updateProgressFromScroll = (scrollTop: number): void => {
+		if (cachedMaxScroll <= 0) {
 			progress = 0;
 			return;
 		}
-		progress = clamp(scrollContainer.scrollTop / cachedMaxScroll, 0, 1);
-		updateActiveLineFromMemory(scrollContainer.scrollTop);
+		progress = clamp(scrollTop / cachedMaxScroll, 0, 1);
+		updateActiveLineFromMemory(scrollTop);
 	};
 
-	const handleScroll = () => {
+	const handleScroll = (): void => {
 		if (!isPlaying && scrollContainer) {
 			scrollAccumulator = scrollContainer.scrollTop;
-			updateProgress();
+			updateProgressFromScroll(scrollAccumulator);
 		}
 	};
 
-	// Motor de scroll de alta precisión sin jitter
-	const tick = (timestamp: number) => {
+	// =========================================================================
+	// MOTOR DE ANIMACIÓN Y RENDERIZADO FLUIDO (60/120 FPS)
+	// =========================================================================
+	const tick = (timestamp: number): void => {
 		if (!isPlaying || !scrollContainer) {
-			raf = null;
-			lastTime = null;
+			rafId = null;
+			lastFrameTimestamp = null;
 			return;
 		}
 
-		if (lastTime === null) {
-			lastTime = timestamp;
+		if (lastFrameTimestamp === null) {
+			lastFrameTimestamp = timestamp;
 			scrollAccumulator = scrollContainer.scrollTop;
-			raf = requestAnimationFrame(tick);
+			rafId = requestAnimationFrame(tick);
 			return;
 		}
 
-		const elapsed = timestamp - lastTime;
-		if (elapsed <= 0) {
-			raf = requestAnimationFrame(tick);
-			return;
-		}
-
-		const delta = Math.min(elapsed / 1000, 0.05);
-		lastTime = timestamp;
+		const elapsedSeconds = Math.min((timestamp - lastFrameTimestamp) / 1000, 0.05);
+		lastFrameTimestamp = timestamp;
 
 		if (smooth) {
-			const smoothing = 1 - Math.exp(-delta * 10);
-			currentSpeed += (targetSpeed - currentSpeed) * smoothing;
+			const smoothingFactor = 1 - Math.exp(-elapsedSeconds * 10);
+			currentSpeed += (speed - currentSpeed) * smoothingFactor;
 		} else {
-			currentSpeed = targetSpeed;
+			currentSpeed = speed;
 		}
 
-		if (Math.abs(currentSpeed - targetSpeed) < 0.2) {
-			currentSpeed = targetSpeed;
+		if (Math.abs(currentSpeed - speed) < 0.2) {
+			currentSpeed = speed;
 		}
 
-		scrollAccumulator += currentSpeed * delta;
+		scrollAccumulator += currentSpeed * elapsedSeconds;
 
 		if (scrollAccumulator >= cachedMaxScroll) {
 			scrollContainer.scrollTop = cachedMaxScroll;
 			scrollAccumulator = cachedMaxScroll;
-			stopProgressTimer();
 			isPlaying = false;
-			raf = null;
-			lastTime = null;
+			rafId = null;
+			lastFrameTimestamp = null;
 			progress = 1;
 			updateActiveLineFromMemory(cachedMaxScroll);
 			return;
@@ -279,26 +340,12 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			updateActiveLineFromMemory(scrollAccumulator);
 		}
 
-		raf = requestAnimationFrame(tick);
+		rafId = requestAnimationFrame(tick);
 	};
 
-	const startProgressTimer = () => {
-		stopProgressTimer();
-		progressUpdateTimer = setInterval(() => {
-			updateProgress();
-		}, 200);
-	};
-
-	const stopProgressTimer = () => {
-		if (progressUpdateTimer) {
-			clearInterval(progressUpdateTimer);
-			progressUpdateTimer = null;
-		}
-	};
-
-	const startPlayback = () => {
+	const startPlayback = (): void => {
 		if (!scrollContainer || !content) return;
-		if (raf) cancelAnimationFrame(raf);
+		if (rafId !== null) cancelAnimationFrame(rafId);
 
 		calculateMetrics();
 		if (cachedMaxScroll <= 0) return;
@@ -311,28 +358,30 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		}
 
 		isPlaying = true;
-		lastTime = null;
-
-		startProgressTimer();
-		raf = requestAnimationFrame(tick);
+		lastFrameTimestamp = null;
+		rafId = requestAnimationFrame(tick);
 	};
 
-	const cancelCountdown = () => {
-		if (countdownTimer) clearInterval(countdownTimer);
-		countdownTimer = null;
+	const cancelCountdown = (): void => {
+		if (countdownTimer !== null) {
+			clearInterval(countdownTimer);
+			countdownTimer = null;
+		}
 		countdown = 0;
 		isCountingDown = false;
 	};
 
-	const beginCountdown = () => {
+	const beginCountdown = (): void => {
 		if (isCountingDown) return;
 		if (countdownDuration <= 0) {
 			startPlayback();
 			return;
 		}
+
 		cancelCountdown();
 		countdown = countdownDuration;
 		isCountingDown = true;
+
 		countdownTimer = setInterval(() => {
 			countdown -= 1;
 			if (countdown <= 0) {
@@ -342,28 +391,30 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		}, 1000);
 	};
 
-	const start = () => {
+	const start = (): void => {
 		if (isPlaying || isCountingDown) return;
 		beginCountdown();
 	};
 
-	const pause = () => {
+	const pause = (): void => {
 		isPlaying = false;
 		cancelCountdown();
-		if (raf) {
-			cancelAnimationFrame(raf);
-			raf = null;
+
+		if (rafId !== null) {
+			cancelAnimationFrame(rafId);
+			rafId = null;
 		}
-		lastTime = null;
-		currentSpeed = targetSpeed;
+
+		lastFrameTimestamp = null;
+		currentSpeed = speed;
+
 		if (scrollContainer) {
 			scrollAccumulator = scrollContainer.scrollTop;
+			updateProgressFromScroll(scrollAccumulator);
 		}
-		stopProgressTimer();
-		updateProgress();
 	};
 
-	const toggle = () => {
+	const toggle = (): void => {
 		if (isPlaying) {
 			pause();
 		} else if (isCountingDown) {
@@ -373,208 +424,337 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		}
 	};
 
-	const reset = () => {
+	const reset = (): void => {
 		pause();
 		if (scrollContainer) {
 			scrollContainer.scrollTop = 0;
 			scrollAccumulator = 0;
+			updateProgressFromScroll(0);
 		}
-		updateProgress();
 	};
 
-	const clearText = () => {
+	const clearText = (): void => {
 		pause();
 		text = "";
 		if (scrollContainer) {
 			scrollContainer.scrollTop = 0;
 			scrollAccumulator = 0;
+			updateProgressFromScroll(0);
 		}
-		updateProgress();
 	};
 
-	const jump = (amount: number) => {
-		if (!scrollContainer || !content) return;
-		const next = scrollContainer.scrollTop + amount;
-		scrollContainer.scrollTop = clamp(next, 0, cachedMaxScroll);
-		scrollAccumulator = scrollContainer.scrollTop;
-		updateProgress();
+	const jump = (pixels: number): void => {
+		if (!scrollContainer) return;
+		const targetPosition = clamp(scrollContainer.scrollTop + pixels, 0, cachedMaxScroll);
+		scrollContainer.scrollTop = targetPosition;
+		scrollAccumulator = targetPosition;
+		updateProgressFromScroll(targetPosition);
 	};
 
-	const scrollToProgress = (value: number) => {
-		if (!scrollContainer || !content) return;
-		scrollContainer.scrollTop = clamp(value, 0, 1) * cachedMaxScroll;
-		scrollAccumulator = scrollContainer.scrollTop;
-		updateProgress();
+	const scrollToProgressRatio = (ratio: number): void => {
+		if (!scrollContainer) return;
+		const targetPosition = clamp(ratio, 0, 1) * cachedMaxScroll;
+		scrollContainer.scrollTop = targetPosition;
+		scrollAccumulator = targetPosition;
+		updateProgressFromScroll(targetPosition);
 	};
 
-	const toggleFullscreen = async () => {
+	// =========================================================================
+	// FULLSCREEN ROBUSTO CON SOPORTE SAFARI IOS
+	// =========================================================================
+	const toggleFullscreen = async (): Promise<void> => {
 		if (!fullscreenTarget) return;
-		try {
-			if (!document.fullscreenElement) {
-				await fullscreenTarget.requestFullscreen();
-			} else {
-				await document.exitFullscreen();
-			}
-		} catch (e) {
-			console.warn("[Teleprompter] Fullscreen no disponible:", e);
+
+		const doc = document as Document & {
+			webkitFullscreenElement?: Element;
+			webkitExitFullscreen?: () => Promise<void>;
+		};
+		const target = fullscreenTarget as HTMLDivElement & {
+			webkitRequestFullscreen?: () => Promise<void>;
+		};
+
+		const isCurrentlyFullscreen = Boolean(doc.fullscreenElement || doc.webkitFullscreenElement);
+
+		if (target.requestFullscreen) {
+			try {
+				if (!isCurrentlyFullscreen) {
+					await target.requestFullscreen();
+				} else {
+					await doc.exitFullscreen();
+				}
+				return;
+			} catch {}
+		} else if (target.webkitRequestFullscreen) {
+			try {
+				if (!isCurrentlyFullscreen) {
+					await target.webkitRequestFullscreen();
+				} else if (doc.webkitExitFullscreen) {
+					await doc.webkitExitFullscreen();
+				}
+				return;
+			} catch {}
 		}
+
+		// Fallback para iOS Safari: Pseudo-Fullscreen visual
+		isPseudoFullscreen = !isPseudoFullscreen;
+		setTimeout(calculateMetrics, 200);
 	};
 
-	const handleWheel = (event: WheelEvent) => {
+	// =========================================================================
+	// INTERACCIÓN Y ENTRADAS DE USUARIO
+	// =========================================================================
+	const adjustSpeed = (delta: number): void => {
+		speed = Math.round(clamp(speed + delta, SPEED_MIN, SPEED_MAX));
+	};
+
+	const handleWheel = (event: WheelEvent): void => {
 		if (!isPlaying) return;
 		event.preventDefault();
-		const baseIncrement = Math.max(8, speed * 0.1);
-		const delta = event.deltaY > 0 ? baseIncrement : -baseIncrement;
-		adjustSpeed(delta);
+		const dynamicIncrement = Math.max(8, speed * 0.1);
+		adjustSpeed(event.deltaY > 0 ? dynamicIncrement : -dynamicIncrement);
 	};
 
-	const adjustSpeed = (amount: number) => {
-		speed = Math.round(clamp(speed + amount, speedMin, speedMax));
+	const handleTouchStart = (e: TouchEvent): void => {
+		if ((e.target as HTMLElement)?.tagName === "TEXTAREA") return;
+		touchStartY = e.touches[0].clientY;
 	};
 
-	const loadState = () => {
-		try {
-			const raw = localStorage.getItem(storageKey);
-			if (!raw) return;
-			const data = JSON.parse(raw);
-			if (typeof data !== "object" || data === null) return;
+	const handleTouchMove = (e: TouchEvent): void => {
+		if (!isPlaying) return;
+		if ((e.target as HTMLElement)?.tagName === "TEXTAREA") return;
 
-			try { if (data.text) text = data.text; } catch {}
-			try { if (data.speed) speed = data.speed; } catch {}
-			try { if (data.fontSize) fontSize = data.fontSize; } catch {}
-			try { if (data.lineHeight) lineHeight = data.lineHeight; } catch {}
-			try { if (typeof data.isMirror === "boolean") isMirror = data.isMirror; } catch {}
-			try { if (typeof data.autoCenter === "boolean") autoCenter = data.autoCenter; } catch {}
-			try { if (typeof data.smooth === "boolean") smooth = data.smooth; } catch {}
-			try { if (typeof data.glow === "boolean") glow = data.glow; } catch {}
-			try { if (typeof data.focusMode === "boolean") focusMode = data.focusMode; } catch {}
-			try { if (typeof data.dimOutside === "boolean") dimOutside = data.dimOutside; } catch {}
-			try { if (typeof data.countdownDuration === "number") countdownDuration = data.countdownDuration; } catch {}
-
-			ultraClean = false;
-			showControls = true;
-			speed = Math.round(clamp(speed, speedMin, speedMax));
-		} catch (e) {
-			console.warn("[Teleprompter] Estado corrupto, usando valores por defecto:", e);
-			try { localStorage.removeItem(storageKey); } catch {}
+		const deltaY = touchStartY - e.touches[0].clientY;
+		if (Math.abs(deltaY) > SWIPE_THRESHOLD_PX) {
+			const speedStep = Math.sign(deltaY) * Math.max(2, Math.abs(deltaY) / 10);
+			adjustSpeed(speedStep);
+			touchStartY = e.touches[0].clientY;
 		}
 	};
 
-	const scheduleSave = () => {
-		if (!isReady) return;
-		if (saveTimeout) clearTimeout(saveTimeout);
-		const delay = text.length > 5000 ? 500 : 300;
-		saveTimeout = setTimeout(() => {
-			try {
-				const payload = {
-					text, speed, fontSize, lineHeight,
-					isMirror, autoCenter, smooth, glow,
-					focusMode, dimOutside, countdownDuration,
-				};
-				localStorage.setItem(storageKey, JSON.stringify(payload));
+	const handleFrameClick = (e: MouseEvent): void => {
+		const target = e.target as HTMLElement | null;
+		if (
+			target?.tagName === "TEXTAREA" ||
+			target?.closest(".teleprompter-panel") ||
+			target?.closest(".teleprompter-float") ||
+			target?.closest(".no-trigger")
+		) {
+			return;
+		}
 
-				if (currentScript && text.trim()) {
-					saveCurrentScript();
+		const now = performance.now();
+		if (now - lastTapTimestamp < TAP_THRESHOLD_MS) {
+			toggleFullscreen();
+			lastTapTimestamp = 0;
+		} else {
+			lastTapTimestamp = now;
+			setTimeout(() => {
+				if (lastTapTimestamp !== 0) {
+					toggle();
+					lastTapTimestamp = 0;
 				}
-			} catch (e) {
-				console.warn("[Teleprompter] Error al guardar:", e);
-				if (e instanceof DOMException && e.name === "QuotaExceededError") {
-					try {
-						const scriptsToDelete = scripts.slice(10);
-						scriptsToDelete.forEach((s) => deleteScript(s.id));
-					} catch {}
-				}
-			}
-		}, delay);
+			}, TAP_THRESHOLD_MS);
+		}
 	};
 
-	interface SavedScript {
-		id: string;
-		name: string;
-		text: string;
-		createdAt: string;
-		updatedAt: string;
-	}
+	const onKey = (event: KeyboardEvent): void => {
+		if ((event.target as HTMLElement | null)?.tagName === "TEXTAREA") return;
 
-	let scripts: SavedScript[] = [];
+		switch (event.code) {
+			case "Space":
+			case "Enter":
+			case "NumpadEnter":
+				event.preventDefault();
+				toggle();
+				break;
+			case "ArrowUp":
+				event.preventDefault();
+				jump(-JUMP_SHORT_PX);
+				break;
+			case "ArrowDown":
+				event.preventDefault();
+				jump(JUMP_SHORT_PX);
+				break;
+			case "PageUp":
+				event.preventDefault();
+				jump(-JUMP_LONG_PX);
+				break;
+			case "PageDown":
+				event.preventDefault();
+				jump(JUMP_LONG_PX);
+				break;
+			case "KeyM":
+				event.preventDefault();
+				isMirror = !isMirror;
+				break;
+			case "KeyF":
+				event.preventDefault();
+				focusMode = !focusMode;
+				setTimeout(calculateMetrics, 50);
+				break;
+			case "KeyR":
+				event.preventDefault();
+				reset();
+				break;
+			case "KeyX":
+				event.preventDefault();
+				toggleFullscreen();
+				break;
+			case "KeyL":
+				event.preventDefault();
+				ultraClean = !ultraClean;
+				setTimeout(calculateMetrics, 200);
+				break;
+			case "Equal":
+			case "NumpadAdd":
+				event.preventDefault();
+				adjustSpeed(4);
+				break;
+			case "Minus":
+			case "NumpadSubtract":
+				event.preventDefault();
+				adjustSpeed(-4);
+				break;
+		}
+	};
 
-	const loadScripts = () => {
-		try {
-			const raw = localStorage.getItem("teleprompter:scripts");
-			if (!raw) {
-				scripts = [];
-				return;
-			}
-			const data = JSON.parse(raw);
-			if (Array.isArray(data)) {
-				scripts = data;
-			} else {
-				scripts = [];
-			}
-		} catch (e) {
-			console.warn("[Teleprompter] Scripts corruptos, inicializando vacío:", e);
+	// =========================================================================
+	// GESTOR DE GUIONES Y PERSISTENCIA ATÓMICA
+	// =========================================================================
+	const loadScripts = (): void => {
+		const serialized = safeStorage.get(STORAGE_KEY_SCRIPTS);
+		if (!serialized) {
 			scripts = [];
-			try { localStorage.removeItem("teleprompter:scripts"); } catch {}
+			return;
+		}
+		try {
+			const parsed = JSON.parse(serialized);
+			scripts = Array.isArray(parsed) ? parsed : [];
+		} catch {
+			scripts = [];
+			safeStorage.remove(STORAGE_KEY_SCRIPTS);
 		}
 	};
 
-	const saveScripts = (scriptsToSave: SavedScript[]) => {
-		localStorage.setItem("teleprompter:scripts", JSON.stringify(scriptsToSave));
+	const saveScripts = (scriptsToSave: SavedScript[]): void => {
+		safeStorage.set(STORAGE_KEY_SCRIPTS, JSON.stringify(scriptsToSave));
 		scripts = scriptsToSave;
 	};
 
-	const saveCurrentScript = () => {
+	const saveCurrentScript = (): void => {
 		if (!text.trim()) return;
-		const now = new Date().toISOString();
+		const nowIso = new Date().toISOString();
 
 		if (currentScript) {
 			const index = scripts.findIndex((s) => s.id === currentScript);
 			if (index >= 0) {
 				scripts[index].text = text;
-				scripts[index].updatedAt = now;
+				scripts[index].updatedAt = nowIso;
 				saveScripts(scripts);
+				return;
 			}
-		} else {
-			const newScript: SavedScript = {
-				id: Date.now().toString(),
-				name: `Guion ${scripts.length + 1}`,
-				text,
-				createdAt: now,
-				updatedAt: now,
-			};
-			const updated = [newScript, ...scripts];
-			if (updated.length > 20) updated.splice(20);
-			saveScripts(updated);
-			currentScript = newScript.id;
-			localStorage.setItem("teleprompter:lastScript", currentScript);
 		}
+
+		const newScriptRecord: SavedScript = {
+			id: Date.now().toString(),
+			name: `Guion ${scripts.length + 1}`,
+			text,
+			createdAt: nowIso,
+			updatedAt: nowIso,
+		};
+
+		const updatedList = [newScriptRecord, ...scripts];
+		if (updatedList.length > 20) updatedList.splice(20);
+
+		saveScripts(updatedList);
+		currentScript = newScriptRecord.id;
+		safeStorage.set(STORAGE_KEY_LAST_SCRIPT, currentScript);
 	};
 
-	const loadScript = (id: string) => {
-		const script = scripts.find((s) => s.id === id);
-		if (script) {
-			text = script.text;
+	const loadScript = (id: string): void => {
+		const targetScript = scripts.find((s) => s.id === id);
+		if (targetScript) {
+			text = targetScript.text;
 			currentScript = id;
-			localStorage.setItem("teleprompter:lastScript", id);
+			safeStorage.set(STORAGE_KEY_LAST_SCRIPT, id);
 			setTimeout(calculateMetrics, 60);
 		}
 	};
 
-	const deleteScript = (id: string) => {
-		const updated = scripts.filter((s) => s.id !== id);
-		saveScripts(updated);
+	const deleteScript = (id: string): void => {
+		const updatedList = scripts.filter((s) => s.id !== id);
+		saveScripts(updatedList);
 		if (currentScript === id) {
 			currentScript = null;
 			text = "";
+			safeStorage.remove(STORAGE_KEY_LAST_SCRIPT);
+			setTimeout(calculateMetrics, 60);
 		}
 	};
 
-	const newScript = () => {
+	const newScript = (): void => {
 		currentScript = null;
 		text = "";
+		safeStorage.remove(STORAGE_KEY_LAST_SCRIPT);
 		setTimeout(calculateMetrics, 60);
 	};
 
+	const loadState = (): void => {
+		const raw = safeStorage.get(STORAGE_KEY_STATE);
+		if (!raw) return;
+
+		try {
+			const data = JSON.parse(raw) as Partial<TeleprompterPersistedState>;
+			if (typeof data !== "object" || data === null) return;
+
+			if (typeof data.text === "string") text = data.text;
+			if (typeof data.speed === "number") speed = clamp(data.speed, SPEED_MIN, SPEED_MAX);
+			if (typeof data.fontSize === "number") fontSize = data.fontSize;
+			if (typeof data.lineHeight === "number") lineHeight = data.lineHeight;
+			if (typeof data.isMirror === "boolean") isMirror = data.isMirror;
+			if (typeof data.autoCenter === "boolean") autoCenter = data.autoCenter;
+			if (typeof data.smooth === "boolean") smooth = data.smooth;
+			if (typeof data.glow === "boolean") glow = data.glow;
+			if (typeof data.focusMode === "boolean") focusMode = data.focusMode;
+			if (typeof data.dimOutside === "boolean") dimOutside = data.dimOutside;
+			if (typeof data.countdownDuration === "number") countdownDuration = data.countdownDuration;
+
+			ultraClean = false;
+			showControls = true;
+		} catch {
+			safeStorage.remove(STORAGE_KEY_STATE);
+		}
+	};
+
+	const scheduleSave = (): void => {
+		if (!isReady) return;
+		if (saveDebounceTimer !== null) clearTimeout(saveDebounceTimer);
+
+		const debounceDelayMs = text.length > 5000 ? 500 : 300;
+		saveDebounceTimer = setTimeout(() => {
+			const payload: TeleprompterPersistedState = {
+				text,
+				speed,
+				fontSize,
+				lineHeight,
+				isMirror,
+				autoCenter,
+				smooth,
+				glow,
+				focusMode,
+				dimOutside,
+				countdownDuration,
+			};
+			safeStorage.set(STORAGE_KEY_STATE, JSON.stringify(payload));
+			if (currentScript && text.trim()) {
+				saveCurrentScript();
+			}
+		}, debounceDelayMs);
+	};
+
+	// =========================================================================
+	// HELPERS VISUALES
+	// =========================================================================
 	const getSpeedLabel = (spd: number): string => {
 		if (spd < 40) return "Muy lento";
 		if (spd < 80) return "Lento";
@@ -599,7 +779,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	};
 
 	const getSpeedColor = (): string => {
-		const ratio = (speed - speedMin) / (speedMax - speedMin);
+		const ratio = (speed - SPEED_MIN) / (SPEED_MAX - SPEED_MIN);
 		if (ratio < 0.33) return "oklch(0.65 0.15 150)";
 		if (ratio < 0.66) return "oklch(0.70 0.15 60)";
 		return "oklch(0.65 0.18 25)";
@@ -615,7 +795,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		});
 	};
 
-	const applyYouTubeSettings = () => {
+	const applyYouTubeSettings = (): void => {
 		speed = 60;
 		fontSize = 40;
 		lineHeight = 1.75;
@@ -638,71 +818,9 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		return `${minutes}:${secs.toString().padStart(2, "0")}`;
 	};
 
-	const handleTouchStart = (e: TouchEvent) => {
-		if (!isMobile && !("ontouchstart" in window)) return;
-		if ((e.target as HTMLElement)?.tagName === "TEXTAREA") return;
-		touchStartY = e.touches[0].clientY;
-	};
-
-	const handleTouchMove = (e: TouchEvent) => {
-		if (!isMobile && !("ontouchstart" in window)) return;
-		if (!isPlaying) return;
-		if ((e.target as HTMLElement)?.tagName === "TEXTAREA") return;
-		const deltaY = touchStartY - e.touches[0].clientY;
-		if (Math.abs(deltaY) > SWIPE_THRESHOLD) {
-			const speedAdjustment = Math.sign(deltaY) * Math.max(2, Math.abs(deltaY) / 10);
-			adjustSpeed(speedAdjustment);
-			touchStartY = e.touches[0].clientY;
-		}
-	};
-
-	const handleFrameClick = (e: MouseEvent) => {
-		if ((e.target as HTMLElement)?.tagName === "TEXTAREA") return;
-		if ((e.target as HTMLElement)?.closest(".teleprompter-panel")) return;
-		if ((e.target as HTMLElement)?.closest(".teleprompter-float")) return;
-		if ((e.target as HTMLElement)?.closest(".no-trigger")) return;
-
-		const now = Date.now();
-		if (now - lastTapTime < TAP_THRESHOLD) {
-			toggleFullscreen();
-			lastTapTime = 0;
-		} else {
-			lastTapTime = now;
-			setTimeout(() => {
-				if (lastTapTime !== 0) {
-					toggle();
-					lastTapTime = 0;
-				}
-			}, TAP_THRESHOLD);
-		}
-	};
-
-	const onKey = (event: KeyboardEvent) => {
-		if (event.target && (event.target as HTMLElement).tagName === "TEXTAREA") return;
-		switch (event.code) {
-			case "Space":
-			case "Enter":
-			case "NumpadEnter":
-				event.preventDefault();
-				toggle();
-				break;
-			case "ArrowUp": event.preventDefault(); jump(-120); break;
-			case "ArrowDown": event.preventDefault(); jump(120); break;
-			case "PageUp": event.preventDefault(); jump(-320); break;
-			case "PageDown": event.preventDefault(); jump(320); break;
-			case "KeyM":
-				event.preventDefault();
-				isMirror = !isMirror;
-				break;
-			case "KeyF": focusMode = !focusMode; setTimeout(calculateMetrics, 50); break;
-			case "KeyR": reset(); break;
-			case "KeyX": toggleFullscreen(); break;
-			case "KeyL": ultraClean = !ultraClean; setTimeout(calculateMetrics, 200); break;
-			case "Equal": case "NumpadAdd": adjustSpeed(4); break;
-			case "Minus": case "NumpadSubtract": adjustSpeed(-4); break;
-		}
-	};
-
+	// =========================================================================
+	// CICLO DE VIDA DEL COMPONENTE
+	// =========================================================================
 	$: if (
 		isReady &&
 		(text || speed || fontSize || lineHeight || isMirror || autoCenter ||
@@ -725,11 +843,10 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			attributeFilter: ["class"],
 		});
 
-		window.addEventListener("keydown", onKey);
+		window.addEventListener("keydown", onKey, { passive: false });
 		const mql = window.matchMedia("(max-width: 768px)");
 		isMobile = mql.matches;
 		showMobileBanner = isMobile;
-		allowMobile = true;
 
 		applyStoredThemeToDocument();
 		stopThemeWatch = watchSystemThemeChanges(getStoredTheme());
@@ -737,12 +854,12 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		loadState();
 		loadScripts();
 
-		const lastScriptId = localStorage.getItem("teleprompter:lastScript");
+		const lastScriptId = safeStorage.get(STORAGE_KEY_LAST_SCRIPT);
 		if (lastScriptId) {
 			loadScript(lastScriptId);
 		}
 
-		const onboardingDone = localStorage.getItem("teleprompter:onboarding:done");
+		const onboardingDone = safeStorage.get(STORAGE_KEY_ONBOARDING);
 		if (!onboardingDone) {
 			showOnboarding = true;
 		}
@@ -751,11 +868,13 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		if (content) resizeObserver.observe(content);
 		if (scrollContainer) resizeObserver.observe(scrollContainer);
 
-		const onFullscreenChange = () => {
+		const onFullscreenChange = (): void => {
 			isFullscreen = Boolean(document.fullscreenElement);
 			setTimeout(calculateMetrics, 200);
 		};
+
 		document.addEventListener("fullscreenchange", onFullscreenChange);
+		document.addEventListener("webkitfullscreenchange", onFullscreenChange);
 		window.addEventListener("resize", calculateMetrics);
 		window.addEventListener("orientationchange", () => setTimeout(calculateMetrics, 200));
 
@@ -764,23 +883,33 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 		return () => {
 			document.removeEventListener("fullscreenchange", onFullscreenChange);
+			document.removeEventListener("webkitfullscreenchange", onFullscreenChange);
 			window.removeEventListener("resize", calculateMetrics);
 		};
 	});
 
 	onDestroy(() => {
-		window.removeEventListener("keydown", onKey);
+		if (typeof window !== "undefined") {
+			window.removeEventListener("keydown", onKey);
+		}
 		pause();
-		stopProgressTimer();
 		resizeObserver?.disconnect();
 		darkModeObserver?.disconnect();
-		if (saveTimeout) clearTimeout(saveTimeout);
+
+		if (saveDebounceTimer !== null) clearTimeout(saveDebounceTimer);
+		if (countdownTimer !== null) clearInterval(countdownTimer);
+
 		stopThemeWatch?.();
 		stopThemeWatch = null;
-		cancelCountdown();
 	});
 </script>
-<div class="teleprompter-wrapper" class:clean={ultraClean} class:dark={isDark}>
+
+<div
+	class="teleprompter-wrapper"
+	class:clean={ultraClean}
+	class:dark={isDark}
+	class:pseudo-fullscreen={isPseudoFullscreen}
+>
 	{#if showOnboarding}
 		<div class="teleprompter-onboarding-overlay">
 			<div class="teleprompter-onboarding-card premium">
@@ -969,7 +1098,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 					class="btn-onboarding premium-btn"
 					on:click={() => {
 						showOnboarding = false;
-						localStorage.setItem("teleprompter:onboarding:done", "true");
+						safeStorage.set(STORAGE_KEY_ONBOARDING, "true");
 					}}
 				>
 					Comenzar
@@ -1014,7 +1143,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 				{showControls ? "Ocultar controles" : "Mostrar controles"}
 			</button>
 			<button class="btn-plain" on:click={toggleFullscreen}>
-				{isFullscreen ? "Salir pantalla completa" : "Pantalla completa (X)"}
+				{isFullscreen || isPseudoFullscreen ? "Salir pantalla completa" : "Pantalla completa (X)"}
 			</button>
 			<button
 				class="btn-plain"
@@ -1085,8 +1214,8 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 						<input
 							type="range"
 							class="custom-range"
-							min={speedMin}
-							max={speedMax}
+							min={SPEED_MIN}
+							max={SPEED_MAX}
 							step="1"
 							bind:value={speed}
 						/>
@@ -1094,7 +1223,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 							<span class="control-value">{speed} px/seg</span>
 							<div
 								class="speed-indicator-bar"
-								style={`width: ${((speed - speedMin) / (speedMax - speedMin)) * 100}%; background-color: ${getSpeedColor()}`}
+								style={`width: ${((speed - SPEED_MIN) / (SPEED_MAX - SPEED_MIN)) * 100}%; background-color: ${getSpeedColor()}`}
 							></div>
 						</div>
 					</div>
@@ -1213,8 +1342,8 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 					</button>
 					<button class="btn-action" on:click={reset}>Reiniciar (R)</button>
 					<button class="btn-action" on:click={clearText}>Vaciar</button>
-					<button class="btn-action" on:click={() => jump(-240)}>↑ Saltar arriba</button>
-					<button class="btn-action" on:click={() => jump(240)}>↓ Saltar abajo</button>
+					<button class="btn-action" on:click={() => jump(-JUMP_ACTION_PX)}>↑ Saltar arriba</button>
+					<button class="btn-action" on:click={() => jump(JUMP_ACTION_PX)}>↓ Saltar abajo</button>
 				</div>
 			</div>
 		{/if}
@@ -1237,16 +1366,13 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			on:click={(e) => {
 				const rect = e.currentTarget.getBoundingClientRect();
 				const clickX = e.clientX - rect.left;
-				const progressValue = clickX / rect.width;
-				scrollToProgress(progressValue);
+				scrollToProgressRatio(clickX / rect.width);
 			}}
 			on:keydown={(e) => {
 				if (e.key === 'Enter' || e.key === ' ') {
 					e.preventDefault();
 					const rect = e.currentTarget.getBoundingClientRect();
-					const clickX = rect.width / 2;
-					const progressValue = clickX / rect.width;
-					scrollToProgress(progressValue);
+					scrollToProgressRatio(0.5);
 				}
 			}}
 		>
@@ -1269,6 +1395,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			style={`padding: ${autoCenter ? "35vh 2rem 50vh" : "2.5rem 2rem"};`}
 			tabindex="-1"
 		>
+			<!-- CONTENEDOR CON TRANSFORMACIÓN EN EJE AISLADO -->
 			<div
 				class="teleprompter-content"
 				class:mirror={isMirror}
@@ -1295,15 +1422,15 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			<button class="btn-float" on:click={toggle} title={isPlaying ? "Pausar" : "Reproducir"} aria-label={isPlaying ? "Pausar reproducción" : "Iniciar reproducción"}>
 				{isPlaying ? "⏸" : isCountingDown ? "⏹" : "▶"}
 			</button>
-			<button class="btn-float" on:click={() => jump(-120)} title="Saltar arriba" aria-label="Saltar hacia arriba">↑</button>
-			<button class="btn-float" on:click={() => jump(120)} title="Saltar abajo" aria-label="Saltar hacia abajo">↓</button>
-			{#if isFullscreen}
+			<button class="btn-float" on:click={() => jump(-JUMP_SHORT_PX)} title="Saltar arriba" aria-label="Saltar hacia arriba">↑</button>
+			<button class="btn-float" on:click={() => jump(JUMP_SHORT_PX)} title="Saltar abajo" aria-label="Saltar hacia abajo">↓</button>
+			{#if isFullscreen || isPseudoFullscreen}
 				<div class="float-speed-control">
 					<input
 						type="range"
 						class="mini-range"
-						min={speedMin}
-						max={speedMax}
+						min={SPEED_MIN}
+						max={SPEED_MAX}
 						step="1"
 						bind:value={speed}
 						aria-label="Control de velocidad"
@@ -1329,6 +1456,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		{/if}
 	</div>
 </div>
+
 <style>
 	.teleprompter-wrapper {
 		display: flex;
@@ -1352,6 +1480,30 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 	.teleprompter-wrapper.clean .teleprompter-screen {
 		height: 70vh;
+	}
+
+	/* SOPORTE PSEUDO-FULLSCREEN PARA SAFARI IOS */
+	.teleprompter-wrapper.pseudo-fullscreen {
+		position: fixed !important;
+		inset: 0 !important;
+		width: 100vw !important;
+		height: 100vh !important;
+		z-index: 9999 !important;
+		background: #000000 !important;
+		padding: 0 !important;
+		margin: 0 !important;
+	}
+
+	.teleprompter-wrapper.pseudo-fullscreen .teleprompter-header,
+	.teleprompter-wrapper.pseudo-fullscreen .teleprompter-panel,
+	.teleprompter-wrapper.pseudo-fullscreen .teleprompter-footer {
+		display: none !important;
+	}
+
+	.teleprompter-wrapper.pseudo-fullscreen .teleprompter-screen {
+		height: 100vh !important;
+		border-radius: 0 !important;
+		min-height: unset !important;
 	}
 
 	.teleprompter-onboarding-overlay {
@@ -1395,15 +1547,9 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		animation: fadeInUp 0.5s ease forwards;
 	}
 
-	.onboarding-step:nth-child(1) {
-		animation-delay: 0.1s;
-	}
-	.onboarding-step:nth-child(2) {
-		animation-delay: 0.2s;
-	}
-	.onboarding-step:nth-child(3) {
-		animation-delay: 0.3s;
-	}
+	.onboarding-step:nth-child(1) { animation-delay: 0.1s; }
+	.onboarding-step:nth-child(2) { animation-delay: 0.2s; }
+	.onboarding-step:nth-child(3) { animation-delay: 0.3s; }
 
 	.step-icon {
 		font-size: 2.5rem;
@@ -2527,6 +2673,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		text-align: center;
 		user-select: none;
 		width: 100%;
+		margin: 0 auto;
 		transform-origin: center center !important;
 		transition: transform 0.2s ease;
 	}
