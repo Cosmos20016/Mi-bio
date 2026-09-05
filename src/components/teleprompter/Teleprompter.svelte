@@ -6,10 +6,12 @@
 	} from "@utils/setting-utils.ts";
 	import { onDestroy, onMount } from "svelte";
 
-	const storageKey = "teleprompter:state:v4";
+	const storageKey = "teleprompter:state:v3";
 
 	// Core state
-	let text = `Pega aquí tu guion...\n\nTip: Usa párrafos cortos para una lectura más cómoda.`;
+	let text = `Pega aquí tu guion...
+
+Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	let speed = 60;
 	let fontSize = 34;
 	let lineHeight = 1.6;
@@ -44,12 +46,12 @@
 	let fullscreenTarget: HTMLDivElement | null = null;
 	let raf: number | null = null;
 	let lastTime: number | null = null;
+	let observer: IntersectionObserver | null = null;
 	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 	let stopThemeWatch: (() => void) | null = null;
 	let countdownTimer: ReturnType<typeof setInterval> | null = null;
 	let darkModeObserver: MutationObserver | null = null;
 	let resizeObserver: ResizeObserver | null = null;
-	
 	let lineElements: Array<HTMLParagraphElement | null> = [];
 	let activeLineIndex = 0;
 	let lines: string[] = [];
@@ -58,10 +60,11 @@
 	const speedMin = 10;
 	const speedMax = 400;
 	
-	// Motor de velocidad y scroll
+	// Reactividad para velocidad en tiempo real
 	$: targetSpeed = speed;
 	let currentSpeed = 0;
 	let cachedMaxScroll = 0;
+	let progressUpdateTimer: ReturnType<typeof setInterval> | null = null;
 	let scrollAccumulator = 0;
 
 	let touchStartY = 0;
@@ -157,7 +160,7 @@
 	};
 
 	// =========================================================
-	// MÉTRICAS EN FRÍO (ZERO LAYOUT THRASHING)
+	// MÉTRICAS EN MEMORIA (ELIMINA EL LAYOUT THRASHING Y LAG)
 	// =========================================================
 	const calculateMetrics = () => {
 		if (!scrollContainer || !content) return;
@@ -168,6 +171,7 @@
 			return;
 		}
 
+		// Pre-cálculo de coordenadas en frío para no consultar el DOM durante el scroll
 		lineMetrics = lineElements.map((el) => {
 			if (!el) return { center: 0 };
 			return { center: el.offsetTop + el.offsetHeight / 2 };
@@ -176,11 +180,20 @@
 		updateProgress();
 	};
 
-	const updateActiveLineFromMemory = (currentScroll: number) => {
-		if (!scrollContainer || !lineMetrics.length || !focusMode) return;
-		const viewport = scrollContainer.clientHeight;
-		const focusCenter = currentScroll + (viewport * 0.45 + 50);
+	$: if (isReady && scrollContainer && content && (text || fontSize || lineHeight || autoCenter)) {
+		setTimeout(calculateMetrics, 60);
+	}
 
+	const getFocusCenter = (currentScrollTop: number) => {
+		if (!scrollContainer) return 0;
+		const viewport = scrollContainer.clientHeight;
+		const focusOffset = focusMode ? viewport * 0.45 + 50 : viewport / 2;
+		return currentScrollTop + focusOffset;
+	};
+
+	const updateActiveLineFromMemory = (currentScrollTop: number) => {
+		if (!scrollContainer || !lineMetrics.length || !focusMode) return;
+		const focusCenter = getFocusCenter(currentScrollTop);
 		let closestIndex = 0;
 		let closestDistance = Number.POSITIVE_INFINITY;
 		for (let i = 0; i < lineMetrics.length; i++) {
@@ -202,9 +215,7 @@
 		updateActiveLineFromMemory(scrollContainer.scrollTop);
 	};
 
-	// =========================================================
-	// MOTOR DE SCROLL FLUIDO DE ALTA PRECISIÓN
-	// =========================================================
+	// Motor de scroll de alta precisión sin "Math.round" y sin lecturas síncronas del DOM
 	const tick = (timestamp: number) => {
 		if (!isPlaying || !scrollContainer) {
 			raf = null;
@@ -220,8 +231,13 @@
 		}
 
 		const elapsed = timestamp - lastTime;
-		lastTime = timestamp;
+		if (elapsed <= 0) {
+			raf = requestAnimationFrame(tick);
+			return;
+		}
+
 		const delta = Math.min(elapsed / 1000, 0.05);
+		lastTime = timestamp;
 
 		if (smooth) {
 			const smoothing = 1 - Math.exp(-delta * 10);
@@ -239,6 +255,7 @@
 		if (scrollAccumulator >= cachedMaxScroll) {
 			scrollContainer.scrollTop = cachedMaxScroll;
 			scrollAccumulator = cachedMaxScroll;
+			stopProgressTimer();
 			isPlaying = false;
 			raf = null;
 			lastTime = null;
@@ -259,6 +276,20 @@
 		raf = requestAnimationFrame(tick);
 	};
 
+	const startProgressTimer = () => {
+		stopProgressTimer();
+		progressUpdateTimer = setInterval(() => {
+			updateProgress();
+		}, 200);
+	};
+
+	const stopProgressTimer = () => {
+		if (progressUpdateTimer) {
+			clearInterval(progressUpdateTimer);
+			progressUpdateTimer = null;
+		}
+	};
+
 	const startPlayback = () => {
 		if (!scrollContainer || !content) return;
 		if (raf) cancelAnimationFrame(raf);
@@ -275,6 +306,8 @@
 
 		isPlaying = true;
 		lastTime = null;
+
+		startProgressTimer();
 		raf = requestAnimationFrame(tick);
 	};
 
@@ -320,6 +353,7 @@
 		if (scrollContainer) {
 			scrollAccumulator = scrollContainer.scrollTop;
 		}
+		stopProgressTimer();
 		updateProgress();
 	};
 
@@ -399,24 +433,25 @@
 			const data = JSON.parse(raw);
 			if (typeof data !== "object" || data === null) return;
 
-			if (data.text) text = data.text;
-			if (data.speed) speed = data.speed;
-			if (data.fontSize) fontSize = data.fontSize;
-			if (data.lineHeight) lineHeight = data.lineHeight;
-			if (typeof data.isMirror === "boolean") isMirror = data.isMirror;
-			if (typeof data.autoCenter === "boolean") autoCenter = data.autoCenter;
-			if (typeof data.smooth === "boolean") smooth = data.smooth;
-			if (typeof data.glow === "boolean") glow = data.glow;
-			if (typeof data.focusMode === "boolean") focusMode = data.focusMode;
-			if (typeof data.dimOutside === "boolean") dimOutside = data.dimOutside;
-			if (typeof data.countdownDuration === "number") countdownDuration = data.countdownDuration;
+			try { if (data.text) text = data.text; } catch {}
+			try { if (data.speed) speed = data.speed; } catch {}
+			try { if (data.fontSize) fontSize = data.fontSize; } catch {}
+			try { if (data.lineHeight) lineHeight = data.lineHeight; } catch {}
+			try { if (typeof data.isMirror === "boolean") isMirror = data.isMirror; } catch {}
+			try { if (typeof data.autoCenter === "boolean") autoCenter = data.autoCenter; } catch {}
+			try { if (typeof data.smooth === "boolean") smooth = data.smooth; } catch {}
+			try { if (typeof data.glow === "boolean") glow = data.glow; } catch {}
+			try { if (typeof data.focusMode === "boolean") focusMode = data.focusMode; } catch {}
+			try { if (typeof data.dimOutside === "boolean") dimOutside = data.dimOutside; } catch {}
+			try { if (typeof data.countdownDuration === "number") countdownDuration = data.countdownDuration; } catch {}
 
-			// ultraClean y showControls siempre garantizan interfaz visible al iniciar
+			// ultraClean y showControls se mantienen visibles al iniciar para no ocultar la barra
 			ultraClean = false;
 			showControls = true;
 
 			speed = Math.round(clamp(speed, speedMin, speedMax));
 		} catch (e) {
+			console.warn("[Teleprompter] Estado corrupto, usando valores por defecto:", e);
 			try { localStorage.removeItem(storageKey); } catch {}
 		}
 	};
@@ -438,6 +473,7 @@
 					saveCurrentScript();
 				}
 			} catch (e) {
+				console.warn("[Teleprompter] Error al guardar:", e);
 				if (e instanceof DOMException && e.name === "QuotaExceededError") {
 					try {
 						const scriptsToDelete = scripts.slice(10);
@@ -466,8 +502,13 @@
 				return;
 			}
 			const data = JSON.parse(raw);
-			scripts = Array.isArray(data) ? data : [];
+			if (Array.isArray(data)) {
+				scripts = data;
+			} else {
+				scripts = [];
+			}
 		} catch (e) {
+			console.warn("[Teleprompter] Scripts corruptos, inicializando vacío:", e);
 			scripts = [];
 			try { localStorage.removeItem("teleprompter:scripts"); } catch {}
 		}
@@ -723,6 +764,7 @@
 	onDestroy(() => {
 		window.removeEventListener("keydown", onKey);
 		pause();
+		stopProgressTimer();
 		resizeObserver?.disconnect();
 		darkModeObserver?.disconnect();
 		if (saveTimeout) clearTimeout(saveTimeout);
@@ -731,7 +773,6 @@
 		cancelCountdown();
 	});
 </script>
-
 <div class="teleprompter-wrapper" class:clean={ultraClean} class:dark={isDark}>
 	{#if showOnboarding}
 		<div class="teleprompter-onboarding-overlay">
@@ -743,10 +784,34 @@
 				</div>
 
 				<div class="help-tabs">
-					<button class="tab-btn" class:active={helpTab === 'quickstart'} on:click={() => (helpTab = 'quickstart')}>Inicio rápido</button>
-					<button class="tab-btn" class:active={helpTab === 'youtube'} on:click={() => (helpTab = 'youtube')}>Ajustes YouTube</button>
-					<button class="tab-btn" class:active={helpTab === 'shortcuts'} on:click={() => (helpTab = 'shortcuts')}>Atajos</button>
-					<button class="tab-btn" class:active={helpTab === 'tips'} on:click={() => (helpTab = 'tips')}>Tips Pro</button>
+					<button
+						class="tab-btn"
+						class:active={helpTab === 'quickstart'}
+						on:click={() => (helpTab = 'quickstart')}
+					>
+						Inicio rápido
+					</button>
+					<button
+						class="tab-btn"
+						class:active={helpTab === 'youtube'}
+						on:click={() => (helpTab = 'youtube')}
+					>
+						Ajustes YouTube
+					</button>
+					<button
+						class="tab-btn"
+						class:active={helpTab === 'shortcuts'}
+						on:click={() => (helpTab = 'shortcuts')}
+					>
+						Atajos
+					</button>
+					<button
+						class="tab-btn"
+						class:active={helpTab === 'tips'}
+						on:click={() => (helpTab = 'tips')}
+					>
+						Tips Pro
+					</button>
 				</div>
 
 				<div class="tab-content">
@@ -755,63 +820,151 @@
 							<div class="onboarding-step">
 								<div class="step-icon">📝</div>
 								<h3>1. Pega tu guion</h3>
-								<p>Escribe o pega el texto. El botón "Auto-Organizar" estructurará párrafos densos automáticamente.</p>
+								<p>Escribe o pega el texto. Si pegas texto denso, usa el botón "✨ Auto-Organizar" para estructurarlo en bloques de lectura óptimos.</p>
 							</div>
 							<div class="onboarding-step">
 								<div class="step-icon">⚙️</div>
 								<h3>2. Ajusta a tu ritmo</h3>
-								<p>Personaliza velocidad, tamaño de fuente y opciones con aceleración fluida en pantalla.</p>
+								<p>Personaliza velocidad, tamaño de fuente e interlineado para adaptarlo a la distancia de tu cámara.</p>
 							</div>
 							<div class="onboarding-step">
 								<div class="step-icon">▶️</div>
 								<h3>3. Empieza a grabar</h3>
-								<p>Presiona Play o Espacio para comenzar la lectura profesional continua.</p>
+								<p>Presiona Play o la barra espaciadora para comenzar la lectura sin saltos ni tirones.</p>
 							</div>
 						</div>
 					{:else if helpTab === 'youtube'}
 						<div class="tab-panel youtube-settings">
 							<h3>⚙️ Configuración recomendada para YouTube</h3>
 							<p class="tab-desc">Estos ajustes te ayudarán a grabar videos profesionales con lectura natural:</p>
+
 							<div class="settings-list">
-								<div class="setting-item"><span class="setting-label">🐢 Velocidad:</span><span class="setting-value">50-70 px/seg (lectura natural sin parecer robot)</span></div>
-								<div class="setting-item"><span class="setting-label">📏 Tamaño fuente:</span><span class="setting-value">38-42px (legible a distancia del monitor)</span></div>
-								<div class="setting-item"><span class="setting-label">📐 Interlineado:</span><span class="setting-value">1.7-1.8 (espaciado cómodo para los ojos)</span></div>
-								<div class="setting-item"><span class="setting-label">🔄 Modo espejo:</span><span class="setting-value">Activado para cámara frontal / desactivado para trasera</span></div>
-								<div class="setting-item"><span class="setting-label">🎯 Focus mode:</span><span class="setting-value">Activado (resalta la línea que estás leyendo)</span></div>
-								<div class="setting-item"><span class="setting-label">🎯 Auto-centrar:</span><span class="setting-value">Activado siempre</span></div>
-								<div class="setting-item"><span class="setting-label">⏱️ Countdown:</span><span class="setting-value">3 segundos (te da tiempo de prepararte)</span></div>
+								<div class="setting-item">
+									<span class="setting-label">🐢 Velocidad:</span>
+									<span class="setting-value">50-70 px/seg (lectura natural sin parecer robot)</span>
+								</div>
+								<div class="setting-item">
+									<span class="setting-label">📏 Tamaño fuente:</span>
+									<span class="setting-value">38-42px (legible a distancia del monitor)</span>
+								</div>
+								<div class="setting-item">
+									<span class="setting-label">📐 Interlineado:</span>
+									<span class="setting-value">1.7-1.8 (espaciado cómodo para los ojos)</span>
+								</div>
+								<div class="setting-item">
+									<span class="setting-label">🔄 Modo espejo:</span>
+									<span class="setting-value">Activado para cristal divisor o cámara frontal / desactivado para lectura directa</span>
+								</div>
+								<div class="setting-item">
+									<span class="setting-label">🎯 Focus mode:</span>
+									<span class="setting-value">Activado (resalta la línea que estás leyendo)</span>
+								</div>
+								<div class="setting-item">
+									<span class="setting-label">🎯 Auto-centrar:</span>
+									<span class="setting-value">Activado siempre</span>
+								</div>
+								<div class="setting-item">
+									<span class="setting-label">⏱️ Countdown:</span>
+									<span class="setting-value">3 segundos (te da tiempo de prepararte)</span>
+								</div>
 							</div>
-							<button class="btn-youtube-apply" on:click={() => { applyYouTubeSettings(); helpTab = 'quickstart'; }}>✨ Aplicar ajustes YouTube</button>
+
+							<button class="btn-youtube-apply" on:click={() => {
+								applyYouTubeSettings();
+								helpTab = 'quickstart';
+							}}>
+								✨ Aplicar ajustes YouTube
+							</button>
 						</div>
 					{:else if helpTab === 'shortcuts'}
 						<div class="tab-panel shortcuts-panel">
 							<h3>⌨️ Atajos de teclado</h3>
 							<div class="shortcuts-table">
-								<div class="shortcut-row"><span class="shortcut-key">Espacio / Enter</span><span class="shortcut-desc">Play / Pausa</span></div>
-								<div class="shortcut-row"><span class="shortcut-key">R</span><span class="shortcut-desc">Reiniciar desde el inicio</span></div>
-								<div class="shortcut-row"><span class="shortcut-key">↑ / ↓</span><span class="shortcut-desc">Ajustar velocidad ±4</span></div>
-								<div class="shortcut-row"><span class="shortcut-key">PageUp / PageDn</span><span class="shortcut-desc">Saltos rápidos de pantalla</span></div>
-								<div class="shortcut-row"><span class="shortcut-key">M</span><span class="shortcut-desc">Activar/desactivar modo espejo</span></div>
-								<div class="shortcut-row"><span class="shortcut-key">F</span><span class="shortcut-desc">Activar/desactivar Focus Mode</span></div>
-								<div class="shortcut-row"><span class="shortcut-key">X</span><span class="shortcut-desc">Pantalla completa</span></div>
-								<div class="shortcut-row"><span class="shortcut-key">L</span><span class="shortcut-desc">Modo limpio (oculta controles)</span></div>
+								<div class="shortcut-row">
+									<span class="shortcut-key">Espacio / Enter</span>
+									<span class="shortcut-desc">Play / Pausa</span>
+								</div>
+								<div class="shortcut-row">
+									<span class="shortcut-key">R</span>
+									<span class="shortcut-desc">Reiniciar desde el inicio</span>
+								</div>
+								<div class="shortcut-row">
+									<span class="shortcut-key">↑ / ↓</span>
+									<span class="shortcut-desc">Ajustar velocidad ±4</span>
+								</div>
+								<div class="shortcut-row">
+									<span class="shortcut-key">PageUp / PageDn</span>
+									<span class="shortcut-desc">Saltar páginas arriba / abajo</span>
+								</div>
+								<div class="shortcut-row">
+									<span class="shortcut-key">M</span>
+									<span class="shortcut-desc">Activar/desactivar modo espejo</span>
+								</div>
+								<div class="shortcut-row">
+									<span class="shortcut-key">F</span>
+									<span class="shortcut-desc">Activar/desactivar Focus Mode</span>
+								</div>
+								<div class="shortcut-row">
+									<span class="shortcut-key">X</span>
+									<span class="shortcut-desc">Pantalla completa</span>
+								</div>
+								<div class="shortcut-row">
+									<span class="shortcut-key">L</span>
+									<span class="shortcut-desc">Modo limpio (oculta todo excepto texto)</span>
+								</div>
 							</div>
 						</div>
 					{:else if helpTab === 'tips'}
 						<div class="tab-panel tips-panel">
 							<h3>💡 Consejos profesionales</h3>
 							<div class="tips-list">
-								<div class="tip-item-pro"><span class="tip-number">1</span><div class="tip-content"><strong>Auto-Organizador</strong><p>Usa el botón "Auto-Organizar" si copiaste texto de un chat o artículo denso.</p></div></div>
-								<div class="tip-item-pro"><span class="tip-number">2</span><div class="tip-content"><strong>Párrafos cortos</strong><p>Mantén bloques de 2-3 líneas para evitar fatiga ocular y pausas forzadas.</p></div></div>
-								<div class="tip-item-pro"><span class="tip-number">3</span><div class="tip-content"><strong>Mira al lente</strong><p>Posiciona el teleprompter lo más cerca posible del lente de la cámara.</p></div></div>
-								<div class="tip-item-pro"><span class="tip-number">4</span><div class="tip-content"><strong>Ritmo natural</strong><p>Adapta la velocidad a tu respiración en vez de apurarte para alcanzar el texto.</p></div></div>
-								<div class="tip-item-pro"><span class="tip-number">5</span><div class="tip-content"><strong>Focus Mode</strong><p>Atenúa el resto del texto para sesiones de grabación largas sin distracciones.</p></div></div>
+								<div class="tip-item-pro">
+									<span class="tip-number">1</span>
+									<div class="tip-content">
+										<strong>Usa el Auto-Organizador</strong>
+										<p>Convierte párrafos largos en oraciones digeribles para no perder aire ni contacto visual.</p>
+									</div>
+								</div>
+								<div class="tip-item-pro">
+									<span class="tip-number">2</span>
+									<div class="tip-content">
+										<strong>Practica el guion 2-3 veces antes de grabar</strong>
+										<p>Familiarízate con el texto para una lectura más natural y fluida.</p>
+									</div>
+								</div>
+								<div class="tip-item-pro">
+									<span class="tip-number">3</span>
+									<div class="tip-content">
+										<strong>Mira a la cámara, no al texto</strong>
+										<p>Posiciona el teleprompter lo más cerca posible del lente y usa visión periférica.</p>
+									</div>
+								</div>
+								<div class="tip-item-pro">
+									<span class="tip-number">4</span>
+									<div class="tip-content">
+										<strong>Ajusta la velocidad a tu respiración</strong>
+										<p>No corras detrás del texto; calibra la velocidad para que acompañe tu cadencia natural.</p>
+									</div>
+								</div>
+								<div class="tip-item-pro">
+									<span class="tip-number">5</span>
+									<div class="tip-content">
+										<strong>Usa el Focus Mode para guiones largos</strong>
+										<p>Atenúa las líneas periféricas reduciendo la fatiga visual en tomas continuas.</p>
+									</div>
+								</div>
 							</div>
 						</div>
 					{/if}
 				</div>
 
-				<button class="btn-onboarding premium-btn" on:click={() => { showOnboarding = false; localStorage.setItem("teleprompter:onboarding:done", "true"); }}>
+				<button
+					class="btn-onboarding premium-btn"
+					on:click={() => {
+						showOnboarding = false;
+						localStorage.setItem("teleprompter:onboarding:done", "true");
+					}}
+				>
 					Comenzar
 				</button>
 			</div>
@@ -831,20 +984,39 @@
 			</div>
 		</div>
 		<div class="teleprompter-header-actions">
-			<button class="btn-format" on:click={autoFormatScript} title="Formatear texto denso en párrafos legibles">
+			<button
+				class="btn-format"
+				on:click={autoFormatScript}
+				title="Formatea párrafos densos automáticamente para una lectura óptima"
+			>
 				✨ Auto-Organizar
 			</button>
-			<button class="btn-help" on:click={() => (showOnboarding = true)} title="Ver tutorial">
+			<button
+				class="btn-help"
+				on:click={() => (showOnboarding = true)}
+				title="Ver tutorial"
+			>
 				<span class="help-icon">?</span>
 				<span class="help-badge">Ayuda</span>
 			</button>
-			<button class="btn-plain" class:active={!showControls} on:click={() => (showControls = !showControls)}>
+			<button
+				class="btn-plain"
+				class:active={!showControls}
+				on:click={() => (showControls = !showControls)}
+			>
 				{showControls ? "Ocultar controles" : "Mostrar controles"}
 			</button>
 			<button class="btn-plain" on:click={toggleFullscreen}>
 				{isFullscreen ? "Salir pantalla completa" : "Pantalla completa (X)"}
 			</button>
-			<button class="btn-plain" class:active={ultraClean} on:click={() => { ultraClean = !ultraClean; setTimeout(calculateMetrics, 200); }}>
+			<button
+				class="btn-plain"
+				class:active={ultraClean}
+				on:click={() => {
+					ultraClean = !ultraClean;
+					setTimeout(calculateMetrics, 200);
+				}}
+			>
 				{ultraClean ? "Salir modo limpio" : "Modo limpio (L)"}
 			</button>
 		</div>
@@ -874,7 +1046,9 @@
 				>
 					<option value="">-- Nuevo guion --</option>
 					{#each scripts as script}
-						<option value={script.id}>{script.name} · {formatDateTime(script.updatedAt)}</option>
+						<option value={script.id}>
+							{script.name} · {formatDateTime(script.updatedAt)}
+						</option>
 					{/each}
 				</select>
 				<button class="btn-icon" on:click={saveCurrentScript} title="Guardar guion actual">💾</button>
@@ -901,27 +1075,62 @@
 							<label title="Velocidad ideal: 40-80 px/seg para lectura natural">Velocidad</label>
 							<span class="speed-label">{getSpeedLabel(speed)}</span>
 						</div>
-						<input type="range" class="custom-range" min={speedMin} max={speedMax} step="1" bind:value={speed} />
+						<input
+							type="range"
+							class="custom-range"
+							min={speedMin}
+							max={speedMax}
+							step="1"
+							bind:value={speed}
+						/>
 						<div class="control-value-row">
 							<span class="control-value">{speed} px/seg</span>
-							<div class="speed-indicator-bar" style={`width: ${((speed - speedMin) / (speedMax - speedMin)) * 100}%; background-color: ${getSpeedColor()}`}></div>
+							<div
+								class="speed-indicator-bar"
+								style={`width: ${((speed - speedMin) / (speedMax - speedMin)) * 100}%; background-color: ${getSpeedColor()}`}
+							></div>
 						</div>
 					</div>
 
 					<div class="control-group">
-						<div class="control-label-row"><label>Tamaño</label></div>
-						<input type="range" class="custom-range" min="22" max="64" bind:value={fontSize} on:input={calculateMetrics} />
-						<div class="control-value-row"><span class="control-value">{fontSize}px</span></div>
+						<div class="control-label-row">
+							<label>Tamaño</label>
+						</div>
+						<input
+							type="range"
+							class="custom-range"
+							min="22"
+							max="64"
+							bind:value={fontSize}
+							on:input={calculateMetrics}
+						/>
+						<div class="control-value-row">
+							<span class="control-value">{fontSize}px</span>
+						</div>
 					</div>
 
 					<div class="control-group">
-						<div class="control-label-row"><label>Interlineado</label></div>
-						<input type="range" class="custom-range" min="1.2" max="2.2" step="0.05" bind:value={lineHeight} on:input={calculateMetrics} />
-						<div class="control-value-row"><span class="control-value">{lineHeight.toFixed(2)}</span></div>
+						<div class="control-label-row">
+							<label>Interlineado</label>
+						</div>
+						<input
+							type="range"
+							class="custom-range"
+							min="1.2"
+							max="2.2"
+							step="0.05"
+							bind:value={lineHeight}
+							on:input={calculateMetrics}
+						/>
+						<div class="control-value-row">
+							<span class="control-value">{lineHeight.toFixed(2)}</span>
+						</div>
 					</div>
 
 					<div class="control-group">
-						<div class="control-label-row"><label>Countdown</label></div>
+						<div class="control-label-row">
+							<label>Countdown</label>
+						</div>
 						<select class="countdown-select" bind:value={countdownDuration}>
 							<option value={0}>Sin countdown</option>
 							<option value={1}>1 segundo</option>
@@ -935,12 +1144,59 @@
 				<div class="control-group toggles">
 					<label>Opciones</label>
 					<div class="toggle-grid">
-						<button class="toggle-btn" class:active={isMirror} on:click={() => (isMirror = !isMirror)} title="Activa para cámaras frontales o espejos de teleprompter">Espejo (M)</button>
-						<button class="toggle-btn" class:active={autoCenter} on:click={() => { autoCenter = !autoCenter; setTimeout(calculateMetrics, 50); }} title="Mantiene el texto centrado en la pantalla">Auto-centrar</button>
-						<button class="toggle-btn" class:active={smooth} on:click={() => (smooth = !smooth)} title="Transición suave entre velocidades">Suave</button>
-						<button class="toggle-btn" class:active={glow} on:click={() => (glow = !glow)} title="Efecto de brillo en la pantalla">Glow</button>
-						<button class="toggle-btn" class:active={focusMode} on:click={() => { focusMode = !focusMode; setTimeout(calculateMetrics, 50); }} title="Resalta la línea actual y oscurece el resto">Focus (F)</button>
-						<button class="toggle-btn" class:active={dimOutside} on:click={() => (dimOutside = !dimOutside)}>Oscurecer bordes</button>
+						<button
+							class="toggle-btn"
+							class:active={isMirror}
+							on:click={() => (isMirror = !isMirror)}
+							title="Invierte el texto horizontalmente para cristales divisores o cámaras frontales"
+						>
+							Espejo (M)
+						</button>
+						<button
+							class="toggle-btn"
+							class:active={autoCenter}
+							on:click={() => {
+								autoCenter = !autoCenter;
+								setTimeout(calculateMetrics, 50);
+							}}
+							title="Mantiene el texto centrado en la pantalla"
+						>
+							Auto-centrar
+						</button>
+						<button
+							class="toggle-btn"
+							class:active={smooth}
+							on:click={() => (smooth = !smooth)}
+							title="Transición suave entre velocidades"
+						>
+							Suave
+						</button>
+						<button
+							class="toggle-btn"
+							class:active={glow}
+							on:click={() => (glow = !glow)}
+							title="Efecto de brillo en la pantalla"
+						>
+							Glow
+						</button>
+						<button
+							class="toggle-btn"
+							class:active={focusMode}
+							on:click={() => {
+								focusMode = !focusMode;
+								setTimeout(calculateMetrics, 50);
+							}}
+							title="Resalta la línea actual y oscurece el resto"
+						>
+							Focus (F)
+						</button>
+						<button
+							class="toggle-btn"
+							class:active={dimOutside}
+							on:click={() => (dimOutside = !dimOutside)}
+						>
+							Oscurecer bordes
+						</button>
 					</div>
 				</div>
 
@@ -974,12 +1230,16 @@
 			on:click={(e) => {
 				const rect = e.currentTarget.getBoundingClientRect();
 				const clickX = e.clientX - rect.left;
-				scrollToProgress(clickX / rect.width);
+				const progressValue = clickX / rect.width;
+				scrollToProgress(progressValue);
 			}}
 			on:keydown={(e) => {
 				if (e.key === 'Enter' || e.key === ' ') {
 					e.preventDefault();
-					scrollToProgress(0.5);
+					const rect = e.currentTarget.getBoundingClientRect();
+					const clickX = rect.width / 2;
+					const progressValue = clickX / rect.width;
+					scrollToProgress(progressValue);
 				}
 			}}
 		>
@@ -1001,6 +1261,7 @@
 			style={`padding: ${autoCenter ? "35vh 2rem 50vh" : "2.5rem 2rem"};`}
 			tabindex="-1"
 		>
+			<!-- EL EFECTO ESPEJO SE APLICA EXCLUSIVAMENTE AL CONTENIDO DE TEXTO -->
 			<div
 				class="teleprompter-content"
 				class:mirror={isMirror}
@@ -1031,17 +1292,26 @@
 			<button class="btn-float" on:click={() => jump(120)} title="Saltar abajo" aria-label="Saltar hacia abajo">↓</button>
 			{#if isFullscreen}
 				<div class="float-speed-control">
-					<input type="range" class="mini-range" min={speedMin} max={speedMax} step="1" bind:value={speed} aria-label="Control de velocidad" />
+					<input
+						type="range"
+						class="mini-range"
+						min={speedMin}
+						max={speedMax}
+						step="1"
+						bind:value={speed}
+						aria-label="Control de velocidad"
+					/>
 					<span class="mini-speed">{speed}</span>
 				</div>
 			{/if}
-			<button class="btn-float" class:active={isMirror} on:click={() => (isMirror = !isMirror)} title="Espejo" aria-label="Activar o desactivar modo espejo">M</button>
+			<button class="btn-float" class:active={isMirror} on:click={() => (isMirror = !isMirror)} title="Espejo (M)" aria-label="Activar o desactivar modo espejo">M</button>
 			<button class="btn-float" on:click={toggleFullscreen} title="Pantalla completa" aria-label="Activar o desactivar pantalla completa">⛶</button>
 		</div>
 
 		<div class="teleprompter-footer">
 			<div class="shortcut">
-				Espacio/Enter = Play · ↑/↓/Page = Saltos · M = Espejo · F = Focus · L = Ultra limpio · R = Reset · X = Fullscreen · Rueda = velocidad · +/- = Velocidad
+				Espacio/Enter = Play · ↑/↓/Page = Saltos · M = Espejo · F = Focus · L = Ultra limpio · R
+				= Reset · X = Fullscreen · Rueda = velocidad · +/- = Velocidad
 			</div>
 		</div>
 
@@ -1052,7 +1322,6 @@
 		{/if}
 	</div>
 </div>
-
 <style>
 	.teleprompter-wrapper {
 		display: flex;
@@ -1119,9 +1388,15 @@
 		animation: fadeInUp 0.5s ease forwards;
 	}
 
-	.onboarding-step:nth-child(1) { animation-delay: 0.1s; }
-	.onboarding-step:nth-child(2) { animation-delay: 0.2s; }
-	.onboarding-step:nth-child(3) { animation-delay: 0.3s; }
+	.onboarding-step:nth-child(1) {
+		animation-delay: 0.1s;
+	}
+	.onboarding-step:nth-child(2) {
+		animation-delay: 0.2s;
+	}
+	.onboarding-step:nth-child(3) {
+		animation-delay: 0.3s;
+	}
 
 	.step-icon {
 		font-size: 2.5rem;
@@ -1547,6 +1822,9 @@
 	}
 
 	.btn-format {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
 		padding: 0.5rem 1rem;
 		background: linear-gradient(135deg, oklch(0.70 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30)));
 		color: white;
@@ -1555,13 +1833,17 @@
 		font-size: 0.9rem;
 		font-weight: 600;
 		cursor: pointer;
-		box-shadow: 0 4px 12px oklch(0.70 0.14 var(--hue) / 0.3);
 		transition: all 0.2s ease;
+		box-shadow: 0 4px 12px oklch(0.70 0.14 var(--hue) / 0.3);
 	}
 
 	.btn-format:hover {
 		transform: translateY(-1px);
 		box-shadow: 0 6px 16px oklch(0.70 0.14 var(--hue) / 0.45);
+	}
+
+	.btn-format:active {
+		transform: translateY(0);
 	}
 
 	.btn-help {
@@ -2196,6 +2478,7 @@
 		scroll-behavior: auto;
 		scrollbar-width: thin;
 		scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+		will-change: scroll-position;
 		overflow-anchor: none;
 	}
 
@@ -2231,17 +2514,18 @@
 		background: rgba(255, 255, 255, 0.5);
 	}
 
+	/* MODO ESPEJO TRADICIONAL (TECLA M): APLICADO DIRECTAMENTE AL TEXTO */
 	.teleprompter-content {
 		color: #0f172a;
 		text-align: center;
 		user-select: none;
 		width: 100%;
+		transform-origin: center center;
 		transition: transform 0.2s ease;
 	}
 
 	.teleprompter-content.mirror {
 		transform: scaleX(-1);
-		transform-origin: center center;
 		display: block;
 		backface-visibility: hidden;
 		-webkit-font-smoothing: antialiased;
