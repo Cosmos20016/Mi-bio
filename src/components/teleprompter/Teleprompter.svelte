@@ -9,9 +9,7 @@
 	const storageKey = "teleprompter:state:v3";
 
 	// Core state
-	let text = `Pega aquí tu guion...
-
-Tip: Usa párrafos cortos para una lectura más cómoda.`;
+	let text = `Pega aquí tu guion...\n\nTip: Usa párrafos cortos para una lectura más cómoda.`;
 	let speed = 60;
 	let fontSize = 34;
 	let lineHeight = 1.6;
@@ -46,23 +44,24 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	let fullscreenTarget: HTMLDivElement | null = null;
 	let raf: number | null = null;
 	let lastTime: number | null = null;
-	let observer: IntersectionObserver | null = null;
 	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 	let stopThemeWatch: (() => void) | null = null;
 	let countdownTimer: ReturnType<typeof setInterval> | null = null;
 	let darkModeObserver: MutationObserver | null = null;
+	let resizeObserver: ResizeObserver | null = null;
+	
 	let lineElements: Array<HTMLParagraphElement | null> = [];
 	let activeLineIndex = 0;
 	let lines: string[] = [];
+	let lineMetrics: Array<{ top: number; height: number; center: number }> = [];
 
 	const speedMin = 10;
 	const speedMax = 400;
 	
-	// Reactividad para velocidad en tiempo real
+	// Motor de velocidad
 	$: targetSpeed = speed;
 	let currentSpeed = 0;
 	let cachedMaxScroll = 0;
-	let progressUpdateTimer: ReturnType<typeof setInterval> | null = null;
 	let scrollAccumulator = 0;
 
 	let touchStartY = 0;
@@ -70,39 +69,33 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	const TAP_THRESHOLD = 300;
 	const SWIPE_THRESHOLD = 30;
 
-	const clamp = (value: number, min: number, max: number) =>
-		Math.min(Math.max(value, min), max);
+	const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 	$: lines = text.split("\n");
-	$: if (lineElements.length !== lines.length) {
-		lineElements = lines.map((_, i) => lineElements[i] || null);
-	}
 
 	$: wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
 	$: estimatedMinutes = wordCount > 0 ? Math.floor(wordCount / 150) : 0;
-	$: estimatedSeconds =
-		wordCount > 0 ? Math.ceil((wordCount / 150) * 60) % 60 : 0;
-	$: readingTimeLabel =
-		wordCount > 0
-			? estimatedMinutes > 0
-				? `~${estimatedMinutes}m ${estimatedSeconds}s`
-				: `~${estimatedSeconds}s`
-			: "";
+	$: estimatedSeconds = wordCount > 0 ? Math.ceil((wordCount / 150) * 60) % 60 : 0;
+	$: readingTimeLabel = wordCount > 0
+		? estimatedMinutes > 0
+			? `~${estimatedMinutes}m ${estimatedSeconds}s`
+			: `~${estimatedSeconds}s`
+		: "";
 
-	// Recálculo dinámico de scroll para evitar cortes
-	$: if (isReady && scrollContainer && content && (text || fontSize || lineHeight || autoCenter)) {
-		setTimeout(() => {
-			if (scrollContainer && content) {
-				cachedMaxScroll = Math.max(content.scrollHeight - scrollContainer.clientHeight, 0);
-			}
-		}, 50);
-	}
-
-	const updateProgress = () => {
+	// Calculador de métricas en frío (Cero Layout Thrashing)
+	const calculateMetrics = () => {
 		if (!scrollContainer || !content) return;
-		const maxScroll = Math.max(content.scrollHeight - scrollContainer.clientHeight, 0);
-		progress = maxScroll <= 0 ? 0 : clamp(scrollContainer.scrollTop / maxScroll, 0, 1);
-		updateActiveLine();
+		cachedMaxScroll = Math.max(content.scrollHeight - scrollContainer.clientHeight, 0);
+		
+		if (!focusMode) return;
+		lineMetrics = lineElements.map((el) => {
+			if (!el) return { top: 0, height: 0, center: 0 };
+			const top = el.offsetTop;
+			const height = el.offsetHeight;
+			return { top, height, center: top + (height / 2) };
+		});
+		
+		updateProgress();
 	};
 
 	const getFocusCenter = () => {
@@ -113,23 +106,38 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	};
 
 	const updateActiveLine = () => {
-		if (!scrollContainer || !lineElements.length || !focusMode) return;
+		if (!scrollContainer || !lineMetrics.length || !focusMode) return;
 		const focusCenter = getFocusCenter();
 		let closestIndex = 0;
 		let closestDistance = Number.POSITIVE_INFINITY;
-		lineElements.forEach((line, index) => {
-			if (!line) return;
-			const lineCenter = line.offsetTop + line.offsetHeight / 2;
-			const distance = Math.abs(lineCenter - focusCenter);
+		
+		for (let i = 0; i < lineMetrics.length; i++) {
+			const distance = Math.abs(lineMetrics[i].center - focusCenter);
 			if (distance < closestDistance) {
 				closestDistance = distance;
-				closestIndex = index;
+				closestIndex = i;
 			}
-		});
+		}
 		activeLineIndex = closestIndex;
 	};
 
-	// Motor de scroll de alta precisión sin "Math.round" (Elimina el lag/jitter)
+	const updateProgress = () => {
+		if (!scrollContainer || cachedMaxScroll <= 0) {
+			progress = 0;
+			return;
+		}
+		progress = clamp(scrollContainer.scrollTop / cachedMaxScroll, 0, 1);
+		updateActiveLine();
+	};
+
+	const handleScrollEvent = () => {
+		if (!isPlaying) {
+			if (scrollContainer) scrollAccumulator = scrollContainer.scrollTop;
+		}
+		updateProgress();
+	};
+
+	// Motor de scroll de alta precisión optimizado
 	const tick = (timestamp: number) => {
 		if (!isPlaying || !scrollContainer) {
 			raf = null;
@@ -145,65 +153,45 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		}
 
 		const elapsed = timestamp - lastTime;
-		if (elapsed <= 0) {
-			raf = requestAnimationFrame(tick);
-			return;
-		}
-
-		const delta = Math.min(elapsed / 1000, 0.1);
 		lastTime = timestamp;
 
+		// Prevención de saltos masivos (e.g. si el tab pasa a segundo plano)
+		const delta = Math.min(elapsed / 1000, 0.05);
+
 		if (smooth) {
-			const smoothing = 1 - Math.exp(-delta * 8);
+			const smoothing = 1 - Math.exp(-delta * 12);
 			currentSpeed += (targetSpeed - currentSpeed) * smoothing;
 		} else {
 			currentSpeed = targetSpeed;
 		}
 
-		if (Math.abs(currentSpeed - targetSpeed) < 0.5) {
-			currentSpeed = targetSpeed;
-		}
+		// Estabilizador para evitar cálculos infinitos
+		if (Math.abs(currentSpeed - targetSpeed) < 0.5) currentSpeed = targetSpeed;
 
 		scrollAccumulator += currentSpeed * delta;
 
 		if (scrollAccumulator >= cachedMaxScroll) {
 			scrollContainer.scrollTop = cachedMaxScroll;
 			scrollAccumulator = cachedMaxScroll;
-			stopProgressTimer();
 			isPlaying = false;
 			raf = null;
 			lastTime = null;
 			progress = 1;
+			updateActiveLine();
 			return;
 		}
 
-		// Asignación directa de valor fraccionario para renderizado sub-píxel perfecto
 		scrollContainer.scrollTop = scrollAccumulator;
 		raf = requestAnimationFrame(tick);
-	};
-
-	const startProgressTimer = () => {
-		stopProgressTimer();
-		progressUpdateTimer = setInterval(() => {
-			updateProgress();
-		}, 200);
-	};
-
-	const stopProgressTimer = () => {
-		if (progressUpdateTimer) {
-			clearInterval(progressUpdateTimer);
-			progressUpdateTimer = null;
-		}
 	};
 
 	const startPlayback = () => {
 		if (!scrollContainer || !content) return;
 		if (raf) cancelAnimationFrame(raf);
 
-		cachedMaxScroll = Math.max(content.scrollHeight - scrollContainer.clientHeight, 0);
+		calculateMetrics();
 		if (cachedMaxScroll <= 0) return;
 
-		// Si terminó, reiniciar desde arriba
 		if (progress >= 0.99) {
 			scrollContainer.scrollTop = 0;
 			scrollAccumulator = 0;
@@ -213,14 +201,14 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 		isPlaying = true;
 		lastTime = null;
-
-		startProgressTimer();
 		raf = requestAnimationFrame(tick);
 	};
 
 	const cancelCountdown = () => {
-		if (countdownTimer) clearInterval(countdownTimer);
-		countdownTimer = null;
+		if (countdownTimer) {
+			clearInterval(countdownTimer);
+			countdownTimer = null;
+		}
 		countdown = 0;
 		isCountingDown = false;
 	};
@@ -260,18 +248,13 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		if (scrollContainer) {
 			scrollAccumulator = scrollContainer.scrollTop;
 		}
-		stopProgressTimer();
 		updateProgress();
 	};
 
 	const toggle = () => {
-		if (isPlaying) {
-			pause();
-		} else if (isCountingDown) {
-			cancelCountdown();
-		} else {
-			start();
-		}
+		if (isPlaying) pause();
+		else if (isCountingDown) cancelCountdown();
+		else start();
 	};
 
 	const reset = () => {
@@ -294,18 +277,16 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	};
 
 	const jump = (amount: number) => {
-		if (!scrollContainer || !content) return;
-		const maxScroll = Math.max(content.scrollHeight - scrollContainer.clientHeight, 0);
+		if (!scrollContainer) return;
 		const next = scrollContainer.scrollTop + amount;
-		scrollContainer.scrollTop = clamp(next, 0, maxScroll);
+		scrollContainer.scrollTop = clamp(next, 0, cachedMaxScroll);
 		scrollAccumulator = scrollContainer.scrollTop;
 		updateProgress();
 	};
 
 	const scrollToProgress = (value: number) => {
-		if (!scrollContainer || !content) return;
-		const maxScroll = Math.max(content.scrollHeight - scrollContainer.clientHeight, 0);
-		scrollContainer.scrollTop = clamp(value, 0, 1) * maxScroll;
+		if (!scrollContainer) return;
+		scrollContainer.scrollTop = clamp(value, 0, 1) * cachedMaxScroll;
 		scrollAccumulator = scrollContainer.scrollTop;
 		updateProgress();
 	};
@@ -319,7 +300,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 				await document.exitFullscreen();
 			}
 		} catch (e) {
-			console.warn("[Teleprompter] Fullscreen no disponible:", e);
+			console.warn("[Teleprompter] Fullscreen API error:", e);
 		}
 	};
 
@@ -342,22 +323,22 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			const data = JSON.parse(raw);
 			if (typeof data !== "object" || data === null) return;
 
-			try { if (data.text) text = data.text; } catch {}
-			try { if (data.speed) speed = data.speed; } catch {}
-			try { if (data.fontSize) fontSize = data.fontSize; } catch {}
-			try { if (data.lineHeight) lineHeight = data.lineHeight; } catch {}
-			try { if (typeof data.isMirror === "boolean") isMirror = data.isMirror; } catch {}
-			try { if (typeof data.autoCenter === "boolean") autoCenter = data.autoCenter; } catch {}
-			try { if (typeof data.smooth === "boolean") smooth = data.smooth; } catch {}
-			try { if (typeof data.glow === "boolean") glow = data.glow; } catch {}
-			try { if (typeof data.focusMode === "boolean") focusMode = data.focusMode; } catch {}
-			try { if (typeof data.dimOutside === "boolean") dimOutside = data.dimOutside; } catch {}
-			try { if (typeof data.ultraClean === "boolean") ultraClean = data.ultraClean; } catch {}
-			try { if (typeof data.countdownDuration === "number") countdownDuration = data.countdownDuration; } catch {}
+			if (data.text) text = data.text;
+			if (data.speed) speed = data.speed;
+			if (data.fontSize) fontSize = data.fontSize;
+			if (data.lineHeight) lineHeight = data.lineHeight;
+			if (typeof data.isMirror === "boolean") isMirror = data.isMirror;
+			if (typeof data.autoCenter === "boolean") autoCenter = data.autoCenter;
+			if (typeof data.smooth === "boolean") smooth = data.smooth;
+			if (typeof data.glow === "boolean") glow = data.glow;
+			if (typeof data.focusMode === "boolean") focusMode = data.focusMode;
+			if (typeof data.dimOutside === "boolean") dimOutside = data.dimOutside;
+			if (typeof data.ultraClean === "boolean") ultraClean = data.ultraClean;
+			if (typeof data.countdownDuration === "number") countdownDuration = data.countdownDuration;
 
 			speed = Math.round(clamp(speed, speedMin, speedMax));
 		} catch (e) {
-			console.warn("[Teleprompter] Estado corrupto, usando valores por defecto:", e);
+			console.warn("[Teleprompter] Estado corrupto reseteado:", e);
 			try { localStorage.removeItem(storageKey); } catch {}
 		}
 	};
@@ -374,12 +355,8 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 					focusMode, dimOutside, ultraClean, countdownDuration,
 				};
 				localStorage.setItem(storageKey, JSON.stringify(payload));
-
-				if (currentScript && text.trim()) {
-					saveCurrentScript();
-				}
+				if (currentScript && text.trim()) saveCurrentScript();
 			} catch (e) {
-				console.warn("[Teleprompter] Error al guardar:", e);
 				if (e instanceof DOMException && e.name === "QuotaExceededError") {
 					try {
 						const scriptsToDelete = scripts.slice(10);
@@ -408,13 +385,8 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 				return;
 			}
 			const data = JSON.parse(raw);
-			if (Array.isArray(data)) {
-				scripts = data;
-			} else {
-				scripts = [];
-			}
+			scripts = Array.isArray(data) ? data : [];
 		} catch (e) {
-			console.warn("[Teleprompter] Scripts corruptos, inicializando vacío:", e);
 			scripts = [];
 			try { localStorage.removeItem("teleprompter:scripts"); } catch {}
 		}
@@ -458,6 +430,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			text = script.text;
 			currentScript = id;
 			localStorage.setItem("teleprompter:lastScript", id);
+			setTimeout(calculateMetrics, 100);
 		}
 	};
 
@@ -473,6 +446,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	const newScript = () => {
 		currentScript = null;
 		text = "";
+		setTimeout(calculateMetrics, 100);
 	};
 
 	const getSpeedLabel = (spd: number): string => {
@@ -508,10 +482,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	const formatDateTime = (isoDate: string): string => {
 		const date = new Date(isoDate);
 		return date.toLocaleDateString("es-ES", {
-			day: "numeric",
-			month: "short",
-			hour: "2-digit",
-			minute: "2-digit",
+			day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
 		});
 	};
 
@@ -524,10 +495,11 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		autoCenter = true;
 		countdownDuration = 3;
 		scheduleSave();
+		setTimeout(calculateMetrics, 100);
 	};
 
 	const getEstimatedTimeRemaining = (): string => {
-		if (!scrollContainer || !content || speed === 0) return "";
+		if (!scrollContainer || speed === 0) return "";
 		const remaining = cachedMaxScroll - scrollContainer.scrollTop;
 		if (remaining <= 0) return "0s";
 		const seconds = Math.ceil(remaining / speed);
@@ -579,32 +551,27 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	const onKey = (event: KeyboardEvent) => {
 		if (event.target && (event.target as HTMLElement).tagName === "TEXTAREA") return;
 		switch (event.code) {
-			case "Space":
-			case "Enter":
-			case "NumpadEnter":
-				event.preventDefault();
-				toggle();
-				break;
+			case "Space": case "Enter": case "NumpadEnter": event.preventDefault(); toggle(); break;
 			case "ArrowUp": event.preventDefault(); jump(-120); break;
 			case "ArrowDown": event.preventDefault(); jump(120); break;
 			case "PageUp": event.preventDefault(); jump(-320); break;
 			case "PageDown": event.preventDefault(); jump(320); break;
 			case "KeyM": isMirror = !isMirror; break;
-			case "KeyF": focusMode = !focusMode; break;
+			case "KeyF": focusMode = !focusMode; setTimeout(calculateMetrics, 50); break;
 			case "KeyR": reset(); break;
 			case "KeyX": toggleFullscreen(); break;
-			case "KeyL": ultraClean = !ultraClean; break;
+			case "KeyL": ultraClean = !ultraClean; setTimeout(calculateMetrics, 300); break;
 			case "Equal": case "NumpadAdd": adjustSpeed(4); break;
 			case "Minus": case "NumpadSubtract": adjustSpeed(-4); break;
 		}
 	};
 
-	$: if (
-		isReady &&
-		(text || speed || fontSize || lineHeight || isMirror || autoCenter ||
-			smooth || glow || focusMode || dimOutside || ultraClean || countdownDuration)
-	) {
+	$: if (isReady && (text || speed || fontSize || lineHeight || isMirror || autoCenter || smooth || glow || focusMode || dimOutside || ultraClean || countdownDuration)) {
 		scheduleSave();
+	}
+	
+	$: if (isReady && text) {
+		setTimeout(calculateMetrics, 150);
 	}
 
 	onMount(() => {
@@ -616,10 +583,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 				}
 			}
 		});
-		darkModeObserver.observe(document.documentElement, {
-			attributes: true,
-			attributeFilter: ["class"],
-		});
+		darkModeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
 
 		window.addEventListener("keydown", onKey);
 		const mql = window.matchMedia("(max-width: 768px)");
@@ -634,54 +598,41 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		loadScripts();
 
 		const lastScriptId = localStorage.getItem("teleprompter:lastScript");
-		if (lastScriptId) {
-			loadScript(lastScriptId);
-		}
+		if (lastScriptId) loadScript(lastScriptId);
 
-		const onboardingDone = localStorage.getItem("teleprompter:onboarding:done");
-		if (!onboardingDone) {
-			showOnboarding = true;
-		}
+		if (!localStorage.getItem("teleprompter:onboarding:done")) showOnboarding = true;
 
-		updateProgress();
-		observer?.disconnect();
-		observer = new IntersectionObserver(() => updateProgress());
-		if (scrollContainer) observer.observe(scrollContainer);
+		resizeObserver = new ResizeObserver(() => calculateMetrics());
+		if (content) resizeObserver.observe(content);
+		if (scrollContainer) resizeObserver.observe(scrollContainer);
 
 		const onFullscreenChange = () => {
 			isFullscreen = Boolean(document.fullscreenElement);
+			setTimeout(calculateMetrics, 300);
 		};
 		document.addEventListener("fullscreenchange", onFullscreenChange);
-
-		const onResize = () => {
-			if (scrollContainer && content) {
-				cachedMaxScroll = Math.max(content.scrollHeight - scrollContainer.clientHeight, 0);
-				scrollAccumulator = Math.min(scrollAccumulator, cachedMaxScroll);
-			}
-		};
-		const orientationHandler = () => setTimeout(onResize, 300);
-		window.addEventListener("resize", onResize);
-		window.addEventListener("orientationchange", orientationHandler);
+		window.addEventListener("resize", calculateMetrics);
+		window.addEventListener("orientationchange", () => setTimeout(calculateMetrics, 300));
 
 		isReady = true;
+		calculateMetrics();
 
 		return () => {
 			document.removeEventListener("fullscreenchange", onFullscreenChange);
-			window.removeEventListener("resize", onResize);
-			window.removeEventListener("orientationchange", orientationHandler);
+			window.removeEventListener("resize", calculateMetrics);
+			window.removeEventListener("orientationchange", () => {});
 		};
 	});
 
 	onDestroy(() => {
 		window.removeEventListener("keydown", onKey);
 		pause();
-		stopProgressTimer();
-		observer?.disconnect();
+		resizeObserver?.disconnect();
 		darkModeObserver?.disconnect();
 		if (saveTimeout) clearTimeout(saveTimeout);
 		stopThemeWatch?.();
 		stopThemeWatch = null;
-		if (countdownTimer) clearInterval(countdownTimer);
+		cancelCountdown();
 	});
 </script>
 
@@ -696,34 +647,10 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 				</div>
 
 				<div class="help-tabs">
-					<button
-						class="tab-btn"
-						class:active={helpTab === 'quickstart'}
-						on:click={() => helpTab = 'quickstart'}
-					>
-						Inicio rápido
-					</button>
-					<button
-						class="tab-btn"
-						class:active={helpTab === 'youtube'}
-						on:click={() => helpTab = 'youtube'}
-					>
-						Ajustes YouTube
-					</button>
-					<button
-						class="tab-btn"
-						class:active={helpTab === 'shortcuts'}
-						on:click={() => helpTab = 'shortcuts'}
-					>
-						Atajos
-					</button>
-					<button
-						class="tab-btn"
-						class:active={helpTab === 'tips'}
-						on:click={() => helpTab = 'tips'}
-					>
-						Tips Pro
-					</button>
+					<button class="tab-btn" class:active={helpTab === 'quickstart'} on:click={() => helpTab = 'quickstart'}>Inicio rápido</button>
+					<button class="tab-btn" class:active={helpTab === 'youtube'} on:click={() => helpTab = 'youtube'}>Ajustes YouTube</button>
+					<button class="tab-btn" class:active={helpTab === 'shortcuts'} on:click={() => helpTab = 'shortcuts'}>Atajos</button>
+					<button class="tab-btn" class:active={helpTab === 'tips'} on:click={() => helpTab = 'tips'}>Tips Pro</button>
 				</div>
 
 				<div class="tab-content">
@@ -749,7 +676,6 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 						<div class="tab-panel youtube-settings">
 							<h3>⚙️ Configuración recomendada para YouTube</h3>
 							<p class="tab-desc">Estos ajustes te ayudarán a grabar videos profesionales con lectura natural:</p>
-
 							<div class="settings-list">
 								<div class="setting-item">
 									<span class="setting-label">🐢 Velocidad:</span>
@@ -780,11 +706,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 									<span class="setting-value">3 segundos (te da tiempo de prepararte)</span>
 								</div>
 							</div>
-
-							<button class="btn-youtube-apply" on:click={() => {
-								applyYouTubeSettings();
-								helpTab = 'quickstart';
-							}}>
+							<button class="btn-youtube-apply" on:click={() => { applyYouTubeSettings(); helpTab = 'quickstart'; }}>
 								✨ Aplicar ajustes YouTube
 							</button>
 						</div>
@@ -792,42 +714,15 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 						<div class="tab-panel shortcuts-panel">
 							<h3>⌨️ Atajos de teclado</h3>
 							<div class="shortcuts-table">
-								<div class="shortcut-row">
-									<span class="shortcut-key">Espacio / Enter</span>
-									<span class="shortcut-desc">Play / Pausa</span>
-								</div>
-								<div class="shortcut-row">
-									<span class="shortcut-key">R</span>
-									<span class="shortcut-desc">Reiniciar desde el inicio</span>
-								</div>
-								<div class="shortcut-row">
-									<span class="shortcut-key">↑ / ↓</span>
-									<span class="shortcut-desc">Ajustar velocidad ±10</span>
-								</div>
-								<div class="shortcut-row">
-									<span class="shortcut-key">Shift + ↑ / ↓</span>
-									<span class="shortcut-desc">Ajustar velocidad ±1 (preciso)</span>
-								</div>
-								<div class="shortcut-row">
-									<span class="shortcut-key">[ / ]</span>
-									<span class="shortcut-desc">Cambiar tamaño de fuente</span>
-								</div>
-								<div class="shortcut-row">
-									<span class="shortcut-key">M</span>
-									<span class="shortcut-desc">Activar/desactivar modo espejo</span>
-								</div>
-								<div class="shortcut-row">
-									<span class="shortcut-key">F</span>
-									<span class="shortcut-desc">Activar/desactivar Focus Mode</span>
-								</div>
-								<div class="shortcut-row">
-									<span class="shortcut-key">X</span>
-									<span class="shortcut-desc">Pantalla completa</span>
-								</div>
-								<div class="shortcut-row">
-									<span class="shortcut-key">L</span>
-									<span class="shortcut-desc">Modo limpio (oculta todo excepto texto)</span>
-								</div>
+								<div class="shortcut-row"><span class="shortcut-key">Espacio / Enter</span><span class="shortcut-desc">Play / Pausa</span></div>
+								<div class="shortcut-row"><span class="shortcut-key">R</span><span class="shortcut-desc">Reiniciar desde el inicio</span></div>
+								<div class="shortcut-row"><span class="shortcut-key">↑ / ↓</span><span class="shortcut-desc">Ajustar velocidad ±10</span></div>
+								<div class="shortcut-row"><span class="shortcut-key">Shift + ↑ / ↓</span><span class="shortcut-desc">Ajustar velocidad ±1 (preciso)</span></div>
+								<div class="shortcut-row"><span class="shortcut-key">[ / ]</span><span class="shortcut-desc">Cambiar tamaño de fuente</span></div>
+								<div class="shortcut-row"><span class="shortcut-key">M</span><span class="shortcut-desc">Activar/desactivar modo espejo</span></div>
+								<div class="shortcut-row"><span class="shortcut-key">F</span><span class="shortcut-desc">Activar/desactivar Focus Mode</span></div>
+								<div class="shortcut-row"><span class="shortcut-key">X</span><span class="shortcut-desc">Pantalla completa</span></div>
+								<div class="shortcut-row"><span class="shortcut-key">L</span><span class="shortcut-desc">Modo limpio (oculta todo excepto texto)</span></div>
 							</div>
 						</div>
 					{:else if helpTab === 'tips'}
@@ -874,13 +769,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 					{/if}
 				</div>
 
-				<button
-					class="btn-onboarding premium-btn"
-					on:click={() => {
-						showOnboarding = false;
-						localStorage.setItem("teleprompter:onboarding:done", "true");
-					}}
-				>
+				<button class="btn-onboarding premium-btn" on:click={() => { showOnboarding = false; localStorage.setItem("teleprompter:onboarding:done", "true"); }}>
 					Comenzar
 				</button>
 			</div>
@@ -900,29 +789,16 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			</div>
 		</div>
 		<div class="teleprompter-header-actions">
-			<button
-				class="btn-help"
-				on:click={() => (showOnboarding = true)}
-				title="Ver tutorial"
-			>
-				<span class="help-icon">?</span>
-				<span class="help-badge">Ayuda</span>
+			<button class="btn-help" on:click={() => (showOnboarding = true)} title="Ver tutorial">
+				<span class="help-icon">?</span><span class="help-badge">Ayuda</span>
 			</button>
-			<button
-				class="btn-plain"
-				class:active={!showControls}
-				on:click={() => (showControls = !showControls)}
-			>
+			<button class="btn-plain" class:active={!showControls} on:click={() => (showControls = !showControls)}>
 				{showControls ? "Ocultar controles" : "Mostrar controles"}
 			</button>
 			<button class="btn-plain" on:click={toggleFullscreen}>
 				{isFullscreen ? "Salir pantalla completa" : "Pantalla completa (X)"}
 			</button>
-			<button
-				class="btn-plain"
-				class:active={ultraClean}
-				on:click={() => (ultraClean = !ultraClean)}
-			>
+			<button class="btn-plain" class:active={ultraClean} on:click={() => { ultraClean = !ultraClean; setTimeout(calculateMetrics, 300); }}>
 				{ultraClean ? "Salir modo limpio" : "Modo limpio (L)"}
 			</button>
 		</div>
@@ -942,19 +818,10 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		<div class="script-manager">
 			<label for="script-selector" class="manager-label">Guion guardado:</label>
 			<div class="script-controls">
-				<select
-					id="script-selector"
-					bind:value={currentScript}
-					on:change={(e) => {
-						const id = (e.target as HTMLSelectElement).value;
-						if (id) loadScript(id);
-					}}
-				>
+				<select id="script-selector" bind:value={currentScript} on:change={(e) => { const id = (e.target as HTMLSelectElement).value; if (id) loadScript(id); }}>
 					<option value="">-- Nuevo guion --</option>
 					{#each scripts as script}
-						<option value={script.id}>
-							{script.name} · {formatDateTime(script.updatedAt)}
-						</option>
+						<option value={script.id}>{script.name} · {formatDateTime(script.updatedAt)}</option>
 					{/each}
 				</select>
 				<button class="btn-icon" on:click={saveCurrentScript} title="Guardar guion actual">💾</button>
@@ -980,60 +847,27 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 							<label title="Velocidad ideal: 40-80 px/seg para lectura natural">Velocidad</label>
 							<span class="speed-label">{getSpeedLabel(speed)}</span>
 						</div>
-						<input
-							type="range"
-							class="custom-range"
-							min={speedMin}
-							max={speedMax}
-							step="1"
-							bind:value={speed}
-						/>
+						<input type="range" class="custom-range" min={speedMin} max={speedMax} step="1" bind:value={speed} />
 						<div class="control-value-row">
 							<span class="control-value">{speed} px/seg</span>
-							<div
-								class="speed-indicator-bar"
-								style={`width: ${((speed - speedMin) / (speedMax - speedMin)) * 100}%; background-color: ${getSpeedColor()}`}
-							></div>
+							<div class="speed-indicator-bar" style={`width: ${((speed - speedMin) / (speedMax - speedMin)) * 100}%; background-color: ${getSpeedColor()}`}></div>
 						</div>
 					</div>
 
 					<div class="control-group">
-						<div class="control-label-row">
-							<label>Tamaño</label>
-						</div>
-						<input
-							type="range"
-							class="custom-range"
-							min="22"
-							max="64"
-							bind:value={fontSize}
-						/>
-						<div class="control-value-row">
-							<span class="control-value">{fontSize}px</span>
-						</div>
+						<div class="control-label-row"><label>Tamaño</label></div>
+						<input type="range" class="custom-range" min="22" max="64" bind:value={fontSize} on:input={calculateMetrics} />
+						<div class="control-value-row"><span class="control-value">{fontSize}px</span></div>
 					</div>
 
 					<div class="control-group">
-						<div class="control-label-row">
-							<label>Interlineado</label>
-						</div>
-						<input
-							type="range"
-							class="custom-range"
-							min="1.2"
-							max="2.2"
-							step="0.05"
-							bind:value={lineHeight}
-						/>
-						<div class="control-value-row">
-							<span class="control-value">{lineHeight.toFixed(2)}</span>
-						</div>
+						<div class="control-label-row"><label>Interlineado</label></div>
+						<input type="range" class="custom-range" min="1.2" max="2.2" step="0.05" bind:value={lineHeight} on:input={calculateMetrics} />
+						<div class="control-value-row"><span class="control-value">{lineHeight.toFixed(2)}</span></div>
 					</div>
 
 					<div class="control-group">
-						<div class="control-label-row">
-							<label>Countdown</label>
-						</div>
+						<div class="control-label-row"><label>Countdown</label></div>
 						<select class="countdown-select" bind:value={countdownDuration}>
 							<option value={0}>Sin countdown</option>
 							<option value={1}>1 segundo</option>
@@ -1047,36 +881,12 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 				<div class="control-group toggles">
 					<label>Opciones</label>
 					<div class="toggle-grid">
-						<button
-							class="toggle-btn"
-							class:active={isMirror}
-							on:click={() => (isMirror = !isMirror)}
-							title="Activa para cámaras frontales que invierten la imagen"
-						>Espejo (M)</button>
-						<button
-							class="toggle-btn"
-							class:active={autoCenter}
-							on:click={() => (autoCenter = !autoCenter)}
-							title="Mantiene el texto centrado en la pantalla">Auto-centrar</button>
-						<button
-							class="toggle-btn"
-							class:active={smooth}
-							on:click={() => (smooth = !smooth)}
-							title="Transición suave entre velocidades">Suave</button>
-						<button
-							class="toggle-btn"
-							class:active={glow}
-							on:click={() => (glow = !glow)}
-							title="Efecto de brillo en la pantalla">Glow</button>
-						<button
-							class="toggle-btn"
-							class:active={focusMode}
-							on:click={() => (focusMode = !focusMode)}
-							title="Resalta la línea actual y oscurece el resto">Focus (F)</button>
-						<button
-							class="toggle-btn"
-							class:active={dimOutside}
-							on:click={() => (dimOutside = !dimOutside)}>Oscurecer bordes</button>
+						<button class="toggle-btn" class:active={isMirror} on:click={() => (isMirror = !isMirror)} title="Activa para cámaras frontales que invierten la imagen">Espejo (M)</button>
+						<button class="toggle-btn" class:active={autoCenter} on:click={() => { autoCenter = !autoCenter; setTimeout(calculateMetrics, 50); }} title="Mantiene el texto centrado en la pantalla">Auto-centrar</button>
+						<button class="toggle-btn" class:active={smooth} on:click={() => (smooth = !smooth)} title="Transición suave entre velocidades">Suave</button>
+						<button class="toggle-btn" class:active={glow} on:click={() => (glow = !glow)} title="Efecto de brillo en la pantalla">Glow</button>
+						<button class="toggle-btn" class:active={focusMode} on:click={() => { focusMode = !focusMode; setTimeout(calculateMetrics, 50); }} title="Resalta la línea actual y oscurece el resto">Focus (F)</button>
+						<button class="toggle-btn" class:active={dimOutside} on:click={() => (dimOutside = !dimOutside)}>Oscurecer bordes</button>
 					</div>
 				</div>
 
@@ -1093,14 +903,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		{/if}
 	</div>
 
-	<!-- IMPORTANTE: El contenedor general YA NO TIENE la clase 'mirror' -->
-	<div
-		class="teleprompter-screen"
-		class:focus={focusMode}
-		class:glow
-		class:is-fullscreen={isFullscreen}
-		bind:this={fullscreenTarget}
-	>
+	<div class="teleprompter-screen" class:focus={focusMode} class:glow class:is-fullscreen={isFullscreen} bind:this={fullscreenTarget}>
 		<div
 			class="teleprompter-progress-top no-trigger"
 			role="progressbar"
@@ -1111,16 +914,12 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			on:click={(e) => {
 				const rect = e.currentTarget.getBoundingClientRect();
 				const clickX = e.clientX - rect.left;
-				const progressValue = clickX / rect.width;
-				scrollToProgress(progressValue);
+				scrollToProgress(clickX / rect.width);
 			}}
 			on:keydown={(e) => {
 				if (e.key === 'Enter' || e.key === ' ') {
 					e.preventDefault();
-					const rect = e.currentTarget.getBoundingClientRect();
-					const clickX = rect.width / 2;
-					const progressValue = clickX / rect.width;
-					scrollToProgress(progressValue);
+					scrollToProgress(0.5);
 				}
 			}}
 		>
@@ -1135,6 +934,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		<div
 			class="teleprompter-frame"
 			bind:this={scrollContainer}
+			on:scroll={handleScrollEvent}
 			on:wheel={handleWheel}
 			on:click={handleFrameClick}
 			on:touchstart={handleTouchStart}
@@ -1142,7 +942,6 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			style={`padding: ${autoCenter ? "35vh 2rem 50vh" : "2.5rem 2rem"};`}
 			tabindex="-1"
 		>
-			<!-- LA CLASE MIRROR SE APLICA AQUÍ, SOLO AL TEXTO -->
 			<div
 				class="teleprompter-content"
 				class:mirror={isMirror}
@@ -1173,15 +972,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			<button class="btn-float" on:click={() => jump(120)} title="Saltar abajo" aria-label="Saltar hacia abajo">↓</button>
 			{#if isFullscreen}
 				<div class="float-speed-control">
-					<input
-						type="range"
-						class="mini-range"
-						min={speedMin}
-						max={speedMax}
-						step="1"
-						bind:value={speed}
-						aria-label="Control de velocidad"
-					/>
+					<input type="range" class="mini-range" min={speedMin} max={speedMax} step="1" bind:value={speed} aria-label="Control de velocidad" />
 					<span class="mini-speed">{speed}</span>
 				</div>
 			{/if}
@@ -1191,8 +982,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 		<div class="teleprompter-footer">
 			<div class="shortcut">
-				Espacio/Enter = Play · ↑/↓/Page = Saltos · M = Espejo · F = Focus · L = Ultra limpio · R
-				= Reset · X = Fullscreen · Rueda = velocidad · +/- = Velocidad
+				Espacio/Enter = Play · ↑/↓/Page = Saltos · M = Espejo · F = Focus · L = Ultra limpio · R = Reset · X = Fullscreen · Rueda = velocidad · +/- = Velocidad
 			</div>
 		</div>
 
@@ -1270,15 +1060,9 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		animation: fadeInUp 0.5s ease forwards;
 	}
 
-	.onboarding-step:nth-child(1) {
-		animation-delay: 0.1s;
-	}
-	.onboarding-step:nth-child(2) {
-		animation-delay: 0.2s;
-	}
-	.onboarding-step:nth-child(3) {
-		animation-delay: 0.3s;
-	}
+	.onboarding-step:nth-child(1) { animation-delay: 0.1s; }
+	.onboarding-step:nth-child(2) { animation-delay: 0.2s; }
+	.onboarding-step:nth-child(3) { animation-delay: 0.3s; }
 
 	.step-icon {
 		font-size: 2.5rem;
@@ -2335,7 +2119,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		scroll-behavior: auto;
 		scrollbar-width: thin;
 		scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
-		will-change: transform;
+		will-change: scroll-position;
 	}
 
 	:global(.dark) .teleprompter-frame,
@@ -2370,7 +2154,6 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		background: rgba(255, 255, 255, 0.5);
 	}
 
-	/* MIRROR SOLAMENTE AL TEXTO */
 	.teleprompter-content {
 		color: #0f172a;
 		text-align: center;
@@ -2575,211 +2358,64 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		animation: countdownPulse 1s ease-in-out infinite;
 	}
 
-	.pointer-none {
-		pointer-events: none;
-	}
+	.pointer-none { pointer-events: none; }
+	.no-trigger { cursor: default; }
 
-	.no-trigger {
-		cursor: default;
-	}
-
-	@keyframes fadeIn {
-		from { opacity: 0; }
-		to { opacity: 1; }
-	}
-
-	@keyframes scaleIn {
-		from { opacity: 0; transform: scale(0.9); }
-		to { opacity: 1; transform: scale(1); }
-	}
-
-	@keyframes fadeInUp {
-		from { opacity: 0; transform: translateY(20px); }
-		to { opacity: 1; transform: translateY(0); }
-	}
-
-	@keyframes pulse {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0.6; }
-	}
-
-	@keyframes glowPulse {
-		0%, 100% { opacity: 0.3; }
-		50% { opacity: 0.5; }
-	}
-
-	@keyframes countdownPulse {
-		0%, 100% { transform: scale(1); }
-		50% { transform: scale(1.1); }
-	}
+	@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+	@keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+	@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+	@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+	@keyframes glowPulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.5; } }
+	@keyframes countdownPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 
 	@media (max-width: 768px) {
-		.teleprompter-header {
-			flex-direction: column;
-			align-items: flex-start;
-		}
-
-		.controls-grid {
-			grid-template-columns: 1fr;
-		}
-
-		.toggle-grid {
-			grid-template-columns: repeat(2, 1fr);
-		}
-
-		.control-actions {
-			flex-direction: column;
-		}
-
-		.btn-play,
-		.btn-action {
-			width: 100%;
-		}
-
-		.teleprompter-float {
-			bottom: 1rem;
-			padding: 0.5rem;
-			gap: 0.35rem;
-		}
-
-		.btn-float {
-			width: 44px;
-			height: 44px;
-			font-size: 1.1rem;
-		}
-
-		.teleprompter-countdown span {
-			font-size: 5rem;
-		}
+		.teleprompter-header { flex-direction: column; align-items: flex-start; }
+		.controls-grid { grid-template-columns: 1fr; }
+		.toggle-grid { grid-template-columns: repeat(2, 1fr); }
+		.control-actions { flex-direction: column; }
+		.btn-play, .btn-action { width: 100%; }
+		.teleprompter-float { bottom: 1rem; padding: 0.5rem; gap: 0.35rem; }
+		.btn-float { width: 44px; height: 44px; font-size: 1.1rem; }
+		.teleprompter-countdown span { font-size: 5rem; }
 	}
 
 	@media (orientation: landscape) and (max-height: 500px) {
-		.teleprompter-screen {
-			height: 85vh;
-			min-height: unset;
-		}
-
-		.teleprompter-header {
-			flex-direction: row;
-			gap: 0.5rem;
-		}
-
-		.teleprompter-panel {
-			padding: 0.75rem;
-		}
-
-		.teleprompter-float {
-			bottom: 0.5rem;
-			padding: 0.4rem;
-		}
-
-		.btn-float {
-			width: 36px;
-			height: 36px;
-			font-size: 0.9rem;
-		}
-
-		.teleprompter-footer {
-			display: none;
-		}
+		.teleprompter-screen { height: 85vh; min-height: unset; }
+		.teleprompter-header { flex-direction: row; gap: 0.5rem; }
+		.teleprompter-panel { padding: 0.75rem; }
+		.teleprompter-float { bottom: 0.5rem; padding: 0.4rem; }
+		.btn-float { width: 36px; height: 36px; font-size: 0.9rem; }
+		.teleprompter-footer { display: none; }
 	}
 
-	.word-count {
-		margin-left: 0.5rem;
-		font-size: 0.85rem;
-		color: oklch(0.55 0.02 var(--hue));
-	}
-
-	:global(.dark) .word-count,
-	.dark .word-count {
-		color: oklch(0.70 0.02 var(--hue));
-	}
+	.word-count { margin-left: 0.5rem; font-size: 0.85rem; color: oklch(0.55 0.02 var(--hue)); }
+	:global(.dark) .word-count, .dark .word-count { color: oklch(0.70 0.02 var(--hue)); }
 
 	.mobile-tip-banner {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem;
-		padding: 0.65rem 1rem;
-		background: oklch(0.94 0.03 var(--hue));
-		border: 1px solid oklch(0.88 0.05 var(--hue));
-		border-radius: 0.75rem;
-		font-size: 0.82rem;
-		line-height: 1.4;
-		color: oklch(0.40 0.08 var(--hue));
+		display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+		padding: 0.65rem 1rem; background: oklch(0.94 0.03 var(--hue)); border: 1px solid oklch(0.88 0.05 var(--hue));
+		border-radius: 0.75rem; font-size: 0.82rem; line-height: 1.4; color: oklch(0.40 0.08 var(--hue));
 		animation: fadeIn 0.4s ease;
 	}
 
-	:global(.dark) .mobile-tip-banner,
-	.dark .mobile-tip-banner {
-		background: oklch(0.22 0.03 var(--hue));
-		border-color: oklch(0.32 0.05 var(--hue));
-		color: oklch(0.78 0.06 var(--hue));
+	:global(.dark) .mobile-tip-banner, .dark .mobile-tip-banner {
+		background: oklch(0.22 0.03 var(--hue)); border-color: oklch(0.32 0.05 var(--hue)); color: oklch(0.78 0.06 var(--hue));
 	}
 
-	.mobile-tip-content {
-		display: flex;
-		align-items: flex-start;
-		gap: 0.5rem;
-		flex: 1;
-		min-width: 0;
-	}
-
-	.mobile-tip-icon {
-		font-size: 1.1rem;
-		flex-shrink: 0;
-		line-height: 1.3;
-	}
-
-	.mobile-tip-content p {
-		margin: 0;
-		color: inherit;
-		font-size: inherit;
-		line-height: inherit;
-	}
-
-	.mobile-tip-content p strong {
-		color: oklch(0.50 0.12 var(--hue));
-		font-weight: 600;
-	}
-
-	:global(.dark) .mobile-tip-content p strong,
-	.dark .mobile-tip-content p strong {
-		color: oklch(0.72 0.12 var(--hue));
-	}
+	.mobile-tip-content { display: flex; align-items: flex-start; gap: 0.5rem; flex: 1; min-width: 0; }
+	.mobile-tip-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.3; }
+	.mobile-tip-content p { margin: 0; color: inherit; font-size: inherit; line-height: inherit; }
+	.mobile-tip-content p strong { color: oklch(0.50 0.12 var(--hue)); font-weight: 600; }
+	:global(.dark) .mobile-tip-content p strong, .dark .mobile-tip-content p strong { color: oklch(0.72 0.12 var(--hue)); }
 
 	.mobile-tip-close {
-		background: none;
-		border: none;
-		color: oklch(0.55 0.05 var(--hue));
-		font-size: 1rem;
-		cursor: pointer;
-		padding: 0.25rem;
-		border-radius: 0.375rem;
-		line-height: 1;
-		flex-shrink: 0;
-		transition: all 0.2s ease;
+		background: none; border: none; color: oklch(0.55 0.05 var(--hue)); font-size: 1rem;
+		cursor: pointer; padding: 0.25rem; border-radius: 0.375rem; line-height: 1; flex-shrink: 0; transition: all 0.2s ease;
 	}
 
-	.mobile-tip-close:hover {
-		background: oklch(0.88 0.04 var(--hue));
-		color: oklch(0.40 0.08 var(--hue));
-	}
+	.mobile-tip-close:hover { background: oklch(0.88 0.04 var(--hue)); color: oklch(0.40 0.08 var(--hue)); }
+	:global(.dark) .mobile-tip-close, .dark .mobile-tip-close { color: oklch(0.60 0.05 var(--hue)); }
+	:global(.dark) .mobile-tip-close:hover, .dark .mobile-tip-close:hover { background: oklch(0.30 0.04 var(--hue)); color: oklch(0.80 0.06 var(--hue)); }
 
-	:global(.dark) .mobile-tip-close,
-	.dark .mobile-tip-close {
-		color: oklch(0.60 0.05 var(--hue));
-	}
-
-	:global(.dark) .mobile-tip-close:hover,
-	.dark .mobile-tip-close:hover {
-		background: oklch(0.30 0.04 var(--hue));
-		color: oklch(0.80 0.06 var(--hue));
-	}
-
-	@media (min-width: 769px) {
-		.mobile-tip-banner {
-			display: none;
-		}
-	}
+	@media (min-width: 769px) { .mobile-tip-banner { display: none; } }
 </style>
