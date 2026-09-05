@@ -55,7 +55,7 @@ const jsonLd = {
   keywords={toolMetadata.keywords.join(", ")}
   jsonLd={jsonLd}
 >
-
+  <div class="tool-page">
     <!-- Navegación superior -->
     <nav class="tool-nav premium-reveal" aria-label="Navegación de herramientas">
       <a
@@ -101,11 +101,11 @@ const jsonLd = {
       </div>
     </header>
 
-    <!-- ✅ FIX CRÍTICO: Teleprompter directo, SIN wrapper premium-reveal -->
+    <!-- Teleprompter directo, SIN wrapper premium-reveal -->
     <section id="main-content" class="tool-page-section" aria-label="Aplicación de teleprompter">
       <Teleprompter client:load />
     </section>
-  </article>
+  </div>
 </MainGridLayout>
 
 <style>
@@ -145,31 +145,6 @@ const jsonLd = {
     /* Scroll suave y prevención de overflow horizontal */
     scroll-behavior: smooth;
     overflow-x: hidden;
-  }
-
-  /* ============================================
-     Skip link (Accesibilidad)
-     ============================================ */
-  .skip-link {
-    position: absolute;
-    top: -3rem;
-    left: 0;
-    background: oklch(0.6 0.18 var(--hue, var(--hue-fallback)));
-    color: white;
-    padding: 0.75rem 1.5rem;
-    z-index: 1000;
-    border-radius: 0 0 0.5rem 0;
-    font-weight: 600;
-    text-decoration: none;
-    font-size: 0.95rem;
-    transition: top var(--transition-smooth);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-
-  .skip-link:focus {
-    top: 0;
-    outline: 3px solid white;
-    outline-offset: -3px;
   }
 
   /* ============================================
@@ -565,8 +540,7 @@ const jsonLd = {
       border-width: 2px;
     }
 
-    .tool-nav-back:focus-visible,
-    .skip-link:focus {
+    .tool-nav-back:focus-visible {
       outline-width: 3px;
     }
 
@@ -581,8 +555,7 @@ const jsonLd = {
   @media print {
     .tool-nav,
     .tool-page-badges,
-    .tool-page-header-actions,
-    .skip-link {
+    .tool-page-header-actions {
       display: none;
     }
 
