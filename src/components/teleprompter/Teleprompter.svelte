@@ -92,23 +92,29 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			: "";
 
 	// =========================================================
-	// COMPARTIR POR TELEGRAM (DOMINIO OFICIAL KEVINBORJA.COM)
+	// COMPARTIR POR TELEGRAM (RESOLUCIÓN DNS GARANTIZADA)
 	// =========================================================
-	const shareOnTelegram = () => {
-		const isProduction =
-			typeof window !== "undefined" &&
-			window.location.hostname.includes("kevinborja.com");
-		const shareUrl = isProduction
-			? window.location.href
-			: "https://kevinborja.com";
+	const shareOnTelegram = async () => {
+		const shareUrl = "https://kevinborja.com/herramientas/teleprompter/";
+		const shareMessage = "¡Mira este Teleprompter profesional gratuito en kevinborja.com!";
 
-		const snippet = text.trim()
-			? `\n\n"${text.trim().slice(0, 140)}${text.trim().length > 140 ? "..." : ""}"`
-			: "";
-		const shareMessage = `🎙️ Teleprompter Pro en kevinborja.com${snippet}\n\nAccede a la herramienta aquí:`;
-		const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareMessage)}`;
+		// 1. Intentar Web Share API nativa (evita problemas de DNS en navegadores/móviles)
+		if (typeof navigator !== "undefined" && navigator.share) {
+			try {
+				await navigator.share({
+					title: "Teleprompter Pro - Kevin Borja",
+					text: shareMessage,
+					url: shareUrl,
+				});
+				return;
+			} catch (err) {
+				// Si el usuario cancela o falla, continúa al fallback web
+			}
+		}
 
-		window.open(telegramUrl, "_blank", "noopener,noreferrer");
+		// 2. Fallback usando 'telegram.me' (resuelve en ISPs que bloquean 't.me')
+		const telegramWebUrl = `https://telegram.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareMessage)}`;
+		window.open(telegramWebUrl, "_blank", "noopener,noreferrer");
 	};
 
 	// =========================================================
@@ -180,7 +186,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	};
 
 	// =========================================================
-	// MÉTRICAS EN MEMORIA (CERO REFLOWS SÍNCRONOS)
+	// MÉTRICAS EN MEMORIA (ELIMINA LAG Y REFLOWS)
 	// =========================================================
 	const calculateMetrics = () => {
 		if (!scrollContainer || !content) return;
@@ -234,14 +240,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		updateActiveLineFromMemory(scrollContainer.scrollTop);
 	};
 
-	const handleScroll = () => {
-		if (!isPlaying && scrollContainer) {
-			scrollAccumulator = scrollContainer.scrollTop;
-			updateProgress();
-		}
-	};
-
-	// Motor de scroll de alta precisión sin jitter
+	// Motor de scroll de alta precisión sin "Math.round"
 	const tick = (timestamp: number) => {
 		if (!isPlaying || !scrollContainer) {
 			raf = null;
@@ -710,7 +709,10 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			case "ArrowDown": event.preventDefault(); jump(120); break;
 			case "PageUp": event.preventDefault(); jump(-320); break;
 			case "PageDown": event.preventDefault(); jump(320); break;
-			case "KeyM": isMirror = !isMirror; break;
+			case "KeyM":
+				event.preventDefault();
+				isMirror = !isMirror;
+				break;
 			case "KeyF": focusMode = !focusMode; setTimeout(calculateMetrics, 50); break;
 			case "KeyR": reset(); break;
 			case "KeyX": toggleFullscreen(); break;
@@ -1293,11 +1295,11 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			style={`padding: ${autoCenter ? "35vh 2rem 50vh" : "2.5rem 2rem"};`}
 			tabindex="-1"
 		>
-			<!-- INYECCIÓN DUAL DE ESPEJO: CLASE + TRANSFORM INLINE PARA GARANTÍA TOTAL -->
+			<!-- CONTENEDOR CON LA CLASE MIRROR ASOCIADA AL ESTADO ISMIRROR -->
 			<div
 				class="teleprompter-content"
 				class:mirror={isMirror}
-				style={`font-size:${fontSize}px; line-height:${lineHeight}; letter-spacing: 0.01em; transform: ${isMirror ? 'scaleX(-1)' : 'none'};`}
+				style={`font-size:${fontSize}px; line-height:${lineHeight}; letter-spacing: 0.01em;`}
 				bind:this={content}
 			>
 				{#each lines as line, index}
@@ -2535,7 +2537,6 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		scroll-behavior: auto;
 		scrollbar-width: thin;
 		scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
-		will-change: scroll-position;
 		overflow-anchor: none;
 	}
 
@@ -2571,7 +2572,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		background: rgba(255, 255, 255, 0.5);
 	}
 
-	/* REGLA DEFINITIVA PARA MODO ESPEJO HORIZONTAL */
+	/* REGLA DEFINITIVA PARA MODO ESPEJO HORIZONTAL (TECLA M) */
 	.teleprompter-content {
 		color: #0f172a;
 		text-align: center;
