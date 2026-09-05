@@ -148,9 +148,9 @@ const canonicalUrl = pageUrl ?? `${siteUrlRaw}${Astro.url.pathname}`;
 					/>
 				)}
 
-				<!-- id cambiado a "page-content" para no chocar con window.swup -->
+				<!-- ⚠️ MANTENEMOS id="swup-container" para compatibilidad con tu astro.config.mjs actual -->
 				<main
-					id="page-content"
+					id="swup-container"
 					class="transition-swup-fade col-span-2 lg:col-span-1"
 				>
 					<div id="content-wrapper" class="onload-animation">
