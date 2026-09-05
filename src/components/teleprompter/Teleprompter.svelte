@@ -112,6 +112,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	let showMobileBanner = false;
 	let showOnboarding = false;
 	let helpTab: HelpTab = "quickstart";
+	let activeLineIndex = 0;  // ✅ MOVIDO AQUÍ (estaba en context="module")
 
 	let isDark = false;
 	let wakeLock: WakeLockSentinel | null = null;
@@ -284,7 +285,6 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 				localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 			} catch (err) {
 				if (err instanceof DOMException && err.name === "QuotaExceededError") {
-					// Limpiar scripts antiguos
 					const reduced = scripts.slice(0, 10);
 					saveScripts(reduced);
 				}
@@ -292,7 +292,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		}, delay);
 	}
 
-	// Reaccionar a cambios en configuración (no en cada frame)
+	// Reaccionar a cambios en configuración
 	$: if (isReady) {
 		void text;
 		void speed;
@@ -348,7 +348,6 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		try {
 			localStorage.setItem(LAST_SCRIPT_KEY, script.id);
 		} catch {}
-		// Reset scroll
 		queueMicrotask(() => {
 			if (scrollContainer) {
 				scrollContainer.scrollTop = 0;
@@ -634,9 +633,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		}
 	}
 
-	// ============================================
 	// Tiempo restante estimado
-	// ============================================
 	let timeRemaining = "";
 	$: {
 		if (cachedMaxScroll > 0 && scrollContainer && speed > 0) {
@@ -814,9 +811,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		helpTab = "quickstart";
 	}
 
-	// ============================================
 	// Recalc on resize y font/line changes
-	// ============================================
 	$: if (isReady && content && scrollContainer) {
 		void fontSize;
 		void lineHeight;
@@ -870,7 +865,6 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		const onFsChange = () => {
 			isFullscreen = Boolean(document.fullscreenElement);
 			if (!isFullscreen) {
-				// Al salir de fullscreen, pausar y liberar wake lock
 				pause();
 			}
 		};
@@ -1553,11 +1547,6 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		{/if}
 	</div>
 </div>
-
-<script context="module" lang="ts">
-	// Variable reactiva no usada removida
-	let activeLineIndex = 0;
-</script>
 
 <style>
 	/* ============================================
