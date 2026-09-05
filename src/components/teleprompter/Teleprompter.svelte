@@ -112,7 +112,6 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	let showMobileBanner = false;
 	let showOnboarding = false;
 	let helpTab: HelpTab = "quickstart";
-	let activeLineIndex = 0;
 
 	let isDark = false;
 	let wakeLock: WakeLockSentinel | null = null;
@@ -122,10 +121,10 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	let scripts: SavedScript[] = [];
 	let currentScript: string | null = null;
 
-	// Scroll engine - ✅ CORREGIDO: ahora acepta null correctamente
-	let scrollContainer: HTMLDivElement | null = null;
-	let content: HTMLDivElement | null = null;
-	let fullscreenTarget: HTMLDivElement | null = null;
+	// Scroll engine
+	let scrollContainer: HTMLDivElement;
+	let content: HTMLDivElement;
+	let fullscreenTarget: HTMLDivElement;
 	let raf: number | null = null;
 	let lastTime: number | null = null;
 	let targetSpeed = speed;
@@ -149,7 +148,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	// Derivados
 	// ============================================
 	$: lines = text.split("\n");
-	$: lineElements = [];
+	$: lineElements = lines.map((_, i) => lineElements[i] ?? null);
 	$: wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
 	$: charCount = text.length;
 	$: estimatedTotalSeconds = wordCount > 0 ? Math.ceil((wordCount / 150) * 60) : 0;
@@ -285,6 +284,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 				localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 			} catch (err) {
 				if (err instanceof DOMException && err.name === "QuotaExceededError") {
+					// Limpiar scripts antiguos
 					const reduced = scripts.slice(0, 10);
 					saveScripts(reduced);
 				}
@@ -292,6 +292,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		}, delay);
 	}
 
+	// Reaccionar a cambios en configuración (no en cada frame)
 	$: if (isReady) {
 		void text;
 		void speed;
@@ -347,6 +348,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		try {
 			localStorage.setItem(LAST_SCRIPT_KEY, script.id);
 		} catch {}
+		// Reset scroll
 		queueMicrotask(() => {
 			if (scrollContainer) {
 				scrollContainer.scrollTop = 0;
@@ -427,9 +429,11 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			raf = requestAnimationFrame(tick);
 			return;
 		}
+		// Clamp delta para evitar saltos grandes al volver de background
 		const delta = Math.min(elapsed / 1000, 0.1);
 		lastTime = timestamp;
 
+		// Interpolación suave
 		if (smooth) {
 			const k = 1 - Math.exp(-delta * 10);
 			currentSpeed += (targetSpeed - currentSpeed) * k;
@@ -442,6 +446,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 		scrollAccumulator += currentSpeed * delta;
 
+		// Final del guion
 		if (scrollAccumulator >= cachedMaxScroll) {
 			scrollContainer.scrollTop = cachedMaxScroll;
 			scrollAccumulator = cachedMaxScroll;
@@ -451,6 +456,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			return;
 		}
 
+		// Solo aplicar si cambia al menos 1px (evita reflows innecesarios)
 		const targetScroll = Math.round(scrollAccumulator);
 		if (targetScroll !== scrollContainer.scrollTop) {
 			scrollContainer.scrollTop = targetScroll;
@@ -521,7 +527,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		countdownTimer = setInterval(() => {
 			countdown -= 1;
 			if (countdown <= 0) {
-				if (countdownTimer) clearInterval(countdownTimer);
+				clearInterval(countdownTimer!);
 				countdownTimer = null;
 				isCountingDown = false;
 				startPlayback();
@@ -628,6 +634,9 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		}
 	}
 
+	// ============================================
+	// Tiempo restante estimado
+	// ============================================
 	let timeRemaining = "";
 	$: {
 		if (cachedMaxScroll > 0 && scrollContainer && speed > 0) {
@@ -679,6 +688,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		}
 		const now = Date.now();
 		if (now - lastTapTime < DOUBLE_TAP_WINDOW) {
+			// Doble tap
 			lastTapTime = 0;
 			if (tapTimeout) {
 				clearTimeout(tapTimeout);
@@ -804,6 +814,9 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		helpTab = "quickstart";
 	}
 
+	// ============================================
+	// Recalc on resize y font/line changes
+	// ============================================
 	$: if (isReady && content && scrollContainer) {
 		void fontSize;
 		void lineHeight;
@@ -815,6 +828,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 
 	function onResize(): void {
 		if (!scrollContainer || !content) return;
+		const prevMax = cachedMaxScroll;
 		recalcMaxScroll();
 		if (isPlaying && scrollContainer) {
 			scrollAccumulator = Math.min(scrollAccumulator, cachedMaxScroll);
@@ -826,6 +840,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	// Lifecycle
 	// ============================================
 	onMount(() => {
+		// Dark mode
 		isDark = document.documentElement.classList.contains("dark");
 		darkModeObserver = new MutationObserver(() => {
 			isDark = document.documentElement.classList.contains("dark");
@@ -835,6 +850,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			attributeFilter: ["class"],
 		});
 
+		// Mobile
 		const mql = window.matchMedia("(max-width: 768px)");
 		isMobile = mql.matches;
 		showMobileBanner = isMobile;
@@ -844,18 +860,23 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		};
 		mql.addEventListener("change", mqlHandler);
 
+		// Wake Lock
 		wakeLockSupported = "wakeLock" in navigator;
 
+		// Keyboard
 		window.addEventListener("keydown", onKey);
 
+		// Fullscreen
 		const onFsChange = () => {
 			isFullscreen = Boolean(document.fullscreenElement);
 			if (!isFullscreen) {
+				// Al salir de fullscreen, pausar y liberar wake lock
 				pause();
 			}
 		};
 		document.addEventListener("fullscreenchange", onFsChange);
 
+		// Visibilidad: liberar wake lock al ocultar
 		const onVisibility = () => {
 			if (document.hidden && wakeLock) {
 				releaseWakeLock();
@@ -865,11 +886,13 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		};
 		document.addEventListener("visibilitychange", onVisibility);
 
+		// Resize
 		const resizeHandler = () => onResize();
 		const orientationHandler = () => setTimeout(onResize, 300);
 		window.addEventListener("resize", resizeHandler);
 		window.addEventListener("orientationchange", orientationHandler);
 
+		// Cargar estado
 		loadState();
 		loadScripts();
 
@@ -884,6 +907,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			loadScript(lastId);
 		}
 
+		// Onboarding
 		try {
 			const done = localStorage.getItem(ONBOARDING_KEY);
 			if (!done) showOnboarding = true;
@@ -1529,6 +1553,11 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		{/if}
 	</div>
 </div>
+
+<script context="module" lang="ts">
+	// Variable reactiva no usada removida
+	let activeLineIndex = 0;
+</script>
 
 <style>
 	/* ============================================
