@@ -17,7 +17,14 @@ const toolMetadata = {
   description: "Tu estudio profesional de lectura en pantalla. Velocidad precisa, modo espejo, focus mode, atajos de teclado, countdown personalizable y pantalla completa.",
   icon: "📺",
   features: ["Pro", "Pantalla completa", "Atajos"],
-  keywords: ["teleprompter", "teleprompter online", "teleprompter gratis", "television prompter", "lector de guion", "presentation tool"]
+  keywords: [
+    "teleprompter",
+    "teleprompter online",
+    "teleprompter gratis",
+    "television prompter",
+    "lector de guion",
+    "presentation tool"
+  ]
 } as const;
 
 // JSON-LD Schema.org para SoftwareApplication
@@ -40,16 +47,14 @@ const jsonLd = {
 };
 ---
 
-<MainGridLayout 
-  title={toolMetadata.name} 
+<MainGridLayout
+  title={toolMetadata.name}
   description={toolMetadata.shortDescription}
   image={`${SITE_URL}/og-images/teleprompter.png`}
   url={FULL_TOOL_URL}
   keywords={toolMetadata.keywords.join(", ")}
+  jsonLd={jsonLd}
 >
-  <!-- JSON-LD Schema.org para SEO avanzado -->
-  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
-
   <article class="tool-page">
     <!-- Skip link para accesibilidad -->
     <a href="#main-content" class="skip-link">
@@ -58,8 +63,8 @@ const jsonLd = {
 
     <!-- Navegación superior -->
     <nav class="tool-nav premium-reveal" aria-label="Navegación de herramientas">
-      <a 
-        class="tool-nav-back" 
+      <a
+        class="tool-nav-back"
         href={url("/herramientas/")}
         aria-label="Volver a la página de Herramientas"
       >
@@ -92,7 +97,7 @@ const jsonLd = {
               </li>
             ))}
           </ul>
-          <ShareToolButton 
+          <ShareToolButton
             toolName={toolMetadata.name}
             toolDescription={toolMetadata.shortDescription}
             toolUrl={TOOL_URL}
@@ -101,9 +106,13 @@ const jsonLd = {
       </div>
     </header>
 
-    <!-- Componente principal -->
-    <section id="main-content" class="premium-reveal" aria-label="Aplicación de teleprompter">
-      <Teleprompter client:only="svelte" />
+    <!-- ✅ FIX: El section NO lleva premium-reveal porque el componente Svelte lo sobrescribirá al hidratar -->
+    <!-- En su lugar, animamos un wrapper interno -->
+    <section id="main-content" class="tool-page-section" aria-label="Aplicación de teleprompter">
+      <div class="tool-page-section-inner premium-reveal">
+        <!-- ✅ FIX CRÍTICO: client:load en lugar de client:only para mejor compatibilidad con Swup -->
+        <Teleprompter client:load />
+      </div>
     </section>
   </article>
 </MainGridLayout>
@@ -117,31 +126,31 @@ const jsonLd = {
     --hue-fallback: 250;
     --card-bg-fallback: #ffffff;
     --radius-large-fallback: 1rem;
-    
+
     /* Colores de texto */
     --color-text-muted: #64748b;
     --color-text-muted-dark: #94a3b8;
-    
+
     /* Bordes */
     --color-border-light: rgba(0, 0, 0, 0.06);
     --color-border-dark: rgba(255, 255, 255, 0.08);
-    
+
     /* Interacción */
     --touch-target-min: 2.75rem;
     --transition-fast: 150ms ease;
     --transition-normal: 200ms ease;
     --transition-smooth: 200ms cubic-bezier(0.4, 0, 0.2, 1);
-    
+
     /* Layout */
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
     min-height: 0;
-    
+
     /* Safe areas para dispositivos con notch */
     padding-left: max(0px, env(safe-area-inset-left));
     padding-right: max(0px, env(safe-area-inset-right));
-    
+
     /* Scroll suave y prevención de overflow horizontal */
     scroll-behavior: smooth;
     overflow-x: hidden;
@@ -193,28 +202,22 @@ const jsonLd = {
     text-decoration: none;
     padding: 0.4rem 0.75rem;
     border-radius: 0.5rem;
-    transition: 
+    transition:
       background-color var(--transition-normal),
       color var(--transition-normal),
       transform var(--transition-fast);
-    
-    /* Touch targets apropiados */
+
     min-height: var(--touch-target-min);
-    
-    /* Accesibilidad */
     position: relative;
     outline-offset: 2px;
-    
-    /* Optimizaciones móviles */
+
     -webkit-tap-highlight-color: oklch(0.6 0.18 var(--hue, var(--hue-fallback)) / 0.1);
     user-select: none;
-    
-    /* GPU promotion una sola vez (NO toggle en hover) */
+
     transform: translateZ(0);
     backface-visibility: hidden;
   }
 
-  /* Focus visible para navegación por teclado */
   .tool-nav-back:focus-visible {
     outline: 2px solid oklch(0.6 0.18 var(--hue, var(--hue-fallback)));
     outline-offset: 3px;
@@ -289,7 +292,6 @@ const jsonLd = {
     border: 1px solid var(--color-border-light);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
     overflow: hidden;
-    /* ⚠️ QUITÉ container-type por compatibilidad Safari */
   }
 
   :global(.dark) .tool-page-header {
@@ -335,11 +337,9 @@ const jsonLd = {
     letter-spacing: -0.01em;
     line-height: 1.2;
     margin: 0 0 0.35rem 0;
-    
-    /* Color fallback SIEMPRE visible */
+
     color: oklch(0.6 0.18 var(--hue, var(--hue-fallback)));
-    
-    /* Gradiente moderno */
+
     background: linear-gradient(
       135deg,
       oklch(0.65 0.16 var(--hue, var(--hue-fallback))),
@@ -404,7 +404,7 @@ const jsonLd = {
     background: oklch(0.93 0.04 var(--hue, var(--hue-fallback)));
     color: oklch(0.5 0.14 var(--hue, var(--hue-fallback)));
     line-height: 1.4;
-    transition: 
+    transition:
       background-color var(--transition-normal),
       color var(--transition-normal),
       transform var(--transition-fast);
@@ -421,18 +421,22 @@ const jsonLd = {
   }
 
   /* ============================================
-     Sección principal con content-visibility
+     Sección principal
      ============================================ */
-  .tool-page section {
+  .tool-page-section {
     content-visibility: auto;
     contain-intrinsic-size: auto 500px;
+  }
+
+  .tool-page-section-inner {
+    /* Wrapper para que la animación premium-reveal no se pierda al hidratar Svelte */
+    min-height: 200px;
   }
 
   /* ============================================
      Responsive Design
      ============================================ */
-  
-  /* Tablets */
+
   @media (max-width: 768px) {
     .tool-page {
       gap: 1.25rem;
@@ -451,7 +455,6 @@ const jsonLd = {
     }
   }
 
-  /* Mobile Portrait */
   @media (max-width: 640px) {
     .tool-page {
       gap: 1rem;
@@ -504,14 +507,13 @@ const jsonLd = {
     }
   }
 
-  /* Mobile Landscape */
   @media (max-width: 640px) and (orientation: landscape) {
     .tool-page-header {
       flex-direction: row;
       padding: 0.75rem 1rem;
       gap: 1rem;
     }
-    
+
     .tool-page-icon-wrapper {
       width: 2.5rem;
       height: 2.5rem;
@@ -521,7 +523,7 @@ const jsonLd = {
     .tool-page-icon {
       font-size: 1.25rem;
     }
-    
+
     .tool-page-title {
       font-size: 1.25rem;
     }
@@ -537,7 +539,6 @@ const jsonLd = {
     }
   }
 
-  /* Muy pequeño (menos de 375px) */
   @media (max-width: 375px) {
     .tool-page-header {
       padding: 0.875rem 1rem;
@@ -617,7 +618,7 @@ const jsonLd = {
   }
 
   /* ============================================
-     Optimizaciones para GPU (solo desktop con mouse)
+     Optimizaciones para GPU
      ============================================ */
   @media (hover: hover) and (pointer: fine) {
     .tool-nav-back,
