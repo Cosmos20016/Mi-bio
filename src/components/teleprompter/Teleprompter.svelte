@@ -6,12 +6,12 @@
 	} from "@utils/setting-utils.ts";
 	import { onDestroy, onMount } from "svelte";
 
-	const storageKey = "teleprompter:state:v3";
+	const storageKey = "teleprompter:state:v4";
 
 	// Core state
 	let text = `Pega aquí tu guion...\n\nTip: Usa párrafos cortos para una lectura más cómoda.`;
 	let speed = 60;
-	let fontSize = 34;
+	let fontSize = 38;
 	let lineHeight = 1.6;
 	let isPlaying = false;
 	let isMirror = false;
@@ -24,7 +24,6 @@
 	let dimOutside = true;
 	let isFullscreen = false;
 	let isMobile = false;
-	let allowMobile = false;
 	let showMobileBanner = false;
 	let isReady = false;
 	let ultraClean = false;
@@ -35,10 +34,19 @@
 	let currentScript: string | null = null;
 	let countdownDuration = 3;
 
-	// Dark mode reactive detection
+	// Variables Reactivas
 	let isDark = false;
+	$: lines = text.split("\n");
+	$: wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+	$: estimatedMinutes = wordCount > 0 ? Math.floor(wordCount / 150) : 0;
+	$: estimatedSeconds = wordCount > 0 ? Math.ceil((wordCount / 150) * 60) % 60 : 0;
+	$: readingTimeLabel = wordCount > 0
+		? estimatedMinutes > 0
+			? `~${estimatedMinutes}m ${estimatedSeconds}s`
+			: `~${estimatedSeconds}s`
+		: "";
 
-	// Refs (seguros para SSR)
+	// Refs y observadores
 	let scrollContainer: HTMLDivElement | null = null;
 	let content: HTMLDivElement | null = null;
 	let fullscreenTarget: HTMLDivElement | null = null;
@@ -52,42 +60,82 @@
 	
 	let lineElements: Array<HTMLParagraphElement | null> = [];
 	let activeLineIndex = 0;
-	let lines: string[] = [];
 	let lineMetrics: Array<{ top: number; height: number; center: number }> = [];
 
+	// Constantes
 	const speedMin = 10;
 	const speedMax = 400;
+	const TAP_THRESHOLD = 300;
+	const SWIPE_THRESHOLD = 30;
 	
-	// Motor de velocidad
+	// Motor GPU Híbrido
 	$: targetSpeed = speed;
 	let currentSpeed = 0;
 	let cachedMaxScroll = 0;
 	let scrollAccumulator = 0;
-
+	let startScrollY = 0;
+	let smoothedDelta = 16.66; // Base 60fps para filtro pasa-bajos
 	let touchStartY = 0;
 	let lastTapTime = 0;
-	const TAP_THRESHOLD = 300;
-	const SWIPE_THRESHOLD = 30;
 
 	const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
-	$: lines = text.split("\n");
+	// Auto-Organizador Premium de Guiones
+	let isFormatting = false;
+	let previousTextLength = 0;
+	
+	const autoFormatScript = () => {
+		if (!text || isFormatting) return;
+		isFormatting = true;
+		
+		const originalText = text;
+		
+		// 1. Limpiar múltiples espacios y saltos extremos
+		let formatted = text
+			.replace(/ +/g, ' ')
+			.replace(/\n{3,}/g, '\n\n');
+		
+		// 2. Romper sentencias largas en párrafos propios
+		formatted = formatted.replace(/([.?!])\s+(?=[A-Z¡¿])/g, '$1\n\n');
+		
+		// 3. Romper bloques de texto denso (sin puntuación final) usando comas
+		formatted = formatted.split('\n').map(p => {
+			if (p.length > 130 && !p.includes('\n')) {
+				return p.replace(/([,;:])\s+/g, '$1\n');
+			}
+			return p;
+		}).join('\n');
+		
+		formatted = formatted.trim();
 
-	$: wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
-	$: estimatedMinutes = wordCount > 0 ? Math.floor(wordCount / 150) : 0;
-	$: estimatedSeconds = wordCount > 0 ? Math.ceil((wordCount / 150) * 60) % 60 : 0;
-	$: readingTimeLabel = wordCount > 0
-		? estimatedMinutes > 0
-			? `~${estimatedMinutes}m ${estimatedSeconds}s`
-			: `~${estimatedSeconds}s`
-		: "";
+		if (formatted !== originalText) {
+			text = formatted;
+			setTimeout(calculateMetrics, 100);
+		}
+		
+		setTimeout(() => { isFormatting = false; }, 200);
+	};
+
+	// Detección de pegado masivo para auto-formato
+	$: if (isReady && text) {
+		const diff = text.length - previousTextLength;
+		if (diff > 400) {
+			const hasDenseParagraphs = text.split('\n').some(p => p.length > 200);
+			if (hasDenseParagraphs) autoFormatScript();
+		}
+		previousTextLength = text.length;
+	}
 
 	// Calculador de métricas en frío (Cero Layout Thrashing)
 	const calculateMetrics = () => {
 		if (!scrollContainer || !content) return;
 		cachedMaxScroll = Math.max(content.scrollHeight - scrollContainer.clientHeight, 0);
 		
-		if (!focusMode) return;
+		if (!focusMode) {
+			updateProgress();
+			return;
+		}
+		
 		lineMetrics = lineElements.map((el) => {
 			if (!el) return { top: 0, height: 0, center: 0 };
 			const top = el.offsetTop;
@@ -102,7 +150,7 @@
 		if (!scrollContainer) return 0;
 		const viewport = scrollContainer.clientHeight;
 		const focusOffset = focusMode ? viewport * 0.45 + 50 : viewport / 2;
-		return scrollContainer.scrollTop + focusOffset;
+		return scrollAccumulator + focusOffset;
 	};
 
 	const updateActiveLine = () => {
@@ -122,24 +170,40 @@
 	};
 
 	const updateProgress = () => {
-		if (!scrollContainer || cachedMaxScroll <= 0) {
+		if (cachedMaxScroll <= 0) {
 			progress = 0;
 			return;
 		}
-		progress = clamp(scrollContainer.scrollTop / cachedMaxScroll, 0, 1);
+		progress = clamp(scrollAccumulator / cachedMaxScroll, 0, 1);
 		updateActiveLine();
 	};
 
-	const handleScrollEvent = () => {
-		if (!isPlaying) {
-			if (scrollContainer) scrollAccumulator = scrollContainer.scrollTop;
+	const handleNativeScroll = () => {
+		if (!isPlaying && scrollContainer) {
+			scrollAccumulator = scrollContainer.scrollTop;
+			updateProgress();
 		}
-		updateProgress();
 	};
 
-	// Motor de scroll de alta precisión optimizado
+	const applyHardwareTransform = () => {
+		if (!content) return;
+		if (isPlaying) {
+			const offset = scrollAccumulator - startScrollY;
+			content.style.transform = `translate3d(0, -${offset}px, 0) ${isMirror ? 'scaleX(-1)' : ''}`;
+		} else {
+			content.style.transform = isMirror ? 'scaleX(-1)' : 'none';
+		}
+	};
+
+	$: if (isReady && content) {
+		// Forzar dependencia reactiva del mirror
+		const _trigger = isMirror; 
+		applyHardwareTransform();
+	}
+
+	// Motor de GPU Híbrido (Cero Tirones, Aceleración Hardware)
 	const tick = (timestamp: number) => {
-		if (!isPlaying || !scrollContainer) {
+		if (!isPlaying || !scrollContainer || !content) {
 			raf = null;
 			lastTime = null;
 			return;
@@ -147,16 +211,17 @@
 
 		if (lastTime === null) {
 			lastTime = timestamp;
-			scrollAccumulator = scrollContainer.scrollTop;
+			smoothedDelta = 16.66;
 			raf = requestAnimationFrame(tick);
 			return;
 		}
 
-		const elapsed = timestamp - lastTime;
+		const rawDelta = timestamp - lastTime;
 		lastTime = timestamp;
-
-		// Prevención de saltos masivos (e.g. si el tab pasa a segundo plano)
-		const delta = Math.min(elapsed / 1000, 0.05);
+		
+		// Filtro pasa-bajos para promediar frames y evitar micro-tirones del navegador
+		smoothedDelta = smoothedDelta * 0.8 + rawDelta * 0.2;
+		const delta = Math.min(smoothedDelta / 1000, 0.05);
 
 		if (smooth) {
 			const smoothing = 1 - Math.exp(-delta * 12);
@@ -165,23 +230,22 @@
 			currentSpeed = targetSpeed;
 		}
 
-		// Estabilizador para evitar cálculos infinitos
 		if (Math.abs(currentSpeed - targetSpeed) < 0.5) currentSpeed = targetSpeed;
 
 		scrollAccumulator += currentSpeed * delta;
 
 		if (scrollAccumulator >= cachedMaxScroll) {
-			scrollContainer.scrollTop = cachedMaxScroll;
 			scrollAccumulator = cachedMaxScroll;
-			isPlaying = false;
-			raf = null;
-			lastTime = null;
-			progress = 1;
-			updateActiveLine();
+			pause();
+			updateProgress();
 			return;
 		}
 
-		scrollContainer.scrollTop = scrollAccumulator;
+		// Movimiento Sub-píxel por hardware llamando a la función unificada
+		applyHardwareTransform();
+		
+		if (focusMode) updateProgress();
+
 		raf = requestAnimationFrame(tick);
 	};
 
@@ -195,22 +259,42 @@
 		if (progress >= 0.99) {
 			scrollContainer.scrollTop = 0;
 			scrollAccumulator = 0;
-		} else {
-			scrollAccumulator = scrollContainer.scrollTop;
 		}
 
+		// Inicialización del Motor Híbrido
+		startScrollY = scrollAccumulator;
+		scrollContainer.style.overflow = 'hidden'; // Bloquea engine nativo
+		
 		isPlaying = true;
 		lastTime = null;
+		applyHardwareTransform();
 		raf = requestAnimationFrame(tick);
 	};
 
-	const cancelCountdown = () => {
-		if (countdownTimer) {
-			clearInterval(countdownTimer);
-			countdownTimer = null;
+	const pause = () => {
+		isPlaying = false;
+		cancelCountdown();
+		if (raf) {
+			cancelAnimationFrame(raf);
+			raf = null;
 		}
-		countdown = 0;
-		isCountingDown = false;
+		
+		// Restauración del Motor Nativo
+		if (scrollContainer && content) {
+			scrollContainer.style.overflow = '';
+			applyHardwareTransform();
+			scrollContainer.scrollTop = scrollAccumulator;
+		}
+		
+		lastTime = null;
+		currentSpeed = targetSpeed;
+		updateProgress();
+	};
+
+	const toggle = () => {
+		if (isPlaying) pause();
+		else if (isCountingDown) cancelCountdown();
+		else start();
 	};
 
 	const beginCountdown = () => {
@@ -236,25 +320,13 @@
 		beginCountdown();
 	};
 
-	const pause = () => {
-		isPlaying = false;
-		cancelCountdown();
-		if (raf) {
-			cancelAnimationFrame(raf);
-			raf = null;
+	const cancelCountdown = () => {
+		if (countdownTimer) {
+			clearInterval(countdownTimer);
+			countdownTimer = null;
 		}
-		lastTime = null;
-		currentSpeed = targetSpeed;
-		if (scrollContainer) {
-			scrollAccumulator = scrollContainer.scrollTop;
-		}
-		updateProgress();
-	};
-
-	const toggle = () => {
-		if (isPlaying) pause();
-		else if (isCountingDown) cancelCountdown();
-		else start();
+		countdown = 0;
+		isCountingDown = false;
 	};
 
 	const reset = () => {
@@ -278,29 +350,28 @@
 
 	const jump = (amount: number) => {
 		if (!scrollContainer) return;
-		const next = scrollContainer.scrollTop + amount;
-		scrollContainer.scrollTop = clamp(next, 0, cachedMaxScroll);
-		scrollAccumulator = scrollContainer.scrollTop;
+		const next = scrollAccumulator + amount;
+		scrollAccumulator = clamp(next, 0, cachedMaxScroll);
+		if (!isPlaying) scrollContainer.scrollTop = scrollAccumulator;
+		else startScrollY -= amount; // Compensa el salto en el motor híbrido
 		updateProgress();
 	};
 
 	const scrollToProgress = (value: number) => {
 		if (!scrollContainer) return;
-		scrollContainer.scrollTop = clamp(value, 0, 1) * cachedMaxScroll;
-		scrollAccumulator = scrollContainer.scrollTop;
+		scrollAccumulator = clamp(value, 0, 1) * cachedMaxScroll;
+		if (!isPlaying) scrollContainer.scrollTop = scrollAccumulator;
+		else startScrollY = scrollAccumulator - (scrollAccumulator - startScrollY); // Re-ancla el offset
 		updateProgress();
 	};
 
 	const toggleFullscreen = async () => {
 		if (!fullscreenTarget) return;
 		try {
-			if (!document.fullscreenElement) {
-				await fullscreenTarget.requestFullscreen();
-			} else {
-				await document.exitFullscreen();
-			}
+			if (!document.fullscreenElement) await fullscreenTarget.requestFullscreen();
+			else await document.exitFullscreen();
 		} catch (e) {
-			console.warn("[Teleprompter] Fullscreen API error:", e);
+			console.warn("[Teleprompter] API Fullscreen denegada:", e);
 		}
 	};
 
@@ -308,22 +379,20 @@
 		if (!isPlaying) return;
 		event.preventDefault();
 		const baseIncrement = Math.max(8, speed * 0.1);
-		const delta = event.deltaY > 0 ? baseIncrement : -baseIncrement;
-		adjustSpeed(delta);
+		adjustSpeed(event.deltaY > 0 ? baseIncrement : -baseIncrement);
 	};
 
 	const adjustSpeed = (amount: number) => {
 		speed = Math.round(clamp(speed + amount, speedMin, speedMax));
 	};
 
+	// Gestión de Estado Local
 	const loadState = () => {
 		try {
 			const raw = localStorage.getItem(storageKey);
 			if (!raw) return;
 			const data = JSON.parse(raw);
-			if (typeof data !== "object" || data === null) return;
-
-			if (data.text) text = data.text;
+			
 			if (data.speed) speed = data.speed;
 			if (data.fontSize) fontSize = data.fontSize;
 			if (data.lineHeight) lineHeight = data.lineHeight;
@@ -338,7 +407,6 @@
 
 			speed = Math.round(clamp(speed, speedMin, speedMax));
 		} catch (e) {
-			console.warn("[Teleprompter] Estado corrupto reseteado:", e);
 			try { localStorage.removeItem(storageKey); } catch {}
 		}
 	};
@@ -346,11 +414,10 @@
 	const scheduleSave = () => {
 		if (!isReady) return;
 		if (saveTimeout) clearTimeout(saveTimeout);
-		const delay = text.length > 5000 ? 500 : 300;
 		saveTimeout = setTimeout(() => {
 			try {
 				const payload = {
-					text, speed, fontSize, lineHeight,
+					speed, fontSize, lineHeight,
 					isMirror, autoCenter, smooth, glow,
 					focusMode, dimOutside, ultraClean, countdownDuration,
 				};
@@ -364,9 +431,10 @@
 					} catch {}
 				}
 			}
-		}, delay);
+		}, 500);
 	};
 
+	// Sistema de Guiones
 	interface SavedScript {
 		id: string;
 		name: string;
@@ -380,15 +448,9 @@
 	const loadScripts = () => {
 		try {
 			const raw = localStorage.getItem("teleprompter:scripts");
-			if (!raw) {
-				scripts = [];
-				return;
-			}
-			const data = JSON.parse(raw);
-			scripts = Array.isArray(data) ? data : [];
+			scripts = raw ? (Array.isArray(JSON.parse(raw)) ? JSON.parse(raw) : []) : [];
 		} catch (e) {
 			scripts = [];
-			try { localStorage.removeItem("teleprompter:scripts"); } catch {}
 		}
 	};
 
@@ -449,6 +511,7 @@
 		setTimeout(calculateMetrics, 100);
 	};
 
+	// UI Helpers
 	const getSpeedLabel = (spd: number): string => {
 		if (spd < 40) return "Muy lento";
 		if (spd < 80) return "Lento";
@@ -457,33 +520,11 @@
 		return "Muy rápido";
 	};
 
-	const getStatus = (): string => {
-		if (isPlaying) return "Al aire 🔴";
-		if (isCountingDown) return "Cuenta regresiva...";
-		if (progress >= 0.99) return "Fin de guion ✓";
-		if (progress > 0) return "En pausa ⏸";
-		return "En línea";
-	};
-
 	const getStatusColor = (): string => {
 		if (isPlaying) return "oklch(0.60 0.15 220)";
 		if (isCountingDown) return "oklch(0.65 0.15 60)";
 		if (progress >= 0.99) return "oklch(0.50 0.05 var(--hue))";
 		return "oklch(0.60 0.15 150)";
-	};
-
-	const getSpeedColor = (): string => {
-		const ratio = (speed - speedMin) / (speedMax - speedMin);
-		if (ratio < 0.33) return "oklch(0.65 0.15 150)";
-		if (ratio < 0.66) return "oklch(0.70 0.15 60)";
-		return "oklch(0.65 0.18 25)";
-	};
-
-	const formatDateTime = (isoDate: string): string => {
-		const date = new Date(isoDate);
-		return date.toLocaleDateString("es-ES", {
-			day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
-		});
 	};
 
 	const applyYouTubeSettings = () => {
@@ -500,38 +541,26 @@
 
 	const getEstimatedTimeRemaining = (): string => {
 		if (!scrollContainer || speed === 0) return "";
-		const remaining = cachedMaxScroll - scrollContainer.scrollTop;
+		const remaining = cachedMaxScroll - scrollAccumulator;
 		if (remaining <= 0) return "0s";
 		const seconds = Math.ceil(remaining / speed);
 		if (seconds < 60) return `${seconds}s`;
-		const minutes = Math.floor(seconds / 60);
-		const secs = seconds % 60;
-		return `${minutes}:${secs.toString().padStart(2, "0")}`;
+		return `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, "0")}`;
 	};
 
-	const handleTouchStart = (e: TouchEvent) => {
-		if (!isMobile && !("ontouchstart" in window)) return;
-		if ((e.target as HTMLElement)?.tagName === "TEXTAREA") return;
-		touchStartY = e.touches[0].clientY;
-	};
-
+	// Controles
 	const handleTouchMove = (e: TouchEvent) => {
-		if (!isMobile && !("ontouchstart" in window)) return;
-		if (!isPlaying) return;
-		if ((e.target as HTMLElement)?.tagName === "TEXTAREA") return;
+		if (!isMobile || !isPlaying || (e.target as HTMLElement)?.tagName === "TEXTAREA") return;
 		const deltaY = touchStartY - e.touches[0].clientY;
 		if (Math.abs(deltaY) > SWIPE_THRESHOLD) {
-			const speedAdjustment = Math.sign(deltaY) * Math.max(2, Math.abs(deltaY) / 10);
-			adjustSpeed(speedAdjustment);
+			adjustSpeed(Math.sign(deltaY) * Math.max(2, Math.abs(deltaY) / 10));
 			touchStartY = e.touches[0].clientY;
 		}
 	};
 
 	const handleFrameClick = (e: MouseEvent) => {
-		if ((e.target as HTMLElement)?.tagName === "TEXTAREA") return;
-		if ((e.target as HTMLElement)?.closest(".teleprompter-panel")) return;
-		if ((e.target as HTMLElement)?.closest(".teleprompter-float")) return;
-		if ((e.target as HTMLElement)?.closest(".no-trigger")) return;
+		const target = e.target as HTMLElement;
+		if (target?.tagName === "TEXTAREA" || target?.closest(".teleprompter-panel, .teleprompter-float, .no-trigger")) return;
 
 		const now = Date.now();
 		if (now - lastTapTime < TAP_THRESHOLD) {
@@ -566,30 +595,21 @@
 		}
 	};
 
-	$: if (isReady && (text || speed || fontSize || lineHeight || isMirror || autoCenter || smooth || glow || focusMode || dimOutside || ultraClean || countdownDuration)) {
+	// Efectos Reactivos
+	$: if (isReady && (speed || fontSize || lineHeight || isMirror || autoCenter || smooth || glow || focusMode || dimOutside || ultraClean || countdownDuration)) {
 		scheduleSave();
-	}
-	
-	$: if (isReady && text) {
-		setTimeout(calculateMetrics, 150);
 	}
 
 	onMount(() => {
 		isDark = document.documentElement.classList.contains("dark");
 		darkModeObserver = new MutationObserver((mutations) => {
-			for (const mutation of mutations) {
-				if (mutation.attributeName === "class") {
-					isDark = document.documentElement.classList.contains("dark");
-				}
-			}
+			for (const mutation of mutations) if (mutation.attributeName === "class") isDark = document.documentElement.classList.contains("dark");
 		});
 		darkModeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
 
 		window.addEventListener("keydown", onKey);
-		const mql = window.matchMedia("(max-width: 768px)");
-		isMobile = mql.matches;
+		isMobile = window.matchMedia("(max-width: 768px)").matches;
 		showMobileBanner = isMobile;
-		allowMobile = true;
 
 		applyStoredThemeToDocument();
 		stopThemeWatch = watchSystemThemeChanges(getStoredTheme());
@@ -615,12 +635,11 @@
 		window.addEventListener("orientationchange", () => setTimeout(calculateMetrics, 300));
 
 		isReady = true;
-		calculateMetrics();
+		setTimeout(calculateMetrics, 100); // Arranque en frío
 
 		return () => {
 			document.removeEventListener("fullscreenchange", onFullscreenChange);
 			window.removeEventListener("resize", calculateMetrics);
-			window.removeEventListener("orientationchange", () => {});
 		};
 	});
 
@@ -631,11 +650,9 @@
 		darkModeObserver?.disconnect();
 		if (saveTimeout) clearTimeout(saveTimeout);
 		stopThemeWatch?.();
-		stopThemeWatch = null;
 		cancelCountdown();
 	});
 </script>
-
 <div class="teleprompter-wrapper" class:clean={ultraClean} class:dark={isDark}>
 	{#if showOnboarding}
 		<div class="teleprompter-onboarding-overlay">
@@ -659,56 +676,31 @@
 							<div class="onboarding-step">
 								<div class="step-icon">📝</div>
 								<h3>1. Pega tu guion</h3>
-								<p>Escribe o pega el texto que deseas leer en el área de texto</p>
+								<p>El sistema auto-organizará bloques de texto gigantes para una lectura perfecta.</p>
 							</div>
 							<div class="onboarding-step">
 								<div class="step-icon">⚙️</div>
 								<h3>2. Ajusta a tu ritmo</h3>
-								<p>Personaliza velocidad, tamaño de fuente y otras opciones según tu preferencia</p>
+								<p>Velocidad fluida renderizada por GPU (Hardware Acceleration) garantizando cero tirones.</p>
 							</div>
 							<div class="onboarding-step">
 								<div class="step-icon">▶️</div>
 								<h3>3. Empieza a grabar</h3>
-								<p>Presiona Play o Espacio para comenzar la lectura profesional</p>
+								<p>Presiona Play o Espacio para comenzar la lectura profesional.</p>
 							</div>
 						</div>
 					{:else if helpTab === 'youtube'}
 						<div class="tab-panel youtube-settings">
 							<h3>⚙️ Configuración recomendada para YouTube</h3>
-							<p class="tab-desc">Estos ajustes te ayudarán a grabar videos profesionales con lectura natural:</p>
 							<div class="settings-list">
-								<div class="setting-item">
-									<span class="setting-label">🐢 Velocidad:</span>
-									<span class="setting-value">50-70 px/seg (lectura natural sin parecer robot)</span>
-								</div>
-								<div class="setting-item">
-									<span class="setting-label">📏 Tamaño fuente:</span>
-									<span class="setting-value">38-42px (legible a distancia del monitor)</span>
-								</div>
-								<div class="setting-item">
-									<span class="setting-label">📐 Interlineado:</span>
-									<span class="setting-value">1.7-1.8 (espaciado cómodo para los ojos)</span>
-								</div>
-								<div class="setting-item">
-									<span class="setting-label">🔄 Modo espejo:</span>
-									<span class="setting-value">Activado para cámara frontal / desactivado para trasera</span>
-								</div>
-								<div class="setting-item">
-									<span class="setting-label">🎯 Focus mode:</span>
-									<span class="setting-value">Activado (resalta la línea que estás leyendo)</span>
-								</div>
-								<div class="setting-item">
-									<span class="setting-label">🎯 Auto-centrar:</span>
-									<span class="setting-value">Activado siempre</span>
-								</div>
-								<div class="setting-item">
-									<span class="setting-label">⏱️ Countdown:</span>
-									<span class="setting-value">3 segundos (te da tiempo de prepararte)</span>
-								</div>
+								<div class="setting-item"><span class="setting-label">🐢 Velocidad:</span><span class="setting-value">50-70 px/seg</span></div>
+								<div class="setting-item"><span class="setting-label">📏 Tamaño fuente:</span><span class="setting-value">38-42px</span></div>
+								<div class="setting-item"><span class="setting-label">📐 Interlineado:</span><span class="setting-value">1.7-1.8</span></div>
+								<div class="setting-item"><span class="setting-label">🔄 Modo espejo:</span><span class="setting-value">Activado (Cámara Frontal)</span></div>
+								<div class="setting-item"><span class="setting-label">🎯 Focus mode:</span><span class="setting-value">Activado (resalta la línea actual)</span></div>
+								<div class="setting-item"><span class="setting-label">⏱️ Countdown:</span><span class="setting-value">3 segundos</span></div>
 							</div>
-							<button class="btn-youtube-apply" on:click={() => { applyYouTubeSettings(); helpTab = 'quickstart'; }}>
-								✨ Aplicar ajustes YouTube
-							</button>
+							<button class="btn-youtube-apply" on:click={() => { applyYouTubeSettings(); helpTab = 'quickstart'; }}>✨ Aplicar ajustes YouTube</button>
 						</div>
 					{:else if helpTab === 'shortcuts'}
 						<div class="tab-panel shortcuts-panel">
@@ -717,12 +709,10 @@
 								<div class="shortcut-row"><span class="shortcut-key">Espacio / Enter</span><span class="shortcut-desc">Play / Pausa</span></div>
 								<div class="shortcut-row"><span class="shortcut-key">R</span><span class="shortcut-desc">Reiniciar desde el inicio</span></div>
 								<div class="shortcut-row"><span class="shortcut-key">↑ / ↓</span><span class="shortcut-desc">Ajustar velocidad ±10</span></div>
-								<div class="shortcut-row"><span class="shortcut-key">Shift + ↑ / ↓</span><span class="shortcut-desc">Ajustar velocidad ±1 (preciso)</span></div>
-								<div class="shortcut-row"><span class="shortcut-key">[ / ]</span><span class="shortcut-desc">Cambiar tamaño de fuente</span></div>
 								<div class="shortcut-row"><span class="shortcut-key">M</span><span class="shortcut-desc">Activar/desactivar modo espejo</span></div>
 								<div class="shortcut-row"><span class="shortcut-key">F</span><span class="shortcut-desc">Activar/desactivar Focus Mode</span></div>
 								<div class="shortcut-row"><span class="shortcut-key">X</span><span class="shortcut-desc">Pantalla completa</span></div>
-								<div class="shortcut-row"><span class="shortcut-key">L</span><span class="shortcut-desc">Modo limpio (oculta todo excepto texto)</span></div>
+								<div class="shortcut-row"><span class="shortcut-key">L</span><span class="shortcut-desc">Modo limpio (oculta controles)</span></div>
 							</div>
 						</div>
 					{:else if helpTab === 'tips'}
@@ -731,38 +721,11 @@
 							<div class="tips-list">
 								<div class="tip-item-pro">
 									<span class="tip-number">1</span>
-									<div class="tip-content">
-										<strong>Practica el guion 2-3 veces antes de grabar</strong>
-										<p>Familiarízate con el texto para una lectura más natural y fluida</p>
-									</div>
+									<div class="tip-content"><strong>Motor Inteligente</strong><p>Pega tu guion sin miedo, el botón "Auto-Organizar" estructura todo en párrafos legibles.</p></div>
 								</div>
 								<div class="tip-item-pro">
 									<span class="tip-number">2</span>
-									<div class="tip-content">
-										<strong>Usa párrafos cortos de 2-3 líneas</strong>
-										<p>Facilita la lectura y evita perder el hilo de tu discurso</p>
-									</div>
-								</div>
-								<div class="tip-item-pro">
-									<span class="tip-number">3</span>
-									<div class="tip-content">
-										<strong>Mira a la cámara, no al texto</strong>
-										<p>Posiciona el teleprompter cerca de la cámara y usa visión periférica</p>
-									</div>
-								</div>
-								<div class="tip-item-pro">
-									<span class="tip-number">4</span>
-									<div class="tip-content">
-										<strong>Ajusta la velocidad ideal para ti</strong>
-										<p>No debes esperar al texto ni correr detrás de él. Encuentra tu ritmo natural</p>
-									</div>
-								</div>
-								<div class="tip-item-pro">
-									<span class="tip-number">5</span>
-									<div class="tip-content">
-										<strong>Usa el Focus Mode para grabaciones largas</strong>
-										<p>Resalta la línea actual y reduce la fatiga visual durante sesiones extensas</p>
-									</div>
+									<div class="tip-content"><strong>Mira a la cámara, no al texto</strong><p>Posiciona el teleprompter cerca de la cámara y usa visión periférica.</p></div>
 								</div>
 							</div>
 						</div>
@@ -778,17 +741,20 @@
 
 	<div class="teleprompter-header">
 		<div>
-			<h1 class="teleprompter-title">Teleprompter</h1>
-			<p class="teleprompter-subtitle">Tu estudio profesional de lectura en pantalla</p>
+			<h1 class="teleprompter-title">Teleprompter Pro</h1>
+			<p class="teleprompter-subtitle">Renderizado por GPU · Cero Tirones</p>
 			<div class="status-row">
 				<div class="status-indicator" style={`background-color: ${getStatusColor()}`}></div>
-				<p class="teleprompter-status">{getStatus()}</p>
+				<p class="teleprompter-status">{isPlaying ? "Al aire 🔴" : isCountingDown ? "Cuenta regresiva..." : progress >= 0.99 ? "Fin de guion ✓" : progress > 0 ? "En pausa ⏸" : "En línea"}</p>
 				{#if wordCount > 0}
 					<span class="word-count">· {wordCount} palabras · {readingTimeLabel}</span>
 				{/if}
 			</div>
 		</div>
 		<div class="teleprompter-header-actions">
+			<button class="btn-format premium-glow" on:click={() => autoFormatScript()} title="Convierte guiones densos en párrafos perfectos para lectura">
+				✨ Auto-Organizar
+			</button>
 			<button class="btn-help" on:click={() => (showOnboarding = true)} title="Ver tutorial">
 				<span class="help-icon">?</span><span class="help-badge">Ayuda</span>
 			</button>
@@ -796,10 +762,10 @@
 				{showControls ? "Ocultar controles" : "Mostrar controles"}
 			</button>
 			<button class="btn-plain" on:click={toggleFullscreen}>
-				{isFullscreen ? "Salir pantalla completa" : "Pantalla completa (X)"}
+				{isFullscreen ? "Salir Fullscreen" : "Fullscreen (X)"}
 			</button>
 			<button class="btn-plain" class:active={ultraClean} on:click={() => { ultraClean = !ultraClean; setTimeout(calculateMetrics, 300); }}>
-				{ultraClean ? "Salir modo limpio" : "Modo limpio (L)"}
+				Modo Limpio (L)
 			</button>
 		</div>
 	</div>
@@ -808,27 +774,24 @@
 		<div class="mobile-tip-banner">
 			<div class="mobile-tip-content">
 				<span class="mobile-tip-icon">💡</span>
-				<p>Para una experiencia completa, usa una pantalla más grande. <strong>👆 Toca</strong> para pausar · <strong>👆👆</strong> pantalla completa</p>
+				<p><strong>👆 Toca</strong> la pantalla para pausar · <strong>👆👆</strong> doble toque para fullscreen.</p>
 			</div>
-			<button class="mobile-tip-close" on:click={() => showMobileBanner = false} aria-label="Cerrar">✕</button>
+			<button class="mobile-tip-close" on:click={() => showMobileBanner = false}>✕</button>
 		</div>
 	{/if}
 
 	<div class="teleprompter-panel">
 		<div class="script-manager">
-			<label for="script-selector" class="manager-label">Guion guardado:</label>
 			<div class="script-controls">
-				<select id="script-selector" bind:value={currentScript} on:change={(e) => { const id = (e.target as HTMLSelectElement).value; if (id) loadScript(id); }}>
+				<select bind:value={currentScript} on:change={(e) => { const id = (e.target as HTMLSelectElement).value; if (id) loadScript(id); }}>
 					<option value="">-- Nuevo guion --</option>
 					{#each scripts as script}
-						<option value={script.id}>{script.name} · {formatDateTime(script.updatedAt)}</option>
+						<option value={script.id}>{script.name} · {new Date(script.updatedAt).toLocaleDateString()}</option>
 					{/each}
 				</select>
 				<button class="btn-icon" on:click={saveCurrentScript} title="Guardar guion actual">💾</button>
 				<button class="btn-icon" on:click={newScript} title="Nuevo guion">➕</button>
-				{#if currentScript}
-					<button class="btn-icon" on:click={() => deleteScript(currentScript!)} title="Eliminar guion">🗑️</button>
-				{/if}
+				{#if currentScript}<button class="btn-icon" on:click={() => deleteScript(currentScript!)} title="Eliminar">🗑️</button>{/if}
 			</div>
 		</div>
 
@@ -836,7 +799,7 @@
 			class="teleprompter-input no-trigger"
 			bind:value={text}
 			rows={6}
-			placeholder="Escribe o pega aquí tu guion..."
+			placeholder="Escribe o pega aquí tu guion... (El sistema auto-organizará bloques gigantes)"
 		></textarea>
 
 		{#if showControls}
@@ -844,25 +807,24 @@
 				<div class="controls-grid">
 					<div class="control-group">
 						<div class="control-label-row">
-							<label title="Velocidad ideal: 40-80 px/seg para lectura natural">Velocidad</label>
+							<label>Velocidad</label>
 							<span class="speed-label">{getSpeedLabel(speed)}</span>
 						</div>
 						<input type="range" class="custom-range" min={speedMin} max={speedMax} step="1" bind:value={speed} />
 						<div class="control-value-row">
 							<span class="control-value">{speed} px/seg</span>
-							<div class="speed-indicator-bar" style={`width: ${((speed - speedMin) / (speedMax - speedMin)) * 100}%; background-color: ${getSpeedColor()}`}></div>
 						</div>
 					</div>
 
 					<div class="control-group">
 						<div class="control-label-row"><label>Tamaño</label></div>
-						<input type="range" class="custom-range" min="22" max="64" bind:value={fontSize} on:input={calculateMetrics} />
+						<input type="range" class="custom-range" min="22" max="72" bind:value={fontSize} on:input={calculateMetrics} />
 						<div class="control-value-row"><span class="control-value">{fontSize}px</span></div>
 					</div>
 
 					<div class="control-group">
 						<div class="control-label-row"><label>Interlineado</label></div>
-						<input type="range" class="custom-range" min="1.2" max="2.2" step="0.05" bind:value={lineHeight} on:input={calculateMetrics} />
+						<input type="range" class="custom-range" min="1.2" max="2.5" step="0.05" bind:value={lineHeight} on:input={calculateMetrics} />
 						<div class="control-value-row"><span class="control-value">{lineHeight.toFixed(2)}</span></div>
 					</div>
 
@@ -871,7 +833,6 @@
 						<select class="countdown-select" bind:value={countdownDuration}>
 							<option value={0}>Sin countdown</option>
 							<option value={1}>1 segundo</option>
-							<option value={2}>2 segundos</option>
 							<option value={3}>3 segundos</option>
 							<option value={5}>5 segundos</option>
 						</select>
@@ -879,25 +840,25 @@
 				</div>
 
 				<div class="control-group toggles">
-					<label>Opciones</label>
+					<label>Opciones Premium</label>
 					<div class="toggle-grid">
-						<button class="toggle-btn" class:active={isMirror} on:click={() => (isMirror = !isMirror)} title="Activa para cámaras frontales que invierten la imagen">Espejo (M)</button>
-						<button class="toggle-btn" class:active={autoCenter} on:click={() => { autoCenter = !autoCenter; setTimeout(calculateMetrics, 50); }} title="Mantiene el texto centrado en la pantalla">Auto-centrar</button>
-						<button class="toggle-btn" class:active={smooth} on:click={() => (smooth = !smooth)} title="Transición suave entre velocidades">Suave</button>
-						<button class="toggle-btn" class:active={glow} on:click={() => (glow = !glow)} title="Efecto de brillo en la pantalla">Glow</button>
-						<button class="toggle-btn" class:active={focusMode} on:click={() => { focusMode = !focusMode; setTimeout(calculateMetrics, 50); }} title="Resalta la línea actual y oscurece el resto">Focus (F)</button>
+						<button class="toggle-btn" class:active={isMirror} on:click={() => (isMirror = !isMirror)}>Espejo (M)</button>
+						<button class="toggle-btn" class:active={autoCenter} on:click={() => { autoCenter = !autoCenter; setTimeout(calculateMetrics, 50); }}>Auto-centrar</button>
+						<button class="toggle-btn" class:active={smooth} on:click={() => (smooth = !smooth)}>Transición Suave</button>
+						<button class="toggle-btn" class:active={glow} on:click={() => (glow = !glow)}>Efecto Glow</button>
+						<button class="toggle-btn" class:active={focusMode} on:click={() => { focusMode = !focusMode; setTimeout(calculateMetrics, 50); }}>Focus Mode (F)</button>
 						<button class="toggle-btn" class:active={dimOutside} on:click={() => (dimOutside = !dimOutside)}>Oscurecer bordes</button>
 					</div>
 				</div>
 
 				<div class="control-actions">
 					<button class="btn-play" on:click={toggle}>
-						{isPlaying ? "⏸ Pausar" : isCountingDown ? "⏹ Cancelar" : "▶ Reproducir"}
+						{isPlaying ? "⏸ Pausar" : isCountingDown ? "⏹ Cancelar" : "▶ Reproducir (Espacio)"}
 					</button>
 					<button class="btn-action" on:click={reset}>Reiniciar (R)</button>
 					<button class="btn-action" on:click={clearText}>Vaciar</button>
-					<button class="btn-action" on:click={() => jump(-240)}>↑ Saltar arriba</button>
-					<button class="btn-action" on:click={() => jump(240)}>↓ Saltar abajo</button>
+					<button class="btn-action" on:click={() => jump(-240)}>↑ Subir</button>
+					<button class="btn-action" on:click={() => jump(240)}>↓ Bajar</button>
 				</div>
 			</div>
 		{/if}
@@ -907,21 +868,9 @@
 		<div
 			class="teleprompter-progress-top no-trigger"
 			role="progressbar"
-			aria-valuenow={Math.round(progress * 100)}
-			aria-valuemin="0"
-			aria-valuemax="100"
 			tabindex="0"
-			on:click={(e) => {
-				const rect = e.currentTarget.getBoundingClientRect();
-				const clickX = e.clientX - rect.left;
-				scrollToProgress(clickX / rect.width);
-			}}
-			on:keydown={(e) => {
-				if (e.key === 'Enter' || e.key === ' ') {
-					e.preventDefault();
-					scrollToProgress(0.5);
-				}
-			}}
+			on:click={(e) => { const rect = e.currentTarget.getBoundingClientRect(); scrollToProgress((e.clientX - rect.left) / rect.width); }}
+			on:keydown={(e) => { if (e.key === 'Enter') scrollToProgress(0.5); }}
 		>
 			<div class="progress-bar" style={`width: ${progress * 100}%`}></div>
 			{#if isPlaying || progress > 0}
@@ -931,21 +880,22 @@
 
 		<div class="reading-position-marker"></div>
 
+		<!-- El scroll nativo se desactiva visualmente durante play, asumiendo control el transform de GPU -->
 		<div
 			class="teleprompter-frame"
 			bind:this={scrollContainer}
-			on:scroll={handleScrollEvent}
+			on:scroll={handleNativeScroll}
 			on:wheel={handleWheel}
 			on:click={handleFrameClick}
-			on:touchstart={handleTouchStart}
+			on:touchstart={(e) => { if (isMobile) touchStartY = e.touches[0].clientY; }}
 			on:touchmove={handleTouchMove}
 			style={`padding: ${autoCenter ? "35vh 2rem 50vh" : "2.5rem 2rem"};`}
 			tabindex="-1"
 		>
+			<!-- Inyección de variables CSS para que Svelte no interfiera con la aceleración hardware del style.transform -->
 			<div
 				class="teleprompter-content"
-				class:mirror={isMirror}
-				style={`font-size:${fontSize}px; line-height:${lineHeight}; letter-spacing: 0.01em;`}
+				style={`--fz: ${fontSize}px; --lh: ${lineHeight};`}
 				bind:this={content}
 			>
 				{#each lines as line, index}
@@ -965,1401 +915,206 @@
 		{/if}
 
 		<div class="teleprompter-float no-trigger">
-			<button class="btn-float" on:click={toggle} title={isPlaying ? "Pausar" : "Reproducir"} aria-label={isPlaying ? "Pausar reproducción" : "Iniciar reproducción"}>
-				{isPlaying ? "⏸" : isCountingDown ? "⏹" : "▶"}
-			</button>
-			<button class="btn-float" on:click={() => jump(-120)} title="Saltar arriba" aria-label="Saltar hacia arriba">↑</button>
-			<button class="btn-float" on:click={() => jump(120)} title="Saltar abajo" aria-label="Saltar hacia abajo">↓</button>
+			<button class="btn-float" on:click={toggle}>{isPlaying ? "⏸" : isCountingDown ? "⏹" : "▶"}</button>
+			<button class="btn-float" on:click={() => jump(-120)}>↑</button>
+			<button class="btn-float" on:click={() => jump(120)}>↓</button>
 			{#if isFullscreen}
 				<div class="float-speed-control">
-					<input type="range" class="mini-range" min={speedMin} max={speedMax} step="1" bind:value={speed} aria-label="Control de velocidad" />
+					<input type="range" class="mini-range" min={speedMin} max={speedMax} bind:value={speed} />
 					<span class="mini-speed">{speed}</span>
 				</div>
 			{/if}
-			<button class="btn-float" class:active={isMirror} on:click={() => (isMirror = !isMirror)} title="Espejo" aria-label="Activar o desactivar modo espejo">M</button>
-			<button class="btn-float" on:click={toggleFullscreen} title="Pantalla completa" aria-label="Activar o desactivar pantalla completa">⛶</button>
-		</div>
-
-		<div class="teleprompter-footer">
-			<div class="shortcut">
-				Espacio/Enter = Play · ↑/↓/Page = Saltos · M = Espejo · F = Focus · L = Ultra limpio · R = Reset · X = Fullscreen · Rueda = velocidad · +/- = Velocidad
-			</div>
+			<button class="btn-float" class:active={isMirror} on:click={() => (isMirror = !isMirror)}>M</button>
+			<button class="btn-float" on:click={toggleFullscreen}>⛶</button>
 		</div>
 
 		{#if isCountingDown}
-			<div class="teleprompter-countdown">
-				<span>{countdown}</span>
-			</div>
+			<div class="teleprompter-countdown"><span>{countdown}</span></div>
 		{/if}
 	</div>
 </div>
-
 <style>
-	.teleprompter-wrapper {
-		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-		position: relative;
-		color: #0f172a;
-		transition: all 0.3s ease;
-	}
-
-	:global(.dark) .teleprompter-wrapper,
-	.teleprompter-wrapper.dark {
-		color: #e2e8f0;
-	}
+	.teleprompter-wrapper { display: flex; flex-direction: column; gap: 1.5rem; position: relative; color: #0f172a; transition: all 0.3s ease; }
+	:global(.dark) .teleprompter-wrapper, .teleprompter-wrapper.dark { color: #e2e8f0; }
 
 	.teleprompter-wrapper.clean .teleprompter-header,
-	.teleprompter-wrapper.clean .teleprompter-panel,
-	.teleprompter-wrapper.clean .teleprompter-footer {
-		display: none;
-	}
-
-	.teleprompter-wrapper.clean .teleprompter-screen {
-		height: 70vh;
-	}
-
-	.teleprompter-onboarding-overlay {
-		position: fixed;
-		inset: 0;
-		background: rgba(0, 0, 0, 0.75);
-		backdrop-filter: blur(12px);
-		z-index: 50;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 1.5rem;
-		animation: fadeIn 0.4s ease;
-	}
-
-	.teleprompter-onboarding-card {
-		max-width: 640px;
-		background: rgba(255, 255, 255, 0.98);
-		border-radius: 1.5rem;
-		padding: 2.5rem;
-		box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
-		border: 1px solid rgba(255, 255, 255, 0.2);
-		display: grid;
-		gap: 1.5rem;
-		animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-	}
-
-	:global(.dark) .teleprompter-onboarding-card,
-	.dark .teleprompter-onboarding-card {
-		background: rgba(15, 23, 42, 0.98);
-		border-color: rgba(148, 163, 184, 0.2);
-	}
-
-	.onboarding-step {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		text-align: center;
-		gap: 0.5rem;
-		opacity: 0;
-		animation: fadeInUp 0.5s ease forwards;
-	}
-
-	.onboarding-step:nth-child(1) { animation-delay: 0.1s; }
-	.onboarding-step:nth-child(2) { animation-delay: 0.2s; }
-	.onboarding-step:nth-child(3) { animation-delay: 0.3s; }
-
-	.step-icon {
-		font-size: 2.5rem;
-		margin-bottom: 0.5rem;
-	}
-
-	.onboarding-step h3 {
-		font-size: 1.25rem;
-		font-weight: 700;
-		color: #0f172a;
-	}
-
-	:global(.dark) .onboarding-step h3,
-	.dark .onboarding-step h3 {
-		color: #e2e8f0;
-	}
-
-	.onboarding-step p {
-		color: #475569;
-		line-height: 1.5;
-	}
-
-	:global(.dark) .onboarding-step p,
-	.dark .onboarding-step p {
-		color: #94a3b8;
-	}
-
-	.btn-onboarding {
-		background: linear-gradient(135deg, oklch(0.70 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30)));
-		color: white;
-		border: none;
-		border-radius: 0.75rem;
-		padding: 0.85rem 2rem;
-		font-weight: 700;
-		font-size: 1.05rem;
-		cursor: pointer;
-		transition: transform 0.2s ease, box-shadow 0.3s ease;
-		box-shadow: 0 8px 20px oklch(0.70 0.14 var(--hue) / 0.35);
-		animation: fadeInUp 0.5s ease forwards 0.4s;
-		opacity: 0;
-	}
-
-	.btn-onboarding:hover {
-		transform: translateY(-2px) scale(1.02);
-		box-shadow: 0 12px 28px oklch(0.70 0.14 var(--hue) / 0.45);
-	}
-
-	.btn-onboarding:active {
-		transform: translateY(0) scale(0.98);
-	}
-
-	.teleprompter-onboarding-card.premium {
-		max-width: 800px;
-	}
-
-	.onboarding-header {
-		text-align: center;
-		margin-bottom: 1.5rem;
-	}
-
-	.logo-gradient {
-		font-size: 4rem;
-		margin-bottom: 1rem;
-		animation: scaleIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-	}
-
-	.onboarding-header h2 {
-		font-size: 2rem;
-		font-weight: 800;
-		background: linear-gradient(135deg, oklch(0.70 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30)));
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		background-clip: text;
-		margin-bottom: 0.5rem;
-	}
-
-	.onboarding-header .subtitle {
-		font-size: 1.1rem;
-		color: #64748b;
-		font-weight: 500;
-	}
-
-	:global(.dark) .onboarding-header .subtitle,
-	.dark .onboarding-header .subtitle {
-		color: #94a3b8;
-	}
-
-	.help-tabs {
-		display: flex;
-		gap: 0.5rem;
-		border-bottom: 2px solid oklch(0.90 0.02 var(--hue));
-		margin-bottom: 1.5rem;
-		overflow-x: auto;
-	}
-
-	:global(.dark) .help-tabs,
-	.dark .help-tabs {
-		border-bottom-color: oklch(0.30 0.02 var(--hue));
-	}
-
-	.tab-btn {
-		background: transparent;
-		border: none;
-		padding: 0.75rem 1.25rem;
-		font-size: 0.95rem;
-		font-weight: 600;
-		color: #64748b;
-		cursor: pointer;
-		transition: all 0.2s ease;
-		border-bottom: 3px solid transparent;
-		white-space: nowrap;
-	}
-
-	.tab-btn:hover {
-		color: oklch(0.60 0.14 var(--hue));
-	}
-
-	.tab-btn.active {
-		color: oklch(0.60 0.14 var(--hue));
-		border-bottom-color: oklch(0.60 0.14 var(--hue));
-	}
-
-	:global(.dark) .tab-btn,
-	.dark .tab-btn {
-		color: #94a3b8;
-	}
-
-	:global(.dark) .tab-btn:hover,
-	.dark .tab-btn:hover,
-	:global(.dark) .tab-btn.active,
-	.dark .tab-btn.active {
-		color: oklch(0.70 0.14 var(--hue));
-		border-bottom-color: oklch(0.70 0.14 var(--hue));
-	}
-
-	.tab-content {
-		min-height: 300px;
-		animation: fadeIn 0.3s ease;
-	}
-
-	.tab-panel {
-		animation: fadeInUp 0.3s ease;
-	}
-
-	.tab-desc {
-		color: #64748b;
-		margin-bottom: 1.5rem;
-		line-height: 1.6;
-	}
-
-	:global(.dark) .tab-desc,
-	.dark .tab-desc {
-		color: #94a3b8;
-	}
-
-	.youtube-settings h3 {
-		font-size: 1.5rem;
-		font-weight: 700;
-		color: #0f172a;
-		margin-bottom: 1rem;
-	}
-
-	:global(.dark) .youtube-settings h3,
-	.dark .youtube-settings h3 {
-		color: #e2e8f0;
-	}
-
-	.settings-list {
-		display: grid;
-		gap: 0.75rem;
-		margin-bottom: 1.5rem;
-	}
-
-	.setting-item {
-		display: flex;
-		gap: 0.75rem;
-		padding: 0.75rem;
-		background: oklch(0.97 0.01 var(--hue));
-		border-radius: 0.5rem;
-		border-left: 3px solid oklch(0.70 0.14 var(--hue));
-	}
-
-	:global(.dark) .setting-item,
-	.dark .setting-item {
-		background: oklch(0.20 0.02 var(--hue));
-	}
-
-	.setting-label {
-		font-weight: 700;
-		color: #0f172a;
-		min-width: 140px;
-	}
-
-	:global(.dark) .setting-label,
-	.dark .setting-label {
-		color: #e2e8f0;
-	}
-
-	.setting-value {
-		color: #475569;
-		line-height: 1.5;
-	}
-
-	:global(.dark) .setting-value,
-	.dark .setting-value {
-		color: #94a3b8;
-	}
-
-	.btn-youtube-apply {
-		width: 100%;
-		background: linear-gradient(135deg, #FF0000, #CC0000);
-		color: white;
-		border: none;
-		border-radius: 0.75rem;
-		padding: 1rem 2rem;
-		font-weight: 700;
-		font-size: 1.05rem;
-		cursor: pointer;
-		transition: transform 0.2s ease, box-shadow 0.3s ease;
-		box-shadow: 0 8px 20px rgba(255, 0, 0, 0.3);
-	}
-
-	.btn-youtube-apply:hover {
-		transform: translateY(-2px) scale(1.02);
-		box-shadow: 0 12px 28px rgba(255, 0, 0, 0.4);
-	}
-
-	.btn-youtube-apply:active {
-		transform: translateY(0) scale(0.98);
-	}
-
-	.shortcuts-panel h3 {
-		font-size: 1.5rem;
-		font-weight: 700;
-		color: #0f172a;
-		margin-bottom: 1.5rem;
-	}
-
-	:global(.dark) .shortcuts-panel h3,
-	.dark .shortcuts-panel h3 {
-		color: #e2e8f0;
-	}
-
-	.shortcuts-table {
-		display: grid;
-		gap: 0.5rem;
-	}
-
-	.shortcut-row {
-		display: grid;
-		grid-template-columns: 180px 1fr;
-		gap: 1rem;
-		padding: 0.75rem;
-		background: oklch(0.97 0.01 var(--hue));
-		border-radius: 0.5rem;
-		align-items: center;
-	}
-
-	:global(.dark) .shortcut-row,
-	.dark .shortcut-row {
-		background: oklch(0.20 0.02 var(--hue));
-	}
-
-	.shortcut-key {
-		font-family: 'Monaco', 'Courier New', monospace;
-		font-weight: 700;
-		color: oklch(0.60 0.14 var(--hue));
-		background: oklch(0.94 0.01 var(--hue));
-		padding: 0.35rem 0.75rem;
-		border-radius: 0.375rem;
-		font-size: 0.9rem;
-		text-align: center;
-	}
-
-	:global(.dark) .shortcut-key,
-	.dark .shortcut-key {
-		background: oklch(0.25 0.02 var(--hue));
-		color: oklch(0.70 0.14 var(--hue));
-	}
-
-	.shortcut-desc {
-		color: #475569;
-		font-size: 0.95rem;
-	}
-
-	:global(.dark) .shortcut-desc,
-	.dark .shortcut-desc {
-		color: #94a3b8;
-	}
-
-	.tips-panel h3 {
-		font-size: 1.5rem;
-		font-weight: 700;
-		color: #0f172a;
-		margin-bottom: 1.5rem;
-	}
-
-	:global(.dark) .tips-panel h3,
-	.dark .tips-panel h3 {
-		color: #e2e8f0;
-	}
-
-	.tips-list {
-		display: grid;
-		gap: 1rem;
-	}
-
-	.tip-item-pro {
-		display: flex;
-		gap: 1rem;
-		padding: 1rem;
-		background: oklch(0.97 0.01 var(--hue));
-		border-radius: 0.75rem;
-		border-left: 4px solid oklch(0.70 0.14 var(--hue));
-	}
-
-	:global(.dark) .tip-item-pro,
-	.dark .tip-item-pro {
-		background: oklch(0.20 0.02 var(--hue));
-	}
-
-	.tip-number {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		min-width: 2rem;
-		height: 2rem;
-		background: oklch(0.70 0.14 var(--hue));
-		color: white;
-		border-radius: 50%;
-		font-weight: 800;
-		font-size: 1rem;
-	}
-
-	.tip-content strong {
-		display: block;
-		color: #0f172a;
-		margin-bottom: 0.35rem;
-		font-weight: 700;
-	}
-
-	:global(.dark) .tip-content strong,
-	.dark .tip-content strong {
-		color: #e2e8f0;
-	}
-
-	.tip-content p {
-		color: #64748b;
-		line-height: 1.5;
-		font-size: 0.95rem;
-		margin: 0;
-	}
-
-	:global(.dark) .tip-content p,
-	.dark .tip-content p {
-		color: #94a3b8;
-	}
-
-	.premium-btn {
-		margin-top: 1rem;
-	}
-
-	.teleprompter-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-		flex-wrap: wrap;
-	}
-
-	.teleprompter-title {
-		font-size: 2rem;
-		font-weight: 700;
-		background: linear-gradient(135deg, oklch(0.70 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30)));
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		background-clip: text;
-		margin-bottom: 0.25rem;
-	}
-
-	.teleprompter-subtitle {
-		color: #475569;
-		font-size: 1rem;
-		line-height: 1.4;
-	}
-
-	:global(.dark) .teleprompter-subtitle,
-	.dark .teleprompter-subtitle {
-		color: #94a3b8;
-	}
-
-	.status-row {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		margin-top: 0.5rem;
-	}
-
-	.status-indicator {
-		width: 8px;
-		height: 8px;
-		border-radius: 50%;
-		transition: background-color 0.3s ease;
-		animation: pulse 2s ease-in-out infinite;
-	}
-
-	.teleprompter-status {
-		color: #64748b;
-		font-size: 0.9rem;
-		font-weight: 600;
-	}
-
-	:global(.dark) .teleprompter-status,
-	.dark .teleprompter-status {
-		color: #94a3b8;
-	}
-
-	.teleprompter-header-actions {
-		display: flex;
-		gap: 0.75rem;
-		flex-wrap: wrap;
-		align-items: center;
-	}
-
-	.btn-help {
-		position: relative;
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.5rem 1rem;
-		background: oklch(0.95 0.02 var(--hue));
-		color: oklch(0.50 0.12 var(--hue));
-		border: 1px solid oklch(0.85 0.05 var(--hue));
-		border-radius: 999px;
-		font-weight: 600;
-		font-size: 0.9rem;
-		cursor: pointer;
-		transition: all 0.2s ease;
-	}
-
-	:global(.dark) .btn-help,
-	.dark .btn-help {
-		background: oklch(0.30 0.03 var(--hue));
-		color: oklch(0.75 0.14 var(--hue));
-		border-color: oklch(0.40 0.05 var(--hue));
-	}
-
-	.btn-help:hover {
-		transform: translateY(-1px);
-		box-shadow: 0 4px 12px oklch(0.70 0.14 var(--hue) / 0.2);
-	}
-
-	.help-icon {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 20px;
-		height: 20px;
-		border-radius: 50%;
-		background: oklch(0.70 0.14 var(--hue));
-		color: white;
-		font-weight: 700;
-		font-size: 0.85rem;
-	}
-
-	.help-badge {
-		font-size: 0.85rem;
-	}
-
-	.btn-plain {
-		padding: 0.5rem 1rem;
-		background: transparent;
-		color: #475569;
-		border: 1px solid #cbd5e1;
-		border-radius: 0.5rem;
-		font-size: 0.9rem;
-		font-weight: 500;
-		cursor: pointer;
-		transition: all 0.2s ease;
-	}
-
-	:global(.dark) .btn-plain,
-	.dark .btn-plain {
-		color: #cbd5e1;
-		border-color: #475569;
-	}
-
-	.btn-plain:hover {
-		background: oklch(0.95 0.02 var(--hue));
-		border-color: oklch(0.80 0.06 var(--hue));
-		color: oklch(0.50 0.12 var(--hue));
-	}
-
-	:global(.dark) .btn-plain:hover,
-	.dark .btn-plain:hover {
-		background: oklch(0.25 0.03 var(--hue));
-		border-color: oklch(0.45 0.08 var(--hue));
-		color: oklch(0.75 0.14 var(--hue));
-	}
-
-	.btn-plain.active {
-		background: oklch(0.92 0.04 var(--hue));
-		border-color: oklch(0.75 0.10 var(--hue));
-		color: oklch(0.55 0.14 var(--hue));
-	}
-
-	:global(.dark) .btn-plain.active,
-	.dark .btn-plain.active {
-		background: oklch(0.28 0.04 var(--hue));
-		border-color: oklch(0.50 0.10 var(--hue));
-		color: oklch(0.75 0.14 var(--hue));
-	}
-
-	.teleprompter-panel {
-		background: rgba(255, 255, 255, 0.8);
-		backdrop-filter: blur(10px);
-		border-radius: 1.25rem;
-		padding: 1.5rem;
-		border: 1px solid rgba(0, 0, 0, 0.08);
-		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-		transition: all 0.3s ease;
-	}
-
-	:global(.dark) .teleprompter-panel,
-	.dark .teleprompter-panel {
-		background: rgba(30, 41, 59, 0.8);
-		border-color: rgba(148, 163, 184, 0.15);
-		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-	}
-
-	.script-manager {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-		margin-bottom: 1rem;
-	}
-
-	.manager-label {
-		font-weight: 600;
-		font-size: 0.9rem;
-		color: #334155;
-	}
-
-	:global(.dark) .manager-label,
-	.dark .manager-label {
-		color: #cbd5e1;
-	}
-
-	.script-controls {
-		display: flex;
-		gap: 0.5rem;
-		flex-wrap: wrap;
-	}
-
-	.script-controls select {
-		flex: 1;
-		min-width: 200px;
-		padding: 0.6rem 1rem;
-		background: white;
-		color: #0f172a;
-		border: 1px solid #cbd5e1;
-		border-radius: 0.5rem;
-		font-size: 0.9rem;
-		cursor: pointer;
-		transition: all 0.2s ease;
-	}
-
-	:global(.dark) .script-controls select,
-	.dark .script-controls select {
-		background: #1e293b;
-		color: #e2e8f0;
-		border-color: #475569;
-	}
-
-	.script-controls select:hover {
-		border-color: oklch(0.70 0.14 var(--hue));
-	}
-
-	.script-controls select:focus {
-		outline: none;
-		border-color: oklch(0.70 0.14 var(--hue));
-		box-shadow: 0 0 0 3px oklch(0.70 0.14 var(--hue) / 0.1);
-	}
-
-	.btn-icon {
-		padding: 0.6rem 0.9rem;
-		background: oklch(0.95 0.02 var(--hue));
-		border: 1px solid #cbd5e1;
-		border-radius: 0.5rem;
-		font-size: 1.1rem;
-		cursor: pointer;
-		transition: all 0.2s ease;
-	}
-
-	:global(.dark) .btn-icon,
-	.dark .btn-icon {
-		background: oklch(0.25 0.03 var(--hue));
-		border-color: #475569;
-	}
-
-	.btn-icon:hover {
-		transform: translateY(-1px);
-		background: oklch(0.70 0.14 var(--hue));
-		border-color: oklch(0.70 0.14 var(--hue));
-		box-shadow: 0 4px 12px oklch(0.70 0.14 var(--hue) / 0.2);
-	}
-
-	.teleprompter-input {
-		width: 100%;
-		min-height: 120px;
-		padding: 1rem;
-		background: white;
-		color: #0f172a;
-		border: 1px solid #cbd5e1;
-		border-radius: 0.75rem;
-		font-family: inherit;
-		font-size: 1rem;
-		line-height: 1.5;
-		resize: vertical;
-		transition: all 0.2s ease;
-		margin-bottom: 1rem;
-	}
-
-	:global(.dark) .teleprompter-input,
-	.dark .teleprompter-input {
-		background: #1e293b;
-		color: #e2e8f0;
-		border-color: #475569;
-	}
-
-	.teleprompter-input::placeholder {
-		color: #94a3b8;
-	}
-
-	:global(.dark) .teleprompter-input::placeholder,
-	.dark .teleprompter-input::placeholder {
-		color: #64748b;
-	}
-
-	.teleprompter-input:focus {
-		outline: none;
-		border-color: oklch(0.70 0.14 var(--hue));
-		box-shadow: 0 0 0 3px oklch(0.70 0.14 var(--hue) / 0.1);
-	}
-
-	.teleprompter-controls {
-		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-	}
-
-	.controls-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-		gap: 1.25rem;
-	}
-
-	@media (min-width: 768px) {
-		.controls-grid {
-			grid-template-columns: repeat(2, 1fr);
-		}
-	}
-
-	.control-group {
-		background: rgba(255, 255, 255, 0.5);
-		border: 1px solid rgba(0, 0, 0, 0.06);
-		border-radius: 0.75rem;
-		padding: 1rem;
-		transition: all 0.2s ease;
-	}
-
-	:global(.dark) .control-group,
-	.dark .control-group {
-		background: rgba(15, 23, 42, 0.4);
-		border-color: rgba(148, 163, 184, 0.1);
-	}
-
-	.control-group:hover {
-		background: rgba(255, 255, 255, 0.8);
-		border-color: oklch(0.85 0.06 var(--hue));
-	}
-
-	:global(.dark) .control-group:hover,
-	.dark .control-group:hover {
-		background: rgba(15, 23, 42, 0.6);
-		border-color: oklch(0.45 0.08 var(--hue));
-	}
-
-	.control-label-row {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 0.75rem;
-	}
-
-	.control-group label {
-		font-weight: 600;
-		font-size: 0.9rem;
-		color: #334155;
-	}
-
-	:global(.dark) .control-group label,
-	.dark .control-group label {
-		color: #cbd5e1;
-	}
-
-	.speed-label {
-		font-size: 0.85rem;
-		font-weight: 500;
-		color: oklch(0.60 0.12 var(--hue));
-		padding: 0.15rem 0.5rem;
-		background: oklch(0.95 0.03 var(--hue));
-		border-radius: 999px;
-	}
-
-	:global(.dark) .speed-label,
-	.dark .speed-label {
-		color: oklch(0.75 0.14 var(--hue));
-		background: oklch(0.25 0.04 var(--hue));
-	}
-
-	.control-value-row {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-top: 0.5rem;
-	}
-
-	.control-value {
-		font-size: 0.9rem;
-		font-weight: 600;
-		color: #475569;
-	}
-
-	:global(.dark) .control-value,
-	.dark .control-value {
-		color: #94a3b8;
-	}
-
-	.speed-indicator-bar {
-		height: 4px;
-		border-radius: 999px;
-		transition: all 0.3s ease;
-		max-width: 60px;
-	}
-
-	.custom-range {
-		width: 100%;
-		height: 6px;
-		-webkit-appearance: none;
-		appearance: none;
-		background: linear-gradient(to right, #cbd5e1 0%, #cbd5e1 100%);
-		border-radius: 999px;
-		outline: none;
-		cursor: pointer;
-		transition: all 0.2s ease;
-	}
-
-	:global(.dark) .custom-range,
-	.dark .custom-range {
-		background: linear-gradient(to right, #475569 0%, #475569 100%);
-	}
-
-	.custom-range::-webkit-slider-thumb {
-		-webkit-appearance: none;
-		appearance: none;
-		width: 20px;
-		height: 20px;
-		border-radius: 50%;
-		background: oklch(0.70 0.14 var(--hue));
-		cursor: pointer;
-		border: 3px solid white;
-		box-shadow: 0 2px 8px oklch(0.70 0.14 var(--hue) / 0.3);
-		transition: all 0.2s ease;
-	}
-
-	:global(.dark) .custom-range::-webkit-slider-thumb,
-	.dark .custom-range::-webkit-slider-thumb {
-		border-color: #1e293b;
-	}
-
-	.custom-range::-webkit-slider-thumb:hover {
-		transform: scale(1.15);
-		box-shadow: 0 4px 12px oklch(0.70 0.14 var(--hue) / 0.4);
-	}
-
-	.custom-range::-moz-range-thumb {
-		width: 20px;
-		height: 20px;
-		border-radius: 50%;
-		background: oklch(0.70 0.14 var(--hue));
-		cursor: pointer;
-		border: 3px solid white;
-		box-shadow: 0 2px 8px oklch(0.70 0.14 var(--hue) / 0.3);
-		transition: all 0.2s ease;
-	}
-
-	:global(.dark) .custom-range::-moz-range-thumb,
-	.dark .custom-range::-moz-range-thumb {
-		border-color: #1e293b;
-	}
-
-	.custom-range::-moz-range-thumb:hover {
-		transform: scale(1.15);
-		box-shadow: 0 4px 12px oklch(0.70 0.14 var(--hue) / 0.4);
-	}
-
-	.countdown-select {
-		width: 100%;
-		padding: 0.6rem 1rem;
-		background: white;
-		color: #0f172a;
-		border: 1px solid #cbd5e1;
-		border-radius: 0.5rem;
-		font-size: 0.9rem;
-		cursor: pointer;
-		transition: all 0.2s ease;
-	}
-
-	:global(.dark) .countdown-select,
-	.dark .countdown-select {
-		background: #1e293b;
-		color: #e2e8f0;
-		border-color: #475569;
-	}
-
-	.countdown-select:hover {
-		border-color: oklch(0.70 0.14 var(--hue));
-	}
-
-	.countdown-select:focus {
-		outline: none;
-		border-color: oklch(0.70 0.14 var(--hue));
-		box-shadow: 0 0 0 3px oklch(0.70 0.14 var(--hue) / 0.1);
-	}
-
-	.control-group.toggles {
-		grid-column: 1 / -1;
-	}
-
-	.toggle-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-		gap: 0.75rem;
-	}
-
-	.toggle-btn {
-		padding: 0.65rem 1rem;
-		background: white;
-		color: #475569;
-		border: 1px solid #cbd5e1;
-		border-radius: 999px;
-		font-size: 0.9rem;
-		font-weight: 500;
-		cursor: pointer;
-		transition: all 0.2s ease;
-		text-align: center;
-	}
-
-	:global(.dark) .toggle-btn,
-	.dark .toggle-btn {
-		background: #1e293b;
-		color: #cbd5e1;
-		border-color: #475569;
-	}
-
-	.toggle-btn:hover {
-		transform: translateY(-1px);
-		border-color: oklch(0.70 0.14 var(--hue));
-		box-shadow: 0 4px 12px oklch(0.70 0.14 var(--hue) / 0.15);
-	}
-
-	.toggle-btn.active {
-		background: oklch(0.70 0.14 var(--hue));
-		color: white;
-		border-color: oklch(0.70 0.14 var(--hue));
-		box-shadow: 0 4px 12px oklch(0.70 0.14 var(--hue) / 0.3);
-	}
-
-	:global(.dark) .toggle-btn.active,
-	.dark .toggle-btn.active {
-		background: oklch(0.60 0.14 var(--hue));
-		color: white;
-		border-color: oklch(0.60 0.14 var(--hue));
-	}
-
-	.toggle-btn.active:hover {
-		background: oklch(0.65 0.16 var(--hue));
-	}
-
-	.control-actions {
-		display: flex;
-		gap: 0.75rem;
-		flex-wrap: wrap;
-	}
-
-	.btn-play {
-		flex: 1;
-		min-width: 180px;
-		padding: 1rem 1.5rem;
-		background: linear-gradient(135deg, oklch(0.70 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30)));
-		color: white;
-		border: none;
-		border-radius: 0.75rem;
-		font-size: 1.05rem;
-		font-weight: 700;
-		cursor: pointer;
-		transition: all 0.2s ease;
-		box-shadow: 0 4px 16px oklch(0.70 0.14 var(--hue) / 0.3);
-	}
-
-	.btn-play:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 6px 20px oklch(0.70 0.14 var(--hue) / 0.4);
-	}
-
-	.btn-play:active {
-		transform: translateY(0);
-	}
-
-	.btn-action {
-		padding: 0.75rem 1.25rem;
-		background: white;
-		color: #475569;
-		border: 1px solid #cbd5e1;
-		border-radius: 0.5rem;
-		font-size: 0.9rem;
-		font-weight: 500;
-		cursor: pointer;
-		transition: all 0.2s ease;
-	}
-
-	:global(.dark) .btn-action,
-	.dark .btn-action {
-		background: #1e293b;
-		color: #cbd5e1;
-		border-color: #475569;
-	}
-
-	.btn-action:hover {
-		background: oklch(0.95 0.02 var(--hue));
-		border-color: oklch(0.80 0.06 var(--hue));
-		color: oklch(0.50 0.12 var(--hue));
-		transform: translateY(-1px);
-	}
-
-	:global(.dark) .btn-action:hover,
-	.dark .btn-action:hover {
-		background: oklch(0.25 0.03 var(--hue));
-		border-color: oklch(0.45 0.08 var(--hue));
-		color: oklch(0.75 0.14 var(--hue));
-	}
-
-	.teleprompter-screen {
-		position: relative;
-		background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-		border-radius: 1.25rem;
-		overflow: hidden;
-		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
-		height: 65vh;
-		min-height: 500px;
-		transition: all 0.3s ease;
-	}
-
-	:global(.dark) .teleprompter-screen,
-	.dark .teleprompter-screen {
-		background: linear-gradient(135deg, #0f172a, #1e293b);
-		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(148, 163, 184, 0.1);
-	}
-
-	@media (max-width: 768px) {
-		.teleprompter-screen {
-			min-height: 350px;
-			height: 60vh;
-		}
-	}
-
-	.teleprompter-screen.glow::before {
-		content: "";
-		position: absolute;
-		inset: -2px;
-		background: linear-gradient(135deg, oklch(0.75 0.14 var(--hue)), oklch(0.70 0.16 calc(var(--hue) + 60)));
-		border-radius: inherit;
-		opacity: 0.3;
-		z-index: -1;
-		filter: blur(20px);
-		animation: glowPulse 3s ease-in-out infinite;
-	}
-
-	.teleprompter-screen.is-fullscreen {
-		border-radius: 0;
-		height: 100vh;
-		min-height: unset;
-	}
-
-	.teleprompter-progress-top {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		height: 3px;
-		background: rgba(0, 0, 0, 0.1);
-		z-index: 10;
-		cursor: pointer;
-	}
-
-	:global(.dark) .teleprompter-progress-top,
-	.dark .teleprompter-progress-top {
-		background: rgba(255, 255, 255, 0.1);
-	}
-
-	.progress-bar {
-		height: 100%;
-		background: linear-gradient(90deg, oklch(0.70 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 60)));
-		transition: width 0.3s ease;
-		box-shadow: 0 0 10px oklch(0.70 0.14 var(--hue) / 0.5);
-	}
-
-	.time-remaining {
-		position: absolute;
-		top: 0.75rem;
-		right: 1rem;
-		padding: 0.35rem 0.75rem;
-		background: rgba(0, 0, 0, 0.6);
-		color: white;
-		font-size: 0.85rem;
-		font-weight: 600;
-		border-radius: 999px;
-		backdrop-filter: blur(8px);
-		z-index: 11;
-	}
-
-	.reading-position-marker {
-		position: absolute;
-		top: 50%;
-		left: 0;
-		right: 0;
-		height: 2px;
-		background: oklch(0.70 0.14 var(--hue) / 0.3);
-		z-index: 5;
-		pointer-events: none;
-		box-shadow: 0 0 20px oklch(0.70 0.14 var(--hue) / 0.4);
-	}
-
-	.teleprompter-screen.focus .reading-position-marker {
-		background: oklch(0.70 0.14 var(--hue) / 0.5);
-		box-shadow: 0 0 30px oklch(0.70 0.14 var(--hue) / 0.6);
-	}
-
-	.teleprompter-frame {
-		height: 100%;
-		overflow-y: auto;
-		overflow-x: hidden;
-		scroll-behavior: auto;
-		scrollbar-width: thin;
-		scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
-		will-change: scroll-position;
-	}
-
-	:global(.dark) .teleprompter-frame,
-	.dark .teleprompter-frame {
-		scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
-	}
-
-	.teleprompter-frame::-webkit-scrollbar {
-		width: 8px;
-	}
-
-	.teleprompter-frame::-webkit-scrollbar-track {
-		background: transparent;
-	}
-
-	.teleprompter-frame::-webkit-scrollbar-thumb {
-		background: rgba(0, 0, 0, 0.3);
-		border-radius: 999px;
-	}
-
-	:global(.dark) .teleprompter-frame::-webkit-scrollbar-thumb,
-	.dark .teleprompter-frame::-webkit-scrollbar-thumb {
-		background: rgba(255, 255, 255, 0.3);
-	}
-
-	.teleprompter-frame::-webkit-scrollbar-thumb:hover {
-		background: rgba(0, 0, 0, 0.5);
-	}
-
-	:global(.dark) .teleprompter-frame::-webkit-scrollbar-thumb:hover,
-	.dark .teleprompter-frame::-webkit-scrollbar-thumb:hover {
-		background: rgba(255, 255, 255, 0.5);
-	}
-
-	.teleprompter-content {
-		color: #0f172a;
-		text-align: center;
-		user-select: none;
-		transition: transform 0.3s ease;
-	}
-
-	.teleprompter-content.mirror {
-		transform: scaleX(-1);
-	}
-
-	:global(.dark) .teleprompter-content,
-	.dark .teleprompter-content {
-		color: #f1f5f9;
-	}
-
-	.teleprompter-content p {
-		margin: 0.75rem 0;
-		padding: 0.5rem 1rem;
-		transition: opacity 0.3s ease, background 0.2s ease, transform 0.2s ease;
-		border-radius: 0.5rem;
-		line-height: inherit;
-		min-height: 1.5em;
-	}
-
-	.teleprompter-content p.active {
-		background: rgba(0, 0, 0, 0.05);
-		border-left: 4px solid oklch(0.70 0.14 var(--hue));
-		padding-left: calc(1rem - 4px);
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-		transform: scale(1.02);
-	}
-
-	:global(.dark) .teleprompter-content p.active,
-	.dark .teleprompter-content p.active {
-		background: rgba(255, 255, 255, 0.08);
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-	}
-
-	.teleprompter-screen.focus .teleprompter-content p.dimmed {
-		opacity: 0.25;
-		filter: blur(1px);
-	}
-
-	.teleprompter-dim {
-		position: absolute;
-		inset: 0;
-		background: radial-gradient(ellipse at center, transparent 20%, rgba(0, 0, 0, 0.6) 70%);
-		pointer-events: none;
-		z-index: 4;
-	}
-
-	:global(.dark) .teleprompter-dim,
-	.dark .teleprompter-dim {
-		background: radial-gradient(ellipse at center, transparent 20%, rgba(0, 0, 0, 0.8) 70%);
-	}
-
-	.teleprompter-float {
-		position: absolute;
-		bottom: 1.5rem;
-		left: 50%;
-		transform: translateX(-50%);
-		display: flex;
-		gap: 0.5rem;
-		align-items: center;
-		padding: 0.75rem;
-		background: rgba(0, 0, 0, 0.7);
-		backdrop-filter: blur(12px);
-		border-radius: 999px;
-		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-		z-index: 20;
-		transition: all 0.3s ease;
-		opacity: 0.7;
-	}
-
-	.teleprompter-float:hover {
-		opacity: 1;
-		box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-	}
-
-	.btn-float {
-		width: 42px;
-		height: 42px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: rgba(255, 255, 255, 0.15);
-		color: white;
-		border: 1px solid rgba(255, 255, 255, 0.2);
-		border-radius: 50%;
-		font-size: 1.1rem;
-		font-weight: 600;
-		cursor: pointer;
-		transition: all 0.2s ease;
-	}
-
-	.btn-float:hover {
-		background: oklch(0.70 0.14 var(--hue));
-		border-color: oklch(0.70 0.14 var(--hue));
-		transform: translateY(-2px) scale(1.05);
-		box-shadow: 0 4px 12px oklch(0.70 0.14 var(--hue) / 0.4);
-	}
-
-	.btn-float.active {
-		background: oklch(0.60 0.14 var(--hue));
-		border-color: oklch(0.60 0.14 var(--hue));
-	}
-
-	.float-speed-control {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0 0.5rem;
-	}
-
-	.mini-range {
-		width: 100px;
-		height: 4px;
-		-webkit-appearance: none;
-		appearance: none;
-		background: rgba(255, 255, 255, 0.3);
-		border-radius: 999px;
-		outline: none;
-		cursor: pointer;
-	}
-
-	.mini-range::-webkit-slider-thumb {
-		-webkit-appearance: none;
-		appearance: none;
-		width: 14px;
-		height: 14px;
-		border-radius: 50%;
-		background: white;
-		cursor: pointer;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-	}
-
-	.mini-range::-moz-range-thumb {
-		width: 14px;
-		height: 14px;
-		border-radius: 50%;
-		background: white;
-		cursor: pointer;
-		border: none;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-	}
-
-	.mini-speed {
-		color: white;
-		font-size: 0.85rem;
-		font-weight: 600;
-		min-width: 35px;
-	}
-
-	.teleprompter-footer {
-		position: absolute;
-		bottom: 1rem;
-		left: 1rem;
-		right: 1rem;
-		text-align: center;
-		z-index: 1;
-		opacity: 0.5;
-		transition: opacity 0.3s ease;
-	}
-
-	.teleprompter-footer:hover {
-		opacity: 0.9;
-	}
-
-	.shortcut {
-		font-size: 0.8rem;
-		color: #64748b;
-		font-weight: 500;
-	}
-
-	:global(.dark) .shortcut,
-	.dark .shortcut {
-		color: #94a3b8;
-	}
-
-	.teleprompter-screen.is-fullscreen .teleprompter-footer {
-		bottom: 5rem;
-	}
-
-	.teleprompter-countdown {
-		position: absolute;
-		inset: 0;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: rgba(0, 0, 0, 0.85);
-		backdrop-filter: blur(8px);
-		z-index: 30;
-		animation: fadeIn 0.3s ease;
-	}
-
-	.teleprompter-countdown span {
-		font-size: 8rem;
-		font-weight: 900;
-		color: white;
-		text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-		animation: countdownPulse 1s ease-in-out infinite;
-	}
+	.teleprompter-wrapper.clean .teleprompter-panel { display: none; }
+	.teleprompter-wrapper.clean .teleprompter-screen { height: 75vh; }
+
+	.teleprompter-onboarding-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(12px); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1.5rem; animation: fadeIn 0.4s ease; }
+	.teleprompter-onboarding-card { max-width: 640px; background: rgba(255, 255, 255, 0.98); border-radius: 1.5rem; padding: 2.5rem; box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.2); display: grid; gap: 1.5rem; animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+	:global(.dark) .teleprompter-onboarding-card, .dark .teleprompter-onboarding-card { background: rgba(15, 23, 42, 0.98); border-color: rgba(148, 163, 184, 0.2); }
+
+	.onboarding-step { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.5rem; opacity: 0; animation: fadeInUp 0.5s ease forwards; }
+	.onboarding-step:nth-child(1) { animation-delay: 0.1s; } .onboarding-step:nth-child(2) { animation-delay: 0.2s; } .onboarding-step:nth-child(3) { animation-delay: 0.3s; }
+	.step-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+	.onboarding-step h3 { font-size: 1.25rem; font-weight: 700; color: #0f172a; }
+	:global(.dark) .onboarding-step h3, .dark .onboarding-step h3 { color: #e2e8f0; }
+	.onboarding-step p { color: #475569; line-height: 1.5; }
+	:global(.dark) .onboarding-step p, .dark .onboarding-step p { color: #94a3b8; }
+
+	.btn-onboarding { background: linear-gradient(135deg, oklch(0.70 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30))); color: white; border: none; border-radius: 0.75rem; padding: 0.85rem 2rem; font-weight: 700; font-size: 1.05rem; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.3s ease; box-shadow: 0 8px 20px oklch(0.70 0.14 var(--hue) / 0.35); animation: fadeInUp 0.5s ease forwards 0.4s; opacity: 0; }
+	.btn-onboarding:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 12px 28px oklch(0.70 0.14 var(--hue) / 0.45); }
+
+	.teleprompter-onboarding-card.premium { max-width: 800px; }
+	.onboarding-header { text-align: center; margin-bottom: 1.5rem; }
+	.logo-gradient { font-size: 4rem; margin-bottom: 1rem; animation: scaleIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+	.onboarding-header h2 { font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, oklch(0.70 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30))); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.5rem; }
+	.onboarding-header .subtitle { font-size: 1.1rem; color: #64748b; font-weight: 500; }
+	:global(.dark) .onboarding-header .subtitle, .dark .onboarding-header .subtitle { color: #94a3b8; }
+
+	.help-tabs { display: flex; gap: 0.5rem; border-bottom: 2px solid oklch(0.90 0.02 var(--hue)); margin-bottom: 1.5rem; overflow-x: auto; }
+	:global(.dark) .help-tabs, .dark .help-tabs { border-bottom-color: oklch(0.30 0.02 var(--hue)); }
+	.tab-btn { background: transparent; border: none; padding: 0.75rem 1.25rem; font-size: 0.95rem; font-weight: 600; color: #64748b; cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; }
+	.tab-btn.active { color: oklch(0.60 0.14 var(--hue)); border-bottom-color: oklch(0.60 0.14 var(--hue)); }
+	:global(.dark) .tab-btn.active, .dark .tab-btn.active { color: oklch(0.70 0.14 var(--hue)); border-bottom-color: oklch(0.70 0.14 var(--hue)); }
+
+	.tab-content { min-height: 300px; animation: fadeIn 0.3s ease; }
+	.tab-panel { animation: fadeInUp 0.3s ease; }
+	
+	.youtube-settings h3 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; }
+	.settings-list { display: grid; gap: 0.75rem; margin-bottom: 1.5rem; }
+	.setting-item { display: flex; gap: 0.75rem; padding: 0.75rem; background: oklch(0.97 0.01 var(--hue)); border-radius: 0.5rem; border-left: 3px solid oklch(0.70 0.14 var(--hue)); }
+	:global(.dark) .setting-item, .dark .setting-item { background: oklch(0.20 0.02 var(--hue)); }
+	.setting-label { font-weight: 700; min-width: 140px; }
+	
+	.btn-youtube-apply { width: 100%; background: linear-gradient(135deg, #FF0000, #CC0000); color: white; border: none; border-radius: 0.75rem; padding: 1rem 2rem; font-weight: 700; font-size: 1.05rem; cursor: pointer; box-shadow: 0 8px 20px rgba(255, 0, 0, 0.3); }
+
+	.shortcuts-table { display: grid; gap: 0.5rem; }
+	.shortcut-row { display: grid; grid-template-columns: 180px 1fr; gap: 1rem; padding: 0.75rem; background: oklch(0.97 0.01 var(--hue)); border-radius: 0.5rem; align-items: center; }
+	:global(.dark) .shortcut-row, .dark .shortcut-row { background: oklch(0.20 0.02 var(--hue)); }
+	.shortcut-key { font-family: monospace; font-weight: 700; color: oklch(0.60 0.14 var(--hue)); background: oklch(0.94 0.01 var(--hue)); padding: 0.35rem 0.75rem; border-radius: 0.375rem; text-align: center; }
+	:global(.dark) .shortcut-key, .dark .shortcut-key { background: oklch(0.25 0.02 var(--hue)); color: oklch(0.70 0.14 var(--hue)); }
+
+	.tips-list { display: grid; gap: 1rem; }
+	.tip-item-pro { display: flex; gap: 1rem; padding: 1rem; background: oklch(0.97 0.01 var(--hue)); border-radius: 0.75rem; border-left: 4px solid oklch(0.70 0.14 var(--hue)); }
+	:global(.dark) .tip-item-pro, .dark .tip-item-pro { background: oklch(0.20 0.02 var(--hue)); }
+	.tip-number { display: flex; align-items: center; justify-content: center; min-width: 2rem; height: 2rem; background: oklch(0.70 0.14 var(--hue)); color: white; border-radius: 50%; font-weight: 800; }
+	.tip-content strong { display: block; margin-bottom: 0.35rem; font-weight: 700; }
+	
+	.teleprompter-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+	.teleprompter-title { font-size: 2rem; font-weight: 700; background: linear-gradient(135deg, oklch(0.70 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30))); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.25rem; }
+	.teleprompter-subtitle { color: #475569; font-size: 1rem; }
+	:global(.dark) .teleprompter-subtitle, .dark .teleprompter-subtitle { color: #94a3b8; }
+	.status-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
+	.status-indicator { width: 8px; height: 8px; border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
+	.teleprompter-status { color: #64748b; font-size: 0.9rem; font-weight: 600; }
+	:global(.dark) .teleprompter-status, .dark .teleprompter-status { color: #94a3b8; }
+
+	.teleprompter-header-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+	
+	.btn-format.premium-glow {
+		background: linear-gradient(135deg, oklch(0.75 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 40)));
+		color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 700; font-size: 0.9rem;
+		cursor: pointer; box-shadow: 0 4px 12px oklch(0.70 0.14 var(--hue) / 0.3); transition: all 0.2s ease;
+	}
+	.btn-format.premium-glow:hover { transform: translateY(-1px); box-shadow: 0 6px 16px oklch(0.70 0.14 var(--hue) / 0.5); }
+
+	.btn-help { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: oklch(0.95 0.02 var(--hue)); color: oklch(0.50 0.12 var(--hue)); border: 1px solid oklch(0.85 0.05 var(--hue)); border-radius: 999px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; }
+	:global(.dark) .btn-help, .dark .btn-help { background: oklch(0.30 0.03 var(--hue)); color: oklch(0.75 0.14 var(--hue)); border-color: oklch(0.40 0.05 var(--hue)); }
+	.help-icon { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: oklch(0.70 0.14 var(--hue)); color: white; font-weight: 700; font-size: 0.85rem; }
+
+	.btn-plain { padding: 0.5rem 1rem; background: transparent; color: #475569; border: 1px solid #cbd5e1; border-radius: 0.5rem; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; }
+	:global(.dark) .btn-plain, .dark .btn-plain { color: #cbd5e1; border-color: #475569; }
+	.btn-plain:hover { background: oklch(0.95 0.02 var(--hue)); border-color: oklch(0.80 0.06 var(--hue)); color: oklch(0.50 0.12 var(--hue)); }
+	:global(.dark) .btn-plain:hover, .dark .btn-plain:hover { background: oklch(0.25 0.03 var(--hue)); border-color: oklch(0.45 0.08 var(--hue)); color: oklch(0.75 0.14 var(--hue)); }
+
+	.teleprompter-panel { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border-radius: 1.25rem; padding: 1.5rem; border: 1px solid rgba(0, 0, 0, 0.08); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04); transition: all 0.3s ease; }
+	:global(.dark) .teleprompter-panel, .dark .teleprompter-panel { background: rgba(30, 41, 59, 0.8); border-color: rgba(148, 163, 184, 0.15); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); }
+
+	.script-manager { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem; }
+	.script-controls { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+	.script-controls select { flex: 1; min-width: 200px; padding: 0.6rem 1rem; background: white; border: 1px solid #cbd5e1; border-radius: 0.5rem; font-size: 0.9rem; cursor: pointer; }
+	:global(.dark) .script-controls select, .dark .script-controls select { background: #1e293b; color: #e2e8f0; border-color: #475569; }
+	.btn-icon { padding: 0.6rem 0.9rem; background: oklch(0.95 0.02 var(--hue)); border: 1px solid #cbd5e1; border-radius: 0.5rem; font-size: 1.1rem; cursor: pointer; }
+	:global(.dark) .btn-icon, .dark .btn-icon { background: oklch(0.25 0.03 var(--hue)); border-color: #475569; }
+
+	.teleprompter-input { width: 100%; min-height: 120px; padding: 1rem; background: white; border: 1px solid #cbd5e1; border-radius: 0.75rem; font-family: inherit; font-size: 1rem; line-height: 1.5; resize: vertical; margin-bottom: 1rem; }
+	:global(.dark) .teleprompter-input, .dark .teleprompter-input { background: #1e293b; color: #e2e8f0; border-color: #475569; }
+	.teleprompter-input:focus { outline: none; border-color: oklch(0.70 0.14 var(--hue)); box-shadow: 0 0 0 3px oklch(0.70 0.14 var(--hue) / 0.1); }
+
+	.teleprompter-controls { display: flex; flex-direction: column; gap: 1.5rem; }
+	.controls-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; }
+	.control-group { background: rgba(255, 255, 255, 0.5); border: 1px solid rgba(0, 0, 0, 0.06); border-radius: 0.75rem; padding: 1rem; }
+	:global(.dark) .control-group, .dark .control-group { background: rgba(15, 23, 42, 0.4); border-color: rgba(148, 163, 184, 0.1); }
+	.control-label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+	.control-group label { font-weight: 600; font-size: 0.9rem; }
+	.speed-label { font-size: 0.85rem; font-weight: 500; color: oklch(0.60 0.12 var(--hue)); padding: 0.15rem 0.5rem; background: oklch(0.95 0.03 var(--hue)); border-radius: 999px; }
+	:global(.dark) .speed-label, .dark .speed-label { color: oklch(0.75 0.14 var(--hue)); background: oklch(0.25 0.04 var(--hue)); }
+
+	.custom-range { width: 100%; height: 6px; -webkit-appearance: none; appearance: none; background: linear-gradient(to right, #cbd5e1 0%, #cbd5e1 100%); border-radius: 999px; outline: none; cursor: pointer; }
+	:global(.dark) .custom-range, .dark .custom-range { background: linear-gradient(to right, #475569 0%, #475569 100%); }
+	.custom-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: oklch(0.70 0.14 var(--hue)); cursor: pointer; border: 3px solid white; box-shadow: 0 2px 8px oklch(0.70 0.14 var(--hue) / 0.3); }
+	.custom-range::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: oklch(0.70 0.14 var(--hue)); cursor: pointer; border: 3px solid white; box-shadow: 0 2px 8px oklch(0.70 0.14 var(--hue) / 0.3); }
+
+	.countdown-select { width: 100%; padding: 0.6rem 1rem; border-radius: 0.5rem; border: 1px solid #cbd5e1; }
+	:global(.dark) .countdown-select, .dark .countdown-select { background: #1e293b; color: #e2e8f0; border-color: #475569; }
+
+	.toggle-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-top: 0.5rem; }
+	.toggle-btn { padding: 0.65rem 1rem; background: white; border: 1px solid #cbd5e1; border-radius: 999px; font-size: 0.9rem; font-weight: 500; cursor: pointer; }
+	:global(.dark) .toggle-btn, .dark .toggle-btn { background: #1e293b; color: #cbd5e1; border-color: #475569; }
+	.toggle-btn.active { background: oklch(0.70 0.14 var(--hue)); color: white; border-color: oklch(0.70 0.14 var(--hue)); }
+	:global(.dark) .toggle-btn.active, .dark .toggle-btn.active { background: oklch(0.60 0.14 var(--hue)); color: white; border-color: oklch(0.60 0.14 var(--hue)); }
+
+	.control-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+	.btn-play { flex: 1; min-width: 180px; padding: 1rem 1.5rem; background: linear-gradient(135deg, oklch(0.70 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30))); color: white; border: none; border-radius: 0.75rem; font-size: 1.05rem; font-weight: 700; cursor: pointer; box-shadow: 0 4px 16px oklch(0.70 0.14 var(--hue) / 0.3); }
+	.btn-action { padding: 0.75rem 1.25rem; background: white; border: 1px solid #cbd5e1; border-radius: 0.5rem; cursor: pointer; }
+	:global(.dark) .btn-action, .dark .btn-action { background: #1e293b; color: #cbd5e1; border-color: #475569; }
+
+	.teleprompter-screen { position: relative; background: linear-gradient(135deg, #f8fafc, #f1f5f9); border-radius: 1.25rem; overflow: hidden; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.5); height: 65vh; min-height: 500px; transition: all 0.3s ease; }
+	:global(.dark) .teleprompter-screen, .dark .teleprompter-screen { background: linear-gradient(135deg, #0f172a, #1e293b); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(148, 163, 184, 0.1); }
+	.teleprompter-screen.glow::before { content: ""; position: absolute; inset: -2px; background: linear-gradient(135deg, oklch(0.75 0.14 var(--hue)), oklch(0.70 0.16 calc(var(--hue) + 60))); border-radius: inherit; opacity: 0.3; z-index: -1; filter: blur(20px); animation: glowPulse 3s ease-in-out infinite; }
+	.teleprompter-screen.is-fullscreen { border-radius: 0; height: 100vh; min-height: unset; }
+
+	.teleprompter-progress-top { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: rgba(0, 0, 0, 0.1); z-index: 10; cursor: pointer; }
+	:global(.dark) .teleprompter-progress-top, .dark .teleprompter-progress-top { background: rgba(255, 255, 255, 0.1); }
+	.progress-bar { height: 100%; background: linear-gradient(90deg, oklch(0.70 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 60))); box-shadow: 0 0 10px oklch(0.70 0.14 var(--hue) / 0.5); }
+	.time-remaining { position: absolute; top: 0.75rem; right: 1rem; padding: 0.35rem 0.75rem; background: rgba(0, 0, 0, 0.6); color: white; font-size: 0.85rem; font-weight: 600; border-radius: 999px; backdrop-filter: blur(8px); z-index: 11; }
+
+	.reading-position-marker { position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: oklch(0.70 0.14 var(--hue) / 0.3); z-index: 5; pointer-events: none; box-shadow: 0 0 20px oklch(0.70 0.14 var(--hue) / 0.4); }
+	.teleprompter-screen.focus .reading-position-marker { background: oklch(0.70 0.14 var(--hue) / 0.5); box-shadow: 0 0 30px oklch(0.70 0.14 var(--hue) / 0.6); }
+
+	.teleprompter-frame { height: 100%; overflow-y: auto; overflow-x: hidden; scroll-behavior: auto; scrollbar-width: thin; scrollbar-color: rgba(0, 0, 0, 0.3) transparent; }
+	:global(.dark) .teleprompter-frame, .dark .teleprompter-frame { scrollbar-color: rgba(255, 255, 255, 0.3) transparent; }
+	.teleprompter-frame::-webkit-scrollbar { width: 8px; }
+	.teleprompter-frame::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.3); border-radius: 999px; }
+	:global(.dark) .teleprompter-frame::-webkit-scrollbar-thumb, .dark .teleprompter-frame::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); }
+
+	/* CSS Híbrido GPU (Aceleración Hardware Nativa) */
+	.teleprompter-content { 
+		color: #0f172a; 
+		text-align: center; 
+		user-select: none; 
+		will-change: transform; 
+		transform: translateZ(0); 
+		transform-origin: center center; 
+		letter-spacing: 0.01em;
+		font-size: var(--fz, 38px);
+		line-height: var(--lh, 1.6);
+	}
+	:global(.dark) .teleprompter-content, .dark .teleprompter-content { color: #f1f5f9; }
+
+	.teleprompter-content p { margin: 0.75rem 0; padding: 0.5rem 1rem; border-radius: 0.5rem; transition: opacity 0.3s ease, background 0.2s ease, transform 0.2s ease; min-height: 1.5em; }
+	.teleprompter-content p.active { background: rgba(0, 0, 0, 0.05); border-left: 4px solid oklch(0.70 0.14 var(--hue)); padding-left: calc(1rem - 4px); transform: scale(1.02); }
+	:global(.dark) .teleprompter-content p.active, .dark .teleprompter-content p.active { background: rgba(255, 255, 255, 0.08); }
+	.teleprompter-screen.focus .teleprompter-content p.dimmed { opacity: 0.25; filter: blur(1px); }
+
+	.teleprompter-dim { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 20%, rgba(0, 0, 0, 0.6) 70%); pointer-events: none; z-index: 4; }
+	:global(.dark) .teleprompter-dim, .dark .teleprompter-dim { background: radial-gradient(ellipse at center, transparent 20%, rgba(0, 0, 0, 0.8) 70%); }
+
+	.teleprompter-float { position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%); display: flex; gap: 0.5rem; align-items: center; padding: 0.75rem; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(12px); border-radius: 999px; z-index: 20; opacity: 0.7; transition: all 0.3s ease; }
+	.teleprompter-float:hover { opacity: 1; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4); }
+	.btn-float { width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.15); color: white; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 50%; font-size: 1.1rem; font-weight: 600; cursor: pointer; }
+	.btn-float:hover { background: oklch(0.70 0.14 var(--hue)); border-color: oklch(0.70 0.14 var(--hue)); transform: translateY(-2px) scale(1.05); }
+	.btn-float.active { background: oklch(0.60 0.14 var(--hue)); border-color: oklch(0.60 0.14 var(--hue)); }
+
+	.teleprompter-countdown { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 30; animation: fadeIn 0.3s ease; }
+	.teleprompter-countdown span { font-size: 8rem; font-weight: 900; color: white; text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); animation: countdownPulse 1s ease-in-out infinite; }
 
 	.pointer-none { pointer-events: none; }
 	.no-trigger { cursor: default; }
+	.word-count { margin-left: 0.5rem; font-size: 0.85rem; color: oklch(0.55 0.02 var(--hue)); }
+	:global(.dark) .word-count, .dark .word-count { color: oklch(0.70 0.02 var(--hue)); }
 
 	@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 	@keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
@@ -2369,6 +1124,7 @@
 	@keyframes countdownPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 
 	@media (max-width: 768px) {
+		.teleprompter-screen { min-height: 350px; height: 60vh; }
 		.teleprompter-header { flex-direction: column; align-items: flex-start; }
 		.controls-grid { grid-template-columns: 1fr; }
 		.toggle-grid { grid-template-columns: repeat(2, 1fr); }
@@ -2387,9 +1143,6 @@
 		.btn-float { width: 36px; height: 36px; font-size: 0.9rem; }
 		.teleprompter-footer { display: none; }
 	}
-
-	.word-count { margin-left: 0.5rem; font-size: 0.85rem; color: oklch(0.55 0.02 var(--hue)); }
-	:global(.dark) .word-count, .dark .word-count { color: oklch(0.70 0.02 var(--hue)); }
 
 	.mobile-tip-banner {
 		display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
