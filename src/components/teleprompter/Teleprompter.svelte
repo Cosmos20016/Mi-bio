@@ -53,24 +53,24 @@
 	let lineElements: Array<HTMLParagraphElement | null> = [];
 	let activeLineIndex = 0;
 	let lines: string[] = [];
-	let lineMetrics: Array<{ top: number; height: number; center: number }> = [];
+	let lineMetrics: Array<{ center: number }> = [];
 
 	const speedMin = 10;
 	const speedMax = 400;
-	const TAP_THRESHOLD = 300;
-	const SWIPE_THRESHOLD = 30;
 	
-	// Motor Híbrido de GPU y Velocidad
+	// Motor de velocidad y scroll
 	$: targetSpeed = speed;
 	let currentSpeed = 0;
 	let cachedMaxScroll = 0;
 	let scrollAccumulator = 0;
-	let startScrollY = 0;
-	let smoothedDelta = 16.66;
+
 	let touchStartY = 0;
 	let lastTapTime = 0;
+	const TAP_THRESHOLD = 300;
+	const SWIPE_THRESHOLD = 30;
 
-	const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+	const clamp = (value: number, min: number, max: number) =>
+		Math.min(Math.max(value, min), max);
 
 	$: lines = text.split("\n");
 	$: if (lineElements.length !== lines.length) {
@@ -79,92 +79,110 @@
 
 	$: wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
 	$: estimatedMinutes = wordCount > 0 ? Math.floor(wordCount / 150) : 0;
-	$: estimatedSeconds = wordCount > 0 ? Math.ceil((wordCount / 150) * 60) % 60 : 0;
-	$: readingTimeLabel = wordCount > 0
-		? estimatedMinutes > 0
-			? `~${estimatedMinutes}m ${estimatedSeconds}s`
-			: `~${estimatedSeconds}s`
-		: "";
+	$: estimatedSeconds =
+		wordCount > 0 ? Math.ceil((wordCount / 150) * 60) % 60 : 0;
+	$: readingTimeLabel =
+		wordCount > 0
+			? estimatedMinutes > 0
+				? `~${estimatedMinutes}m ${estimatedSeconds}s`
+				: `~${estimatedSeconds}s`
+			: "";
 
-	// =========================================
-	// AUTO-ORGANIZADOR PREMIUM
-	// =========================================
+	// =========================================================
+	// AUTO-ORGANIZADOR PROFESIONAL DE GUIONES
+	// =========================================================
 	let isFormatting = false;
-	let previousTextLength = 0;
 
 	const autoFormatScript = () => {
-		if (!text || isFormatting) return;
+		if (!text.trim() || isFormatting) return;
 		isFormatting = true;
-		
-		const originalText = text;
-		
-		let formatted = text
-			.replace(/ +/g, ' ')
-			.replace(/\n{3,}/g, '\n\n');
-		
-		formatted = formatted.replace(/([.?!])\s+(?=[A-Z¡¿])/g, '$1\n\n');
-		
-		formatted = formatted.split('\n').map(p => {
-			if (p.length > 130 && !p.includes('\n')) {
-				return p.replace(/([,;:])\s+/g, '$1\n');
-			}
-			return p;
-		}).join('\n');
-		
-		formatted = formatted.trim();
 
-		if (formatted !== originalText) {
-			text = formatted;
-			setTimeout(calculateMetrics, 100);
+		let clean = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+		clean = clean.replace(/[ \t]+/g, " ");
+
+		const rawParagraphs = clean.split(/\n\s*\n/);
+		const processed: string[] = [];
+
+		for (const p of rawParagraphs) {
+			const trimmed = p.trim();
+			if (!trimmed) continue;
+
+			const linesInP = trimmed.split("\n");
+			let joinedP = "";
+			for (let i = 0; i < linesInP.length; i++) {
+				const l = linesInP[i].trim();
+				if (!l) continue;
+				if (joinedP && !joinedP.endsWith("\n") && !/^[-*•\d+.]\s/.test(l)) {
+					joinedP += " " + l;
+				} else {
+					joinedP += (joinedP ? "\n" : "") + l;
+				}
+			}
+
+			if (joinedP.length > 130 && !joinedP.includes("\n")) {
+				const sentences = joinedP.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g) || [joinedP];
+				let chunk = "";
+				for (const s of sentences) {
+					const sTrim = s.trim();
+					if (!sTrim) continue;
+					if (!chunk) {
+						chunk = sTrim;
+					} else if ((chunk + " " + sTrim).length <= 150) {
+						chunk += " " + sTrim;
+					} else {
+						processed.push(chunk);
+						chunk = sTrim;
+					}
+				}
+				if (chunk) processed.push(chunk);
+			} else {
+				processed.push(joinedP);
+			}
 		}
-		
-		setTimeout(() => { isFormatting = false; }, 200);
+
+		text = processed.join("\n\n");
+		setTimeout(() => {
+			calculateMetrics();
+			isFormatting = false;
+		}, 80);
 	};
 
-	$: if (isReady && text) {
-		const diff = text.length - previousTextLength;
-		if (diff > 400) {
-			const hasDenseParagraphs = text.split('\n').some(p => p.length > 200);
-			if (hasDenseParagraphs) autoFormatScript();
+	const handlePaste = (e: ClipboardEvent) => {
+		const pasted = e.clipboardData?.getData("text");
+		if (pasted && pasted.length > 250) {
+			if (pasted.split("\n").some((l) => l.length > 160)) {
+				setTimeout(autoFormatScript, 60);
+			}
 		}
-		previousTextLength = text.length;
-	}
+	};
 
-	// =========================================
-	// MÉTRICAS Y MOTOR GPU HÍBRIDO
-	// =========================================
+	// =========================================================
+	// MÉTRICAS EN FRÍO (ZERO LAYOUT THRASHING)
+	// =========================================================
 	const calculateMetrics = () => {
 		if (!scrollContainer || !content) return;
 		cachedMaxScroll = Math.max(content.scrollHeight - scrollContainer.clientHeight, 0);
-		
+
 		if (!focusMode) {
 			updateProgress();
 			return;
 		}
-		
+
 		lineMetrics = lineElements.map((el) => {
-			if (!el) return { top: 0, height: 0, center: 0 };
-			const top = el.offsetTop;
-			const height = el.offsetHeight;
-			return { top, height, center: top + (height / 2) };
+			if (!el) return { center: 0 };
+			return { center: el.offsetTop + el.offsetHeight / 2 };
 		});
-		
+
 		updateProgress();
 	};
 
-	const getFocusCenter = () => {
-		if (!scrollContainer) return 0;
-		const viewport = scrollContainer.clientHeight;
-		const focusOffset = focusMode ? viewport * 0.45 + 50 : viewport / 2;
-		return scrollAccumulator + focusOffset;
-	};
-
-	const updateActiveLine = () => {
+	const updateActiveLineFromMemory = (currentScroll: number) => {
 		if (!scrollContainer || !lineMetrics.length || !focusMode) return;
-		const focusCenter = getFocusCenter();
+		const viewport = scrollContainer.clientHeight;
+		const focusCenter = currentScroll + (viewport * 0.45 + 50);
+
 		let closestIndex = 0;
 		let closestDistance = Number.POSITIVE_INFINITY;
-		
 		for (let i = 0; i < lineMetrics.length; i++) {
 			const distance = Math.abs(lineMetrics[i].center - focusCenter);
 			if (distance < closestDistance) {
@@ -176,38 +194,19 @@
 	};
 
 	const updateProgress = () => {
-		if (cachedMaxScroll <= 0) {
+		if (!scrollContainer || cachedMaxScroll <= 0) {
 			progress = 0;
 			return;
 		}
-		progress = clamp(scrollAccumulator / cachedMaxScroll, 0, 1);
-		updateActiveLine();
+		progress = clamp(scrollContainer.scrollTop / cachedMaxScroll, 0, 1);
+		updateActiveLineFromMemory(scrollContainer.scrollTop);
 	};
 
-	const handleScrollEvent = () => {
-		if (!isPlaying && scrollContainer) {
-			scrollAccumulator = scrollContainer.scrollTop;
-			updateProgress();
-		}
-	};
-
-	const applyHardwareTransform = () => {
-		if (!content) return;
-		if (isPlaying) {
-			const offset = scrollAccumulator - startScrollY;
-			content.style.transform = `translate3d(0, -${offset}px, 0) ${isMirror ? 'scaleX(-1)' : ''}`;
-		} else {
-			content.style.transform = isMirror ? 'scaleX(-1)' : 'none';
-		}
-	};
-
-	$: if (isReady && content) {
-		const _trigger = isMirror; 
-		applyHardwareTransform();
-	}
-
+	// =========================================================
+	// MOTOR DE SCROLL FLUIDO DE ALTA PRECISIÓN
+	// =========================================================
 	const tick = (timestamp: number) => {
-		if (!isPlaying || !scrollContainer || !content) {
+		if (!isPlaying || !scrollContainer) {
 			raf = null;
 			lastTime = null;
 			return;
@@ -215,37 +214,47 @@
 
 		if (lastTime === null) {
 			lastTime = timestamp;
-			smoothedDelta = 16.66;
+			scrollAccumulator = scrollContainer.scrollTop;
 			raf = requestAnimationFrame(tick);
 			return;
 		}
 
-		const rawDelta = timestamp - lastTime;
+		const elapsed = timestamp - lastTime;
 		lastTime = timestamp;
-		
-		smoothedDelta = smoothedDelta * 0.8 + rawDelta * 0.2;
-		const delta = Math.min(smoothedDelta / 1000, 0.05);
+		const delta = Math.min(elapsed / 1000, 0.05);
 
 		if (smooth) {
-			const smoothing = 1 - Math.exp(-delta * 12);
+			const smoothing = 1 - Math.exp(-delta * 10);
 			currentSpeed += (targetSpeed - currentSpeed) * smoothing;
 		} else {
 			currentSpeed = targetSpeed;
 		}
 
-		if (Math.abs(currentSpeed - targetSpeed) < 0.5) currentSpeed = targetSpeed;
+		if (Math.abs(currentSpeed - targetSpeed) < 0.2) {
+			currentSpeed = targetSpeed;
+		}
 
 		scrollAccumulator += currentSpeed * delta;
 
 		if (scrollAccumulator >= cachedMaxScroll) {
+			scrollContainer.scrollTop = cachedMaxScroll;
 			scrollAccumulator = cachedMaxScroll;
-			pause();
-			updateProgress();
+			isPlaying = false;
+			raf = null;
+			lastTime = null;
+			progress = 1;
+			updateActiveLineFromMemory(cachedMaxScroll);
 			return;
 		}
 
-		applyHardwareTransform();
-		if (focusMode) updateProgress();
+		scrollContainer.scrollTop = scrollAccumulator;
+
+		if (cachedMaxScroll > 0) {
+			progress = clamp(scrollAccumulator / cachedMaxScroll, 0, 1);
+		}
+		if (focusMode) {
+			updateActiveLineFromMemory(scrollAccumulator);
+		}
 
 		raf = requestAnimationFrame(tick);
 	};
@@ -264,20 +273,14 @@
 			scrollAccumulator = scrollContainer.scrollTop;
 		}
 
-		startScrollY = scrollAccumulator;
-		scrollContainer.style.overflow = 'hidden'; 
-		
 		isPlaying = true;
 		lastTime = null;
-		applyHardwareTransform();
 		raf = requestAnimationFrame(tick);
 	};
 
 	const cancelCountdown = () => {
-		if (countdownTimer) {
-			clearInterval(countdownTimer);
-			countdownTimer = null;
-		}
+		if (countdownTimer) clearInterval(countdownTimer);
+		countdownTimer = null;
 		countdown = 0;
 		isCountingDown = false;
 	};
@@ -312,22 +315,22 @@
 			cancelAnimationFrame(raf);
 			raf = null;
 		}
-		
-		if (scrollContainer && content) {
-			scrollContainer.style.overflow = '';
-			applyHardwareTransform();
-			scrollContainer.scrollTop = scrollAccumulator;
-		}
-		
 		lastTime = null;
 		currentSpeed = targetSpeed;
+		if (scrollContainer) {
+			scrollAccumulator = scrollContainer.scrollTop;
+		}
 		updateProgress();
 	};
 
 	const toggle = () => {
-		if (isPlaying) pause();
-		else if (isCountingDown) cancelCountdown();
-		else start();
+		if (isPlaying) {
+			pause();
+		} else if (isCountingDown) {
+			cancelCountdown();
+		} else {
+			start();
+		}
 	};
 
 	const reset = () => {
@@ -350,28 +353,17 @@
 	};
 
 	const jump = (amount: number) => {
-		if (!scrollContainer) return;
-		const next = scrollAccumulator + amount;
-		scrollAccumulator = clamp(next, 0, cachedMaxScroll);
-		if (!isPlaying) {
-			scrollContainer.scrollTop = scrollAccumulator;
-		} else {
-			startScrollY -= amount; 
-		}
+		if (!scrollContainer || !content) return;
+		const next = scrollContainer.scrollTop + amount;
+		scrollContainer.scrollTop = clamp(next, 0, cachedMaxScroll);
+		scrollAccumulator = scrollContainer.scrollTop;
 		updateProgress();
 	};
 
 	const scrollToProgress = (value: number) => {
-		if (!scrollContainer) return;
-		const next = clamp(value, 0, 1) * cachedMaxScroll;
-		if (!isPlaying) {
-			scrollContainer.scrollTop = next;
-			scrollAccumulator = next;
-		} else {
-			const diff = next - scrollAccumulator;
-			scrollAccumulator = next;
-			startScrollY += diff; 
-		}
+		if (!scrollContainer || !content) return;
+		scrollContainer.scrollTop = clamp(value, 0, 1) * cachedMaxScroll;
+		scrollAccumulator = scrollContainer.scrollTop;
 		updateProgress();
 	};
 
@@ -384,7 +376,7 @@
 				await document.exitFullscreen();
 			}
 		} catch (e) {
-			console.warn("[Teleprompter] Fullscreen API error:", e);
+			console.warn("[Teleprompter] Fullscreen no disponible:", e);
 		}
 	};
 
@@ -417,8 +409,11 @@
 			if (typeof data.glow === "boolean") glow = data.glow;
 			if (typeof data.focusMode === "boolean") focusMode = data.focusMode;
 			if (typeof data.dimOutside === "boolean") dimOutside = data.dimOutside;
-			if (typeof data.ultraClean === "boolean") ultraClean = data.ultraClean;
 			if (typeof data.countdownDuration === "number") countdownDuration = data.countdownDuration;
+
+			// ultraClean y showControls siempre garantizan interfaz visible al iniciar
+			ultraClean = false;
+			showControls = true;
 
 			speed = Math.round(clamp(speed, speedMin, speedMax));
 		} catch (e) {
@@ -435,10 +430,13 @@
 				const payload = {
 					text, speed, fontSize, lineHeight,
 					isMirror, autoCenter, smooth, glow,
-					focusMode, dimOutside, ultraClean, countdownDuration,
+					focusMode, dimOutside, countdownDuration,
 				};
 				localStorage.setItem(storageKey, JSON.stringify(payload));
-				if (currentScript && text.trim()) saveCurrentScript();
+
+				if (currentScript && text.trim()) {
+					saveCurrentScript();
+				}
 			} catch (e) {
 				if (e instanceof DOMException && e.name === "QuotaExceededError") {
 					try {
@@ -513,7 +511,7 @@
 			text = script.text;
 			currentScript = id;
 			localStorage.setItem("teleprompter:lastScript", id);
-			setTimeout(calculateMetrics, 100);
+			setTimeout(calculateMetrics, 60);
 		}
 	};
 
@@ -529,7 +527,7 @@
 	const newScript = () => {
 		currentScript = null;
 		text = "";
-		setTimeout(calculateMetrics, 100);
+		setTimeout(calculateMetrics, 60);
 	};
 
 	const getSpeedLabel = (spd: number): string => {
@@ -565,7 +563,10 @@
 	const formatDateTime = (isoDate: string): string => {
 		const date = new Date(isoDate);
 		return date.toLocaleDateString("es-ES", {
-			day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+			day: "numeric",
+			month: "short",
+			hour: "2-digit",
+			minute: "2-digit",
 		});
 	};
 
@@ -578,12 +579,12 @@
 		autoCenter = true;
 		countdownDuration = 3;
 		scheduleSave();
-		setTimeout(calculateMetrics, 100);
+		setTimeout(calculateMetrics, 60);
 	};
 
 	const getEstimatedTimeRemaining = (): string => {
-		if (!scrollContainer || speed === 0) return "";
-		const remaining = cachedMaxScroll - scrollAccumulator;
+		if (!scrollContainer || !content || speed === 0) return "";
+		const remaining = cachedMaxScroll - scrollContainer.scrollTop;
 		if (remaining <= 0) return "0s";
 		const seconds = Math.ceil(remaining / speed);
 		if (seconds < 60) return `${seconds}s`;
@@ -634,7 +635,12 @@
 	const onKey = (event: KeyboardEvent) => {
 		if (event.target && (event.target as HTMLElement).tagName === "TEXTAREA") return;
 		switch (event.code) {
-			case "Space": case "Enter": case "NumpadEnter": event.preventDefault(); toggle(); break;
+			case "Space":
+			case "Enter":
+			case "NumpadEnter":
+				event.preventDefault();
+				toggle();
+				break;
 			case "ArrowUp": event.preventDefault(); jump(-120); break;
 			case "ArrowDown": event.preventDefault(); jump(120); break;
 			case "PageUp": event.preventDefault(); jump(-320); break;
@@ -643,13 +649,17 @@
 			case "KeyF": focusMode = !focusMode; setTimeout(calculateMetrics, 50); break;
 			case "KeyR": reset(); break;
 			case "KeyX": toggleFullscreen(); break;
-			case "KeyL": ultraClean = !ultraClean; setTimeout(calculateMetrics, 300); break;
+			case "KeyL": ultraClean = !ultraClean; setTimeout(calculateMetrics, 200); break;
 			case "Equal": case "NumpadAdd": adjustSpeed(4); break;
 			case "Minus": case "NumpadSubtract": adjustSpeed(-4); break;
 		}
 	};
 
-	$: if (isReady && (text || speed || fontSize || lineHeight || isMirror || autoCenter || smooth || glow || focusMode || dimOutside || ultraClean || countdownDuration)) {
+	$: if (
+		isReady &&
+		(text || speed || fontSize || lineHeight || isMirror || autoCenter ||
+			smooth || glow || focusMode || dimOutside || countdownDuration)
+	) {
 		scheduleSave();
 	}
 
@@ -662,7 +672,10 @@
 				}
 			}
 		});
-		darkModeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+		darkModeObserver.observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ["class"],
+		});
 
 		window.addEventListener("keydown", onKey);
 		const mql = window.matchMedia("(max-width: 768px)");
@@ -677,9 +690,14 @@
 		loadScripts();
 
 		const lastScriptId = localStorage.getItem("teleprompter:lastScript");
-		if (lastScriptId) loadScript(lastScriptId);
+		if (lastScriptId) {
+			loadScript(lastScriptId);
+		}
 
-		if (!localStorage.getItem("teleprompter:onboarding:done")) showOnboarding = true;
+		const onboardingDone = localStorage.getItem("teleprompter:onboarding:done");
+		if (!onboardingDone) {
+			showOnboarding = true;
+		}
 
 		resizeObserver = new ResizeObserver(() => calculateMetrics());
 		if (content) resizeObserver.observe(content);
@@ -687,19 +705,18 @@
 
 		const onFullscreenChange = () => {
 			isFullscreen = Boolean(document.fullscreenElement);
-			setTimeout(calculateMetrics, 300);
+			setTimeout(calculateMetrics, 200);
 		};
 		document.addEventListener("fullscreenchange", onFullscreenChange);
 		window.addEventListener("resize", calculateMetrics);
-		window.addEventListener("orientationchange", () => setTimeout(calculateMetrics, 300));
+		window.addEventListener("orientationchange", () => setTimeout(calculateMetrics, 200));
 
 		isReady = true;
-		calculateMetrics();
+		setTimeout(calculateMetrics, 80);
 
 		return () => {
 			document.removeEventListener("fullscreenchange", onFullscreenChange);
 			window.removeEventListener("resize", calculateMetrics);
-			window.removeEventListener("orientationchange", () => {});
 		};
 	});
 
@@ -726,10 +743,10 @@
 				</div>
 
 				<div class="help-tabs">
-					<button class="tab-btn" class:active={helpTab === 'quickstart'} on:click={() => helpTab = 'quickstart'}>Inicio rápido</button>
-					<button class="tab-btn" class:active={helpTab === 'youtube'} on:click={() => helpTab = 'youtube'}>Ajustes YouTube</button>
-					<button class="tab-btn" class:active={helpTab === 'shortcuts'} on:click={() => helpTab = 'shortcuts'}>Atajos</button>
-					<button class="tab-btn" class:active={helpTab === 'tips'} on:click={() => helpTab = 'tips'}>Tips Pro</button>
+					<button class="tab-btn" class:active={helpTab === 'quickstart'} on:click={() => (helpTab = 'quickstart')}>Inicio rápido</button>
+					<button class="tab-btn" class:active={helpTab === 'youtube'} on:click={() => (helpTab = 'youtube')}>Ajustes YouTube</button>
+					<button class="tab-btn" class:active={helpTab === 'shortcuts'} on:click={() => (helpTab = 'shortcuts')}>Atajos</button>
+					<button class="tab-btn" class:active={helpTab === 'tips'} on:click={() => (helpTab = 'tips')}>Tips Pro</button>
 				</div>
 
 				<div class="tab-content">
@@ -738,17 +755,17 @@
 							<div class="onboarding-step">
 								<div class="step-icon">📝</div>
 								<h3>1. Pega tu guion</h3>
-								<p>Escribe o pega el texto que deseas leer en el área de texto</p>
+								<p>Escribe o pega el texto. El botón "Auto-Organizar" estructurará párrafos densos automáticamente.</p>
 							</div>
 							<div class="onboarding-step">
 								<div class="step-icon">⚙️</div>
 								<h3>2. Ajusta a tu ritmo</h3>
-								<p>Personaliza velocidad, tamaño de fuente y otras opciones según tu preferencia</p>
+								<p>Personaliza velocidad, tamaño de fuente y opciones con aceleración fluida en pantalla.</p>
 							</div>
 							<div class="onboarding-step">
 								<div class="step-icon">▶️</div>
 								<h3>3. Empieza a grabar</h3>
-								<p>Presiona Play o Espacio para comenzar la lectura profesional</p>
+								<p>Presiona Play o Espacio para comenzar la lectura profesional continua.</p>
 							</div>
 						</div>
 					{:else if helpTab === 'youtube'}
@@ -756,38 +773,15 @@
 							<h3>⚙️ Configuración recomendada para YouTube</h3>
 							<p class="tab-desc">Estos ajustes te ayudarán a grabar videos profesionales con lectura natural:</p>
 							<div class="settings-list">
-								<div class="setting-item">
-									<span class="setting-label">🐢 Velocidad:</span>
-									<span class="setting-value">50-70 px/seg (lectura natural sin parecer robot)</span>
-								</div>
-								<div class="setting-item">
-									<span class="setting-label">📏 Tamaño fuente:</span>
-									<span class="setting-value">38-42px (legible a distancia del monitor)</span>
-								</div>
-								<div class="setting-item">
-									<span class="setting-label">📐 Interlineado:</span>
-									<span class="setting-value">1.7-1.8 (espaciado cómodo para los ojos)</span>
-								</div>
-								<div class="setting-item">
-									<span class="setting-label">🔄 Modo espejo:</span>
-									<span class="setting-value">Activado para cámara frontal / desactivado para trasera</span>
-								</div>
-								<div class="setting-item">
-									<span class="setting-label">🎯 Focus mode:</span>
-									<span class="setting-value">Activado (resalta la línea que estás leyendo)</span>
-								</div>
-								<div class="setting-item">
-									<span class="setting-label">🎯 Auto-centrar:</span>
-									<span class="setting-value">Activado siempre</span>
-								</div>
-								<div class="setting-item">
-									<span class="setting-label">⏱️ Countdown:</span>
-									<span class="setting-value">3 segundos (te da tiempo de prepararte)</span>
-								</div>
+								<div class="setting-item"><span class="setting-label">🐢 Velocidad:</span><span class="setting-value">50-70 px/seg (lectura natural sin parecer robot)</span></div>
+								<div class="setting-item"><span class="setting-label">📏 Tamaño fuente:</span><span class="setting-value">38-42px (legible a distancia del monitor)</span></div>
+								<div class="setting-item"><span class="setting-label">📐 Interlineado:</span><span class="setting-value">1.7-1.8 (espaciado cómodo para los ojos)</span></div>
+								<div class="setting-item"><span class="setting-label">🔄 Modo espejo:</span><span class="setting-value">Activado para cámara frontal / desactivado para trasera</span></div>
+								<div class="setting-item"><span class="setting-label">🎯 Focus mode:</span><span class="setting-value">Activado (resalta la línea que estás leyendo)</span></div>
+								<div class="setting-item"><span class="setting-label">🎯 Auto-centrar:</span><span class="setting-value">Activado siempre</span></div>
+								<div class="setting-item"><span class="setting-label">⏱️ Countdown:</span><span class="setting-value">3 segundos (te da tiempo de prepararte)</span></div>
 							</div>
-							<button class="btn-youtube-apply" on:click={() => { applyYouTubeSettings(); helpTab = 'quickstart'; }}>
-								✨ Aplicar ajustes YouTube
-							</button>
+							<button class="btn-youtube-apply" on:click={() => { applyYouTubeSettings(); helpTab = 'quickstart'; }}>✨ Aplicar ajustes YouTube</button>
 						</div>
 					{:else if helpTab === 'shortcuts'}
 						<div class="tab-panel shortcuts-panel">
@@ -795,54 +789,23 @@
 							<div class="shortcuts-table">
 								<div class="shortcut-row"><span class="shortcut-key">Espacio / Enter</span><span class="shortcut-desc">Play / Pausa</span></div>
 								<div class="shortcut-row"><span class="shortcut-key">R</span><span class="shortcut-desc">Reiniciar desde el inicio</span></div>
-								<div class="shortcut-row"><span class="shortcut-key">↑ / ↓</span><span class="shortcut-desc">Ajustar velocidad ±10</span></div>
-								<div class="shortcut-row"><span class="shortcut-key">Shift + ↑ / ↓</span><span class="shortcut-desc">Ajustar velocidad ±1 (preciso)</span></div>
-								<div class="shortcut-row"><span class="shortcut-key">[ / ]</span><span class="shortcut-desc">Cambiar tamaño de fuente</span></div>
+								<div class="shortcut-row"><span class="shortcut-key">↑ / ↓</span><span class="shortcut-desc">Ajustar velocidad ±4</span></div>
+								<div class="shortcut-row"><span class="shortcut-key">PageUp / PageDn</span><span class="shortcut-desc">Saltos rápidos de pantalla</span></div>
 								<div class="shortcut-row"><span class="shortcut-key">M</span><span class="shortcut-desc">Activar/desactivar modo espejo</span></div>
 								<div class="shortcut-row"><span class="shortcut-key">F</span><span class="shortcut-desc">Activar/desactivar Focus Mode</span></div>
 								<div class="shortcut-row"><span class="shortcut-key">X</span><span class="shortcut-desc">Pantalla completa</span></div>
-								<div class="shortcut-row"><span class="shortcut-key">L</span><span class="shortcut-desc">Modo limpio (oculta todo excepto texto)</span></div>
+								<div class="shortcut-row"><span class="shortcut-key">L</span><span class="shortcut-desc">Modo limpio (oculta controles)</span></div>
 							</div>
 						</div>
 					{:else if helpTab === 'tips'}
 						<div class="tab-panel tips-panel">
 							<h3>💡 Consejos profesionales</h3>
 							<div class="tips-list">
-								<div class="tip-item-pro">
-									<span class="tip-number">1</span>
-									<div class="tip-content">
-										<strong>Practica el guion 2-3 veces antes de grabar</strong>
-										<p>Familiarízate con el texto para una lectura más natural y fluida</p>
-									</div>
-								</div>
-								<div class="tip-item-pro">
-									<span class="tip-number">2</span>
-									<div class="tip-content">
-										<strong>Usa párrafos cortos de 2-3 líneas</strong>
-										<p>Facilita la lectura y evita perder el hilo de tu discurso</p>
-									</div>
-								</div>
-								<div class="tip-item-pro">
-									<span class="tip-number">3</span>
-									<div class="tip-content">
-										<strong>Mira a la cámara, no al texto</strong>
-										<p>Posiciona el teleprompter cerca de la cámara y usa visión periférica</p>
-									</div>
-								</div>
-								<div class="tip-item-pro">
-									<span class="tip-number">4</span>
-									<div class="tip-content">
-										<strong>Ajusta la velocidad ideal para ti</strong>
-										<p>No debes esperar al texto ni correr detrás de él. Encuentra tu ritmo natural</p>
-									</div>
-								</div>
-								<div class="tip-item-pro">
-									<span class="tip-number">5</span>
-									<div class="tip-content">
-										<strong>Usa el Focus Mode para grabaciones largas</strong>
-										<p>Resalta la línea actual y reduce la fatiga visual durante sesiones extensas</p>
-									</div>
-								</div>
+								<div class="tip-item-pro"><span class="tip-number">1</span><div class="tip-content"><strong>Auto-Organizador</strong><p>Usa el botón "Auto-Organizar" si copiaste texto de un chat o artículo denso.</p></div></div>
+								<div class="tip-item-pro"><span class="tip-number">2</span><div class="tip-content"><strong>Párrafos cortos</strong><p>Mantén bloques de 2-3 líneas para evitar fatiga ocular y pausas forzadas.</p></div></div>
+								<div class="tip-item-pro"><span class="tip-number">3</span><div class="tip-content"><strong>Mira al lente</strong><p>Posiciona el teleprompter lo más cerca posible del lente de la cámara.</p></div></div>
+								<div class="tip-item-pro"><span class="tip-number">4</span><div class="tip-content"><strong>Ritmo natural</strong><p>Adapta la velocidad a tu respiración en vez de apurarte para alcanzar el texto.</p></div></div>
+								<div class="tip-item-pro"><span class="tip-number">5</span><div class="tip-content"><strong>Focus Mode</strong><p>Atenúa el resto del texto para sesiones de grabación largas sin distracciones.</p></div></div>
 							</div>
 						</div>
 					{/if}
@@ -868,11 +831,12 @@
 			</div>
 		</div>
 		<div class="teleprompter-header-actions">
-			<button class="btn-format premium-glow" on:click={() => autoFormatScript()}>
+			<button class="btn-format" on:click={autoFormatScript} title="Formatear texto denso en párrafos legibles">
 				✨ Auto-Organizar
 			</button>
 			<button class="btn-help" on:click={() => (showOnboarding = true)} title="Ver tutorial">
-				<span class="help-icon">?</span><span class="help-badge">Ayuda</span>
+				<span class="help-icon">?</span>
+				<span class="help-badge">Ayuda</span>
 			</button>
 			<button class="btn-plain" class:active={!showControls} on:click={() => (showControls = !showControls)}>
 				{showControls ? "Ocultar controles" : "Mostrar controles"}
@@ -880,7 +844,7 @@
 			<button class="btn-plain" on:click={toggleFullscreen}>
 				{isFullscreen ? "Salir pantalla completa" : "Pantalla completa (X)"}
 			</button>
-			<button class="btn-plain" class:active={ultraClean} on:click={() => { ultraClean = !ultraClean; setTimeout(calculateMetrics, 300); }}>
+			<button class="btn-plain" class:active={ultraClean} on:click={() => { ultraClean = !ultraClean; setTimeout(calculateMetrics, 200); }}>
 				{ultraClean ? "Salir modo limpio" : "Modo limpio (L)"}
 			</button>
 		</div>
@@ -892,7 +856,7 @@
 				<span class="mobile-tip-icon">💡</span>
 				<p>Para una experiencia completa, usa una pantalla más grande. <strong>👆 Toca</strong> para pausar · <strong>👆👆</strong> pantalla completa</p>
 			</div>
-			<button class="mobile-tip-close" on:click={() => showMobileBanner = false} aria-label="Cerrar">✕</button>
+			<button class="mobile-tip-close" on:click={() => (showMobileBanner = false)} aria-label="Cerrar">✕</button>
 		</div>
 	{/if}
 
@@ -900,7 +864,14 @@
 		<div class="script-manager">
 			<label for="script-selector" class="manager-label">Guion guardado:</label>
 			<div class="script-controls">
-				<select id="script-selector" bind:value={currentScript} on:change={(e) => { const id = (e.target as HTMLSelectElement).value; if (id) loadScript(id); }}>
+				<select
+					id="script-selector"
+					bind:value={currentScript}
+					on:change={(e) => {
+						const id = (e.target as HTMLSelectElement).value;
+						if (id) loadScript(id);
+					}}
+				>
 					<option value="">-- Nuevo guion --</option>
 					{#each scripts as script}
 						<option value={script.id}>{script.name} · {formatDateTime(script.updatedAt)}</option>
@@ -917,6 +888,7 @@
 		<textarea
 			class="teleprompter-input no-trigger"
 			bind:value={text}
+			on:paste={handlePaste}
 			rows={6}
 			placeholder="Escribe o pega aquí tu guion..."
 		></textarea>
@@ -963,7 +935,7 @@
 				<div class="control-group toggles">
 					<label>Opciones</label>
 					<div class="toggle-grid">
-						<button class="toggle-btn" class:active={isMirror} on:click={() => (isMirror = !isMirror)} title="Activa para cámaras frontales que invierten la imagen">Espejo (M)</button>
+						<button class="toggle-btn" class:active={isMirror} on:click={() => (isMirror = !isMirror)} title="Activa para cámaras frontales o espejos de teleprompter">Espejo (M)</button>
 						<button class="toggle-btn" class:active={autoCenter} on:click={() => { autoCenter = !autoCenter; setTimeout(calculateMetrics, 50); }} title="Mantiene el texto centrado en la pantalla">Auto-centrar</button>
 						<button class="toggle-btn" class:active={smooth} on:click={() => (smooth = !smooth)} title="Transición suave entre velocidades">Suave</button>
 						<button class="toggle-btn" class:active={glow} on:click={() => (glow = !glow)} title="Efecto de brillo en la pantalla">Glow</button>
@@ -985,7 +957,13 @@
 		{/if}
 	</div>
 
-	<div class="teleprompter-screen" class:focus={focusMode} class:glow class:is-fullscreen={isFullscreen} bind:this={fullscreenTarget}>
+	<div
+		class="teleprompter-screen"
+		class:focus={focusMode}
+		class:glow
+		class:is-fullscreen={isFullscreen}
+		bind:this={fullscreenTarget}
+	>
 		<div
 			class="teleprompter-progress-top no-trigger"
 			role="progressbar"
@@ -1016,7 +994,6 @@
 		<div
 			class="teleprompter-frame"
 			bind:this={scrollContainer}
-			on:scroll={handleScrollEvent}
 			on:wheel={handleWheel}
 			on:click={handleFrameClick}
 			on:touchstart={handleTouchStart}
@@ -1026,6 +1003,7 @@
 		>
 			<div
 				class="teleprompter-content"
+				class:mirror={isMirror}
 				style={`font-size:${fontSize}px; line-height:${lineHeight}; letter-spacing: 0.01em;`}
 				bind:this={content}
 			>
@@ -1569,13 +1547,13 @@
 	}
 
 	.btn-format {
-		background: linear-gradient(135deg, oklch(0.75 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 40)));
+		padding: 0.5rem 1rem;
+		background: linear-gradient(135deg, oklch(0.70 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 30)));
 		color: white;
 		border: none;
-		padding: 0.5rem 1rem;
 		border-radius: 0.5rem;
-		font-weight: 700;
 		font-size: 0.9rem;
+		font-weight: 600;
 		cursor: pointer;
 		box-shadow: 0 4px 12px oklch(0.70 0.14 var(--hue) / 0.3);
 		transition: all 0.2s ease;
@@ -1583,7 +1561,7 @@
 
 	.btn-format:hover {
 		transform: translateY(-1px);
-		box-shadow: 0 6px 16px oklch(0.70 0.14 var(--hue) / 0.5);
+		box-shadow: 0 6px 16px oklch(0.70 0.14 var(--hue) / 0.45);
 	}
 
 	.btn-help {
@@ -2218,7 +2196,7 @@
 		scroll-behavior: auto;
 		scrollbar-width: thin;
 		scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
-		will-change: scroll-position;
+		overflow-anchor: none;
 	}
 
 	:global(.dark) .teleprompter-frame,
@@ -2253,15 +2231,20 @@
 		background: rgba(255, 255, 255, 0.5);
 	}
 
-	/* CSS MOTOR GPU HÍBRIDO NATIVO */
 	.teleprompter-content {
 		color: #0f172a;
 		text-align: center;
 		user-select: none;
-		will-change: transform;
-		transform: translateZ(0); 
+		width: 100%;
+		transition: transform 0.2s ease;
+	}
+
+	.teleprompter-content.mirror {
+		transform: scaleX(-1);
 		transform-origin: center center;
-		transition: opacity 0.3s ease;
+		display: block;
+		backface-visibility: hidden;
+		-webkit-font-smoothing: antialiased;
 	}
 
 	:global(.dark) .teleprompter-content,
@@ -2272,29 +2255,29 @@
 	.teleprompter-content p {
 		margin: 0.75rem 0;
 		padding: 0.5rem 1rem;
-		transition: opacity 0.3s ease, background 0.2s ease, transform 0.2s ease;
 		border-radius: 0.5rem;
 		line-height: inherit;
 		min-height: 1.5em;
+		transition: opacity 0.2s ease, background-color 0.15s ease;
 	}
 
 	.teleprompter-content p.active {
-		background: rgba(0, 0, 0, 0.05);
+		background: rgba(0, 0, 0, 0.06);
 		border-left: 4px solid oklch(0.70 0.14 var(--hue));
 		padding-left: calc(1rem - 4px);
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-		transform: scale(1.02);
+		font-weight: 600;
 	}
 
 	:global(.dark) .teleprompter-content p.active,
 	.dark .teleprompter-content p.active {
-		background: rgba(255, 255, 255, 0.08);
+		background: rgba(255, 255, 255, 0.1);
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 	}
 
 	.teleprompter-screen.focus .teleprompter-content p.dimmed {
 		opacity: 0.25;
-		filter: blur(1px);
+		filter: blur(0.5px);
 	}
 
 	.teleprompter-dim {
@@ -2457,64 +2440,211 @@
 		animation: countdownPulse 1s ease-in-out infinite;
 	}
 
-	.pointer-none { pointer-events: none; }
-	.no-trigger { cursor: default; }
+	.pointer-none {
+		pointer-events: none;
+	}
 
-	@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-	@keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-	@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-	@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-	@keyframes glowPulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.5; } }
-	@keyframes countdownPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+	.no-trigger {
+		cursor: default;
+	}
+
+	@keyframes fadeIn {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+
+	@keyframes scaleIn {
+		from { opacity: 0; transform: scale(0.9); }
+		to { opacity: 1; transform: scale(1); }
+	}
+
+	@keyframes fadeInUp {
+		from { opacity: 0; transform: translateY(20px); }
+		to { opacity: 1; transform: translateY(0); }
+	}
+
+	@keyframes pulse {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0.6; }
+	}
+
+	@keyframes glowPulse {
+		0%, 100% { opacity: 0.3; }
+		50% { opacity: 0.5; }
+	}
+
+	@keyframes countdownPulse {
+		0%, 100% { transform: scale(1); }
+		50% { transform: scale(1.1); }
+	}
 
 	@media (max-width: 768px) {
-		.teleprompter-header { flex-direction: column; align-items: flex-start; }
-		.controls-grid { grid-template-columns: 1fr; }
-		.toggle-grid { grid-template-columns: repeat(2, 1fr); }
-		.control-actions { flex-direction: column; }
-		.btn-play, .btn-action { width: 100%; }
-		.teleprompter-float { bottom: 1rem; padding: 0.5rem; gap: 0.35rem; }
-		.btn-float { width: 44px; height: 44px; font-size: 1.1rem; }
-		.teleprompter-countdown span { font-size: 5rem; }
+		.teleprompter-header {
+			flex-direction: column;
+			align-items: flex-start;
+		}
+
+		.controls-grid {
+			grid-template-columns: 1fr;
+		}
+
+		.toggle-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+
+		.control-actions {
+			flex-direction: column;
+		}
+
+		.btn-play,
+		.btn-action {
+			width: 100%;
+		}
+
+		.teleprompter-float {
+			bottom: 1rem;
+			padding: 0.5rem;
+			gap: 0.35rem;
+		}
+
+		.btn-float {
+			width: 44px;
+			height: 44px;
+			font-size: 1.1rem;
+		}
+
+		.teleprompter-countdown span {
+			font-size: 5rem;
+		}
 	}
 
 	@media (orientation: landscape) and (max-height: 500px) {
-		.teleprompter-screen { height: 85vh; min-height: unset; }
-		.teleprompter-header { flex-direction: row; gap: 0.5rem; }
-		.teleprompter-panel { padding: 0.75rem; }
-		.teleprompter-float { bottom: 0.5rem; padding: 0.4rem; }
-		.btn-float { width: 36px; height: 36px; font-size: 0.9rem; }
-		.teleprompter-footer { display: none; }
+		.teleprompter-screen {
+			height: 85vh;
+			min-height: unset;
+		}
+
+		.teleprompter-header {
+			flex-direction: row;
+			gap: 0.5rem;
+		}
+
+		.teleprompter-panel {
+			padding: 0.75rem;
+		}
+
+		.teleprompter-float {
+			bottom: 0.5rem;
+			padding: 0.4rem;
+		}
+
+		.btn-float {
+			width: 36px;
+			height: 36px;
+			font-size: 0.9rem;
+		}
+
+		.teleprompter-footer {
+			display: none;
+		}
 	}
 
-	.word-count { margin-left: 0.5rem; font-size: 0.85rem; color: oklch(0.55 0.02 var(--hue)); }
-	:global(.dark) .word-count, .dark .word-count { color: oklch(0.70 0.02 var(--hue)); }
+	.word-count {
+		margin-left: 0.5rem;
+		font-size: 0.85rem;
+		color: oklch(0.55 0.02 var(--hue));
+	}
+
+	:global(.dark) .word-count,
+	.dark .word-count {
+		color: oklch(0.70 0.02 var(--hue));
+	}
 
 	.mobile-tip-banner {
-		display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
-		padding: 0.65rem 1rem; background: oklch(0.94 0.03 var(--hue)); border: 1px solid oklch(0.88 0.05 var(--hue));
-		border-radius: 0.75rem; font-size: 0.82rem; line-height: 1.4; color: oklch(0.40 0.08 var(--hue));
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.65rem 1rem;
+		background: oklch(0.94 0.03 var(--hue));
+		border: 1px solid oklch(0.88 0.05 var(--hue));
+		border-radius: 0.75rem;
+		font-size: 0.82rem;
+		line-height: 1.4;
+		color: oklch(0.40 0.08 var(--hue));
 		animation: fadeIn 0.4s ease;
 	}
 
-	:global(.dark) .mobile-tip-banner, .dark .mobile-tip-banner {
-		background: oklch(0.22 0.03 var(--hue)); border-color: oklch(0.32 0.05 var(--hue)); color: oklch(0.78 0.06 var(--hue));
+	:global(.dark) .mobile-tip-banner,
+	.dark .mobile-tip-banner {
+		background: oklch(0.22 0.03 var(--hue));
+		border-color: oklch(0.32 0.05 var(--hue));
+		color: oklch(0.78 0.06 var(--hue));
 	}
 
-	.mobile-tip-content { display: flex; align-items: flex-start; gap: 0.5rem; flex: 1; min-width: 0; }
-	.mobile-tip-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.3; }
-	.mobile-tip-content p { margin: 0; color: inherit; font-size: inherit; line-height: inherit; }
-	.mobile-tip-content p strong { color: oklch(0.50 0.12 var(--hue)); font-weight: 600; }
-	:global(.dark) .mobile-tip-content p strong, .dark .mobile-tip-content p strong { color: oklch(0.72 0.12 var(--hue)); }
+	.mobile-tip-content {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.5rem;
+		flex: 1;
+		min-width: 0;
+	}
+
+	.mobile-tip-icon {
+		font-size: 1.1rem;
+		flex-shrink: 0;
+		line-height: 1.3;
+	}
+
+	.mobile-tip-content p {
+		margin: 0;
+		color: inherit;
+		font-size: inherit;
+		line-height: inherit;
+	}
+
+	.mobile-tip-content p strong {
+		color: oklch(0.50 0.12 var(--hue));
+		font-weight: 600;
+	}
+
+	:global(.dark) .mobile-tip-content p strong,
+	.dark .mobile-tip-content p strong {
+		color: oklch(0.72 0.12 var(--hue));
+	}
 
 	.mobile-tip-close {
-		background: none; border: none; color: oklch(0.55 0.05 var(--hue)); font-size: 1rem;
-		cursor: pointer; padding: 0.25rem; border-radius: 0.375rem; line-height: 1; flex-shrink: 0; transition: all 0.2s ease;
+		background: none;
+		border: none;
+		color: oklch(0.55 0.05 var(--hue));
+		font-size: 1rem;
+		cursor: pointer;
+		padding: 0.25rem;
+		border-radius: 0.375rem;
+		line-height: 1;
+		flex-shrink: 0;
+		transition: all 0.2s ease;
 	}
 
-	.mobile-tip-close:hover { background: oklch(0.88 0.04 var(--hue)); color: oklch(0.40 0.08 var(--hue)); }
-	:global(.dark) .mobile-tip-close, .dark .mobile-tip-close { color: oklch(0.60 0.05 var(--hue)); }
-	:global(.dark) .mobile-tip-close:hover, .dark .mobile-tip-close:hover { background: oklch(0.30 0.04 var(--hue)); color: oklch(0.80 0.06 var(--hue)); }
+	.mobile-tip-close:hover {
+		background: oklch(0.88 0.04 var(--hue));
+		color: oklch(0.40 0.08 var(--hue));
+	}
 
-	@media (min-width: 769px) { .mobile-tip-banner { display: none; } }
+	:global(.dark) .mobile-tip-close,
+	.dark .mobile-tip-close {
+		color: oklch(0.60 0.05 var(--hue));
+	}
+
+	:global(.dark) .mobile-tip-close:hover,
+	.dark .mobile-tip-close:hover {
+		background: oklch(0.30 0.04 var(--hue));
+		color: oklch(0.80 0.06 var(--hue));
+	}
+
+	@media (min-width: 769px) {
+		.mobile-tip-banner {
+			display: none;
+		}
+	}
 </style>
