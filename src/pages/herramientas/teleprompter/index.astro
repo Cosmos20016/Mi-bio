@@ -55,7 +55,9 @@ const jsonLd = {
   keywords={toolMetadata.keywords.join(", ")}
   jsonLd={jsonLd}
 >
-  <div class="tool-page">
+  <article class="tool-page">
+    <!-- Skip link ELIMINADO (ya no se necesita el duplicado) -->
+
     <!-- Navegación superior -->
     <nav class="tool-nav premium-reveal" aria-label="Navegación de herramientas">
       <a
@@ -101,11 +103,11 @@ const jsonLd = {
       </div>
     </header>
 
-    <!-- Teleprompter directo, SIN wrapper premium-reveal -->
+    <!-- Teleprompter directo, sin wrapper -->
     <section id="main-content" class="tool-page-section" aria-label="Aplicación de teleprompter">
       <Teleprompter client:load />
     </section>
-  </div>
+  </article>
 </MainGridLayout>
 
 <style>
@@ -113,36 +115,29 @@ const jsonLd = {
      Variables y configuración base
      ============================================ */
   .tool-page {
-    /* Fallbacks seguros */
     --hue-fallback: 250;
     --card-bg-fallback: #ffffff;
     --radius-large-fallback: 1rem;
 
-    /* Colores de texto */
     --color-text-muted: #64748b;
     --color-text-muted-dark: #94a3b8;
 
-    /* Bordes */
     --color-border-light: rgba(0, 0, 0, 0.06);
     --color-border-dark: rgba(255, 255, 255, 0.08);
 
-    /* Interacción */
     --touch-target-min: 2.75rem;
     --transition-fast: 150ms ease;
     --transition-normal: 200ms ease;
     --transition-smooth: 200ms cubic-bezier(0.4, 0, 0.2, 1);
 
-    /* Layout */
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
     min-height: 0;
 
-    /* Safe areas para dispositivos con notch */
     padding-left: max(0px, env(safe-area-inset-left));
     padding-right: max(0px, env(safe-area-inset-right));
 
-    /* Scroll suave y prevención de overflow horizontal */
     scroll-behavior: smooth;
     overflow-x: hidden;
   }
@@ -383,7 +378,7 @@ const jsonLd = {
 
   :global(.dark) .tool-page-badge {
     background: oklch(0.3 0.05 var(--hue, var(--hue-fallback)));
-    color: oklch(0.78 0.12 var(--hue, var(--hue-fallback)));
+    color: oklch(0.78 0.12 var(--hue, var(--hue-fallback));
   }
 
   /* ============================================
@@ -594,5 +589,11 @@ const jsonLd = {
     opacity: 1 !important;
     transform: none !important;
     animation: none !important;
+    visibility: visible !important;
+  }
+
+  /* Forzar altura mínima para que el componente no colapse */
+  .tool-page-section {
+    min-height: 700px;
   }
 </style>
