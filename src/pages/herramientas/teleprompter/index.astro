@@ -106,13 +106,9 @@ const jsonLd = {
       </div>
     </header>
 
-    <!-- ✅ FIX: El section NO lleva premium-reveal porque el componente Svelte lo sobrescribirá al hidratar -->
-    <!-- En su lugar, animamos un wrapper interno -->
+    <!-- ✅ FIX CRÍTICO: Teleprompter directo, SIN wrapper premium-reveal -->
     <section id="main-content" class="tool-page-section" aria-label="Aplicación de teleprompter">
-      <div class="tool-page-section-inner premium-reveal">
-        <!-- ✅ FIX CRÍTICO: client:load en lugar de client:only para mejor compatibilidad con Swup -->
-        <Teleprompter client:load />
-      </div>
+      <Teleprompter client:load />
     </section>
   </article>
 </MainGridLayout>
@@ -426,11 +422,6 @@ const jsonLd = {
   .tool-page-section {
     content-visibility: auto;
     contain-intrinsic-size: auto 500px;
-  }
-
-  .tool-page-section-inner {
-    /* Wrapper para que la animación premium-reveal no se pierda al hidratar Svelte */
-    min-height: 200px;
   }
 
   /* ============================================
