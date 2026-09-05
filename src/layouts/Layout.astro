@@ -24,23 +24,36 @@ interface Props {
 	title?: string;
 	banner?: string;
 	description?: string;
+	image?: string;
+	url?: string;
+	keywords?: string;
 	lang?: string;
-	setOGTypeArticle?: boolean;
+	ogType?: "website" | "article";
 }
 
-let { title, banner, description, lang, setOGTypeArticle } = Astro.props;
+let {
+	title,
+	banner,
+	description,
+	image,
+	url: pageUrl,
+	keywords,
+	lang,
+	ogType,
+} = Astro.props;
 
 const isHomePage = pathsEqual(Astro.url.pathname, url("/"));
 
 const configHue = siteConfig.themeColor.hue;
+
+// Banner con fallback seguro
 if (!banner || typeof banner !== "string" || banner.trim() === "") {
 	banner = siteConfig.banner.src;
 }
 
-banner = siteConfig.banner.src;
-
 const enableBanner = siteConfig.banner.enable;
 
+// Título de página
 let pageTitle: string;
 if (title) {
 	pageTitle = `${title} - ${siteConfig.title}`;
@@ -50,578 +63,680 @@ if (title) {
 	pageTitle = siteConfig.title;
 }
 
+// Favicons
 const favicons: Favicon[] =
 	siteConfig.favicon.length > 0 ? siteConfig.favicon : defaultFavicons;
 
+// Lang con fallback
 if (!lang) {
 	lang = `${siteConfig.lang}`;
 }
 const siteLang = lang.replace("_", "-");
 
+// Banner offset
 const bannerOffsetByPosition = {
 	top: `${BANNER_HEIGHT_EXTEND}vh`,
 	center: `${BANNER_HEIGHT_EXTEND / 2}vh`,
 	bottom: "0",
-};
+} as const;
 const bannerOffset =
 	bannerOffsetByPosition[siteConfig.banner.position || "center"];
+
+// ============================================
+// SEO: construcción robusta de URLs
+// ============================================
+const siteUrlRaw = Astro.site?.toString().replace(/\/$/, "") ?? "";
+const currentPath = Astro.url.pathname;
+const fullCanonicalUrl = pageUrl ?? `${siteUrlRaw}${currentPath}`;
+const ogImageUrl = image
+	? (image.startsWith("http") ? image : `${siteUrlRaw}${image}`)
+	: `${siteUrlRaw}/og-default.png`;
+const metaDescription = description || siteConfig.description || pageTitle;
+const finalOgType = ogType ?? (setOGTypeArticle ? "article" : "website");
 ---
 
 <!DOCTYPE html>
-<html lang={siteLang} class="bg-[var(--page-bg)] transition text-[14px] md:text-[16px]"
-		data-overlayscrollbars-initialize
+<html
+	lang={siteLang}
+	class="bg-[var(--page-bg)] transition text-[14px] md:text-[16px]"
+	data-overlayscrollbars-initialize
 >
 	<head>
-
 		<title>{pageTitle}</title>
 
 		<meta charset="UTF-8" />
-		<meta name="description" content={description || pageTitle}>
-		<meta name="author" content={profileConfig.name}>
+		<meta name="description" content={metaDescription} />
+		<meta name="author" content={profileConfig.name} />
+		<meta name="keywords" content={keywords || ""} />
 
-		<meta property="og:site_name" content={siteConfig.title}>
-		<meta property="og:url" content={Astro.url}>
-		<meta property="og:title" content={pageTitle}>
-		<meta property="og:description" content={description || pageTitle}>
-		<meta property="og:image" content={new URL('/og-default.png', Astro.site).href}>
-		<meta property="og:image:width" content="1200">
-		<meta property="og:image:height" content="630">
-		{setOGTypeArticle ? (
-        <meta property="og:type" content="article" />
-        ) : (
-        <meta property="og:type" content="website" />
-        )}
+		<!-- Open Graph -->
+		<meta property="og:site_name" content={siteConfig.title} />
+		<meta property="og:url" content={fullCanonicalUrl} />
+		<meta property="og:title" content={pageTitle} />
+		<meta property="og:description" content={metaDescription} />
+		<meta property="og:image" content={ogImageUrl} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:type" content={finalOgType} />
+		<meta property="og:locale" content={siteLang.replace("-", "_")} />
 
-		<meta name="twitter:card" content="summary_large_image">
-		<meta property="twitter:url" content={Astro.url}>
-		<meta name="twitter:title" content={pageTitle}>
-		<meta name="twitter:description" content={description || pageTitle}>
-		<meta name="twitter:image" content={new URL('/og-default.png', Astro.site).href}>
+		<!-- Twitter Card -->
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta property="twitter:url" content={fullCanonicalUrl} />
+		<meta name="twitter:title" content={pageTitle} />
+		<meta name="twitter:description" content={metaDescription} />
+		<meta name="twitter:image" content={ogImageUrl} />
 
+		<!-- Canonical -->
+		<link rel="canonical" href={fullCanonicalUrl} />
+
+		<!-- Viewport & Generator -->
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="generator" content={Astro.generator} />
-		<meta name="theme-color" content={`hsl(${configHue}, 50%, 50%)` }>
+		<meta name="theme-color" content={`hsl(${configHue}, 50%, 50%)`} />
 
-		<link rel="preload" href="/_astro/roboto-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
-		{enableBanner && banner && <link rel="preload" href={banner.startsWith('/') ? url(banner) : url(`/${banner}`)} as="image" fetchpriority="high" />}
+		<!-- Preloads -->
+		<link
+			rel="preload"
+			href="/_astro/roboto-latin-400-normal.woff2"
+			as="font"
+			type="font/woff2"
+			crossorigin
+		/>
+		{enableBanner && banner && (
+			<link
+				rel="preload"
+				href={banner.startsWith("/") ? url(banner) : url(`/${banner}`)}
+				as="image"
+				fetchpriority="high"
+			/>
+		)}
 
+		<!-- DNS Prefetch & Preconnect -->
 		<link rel="dns-prefetch" href="https://api.qrserver.com" />
 		<link rel="preconnect" href="https://api.qrserver.com" crossorigin />
-		<link rel="dns-prefetch" href="https://fonts.googleapis.com">
-		<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
-		<link rel="dns-prefetch" href="https://giscus-personal-woft.vercel.app">
-		<link rel="preconnect" href="https://giscus-personal-woft.vercel.app" crossorigin>
-		{favicons.map(favicon => (
-			<link rel="icon"
-				href={favicon.src.startsWith('/') ? url(favicon.src) : favicon.src}
+		<link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+		<link rel="dns-prefetch" href="https://giscus-personal-woft.vercel.app" />
+		<link
+			rel="preconnect"
+			href="https://giscus-personal-woft.vercel.app"
+			crossorigin
+		/>
+
+		<!-- Favicons -->
+		{favicons.map((favicon) => (
+			<link
+				rel="icon"
+				href={favicon.src.startsWith("/") ? url(favicon.src) : favicon.src}
 				sizes={favicon.sizes}
 				media={favicon.theme && `(prefers-color-scheme: ${favicon.theme})`}
 			/>
 		))}
-		<link rel="manifest" href="/manifest.json">
 
+		<link rel="manifest" href="/manifest.json" />
+
+		<!-- Prefetch de páginas importantes -->
 		<link rel="prefetch" href="/" />
 		<link rel="prefetch" href="/archive/" />
 		<link rel="prefetch" href="/about/" />
 		<link rel="prefetch" href="/herramientas/" />
 
-		<script is:inline define:vars={{DEFAULT_THEME, LIGHT_MODE, DARK_MODE, AUTO_MODE, BANNER_HEIGHT_EXTEND, PAGE_WIDTH, configHue}}>
-			const theme = localStorage.getItem('theme') || DEFAULT_THEME;
-			switch (theme) {
-				case LIGHT_MODE:
-					document.documentElement.classList.remove('dark');
-					break
-				case DARK_MODE:
-					document.documentElement.classList.add('dark');
-					break
-				case AUTO_MODE:
-					if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-						document.documentElement.classList.add('dark');
-					} else {
-						document.documentElement.classList.remove('dark');
+		<!-- Theme inline (debe estar en head para evitar FOUC) -->
+		<script
+			is:inline
+			define:vars={{
+				DEFAULT_THEME,
+				LIGHT_MODE,
+				DARK_MODE,
+				AUTO_MODE,
+				BANNER_HEIGHT_EXTEND,
+				PAGE_WIDTH,
+				configHue,
+			}}
+		>
+			(function () {
+				try {
+					const theme = localStorage.getItem("theme") || DEFAULT_THEME;
+					switch (theme) {
+						case LIGHT_MODE:
+							document.documentElement.classList.remove("dark");
+							break;
+						case DARK_MODE:
+							document.documentElement.classList.add("dark");
+							break;
+						case AUTO_MODE:
+							if (
+								window.matchMedia("(prefers-color-scheme: dark)").matches
+							) {
+								document.documentElement.classList.add("dark");
+							} else {
+								document.documentElement.classList.remove("dark");
+							}
+							break;
 					}
-			}
 
-			const hue = localStorage.getItem('hue') || configHue;
-			document.documentElement.style.setProperty('--hue', hue);
+					const hue = localStorage.getItem("hue") || configHue;
+					document.documentElement.style.setProperty("--hue", hue);
 
-			let offset = Math.floor(window.innerHeight * (BANNER_HEIGHT_EXTEND / 100));
-			offset = offset - offset % 4;
-			document.documentElement.style.setProperty('--banner-height-extend', `${offset}px`);
+					let offset = Math.floor(
+						window.innerHeight * (BANNER_HEIGHT_EXTEND / 100),
+					);
+					offset = offset - (offset % 4);
+					document.documentElement.style.setProperty(
+						"--banner-height-extend",
+						`${offset}px`,
+					);
+				} catch (e) {
+					// Silenciar errores
+				}
+			})();
 		</script>
-		<style define:vars={{
-			configHue,
-			'page-width': `${PAGE_WIDTH}rem`,
-		}}></style>
 
-		<slot name="head"></slot>
+		<style
+			define:vars={{
+				configHue,
+				"page-width": `${PAGE_WIDTH}rem`,
+			}}
+		></style>
 
-		<link rel="alternate" type="application/rss+xml" title={profileConfig.name} href={`${Astro.site}rss.xml`}/>
+		<slot name="head" />
 
+		<link
+			rel="alternate"
+			type="application/rss+xml"
+			title={profileConfig.name}
+			href={`${Astro.site}rss.xml`}
+		/>
 	</head>
-	<body class=" min-h-screen transition " class:list={[{"lg:is-home": isHomePage, "enable-banner": enableBanner}]}
-			data-overlayscrollbars-initialize
-	>
-		<ConfigCarrier></ConfigCarrier>
-		<slot />
 
+	<body
+		class="min-h-screen transition"
+		class:list={[{ "lg:is-home": isHomePage, "enable-banner": enableBanner }]}
+		data-overlayscrollbars-initialize
+	>
+		<ConfigCarrier />
+		<slot />
 	</body>
 </html>
 
-<style is:global define:vars={{
-	bannerOffset,
-	'banner-height-home': `${BANNER_HEIGHT_HOME}vh`,
-	'banner-height': `${BANNER_HEIGHT}vh`,
-}}>
-@tailwind components;
-@layer components {
-	.enable-banner.is-home #banner-wrapper {
-		@apply h-[var(--banner-height-home)] translate-y-[var(--banner-height-extend)]
-	}
-	.enable-banner #banner-wrapper {
-		@apply h-[var(--banner-height-home)]
+<style
+	is:global
+	define:vars={{
+		bannerOffset,
+		"banner-height-home": `${BANNER_HEIGHT_HOME}vh`,
+		"banner-height": `${BANNER_HEIGHT}vh`,
+	}}
+>
+	@tailwind components;
+	@layer components {
+		.enable-banner.is-home #banner-wrapper {
+			@apply h-[var(--banner-height-home)] translate-y-[var(--banner-height-extend)];
+		}
+		.enable-banner #banner-wrapper {
+			@apply h-[var(--banner-height-home)];
+		}
+
+		.enable-banner.is-home #banner {
+			@apply h-[var(--banner-height-home)] translate-y-0;
+		}
+		.enable-banner #banner {
+			@apply h-[var(--banner-height-home)] translate-y-[var(--bannerOffset)];
+		}
+		.enable-banner.is-home #main-grid {
+			@apply translate-y-[var(--banner-height-extend)];
+		}
+		.enable-banner #top-row {
+			@apply h-[calc(var(--banner-height-home)_-_4.5rem)] transition-all duration-300;
+		}
+		.enable-banner.is-home #sidebar-sticky {
+			@apply top-[calc(1rem_-_var(--banner-height-extend))];
+		}
+		.navbar-hidden {
+			@apply opacity-0 -translate-y-4 pointer-events-none;
+		}
 	}
 
-	.enable-banner.is-home #banner {
-		@apply h-[var(--banner-height-home)] translate-y-0
-	}
-	.enable-banner #banner {
-		@apply h-[var(--banner-height-home)] translate-y-[var(--bannerOffset)]
-	}
-	.enable-banner.is-home #main-grid {
-		@apply translate-y-[var(--banner-height-extend)];
-	}
-	.enable-banner #top-row {
-		@apply h-[calc(var(--banner-height-home)_-_4.5rem)] transition-all duration-300
-	}
-	.enable-banner.is-home #sidebar-sticky {
-		@apply top-[calc(1rem_-_var(--banner-height-extend))]
-	}
-	.navbar-hidden {
-		@apply opacity-0 -translate-y-4 pointer-events-none
-	}
-}
-
-/* ========================================================
-   ESTILOS GLOBALES: PREMIUM SCROLL REVEAL (Añadido Límpiamente)
-   ======================================================== */
-.premium-reveal {
-	opacity: 0;
-	transform: translateY(20px);
-	transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-	will-change: opacity, transform;
-}
-
-.premium-reveal.is-revealed {
-	opacity: 1;
-	transform: translateY(0);
-}
-
-@media (prefers-reduced-motion: reduce) {
+	/* ========================================================
+     ESTILOS GLOBALES: PREMIUM SCROLL REVEAL
+     ======================================================== */
 	.premium-reveal {
-		transition: none !important;
-		opacity: 1 !important;
-		transform: none !important;
+		opacity: 0;
+		transform: translateY(20px);
+		transition:
+			opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+			transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+		will-change: opacity, transform;
 	}
-}
+
+	.premium-reveal.is-revealed {
+		opacity: 1;
+		transform: translateY(0);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.premium-reveal {
+			transition: none !important;
+			opacity: 1 !important;
+			transform: none !important;
+		}
+	}
 </style>
 
+<!-- ✅ Scripts con lang="ts" eliminados o movidos a archivos externos -->
 <script>
-import 'overlayscrollbars/overlayscrollbars.css';
-import {
-	OverlayScrollbars,
-} from 'overlayscrollbars';
-import {getHue, getStoredTheme, setHue, setTheme} from "../utils/setting-utils";
-import {pathsEqual, url} from "../utils/url-utils";
-import {
-	BANNER_HEIGHT,
-	BANNER_HEIGHT_HOME,
-	BANNER_HEIGHT_EXTEND,
-	MAIN_PANEL_OVERLAPS_BANNER_HEIGHT
-} from "../constants/constants";
-import { siteConfig } from '../config';
+	import "overlayscrollbars/overlayscrollbars.css";
+	import { OverlayScrollbars } from "overlayscrollbars";
+	import { getHue, getStoredTheme, setHue, setTheme } from "../utils/setting-utils";
+	import { pathsEqual, url } from "../utils/url-utils";
+	import {
+		BANNER_HEIGHT,
+		BANNER_HEIGHT_HOME,
+		BANNER_HEIGHT_EXTEND,
+		MAIN_PANEL_OVERLAPS_BANNER_HEIGHT,
+	} from "../constants/constants";
+	import { siteConfig } from "../config";
 
-const bannerEnabled = !!document.getElementById('banner-wrapper')
+	const bannerEnabled = !!document.getElementById("banner-wrapper");
 
-function setClickOutsideToClose(panel: string, ignores: string[]) {
-	document.addEventListener("click", event => {
-		let panelDom = document.getElementById(panel);
-		let tDom = event.target;
-		if (!(tDom instanceof Node)) return;
-		for (let ig of ignores) {
-			let ie = document.getElementById(ig)
-			if (ie == tDom || (ie?.contains(tDom))) {
-				return;
+	function setClickOutsideToClose(panel: string, ignores: string[]) {
+		document.addEventListener("click", (event) => {
+			const panelDom = document.getElementById(panel);
+			const tDom = event.target;
+			if (!(tDom instanceof Node)) return;
+			for (const ig of ignores) {
+				const ie = document.getElementById(ig);
+				if (ie === tDom || ie?.contains(tDom)) {
+					return;
+				}
 			}
-		}
-		panelDom!.classList.add("float-panel-closed");
-	});
-}
-setClickOutsideToClose("display-setting", ["display-setting", "display-settings-switch"])
-setClickOutsideToClose("nav-menu-panel", ["nav-menu-panel", "nav-menu-switch"])
-setClickOutsideToClose("search-panel", ["search-panel", "search-bar", "search-switch"])
-
-function loadTheme() {
-	const theme = getStoredTheme()
-	setTheme(theme)
-}
-
-function loadHue() {
-	setHue(getHue())
-}
-
-function initCustomScrollbar() {
-	const bodyElement = document.querySelector('body');
-	if (!bodyElement) return;
-	OverlayScrollbars(
-		{
-			target: bodyElement,
-			cancel: {
-				nativeScrollbarsOverlaid: true,
-			},
-		}, {
-			scrollbars: {
-				theme: 'scrollbar-base scrollbar-auto py-1',
-				autoHide: 'move',
-				autoHideDelay: 500,
-				autoHideSuspend: false,
-			},
+			panelDom?.classList.add("float-panel-closed");
 		});
+	}
+	setClickOutsideToClose("display-setting", [
+		"display-setting",
+		"display-settings-switch",
+	]);
+	setClickOutsideToClose("nav-menu-panel", ["nav-menu-panel", "nav-menu-switch"]);
+	setClickOutsideToClose("search-panel", [
+		"search-panel",
+		"search-bar",
+		"search-switch",
+	]);
 
-	const katexElements = document.querySelectorAll('.katex-display') as NodeListOf<HTMLElement>;
-
-	const katexObserverOptions = {
-		root: null,
-		rootMargin: '100px',
-		threshold: 0.1
-	};
-
-	const processKatexElement = (element: HTMLElement) => {
-		if (!element.parentNode) return;
-		if (element.hasAttribute('data-scrollbar-initialized')) return;
-
-		const container = document.createElement('div');
-		container.className = 'katex-display-container';
-		container.setAttribute('aria-label', 'scrollable container for formulas');
-
-		element.parentNode.insertBefore(container, element);
-		container.appendChild(element);
-
-		OverlayScrollbars(container, {
-			scrollbars: {
-				theme: 'scrollbar-base scrollbar-auto',
-				autoHide: 'leave',
-				autoHideDelay: 500,
-				autoHideSuspend: false
-			}
-		});
-
-		element.setAttribute('data-scrollbar-initialized', 'true');
-	};
-
-	const katexObserver = new IntersectionObserver((entries, observer) => {
-		entries.forEach(entry => {
-			if (entry.isIntersecting) {
-				processKatexElement(entry.target as HTMLElement);
-				observer.unobserve(entry.target);
-			}
-		});
-	}, katexObserverOptions);
-
-	katexElements.forEach(element => {
-		katexObserver.observe(element);
-	});
-}
-
-function showBanner() {
-	if (!siteConfig.banner.enable) return;
-
-	const banner = document.getElementById('banner');
-	if (!banner) return;
-
-	banner.classList.remove('opacity-0', 'scale-105');
-}
-
-/* ========================================================
-   LÓGICA GLOBAL: PREMIUM SCROLL REVEAL ENGINE
-   ======================================================== */
-function initPremiumReveal() {
-	if (!('IntersectionObserver' in window)) {
-		// Fallback seguro si el navegador es muy antiguo
-		document.querySelectorAll('.premium-reveal').forEach(el => el.classList.add('is-revealed'));
-		return;
+	function loadTheme() {
+		setTheme(getStoredTheme());
 	}
 
-	const observer = new IntersectionObserver((entries, obs) => {
-		entries.forEach(entry => {
-			if (entry.isIntersecting) {
-				entry.target.classList.add('is-revealed');
-				obs.unobserve(entry.target); // Dejar de observar una vez mostrado para ahorrar recursos
-			}
+	function loadHue() {
+		setHue(getHue());
+	}
+
+	function initCustomScrollbar() {
+		const bodyElement = document.querySelector("body");
+		if (!bodyElement) return;
+		OverlayScrollbars(
+			{
+				target: bodyElement,
+				cancel: {
+					nativeScrollbarsOverlaid: true,
+				},
+			},
+			{
+				scrollbars: {
+					theme: "scrollbar-base scrollbar-auto py-1",
+					autoHide: "move",
+					autoHideDelay: 500,
+					autoHideSuspend: false,
+				},
+			},
+		);
+
+		const katexElements = document.querySelectorAll(
+			".katex-display",
+		) as NodeListOf<HTMLElement>;
+
+		const processKatexElement = (element: HTMLElement) => {
+			if (!element.parentNode) return;
+			if (element.hasAttribute("data-scrollbar-initialized")) return;
+
+			const container = document.createElement("div");
+			container.className = "katex-display-container";
+			container.setAttribute("aria-label", "scrollable container for formulas");
+
+			element.parentNode.insertBefore(container, element);
+			container.appendChild(element);
+
+			OverlayScrollbars(container, {
+				scrollbars: {
+					theme: "scrollbar-base scrollbar-auto",
+					autoHide: "leave",
+					autoHideDelay: 500,
+					autoHideSuspend: false,
+				},
+			});
+
+			element.setAttribute("data-scrollbar-initialized", "true");
+		};
+
+		const katexObserver = new IntersectionObserver((entries, observer) => {
+			entries.forEach((entry) => {
+				if (entry.isIntersecting) {
+					processKatexElement(entry.target as HTMLElement);
+					observer.unobserve(entry.target);
+				}
+			});
 		});
-	}, { 
-		threshold: 0.05, 
-		rootMargin: '0px 0px -30px 0px' 
-	});
 
-	// Capturar todos los elementos con la clase que aún no hayan sido revelados
-	document.querySelectorAll('.premium-reveal:not(.is-revealed)').forEach(el => {
-		observer.observe(el);
-	});
-}
+		katexElements.forEach((element) => {
+			katexObserver.observe(element);
+		});
+	}
 
-function init() {
-	loadTheme();
-	loadHue();
-	initCustomScrollbar();
-	showBanner();
-	initPremiumReveal(); // Inyectado en la inicialización principal
-}
+	function showBanner() {
+		if (!siteConfig.banner.enable) return;
+		const banner = document.getElementById("banner");
+		if (!banner) return;
+		banner.classList.remove("opacity-0", "scale-105");
+	}
 
-init();
-
-const setup = () => {
-	window.swup.hooks.on('link:click', () => {
-		document.documentElement.style.setProperty('--content-delay', '0ms')
-
-		if (!bannerEnabled) {
-			return
+	function initPremiumReveal() {
+		if (!("IntersectionObserver" in window)) {
+			document
+				.querySelectorAll(".premium-reveal")
+				.forEach((el) => el.classList.add("is-revealed"));
+			return;
 		}
-		let threshold = window.innerHeight * (BANNER_HEIGHT / 100) - 72 - 16
-		let navbar = document.getElementById('navbar-wrapper')
-		if (!navbar || !document.body.classList.contains('lg:is-home')) {
-			return
-		}
-		if (document.body.scrollTop >= threshold || document.documentElement.scrollTop >= threshold) {
-			navbar.classList.add('navbar-hidden')
-		}
-	})
-	
-	// Asegurar que el scroll reveal vuelva a escanear elementos después de que Swup cambie el contenido
-	window.swup.hooks.on('content:replace', () => {
+
+		const observer = new IntersectionObserver(
+			(entries, obs) => {
+				entries.forEach((entry) => {
+					if (entry.isIntersecting) {
+						entry.target.classList.add("is-revealed");
+						obs.unobserve(entry.target);
+					}
+				});
+			},
+			{ threshold: 0.05, rootMargin: "0px 0px -30px 0px" },
+		);
+
+		document
+			.querySelectorAll(".premium-reveal:not(.is-revealed)")
+			.forEach((el) => {
+				observer.observe(el);
+			});
+	}
+
+	function init() {
+		loadTheme();
+		loadHue();
 		initCustomScrollbar();
-		initPremiumReveal(); 
-	})
-
-	window.swup.hooks.on('visit:start', (visit: {to: {url: string}}) => {
-		const bodyElement = document.querySelector('body')
-		if (pathsEqual(visit.to.url, url('/'))) {
-			bodyElement!.classList.add('lg:is-home');
-		} else {
-			bodyElement!.classList.remove('lg:is-home');
-		}
-
-		const heightExtend = document.getElementById('page-height-extend')
-		if (heightExtend) {
-			heightExtend.classList.remove('hidden')
-		}
-
-		let toc = document.getElementById('toc-wrapper');
-		if (toc) {
-			toc.classList.add('toc-not-ready')
-		}
-	});
-	window.swup.hooks.on('page:view', () => {
-		const heightExtend = document.getElementById('page-height-extend')
-		if (heightExtend) {
-			heightExtend.classList.remove('hidden')
-		}
-	});
-	window.swup.hooks.on('visit:end', (_visit: {to: {url: string}}) => {
-		setTimeout(() => {
-			const heightExtend = document.getElementById('page-height-extend')
-			if (heightExtend) {
-				heightExtend.classList.add('hidden')
-			}
-
-			const toc = document.getElementById('toc-wrapper');
-			if (toc) {
-				toc.classList.remove('toc-not-ready')
-			}
-		}, 200)
-	});
-}
-
-if (window?.swup?.hooks) {
-	setup()
-} else {
-	document.addEventListener('swup:enable', setup)
-}
-
-let backToTopBtn = document.getElementById('back-to-top-btn');
-let toc = document.getElementById('toc-wrapper');
-let navbar = document.getElementById('navbar-wrapper')
-let lastScrollY = 0;
-let ticking = false;
-const SCROLL_DELTA = 60;
-
-function scrollFunction() {
-	const currentScrollY = Math.max(document.body.scrollTop, document.documentElement.scrollTop);
-	let bannerHeight = window.innerHeight * (BANNER_HEIGHT / 100)
-
-	if (backToTopBtn) {
-		if (currentScrollY > bannerHeight) {
-			backToTopBtn.classList.remove('hide')
-		} else {
-			backToTopBtn.classList.add('hide')
-		}
+		showBanner();
+		initPremiumReveal();
 	}
 
-	if (bannerEnabled && toc) {
-		if (currentScrollY > bannerHeight) {
-			toc.classList.remove('toc-hide')
-		} else {
-			toc.classList.add('toc-hide')
-		}
-	}
+	init();
 
-	if (navbar) {
-		if (!bannerEnabled) {
-			if (currentScrollY <= 10) {
-				navbar.classList.remove('navbar-hidden')
-			} else if (currentScrollY < lastScrollY - 5) {
-				navbar.classList.remove('navbar-hidden')
-			} else if (currentScrollY > lastScrollY + SCROLL_DELTA) {
-				navbar.classList.add('navbar-hidden')
+	const setup = () => {
+		const swup = (window as any).swup;
+		if (!swup?.hooks) return;
+
+		swup.hooks.on("link:click", () => {
+			document.documentElement.style.setProperty("--content-delay", "0ms");
+
+			if (!bannerEnabled) return;
+			const threshold = window.innerHeight * (BANNER_HEIGHT / 100) - 72 - 16;
+			const navbar = document.getElementById("navbar-wrapper");
+			if (!navbar || !document.body.classList.contains("lg:is-home")) return;
+			if (
+				document.body.scrollTop >= threshold ||
+				document.documentElement.scrollTop >= threshold
+			) {
+				navbar.classList.add("navbar-hidden");
 			}
-		} else {
-			const NAVBAR_HEIGHT = 72
-			const MAIN_PANEL_EXCESS_HEIGHT = MAIN_PANEL_OVERLAPS_BANNER_HEIGHT * 16
-
-			let navBannerHeight = BANNER_HEIGHT
-			if (document.body.classList.contains('lg:is-home') && window.innerWidth >= 1024) {
-				navBannerHeight = BANNER_HEIGHT_HOME
-			}
-			let threshold = window.innerHeight * (navBannerHeight / 100) - NAVBAR_HEIGHT - MAIN_PANEL_EXCESS_HEIGHT - 16
-
-			if (currentScrollY < threshold) {
-				navbar.classList.remove('navbar-hidden')
-			} else if (currentScrollY <= threshold + 10) {
-				navbar.classList.remove('navbar-hidden')
-			} else if (currentScrollY < lastScrollY - 5) {
-				navbar.classList.remove('navbar-hidden')
-			} else if (currentScrollY > lastScrollY + SCROLL_DELTA) {
-				navbar.classList.add('navbar-hidden')
-			}
-		}
-	}
-
-	if (Math.abs(currentScrollY - lastScrollY) > 5) {
-		lastScrollY = currentScrollY;
-	}
-}
-
-window.onscroll = () => {
-	if (!ticking) {
-		requestAnimationFrame(() => {
-			scrollFunction();
-			ticking = false;
 		});
-		ticking = true;
+
+		swup.hooks.on("content:replace", () => {
+			initCustomScrollbar();
+			initPremiumReveal();
+		});
+
+		swup.hooks.on("visit:start", (visit: { to: { url: string } }) => {
+			const bodyElement = document.querySelector("body");
+			if (pathsEqual(visit.to.url, url("/"))) {
+				bodyElement?.classList.add("lg:is-home");
+			} else {
+				bodyElement?.classList.remove("lg:is-home");
+			}
+
+			const heightExtend = document.getElementById("page-height-extend");
+			if (heightExtend) heightExtend.classList.remove("hidden");
+
+			const toc = document.getElementById("toc-wrapper");
+			if (toc) toc.classList.add("toc-not-ready");
+		});
+
+		swup.hooks.on("page:view", () => {
+			const heightExtend = document.getElementById("page-height-extend");
+			if (heightExtend) heightExtend.classList.remove("hidden");
+		});
+
+		swup.hooks.on("visit:end", () => {
+			setTimeout(() => {
+				const heightExtend = document.getElementById("page-height-extend");
+				if (heightExtend) heightExtend.classList.add("hidden");
+
+				const toc = document.getElementById("toc-wrapper");
+				if (toc) toc.classList.remove("toc-not-ready");
+			}, 200);
+		});
+	};
+
+	const swup = (window as any).swup;
+	if (swup?.hooks) {
+		setup();
+	} else {
+		document.addEventListener("swup:enable", setup);
 	}
-};
 
-window.onresize = () => {
-	let offset = Math.floor(window.innerHeight * (BANNER_HEIGHT_EXTEND / 100));
-	offset = offset - offset % 4;
-	document.documentElement.style.setProperty('--banner-height-extend', `${offset}px`);
-}
+	// Scroll handling
+	const backToTopBtn = document.getElementById("back-to-top-btn");
+	const toc = document.getElementById("toc-wrapper");
+	const navbar = document.getElementById("navbar-wrapper");
+	let lastScrollY = 0;
+	let ticking = false;
+	const SCROLL_DELTA = 60;
 
-</script>
+	function scrollFunction() {
+		const currentScrollY = Math.max(
+			document.body.scrollTop,
+			document.documentElement.scrollTop,
+		);
+		const bannerHeight = window.innerHeight * (BANNER_HEIGHT / 100);
 
-<script>
-import PhotoSwipeLightbox from "photoswipe/lightbox"
-import "photoswipe/style.css"
-
-let lightbox: PhotoSwipeLightbox
-let pswp = import("photoswipe")
-
-function createPhotoSwipe() {
-	lightbox = new PhotoSwipeLightbox({
-		gallery: ".custom-md img, #post-cover img",
-		pswpModule: () => pswp,
-		closeSVG: '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff"><path d="M480-424 284-228q-11 11-28 11t-28-11q-11-11-11-28t11-28l196-196-196-196q-11-11-11-28t11-28q11-11 28-11t28 11l196 196 196-196q11-11 28-11t28 11q11 11 11 28t-11 28L536-480l196 196q11 11 11 28t-11 28q-11 11-28 11t-28-11L480-424Z"/></svg>',
-		zoomSVG: '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff"><path d="M340-540h-40q-17 0-28.5-11.5T260-580q0-17 11.5-28.5T300-620h40v-40q0-17 11.5-28.5T380-700q17 0 28.5 11.5T420-660v40h40q17 0 28.5 11.5T500-580q0 17-11.5 28.5T460-540h-40v40q0 17-11.5 28.5T380-460q-17 0-28.5-11.5T340-500v-40Zm40 220q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l224 224q11 11 11 28t-11 28q-11 11-28 11t-28-11L532-372q-30 24-69 38t-83 14Zm0-80q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/></svg>',
-		padding: { top: 20, bottom: 20, left: 20, right: 20 },
-		wheelToZoom: true,
-		arrowPrev: false,
-		arrowNext: false,
-		imageClickAction: 'close',
-		tapAction: 'close',
-		doubleTapAction: 'zoom',
-	})
-
-	lightbox.addFilter("domItemData", (itemData, element) => {
-		if (element instanceof HTMLImageElement) {
-			itemData.src = element.src
-			itemData.w = Number(element.naturalWidth || window.innerWidth)
-			itemData.h = Number(element.naturalHeight || window.innerHeight)
-			itemData.msrc = element.src
+		if (backToTopBtn) {
+			if (currentScrollY > bannerHeight) {
+				backToTopBtn.classList.remove("hide");
+			} else {
+				backToTopBtn.classList.add("hide");
+			}
 		}
-		return itemData
-	})
 
-	lightbox.init()
-}
+		if (bannerEnabled && toc) {
+			if (currentScrollY > bannerHeight) {
+				toc.classList.remove("toc-hide");
+			} else {
+				toc.classList.add("toc-hide");
+			}
+		}
 
-const setup2 = () => { // Renombrado internamente solo para no chocar con la función swup principal si se declara de nuevo.
-	if (!lightbox) {
-		createPhotoSwipe()
+		if (navbar) {
+			if (!bannerEnabled) {
+				if (currentScrollY <= 10) {
+					navbar.classList.remove("navbar-hidden");
+				} else if (currentScrollY < lastScrollY - 5) {
+					navbar.classList.remove("navbar-hidden");
+				} else if (currentScrollY > lastScrollY + SCROLL_DELTA) {
+					navbar.classList.add("navbar-hidden");
+				}
+			} else {
+				const NAVBAR_HEIGHT = 72;
+				const MAIN_PANEL_EXCESS_HEIGHT = MAIN_PANEL_OVERLAPS_BANNER_HEIGHT * 16;
+
+				let navBannerHeight = BANNER_HEIGHT;
+				if (
+					document.body.classList.contains("lg:is-home") &&
+					window.innerWidth >= 1024
+				) {
+					navBannerHeight = BANNER_HEIGHT_HOME;
+				}
+				const threshold =
+					window.innerHeight * (navBannerHeight / 100) -
+					NAVBAR_HEIGHT -
+					MAIN_PANEL_EXCESS_HEIGHT -
+					16;
+
+				if (currentScrollY < threshold) {
+					navbar.classList.remove("navbar-hidden");
+				} else if (currentScrollY <= threshold + 10) {
+					navbar.classList.remove("navbar-hidden");
+				} else if (currentScrollY < lastScrollY - 5) {
+					navbar.classList.remove("navbar-hidden");
+				} else if (currentScrollY > lastScrollY + SCROLL_DELTA) {
+					navbar.classList.add("navbar-hidden");
+				}
+			}
+		}
+
+		if (Math.abs(currentScrollY - lastScrollY) > 5) {
+			lastScrollY = currentScrollY;
+		}
 	}
-	window.swup.hooks.on("page:view", () => {
-		createPhotoSwipe()
-	})
 
-	window.swup.hooks.on(
-		"content:replace",
-		() => {
-			lightbox?.destroy?.()
-		},
-		{ before: true },
-	)
-}
+	window.onscroll = () => {
+		if (!ticking) {
+			window.requestAnimationFrame(() => {
+				scrollFunction();
+				ticking = false;
+			});
+			ticking = true;
+		}
+	};
 
-if (window.swup) {
-	setup2()
-} else {
-	document.addEventListener("swup:enable", setup2)
-}
+	window.onresize = () => {
+		const offset =
+			Math.floor(window.innerHeight * (BANNER_HEIGHT_EXTEND / 100)) -
+			(Math.floor(window.innerHeight * (BANNER_HEIGHT_EXTEND / 100)) % 4);
+		document.documentElement.style.setProperty(
+			"--banner-height-extend",
+			`${offset}px`,
+		);
+	};
 </script>
 
 <script>
-  document.addEventListener('contextmenu', function(e) {
-    if (e.target && (e.target as HTMLElement).tagName === 'IMG') {
-      e.preventDefault();
-    }
-  });
+	import PhotoSwipeLightbox from "photoswipe/lightbox";
+	import "photoswipe/style.css";
 
-  document.addEventListener('dragstart', function(e) {
-    if (e.target && (e.target as HTMLElement).tagName === 'IMG') {
-      e.preventDefault();
-    }
-  });
+	let lightbox: PhotoSwipeLightbox | null = null;
+	const pswp = import("photoswipe");
+
+	function createPhotoSwipe() {
+		lightbox = new PhotoSwipeLightbox({
+			gallery: ".custom-md img, #post-cover img",
+			pswpModule: () => pswp,
+			closeSVG:
+				'<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff"><path d="M480-424 284-228q-11 11-28 11t-28-11q-11-11-11-28t11-28l196-196-196-196q-11-11-11-28t11-28q11-11 28-11t28 11l196 196 196-196q11-11 28-11t28 11q11 11 11 28t-11 28L536-480l196 196q11 11 11 28t-11 28q-11 11-28 11t-28-11L480-424Z"/></svg>',
+			zoomSVG:
+				'<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff"><path d="M340-540h-40q-17 0-28.5-11.5T260-580q0-17 11.5-28.5T300-620h40v-40q0-17 11.5-28.5T380-700q17 0 28.5 11.5T420-660v40h40q17 0 28.5 11.5T500-580q0 17-11.5 28.5T460-540h-40v40q0 17-11.5 28.5T380-460q-17 0-28.5-11.5T340-500v-40Zm40 220q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l224 224q11 11 11 28t-11 28q-11 11-28 11t-28-11L532-372q-30 24-69 38t-83 14Zm0-80q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/></svg>',
+			padding: { top: 20, bottom: 20, left: 20, right: 20 },
+			wheelToZoom: true,
+			arrowPrev: false,
+			arrowNext: false,
+			imageClickAction: "close",
+			tapAction: "close",
+			doubleTapAction: "zoom",
+		});
+
+		lightbox.addFilter("domItemData", (itemData, element) => {
+			if (element instanceof HTMLImageElement) {
+				itemData.src = element.src;
+				itemData.w = Number(element.naturalWidth || window.innerWidth);
+				itemData.h = Number(element.naturalHeight || window.innerHeight);
+				itemData.msrc = element.src;
+			}
+			return itemData;
+		});
+
+		lightbox.init();
+	}
+
+	const setup2 = () => {
+		const swup = (window as any).swup;
+		if (!swup) return;
+
+		if (!lightbox) {
+			createPhotoSwipe();
+		}
+
+		swup.hooks.on("page:view", () => {
+			createPhotoSwipe();
+		});
+
+		swup.hooks.on(
+			"content:replace",
+			() => {
+				lightbox?.destroy?.();
+			},
+			{ before: true },
+		);
+	};
+
+	if ((window as any).swup) {
+		setup2();
+	} else {
+		document.addEventListener("swup:enable", setup2);
+	}
+</script>
+
+<!-- ✅ Script de contextmenu corregido (sin TypeScript) -->
+<script is:inline>
+	(function () {
+		document.addEventListener("contextmenu", function (e) {
+			if (e.target && e.target.tagName === "IMG") {
+				e.preventDefault();
+			}
+		});
+
+		document.addEventListener("dragstart", function (e) {
+			if (e.target && e.target.tagName === "IMG") {
+				e.preventDefault();
+			}
+		});
+	})();
 </script>
 
 <script is:inline>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
-      .then(reg => {
-        setInterval(() => reg.update(), 60 * 60 * 1000);
-      })
-      .catch(() => {});
-  });
+	if ("serviceWorker" in navigator) {
+		window.addEventListener("load", () => {
+			navigator.serviceWorker
+				.register("/sw.js", { updateViaCache: "none" })
+				.then((reg) => {
+					setInterval(() => reg.update(), 60 * 60 * 1000);
+				})
+				.catch(() => {});
+		});
 
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      navigator.serviceWorker.getRegistration().then(reg => {
-        if (reg && reg.waiting) {
-          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-        } else if (reg) {
-          reg.update();
-        }
-      });
-    }
-  });
-}
+		document.addEventListener("visibilitychange", () => {
+			if (document.visibilityState === "visible") {
+				navigator.serviceWorker.getRegistration().then((reg) => {
+					if (reg && reg.waiting) {
+						reg.waiting.postMessage({ type: "SKIP_WAITING" });
+					} else if (reg) {
+						reg.update();
+					}
+				});
+			}
+		});
+	}
 </script>
