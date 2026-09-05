@@ -123,9 +123,9 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	let currentScript: string | null = null;
 
 	// Scroll engine
-	let scrollContainer: HTMLDivElement;
-	let content: HTMLDivElement;
-	let fullscreenTarget: HTMLDivElement;
+	let scrollContainer: HTMLDivElement | null = null;
+    let content: HTMLDivElement | null = null;
+    let fullscreenTarget: HTMLDivElement | null = null;
 	let raf: number | null = null;
 	let lastTime: number | null = null;
 	let targetSpeed = speed;
@@ -149,7 +149,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	// Derivados
 	// ============================================
 	$: lines = text.split("\n");
-	$: lineElements = lines.map((_, i) => lineElements[i] ?? null);
+	$: lineElements = [];
 	$: wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
 	$: charCount = text.length;
 	$: estimatedTotalSeconds = wordCount > 0 ? Math.ceil((wordCount / 150) * 60) : 0;
