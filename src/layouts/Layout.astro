@@ -29,6 +29,7 @@ interface Props {
 	keywords?: string;
 	lang?: string;
 	ogType?: "website" | "article";
+	jsonLd?: Record<string, unknown> | null;
 }
 
 let {
@@ -40,6 +41,7 @@ let {
 	keywords,
 	lang,
 	ogType,
+	jsonLd = null,
 } = Astro.props;
 
 const isHomePage = pathsEqual(Astro.url.pathname, url("/"));
@@ -89,10 +91,15 @@ const siteUrlRaw = Astro.site?.toString().replace(/\/$/, "") ?? "";
 const currentPath = Astro.url.pathname;
 const fullCanonicalUrl = pageUrl ?? `${siteUrlRaw}${currentPath}`;
 const ogImageUrl = image
-	? (image.startsWith("http") ? image : `${siteUrlRaw}${image}`)
+	? image.startsWith("http")
+		? image
+		: `${siteUrlRaw}${image}`
 	: `${siteUrlRaw}/og-default.png`;
 const metaDescription = description || siteConfig.description || pageTitle;
-const finalOgType = ogType ?? (setOGTypeArticle ? "article" : "website");
+const finalOgType = ogType ?? "website";
+
+// JSON-LD serializado (se inyecta en el head)
+const jsonLdString = jsonLd ? JSON.stringify(jsonLd) : null;
 ---
 
 <!DOCTYPE html>
@@ -134,6 +141,15 @@ const finalOgType = ogType ?? (setOGTypeArticle ? "article" : "website");
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="generator" content={Astro.generator} />
 		<meta name="theme-color" content={`hsl(${configHue}, 50%, 50%)`} />
+
+		<!-- JSON-LD Schema.org -->
+		{jsonLdString && (
+			<script
+				type="application/ld+json"
+				set:html={jsonLdString}
+				is:inline
+			/>
+		)}
 
 		<!-- Preloads -->
 		<link
@@ -323,7 +339,7 @@ const finalOgType = ogType ?? (setOGTypeArticle ? "article" : "website");
 	}
 </style>
 
-<!-- ✅ Scripts con lang="ts" eliminados o movidos a archivos externos -->
+<!-- Scripts -->
 <script>
 	import "overlayscrollbars/overlayscrollbars.css";
 	import { OverlayScrollbars } from "overlayscrollbars";
@@ -699,7 +715,7 @@ const finalOgType = ogType ?? (setOGTypeArticle ? "article" : "website");
 	}
 </script>
 
-<!-- ✅ Script de contextmenu corregido (sin TypeScript) -->
+<!-- Script de contextmenu corregido (sin TypeScript) -->
 <script is:inline>
 	(function () {
 		document.addEventListener("contextmenu", function (e) {
