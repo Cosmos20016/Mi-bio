@@ -23,7 +23,7 @@ interface Props {
 	url?: string;
 	keywords?: string;
 	lang?: string;
-	ogType?: "website" | "article";
+	setOGTypeArticle?: boolean;
 	headings?: MarkdownHeading[];
 	jsonLd?: Record<string, unknown> | null;
 }
@@ -33,10 +33,10 @@ const {
 	banner,
 	description,
 	image,
-	url: pageUrl,
+	url,
 	keywords,
 	lang,
-	ogType,
+	setOGTypeArticle,
 	headings = [],
 	jsonLd = null,
 } = Astro.props;
@@ -44,14 +44,17 @@ const {
 const hasBannerCredit =
 	siteConfig.banner.enable && siteConfig.banner.credit.enable;
 const hasBannerLink = !!siteConfig.banner.credit.url;
-const hasHeadings = headings && headings.length > 0;
 
 const mainPanelTop = siteConfig.banner.enable
 	? `calc(${BANNER_HEIGHT}vh - ${MAIN_PANEL_OVERLAPS_BANNER_HEIGHT}rem)`
 	: "5.5rem";
 
-const siteUrlRaw = Astro.site?.toString().replace(/\/$/, "") ?? "";
-const canonicalUrl = pageUrl ?? `${siteUrlRaw}${Astro.url.pathname}`;
+// URL canónica
+const canonicalUrl =
+	url ??
+	(typeof Astro.request !== "undefined"
+		? new URL(Astro.request.url).origin + Astro.url.pathname
+		: "");
 ---
 
 <Layout
@@ -62,9 +65,18 @@ const canonicalUrl = pageUrl ?? `${siteUrlRaw}${Astro.url.pathname}`;
 	url={canonicalUrl}
 	keywords={keywords}
 	lang={lang}
-	ogType={ogType}
-	jsonLd={jsonLd}
+	setOGTypeArticle={setOGTypeArticle}
 >
+	<!-- JSON-LD opcional (passthrough) -->
+	{jsonLd && (
+		<script
+			type="application/ld+json"
+			set:html={JSON.stringify(jsonLd)}
+			is:inline
+			slot="head"
+		/>
+	)}
+
 	<!-- Slot para meta adicional en head -->
 	<slot slot="head" name="head" />
 
@@ -85,14 +97,14 @@ const canonicalUrl = pageUrl ?? `${siteUrlRaw}${Astro.url.pathname}`;
 	{siteConfig.banner.enable && (
 		<div
 			id="banner-wrapper"
-			class={`absolute z-10 w-full transition-all duration-700 overflow-hidden`}
+			class={`absolute z-10 w-full transition duration-700 overflow-hidden`}
 			style={`top: -${BANNER_HEIGHT_EXTEND}vh`}
 		>
 			<ImageWrapper
 				id="banner"
 				alt="Banner image of the blog"
 				class:list={[
-					"object-cover h-full transition-all duration-700 opacity-0 scale-105",
+					"object-cover h-full transition duration-700 opacity-0 scale-105",
 				]}
 				src={siteConfig.banner.src}
 				position={siteConfig.banner.position}
@@ -108,7 +120,7 @@ const canonicalUrl = pageUrl ?? `${siteUrlRaw}${Astro.url.pathname}`;
 		<div class="relative max-w-[var(--page-width)] mx-auto pointer-events-auto">
 			<div
 				id="main-grid"
-				class="transition-all duration-700 w-full left-0 right-0 grid grid-cols-1 lg:grid-cols-[17.5rem_auto] grid-rows-[auto_1fr_auto] lg:grid-rows-[auto] mx-auto gap-4 px-0 md:px-4"
+				class="transition-all duration-700 w-full left-0 right-0 grid grid-cols-[17.5rem_auto] grid-rows-[auto_1fr_auto] lg:grid-rows-[auto] mx-auto gap-4 px-0 md:px-4"
 			>
 				<!-- Banner image credit -->
 				{hasBannerCredit && (
@@ -132,7 +144,7 @@ const canonicalUrl = pageUrl ?? `${siteUrlRaw}${Astro.url.pathname}`;
 						</div>
 						<Icon
 							class:list={[
-								"transition-all absolute text-[oklch(0.75_0.14_var(--hue))] right-4 text-[0.75rem] opacity-0",
+								"transition absolute text-[oklch(0.75_0.14_var(--hue))] right-4 text-[0.75rem] opacity-0",
 								{ "group-hover:opacity-100": hasBannerLink },
 							]}
 							name="fa6-solid:arrow-up-right-from-square"
@@ -140,28 +152,27 @@ const canonicalUrl = pageUrl ?? `${siteUrlRaw}${Astro.url.pathname}`;
 					</a>
 				)}
 
-				<!-- Sidebar: solo si hay headings -->
-				{hasHeadings && (
-					<SideBar
-						class="mb-4 row-start-2 row-end-3 col-span-2 lg:row-start-1 lg:row-end-2 lg:col-span-1 lg:max-w-[17.5rem] onload-animation"
-						headings={headings}
-					/>
-				)}
+				<SideBar
+					class="mb-4 row-start-2 row-end-3 col-span-2 lg:row-start-1 lg:row-end-2 lg:col-span-1 lg:max-w-[17.5rem] onload-animation"
+					headings={headings}
+				/>
 
-				<!-- ⚠️ MANTENEMOS id="swup-container" para compatibilidad con tu astro.config.mjs actual -->
 				<main
 					id="swup-container"
 					class="transition-swup-fade col-span-2 lg:col-span-1"
 				>
 					<div id="content-wrapper" class="onload-animation">
+						<!-- make id different from windows.swup global property -->
 						<slot />
 
+						<!-- Footer desktop -->
 						<div class="footer col-span-2 premium-reveal hidden lg:block">
 							<Footer />
 						</div>
 					</div>
 				</main>
 
+				<!-- Footer móvil -->
 				<div class="footer col-span-2 premium-reveal block lg:hidden">
 					<Footer />
 				</div>
@@ -171,10 +182,10 @@ const canonicalUrl = pageUrl ?? `${siteUrlRaw}${Astro.url.pathname}`;
 		</div>
 	</div>
 
-	<!-- TOC: solo si hay headings -->
-	{siteConfig.toc.enable && hasHeadings && (
-		<div class="absolute w-full z-0 hidden 2xl:block">
-			<div class="relative max-w-[var(--page-width)] mx-auto">
+	<!-- TOC -->
+	<div class="absolute w-full z-0 hidden 2xl:block">
+		<div class="relative max-w-[var(--page-width)] mx-auto">
+			{siteConfig.toc.enable && (
 				<div
 					id="toc-wrapper"
 					class:list={[
@@ -193,9 +204,9 @@ const canonicalUrl = pageUrl ?? `${siteUrlRaw}${Astro.url.pathname}`;
 						</div>
 					</div>
 				</div>
-			</div>
-		</div>
-	)}
+			)}
 
-	{(!siteConfig.toc.enable || !hasHeadings) && <div id="toc" class="hidden" />}
+			{!siteConfig.toc.enable && <div id="toc" />}
+		</div>
+	</div>
 </Layout>
