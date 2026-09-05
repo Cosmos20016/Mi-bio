@@ -50,7 +50,6 @@ const mainPanelTop = siteConfig.banner.enable
 	? `calc(${BANNER_HEIGHT}vh - ${MAIN_PANEL_OVERLAPS_BANNER_HEIGHT}rem)`
 	: "5.5rem";
 
-// URL canónica
 const siteUrlRaw = Astro.site?.toString().replace(/\/$/, "") ?? "";
 const canonicalUrl = pageUrl ?? `${siteUrlRaw}${Astro.url.pathname}`;
 ---
@@ -141,7 +140,7 @@ const canonicalUrl = pageUrl ?? `${siteUrlRaw}${Astro.url.pathname}`;
 					</a>
 				)}
 
-				<!-- Sidebar: solo se renderiza si hay headings -->
+				<!-- Sidebar: solo si hay headings -->
 				{hasHeadings && (
 					<SideBar
 						class="mb-4 row-start-2 row-end-3 col-span-2 lg:row-start-1 lg:row-end-2 lg:col-span-1 lg:max-w-[17.5rem] onload-animation"
@@ -149,23 +148,20 @@ const canonicalUrl = pageUrl ?? `${siteUrlRaw}${Astro.url.pathname}`;
 					/>
 				)}
 
-				<!-- ✅ FIX CRÍTICO: id cambiado para no chocar con window.swup -->
+				<!-- id cambiado a "page-content" para no chocar con window.swup -->
 				<main
 					id="page-content"
 					class="transition-swup-fade col-span-2 lg:col-span-1"
 				>
 					<div id="content-wrapper" class="onload-animation">
-						<!-- ✅ FIX: overflow-hidden removido para no cortar tooltips/modals -->
 						<slot />
 
-						<!-- Footer desktop -->
 						<div class="footer col-span-2 premium-reveal hidden lg:block">
 							<Footer />
 						</div>
 					</div>
 				</main>
 
-				<!-- Footer móvil -->
 				<div class="footer col-span-2 premium-reveal block lg:hidden">
 					<Footer />
 				</div>
@@ -175,7 +171,7 @@ const canonicalUrl = pageUrl ?? `${siteUrlRaw}${Astro.url.pathname}`;
 		</div>
 	</div>
 
-	<!-- TOC: solo se renderiza si está habilitado Y hay headings -->
+	<!-- TOC solo si hay headings -->
 	{siteConfig.toc.enable && hasHeadings && (
 		<div class="absolute w-full z-0 hidden 2xl:block">
 			<div class="relative max-w-[var(--page-width)] mx-auto">
@@ -201,6 +197,5 @@ const canonicalUrl = pageUrl ?? `${siteUrlRaw}${Astro.url.pathname}`;
 		</div>
 	)}
 
-	<!-- Fallback para que Swup encuentre #toc siempre -->
 	{(!siteConfig.toc.enable || !hasHeadings) && <div id="toc" class="hidden" />}
 </Layout>
