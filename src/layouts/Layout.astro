@@ -29,6 +29,8 @@ interface Props {
 	keywords?: string;
 	lang?: string;
 	ogType?: "website" | "article";
+	setOGTypeArticle?: boolean;
+	jsonLd?: Record<string, unknown> | null;
 }
 
 let {
@@ -40,20 +42,20 @@ let {
 	keywords,
 	lang,
 	ogType,
+	setOGTypeArticle,
+	jsonLd = null,
 } = Astro.props;
 
 const isHomePage = pathsEqual(Astro.url.pathname, url("/"));
 
 const configHue = siteConfig.themeColor.hue;
 
-// Banner con fallback seguro
 if (!banner || typeof banner !== "string" || banner.trim() === "") {
 	banner = siteConfig.banner.src;
 }
 
 const enableBanner = siteConfig.banner.enable;
 
-// Título de página
 let pageTitle: string;
 if (title) {
 	pageTitle = `${title} - ${siteConfig.title}`;
@@ -63,17 +65,14 @@ if (title) {
 	pageTitle = siteConfig.title;
 }
 
-// Favicons
 const favicons: Favicon[] =
 	siteConfig.favicon.length > 0 ? siteConfig.favicon : defaultFavicons;
 
-// Lang con fallback
 if (!lang) {
 	lang = `${siteConfig.lang}`;
 }
 const siteLang = lang.replace("_", "-");
 
-// Banner offset
 const bannerOffsetByPosition = {
 	top: `${BANNER_HEIGHT_EXTEND}vh`,
 	center: `${BANNER_HEIGHT_EXTEND / 2}vh`,
@@ -82,17 +81,18 @@ const bannerOffsetByPosition = {
 const bannerOffset =
 	bannerOffsetByPosition[siteConfig.banner.position || "center"];
 
-// ============================================
-// SEO: construcción robusta de URLs
-// ============================================
 const siteUrlRaw = Astro.site?.toString().replace(/\/$/, "") ?? "";
 const currentPath = Astro.url.pathname;
 const fullCanonicalUrl = pageUrl ?? `${siteUrlRaw}${currentPath}`;
 const ogImageUrl = image
-	? (image.startsWith("http") ? image : `${siteUrlRaw}${image}`)
+	? image.startsWith("http")
+		? image
+		: `${siteUrlRaw}${image}`
 	: `${siteUrlRaw}/og-default.png`;
 const metaDescription = description || siteConfig.description || pageTitle;
 const finalOgType = ogType ?? (setOGTypeArticle ? "article" : "website");
+
+const jsonLdString = jsonLd ? JSON.stringify(jsonLd) : null;
 ---
 
 <!DOCTYPE html>
@@ -109,7 +109,10 @@ const finalOgType = ogType ?? (setOGTypeArticle ? "article" : "website");
 		<meta name="author" content={profileConfig.name} />
 		<meta name="keywords" content={keywords || ""} />
 
-		<!-- Open Graph -->
+		<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+		<meta name="theme-color" content={`hsl(${configHue}, 50%, 50%)`} />
+		<meta name="generator" content={Astro.generator} />
+
 		<meta property="og:site_name" content={siteConfig.title} />
 		<meta property="og:url" content={fullCanonicalUrl} />
 		<meta property="og:title" content={pageTitle} />
@@ -119,23 +122,30 @@ const finalOgType = ogType ?? (setOGTypeArticle ? "article" : "website");
 		<meta property="og:image:height" content="630" />
 		<meta property="og:type" content={finalOgType} />
 		<meta property="og:locale" content={siteLang.replace("-", "_")} />
+		<meta property="og:locale:alternate" content="es_ES" />
+		<meta property="og:site_name" content={siteConfig.title} />
 
-		<!-- Twitter Card -->
 		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:site" content={`@${profileConfig.name}`} />
+		<meta name="twitter:creator" content={`@${profileConfig.name}`} />
 		<meta property="twitter:url" content={fullCanonicalUrl} />
 		<meta name="twitter:title" content={pageTitle} />
 		<meta name="twitter:description" content={metaDescription} />
 		<meta name="twitter:image" content={ogImageUrl} />
+		<meta name="twitter:image:alt" content={pageTitle} />
 
-		<!-- Canonical -->
 		<link rel="canonical" href={fullCanonicalUrl} />
 
-		<!-- Viewport & Generator -->
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<meta name="generator" content={Astro.generator} />
-		<meta name="theme-color" content={`hsl(${configHue}, 50%, 50%)`} />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
-		<!-- Preloads -->
+		{jsonLdString && (
+			<script
+				type="application/ld+json"
+				set:html={jsonLdString}
+				is:inline
+			/>
+		)}
+
 		<link
 			rel="preload"
 			href="/_astro/roboto-latin-400-normal.woff2"
@@ -143,6 +153,7 @@ const finalOgType = ogType ?? (setOGTypeArticle ? "article" : "website");
 			type="font/woff2"
 			crossorigin
 		/>
+
 		{enableBanner && banner && (
 			<link
 				rel="preload"
@@ -152,7 +163,6 @@ const finalOgType = ogType ?? (setOGTypeArticle ? "article" : "website");
 			/>
 		)}
 
-		<!-- DNS Prefetch & Preconnect -->
 		<link rel="dns-prefetch" href="https://api.qrserver.com" />
 		<link rel="preconnect" href="https://api.qrserver.com" crossorigin />
 		<link rel="dns-prefetch" href="https://fonts.googleapis.com" />
@@ -164,7 +174,6 @@ const finalOgType = ogType ?? (setOGTypeArticle ? "article" : "website");
 			crossorigin
 		/>
 
-		<!-- Favicons -->
 		{favicons.map((favicon) => (
 			<link
 				rel="icon"
@@ -175,14 +184,13 @@ const finalOgType = ogType ?? (setOGTypeArticle ? "article" : "website");
 		))}
 
 		<link rel="manifest" href="/manifest.json" />
+		<link rel="sitemap" href="/sitemap-index.xml" />
 
-		<!-- Prefetch de páginas importantes -->
 		<link rel="prefetch" href="/" />
 		<link rel="prefetch" href="/archive/" />
 		<link rel="prefetch" href="/about/" />
 		<link rel="prefetch" href="/herramientas/" />
 
-		<!-- Theme inline (debe estar en head para evitar FOUC) -->
 		<script
 			is:inline
 			define:vars={{
@@ -206,9 +214,7 @@ const finalOgType = ogType ?? (setOGTypeArticle ? "article" : "website");
 							document.documentElement.classList.add("dark");
 							break;
 						case AUTO_MODE:
-							if (
-								window.matchMedia("(prefers-color-scheme: dark)").matches
-							) {
+							if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
 								document.documentElement.classList.add("dark");
 							} else {
 								document.documentElement.classList.remove("dark");
@@ -219,9 +225,7 @@ const finalOgType = ogType ?? (setOGTypeArticle ? "article" : "website");
 					const hue = localStorage.getItem("hue") || configHue;
 					document.documentElement.style.setProperty("--hue", hue);
 
-					let offset = Math.floor(
-						window.innerHeight * (BANNER_HEIGHT_EXTEND / 100),
-					);
+					let offset = Math.floor(window.innerHeight * (BANNER_HEIGHT_EXTEND / 100));
 					offset = offset - (offset % 4);
 					document.documentElement.style.setProperty(
 						"--banner-height-extend",
@@ -255,6 +259,10 @@ const finalOgType = ogType ?? (setOGTypeArticle ? "article" : "website");
 		class:list={[{ "lg:is-home": isHomePage, "enable-banner": enableBanner }]}
 		data-overlayscrollbars-initialize
 	>
+		<a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-white focus:text-black focus:rounded-lg focus:shadow-lg">
+			Saltar al contenido principal
+		</a>
+
 		<ConfigCarrier />
 		<slot />
 	</body>
@@ -297,9 +305,6 @@ const finalOgType = ogType ?? (setOGTypeArticle ? "article" : "website");
 		}
 	}
 
-	/* ========================================================
-     ESTILOS GLOBALES: PREMIUM SCROLL REVEAL
-     ======================================================== */
 	.premium-reveal {
 		opacity: 0;
 		transform: translateY(20px);
@@ -323,7 +328,6 @@ const finalOgType = ogType ?? (setOGTypeArticle ? "article" : "website");
 	}
 </style>
 
-<!-- ✅ Scripts con lang="ts" eliminados o movidos a archivos externos -->
 <script>
 	import "overlayscrollbars/overlayscrollbars.css";
 	import { OverlayScrollbars } from "overlayscrollbars";
@@ -539,7 +543,6 @@ const finalOgType = ogType ?? (setOGTypeArticle ? "article" : "website");
 		document.addEventListener("swup:enable", setup);
 	}
 
-	// Scroll handling
 	const backToTopBtn = document.getElementById("back-to-top-btn");
 	const toc = document.getElementById("toc-wrapper");
 	const navbar = document.getElementById("navbar-wrapper");
@@ -699,7 +702,6 @@ const finalOgType = ogType ?? (setOGTypeArticle ? "article" : "website");
 	}
 </script>
 
-<!-- ✅ Script de contextmenu corregido (sin TypeScript) -->
 <script is:inline>
 	(function () {
 		document.addEventListener("contextmenu", function (e) {
