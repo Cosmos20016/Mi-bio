@@ -92,32 +92,6 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			: "";
 
 	// =========================================================
-	// COMPARTIR POR TELEGRAM (RESOLUCIÓN DNS GARANTIZADA)
-	// =========================================================
-	const shareOnTelegram = async () => {
-		const shareUrl = "https://kevinborja.com/herramientas/teleprompter/";
-		const shareMessage = "¡Mira este Teleprompter profesional gratuito en kevinborja.com!";
-
-		// 1. Intentar Web Share API nativa (evita problemas de DNS en navegadores/móviles)
-		if (typeof navigator !== "undefined" && navigator.share) {
-			try {
-				await navigator.share({
-					title: "Teleprompter Pro - Kevin Borja",
-					text: shareMessage,
-					url: shareUrl,
-				});
-				return;
-			} catch (err) {
-				// Si el usuario cancela o falla, continúa al fallback web
-			}
-		}
-
-		// 2. Fallback usando 'telegram.me' (resuelve en ISPs que bloquean 't.me')
-		const telegramWebUrl = `https://telegram.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareMessage)}`;
-		window.open(telegramWebUrl, "_blank", "noopener,noreferrer");
-	};
-
-	// =========================================================
 	// AUTO-ORGANIZADOR PROFESIONAL DE GUIONES
 	// =========================================================
 	let isFormatting = false;
@@ -186,7 +160,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	};
 
 	// =========================================================
-	// MÉTRICAS EN MEMORIA (ELIMINA LAG Y REFLOWS)
+	// MÉTRICAS EN MEMORIA (ZERO LAYOUT THRASHING)
 	// =========================================================
 	const calculateMetrics = () => {
 		if (!scrollContainer || !content) return;
@@ -240,7 +214,14 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		updateActiveLineFromMemory(scrollContainer.scrollTop);
 	};
 
-	// Motor de scroll de alta precisión sin "Math.round"
+	const handleScroll = () => {
+		if (!isPlaying && scrollContainer) {
+			scrollAccumulator = scrollContainer.scrollTop;
+			updateProgress();
+		}
+	};
+
+	// Motor de scroll de alta precisión sin jitter
 	const tick = (timestamp: number) => {
 		if (!isPlaying || !scrollContainer) {
 			raf = null;
@@ -1018,13 +999,6 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 				✨ Auto-Organizar
 			</button>
 			<button
-				class="btn-telegram"
-				on:click={shareOnTelegram}
-				title="Compartir guion en Telegram hacia kevinborja.com"
-			>
-				✈️ Telegram
-			</button>
-			<button
 				class="btn-help"
 				on:click={() => (showOnboarding = true)}
 				title="Ver tutorial"
@@ -1295,7 +1269,6 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			style={`padding: ${autoCenter ? "35vh 2rem 50vh" : "2.5rem 2rem"};`}
 			tabindex="-1"
 		>
-			<!-- CONTENEDOR CON LA CLASE MIRROR ASOCIADA AL ESTADO ISMIRROR -->
 			<div
 				class="teleprompter-content"
 				class:mirror={isMirror}
@@ -1877,31 +1850,6 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	}
 
 	.btn-format:active {
-		transform: translateY(0);
-	}
-
-	.btn-telegram {
-		display: flex;
-		align-items: center;
-		gap: 0.4rem;
-		padding: 0.5rem 1rem;
-		background: linear-gradient(135deg, #229ED9, #197db3);
-		color: white;
-		border: none;
-		border-radius: 0.5rem;
-		font-size: 0.9rem;
-		font-weight: 600;
-		cursor: pointer;
-		transition: all 0.2s ease;
-		box-shadow: 0 4px 12px rgba(34, 158, 217, 0.3);
-	}
-
-	.btn-telegram:hover {
-		transform: translateY(-1px);
-		box-shadow: 0 6px 16px rgba(34, 158, 217, 0.45);
-	}
-
-	.btn-telegram:active {
 		transform: translateY(0);
 	}
 
@@ -2537,6 +2485,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		scroll-behavior: auto;
 		scrollbar-width: thin;
 		scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+		will-change: scroll-position;
 		overflow-anchor: none;
 	}
 
@@ -2572,7 +2521,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		background: rgba(255, 255, 255, 0.5);
 	}
 
-	/* REGLA DEFINITIVA PARA MODO ESPEJO HORIZONTAL (TECLA M) */
+	/* REGLA DEFINITIVA PARA MODO ESPEJO HORIZONTAL (TECLA M Y BOTÓN) */
 	.teleprompter-content {
 		color: #0f172a;
 		text-align: center;
