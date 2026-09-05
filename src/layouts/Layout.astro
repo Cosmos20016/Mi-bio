@@ -258,8 +258,6 @@ const jsonLdString = jsonLd ? JSON.stringify(jsonLd) : null;
 		class:list={[{ "lg:is-home": isHomePage, "enable-banner": enableBanner }]}
 		data-overlayscrollbars-initialize
 	>
-		<!-- Skip link eliminado -->
-
 		<ConfigCarrier />
 		<slot />
 	</body>
@@ -314,6 +312,14 @@ const jsonLdString = jsonLd ? JSON.stringify(jsonLd) : null;
 	.premium-reveal.is-revealed {
 		opacity: 1;
 		transform: translateY(0);
+	}
+
+	/* ⭐ FIX CRÍTICO: El Teleprompter y el contenido principal siempre visibles */
+	#main-content,
+	#main-content * {
+		opacity: 1 !important;
+		visibility: visible !important;
+		transform: none !important;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
