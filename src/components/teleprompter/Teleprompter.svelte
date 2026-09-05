@@ -9,7 +9,7 @@
 	// =========================================================================
 	// CONSTANTES Y CONFIGURACIÓN INMUTABLE
 	// =========================================================================
-	const STORAGE_KEY_STATE = "teleprompter:state:v4";
+	const STORAGE_KEY_STATE = "teleprompter:state:v5";
 	const STORAGE_KEY_SCRIPTS = "teleprompter:scripts";
 	const STORAGE_KEY_LAST_SCRIPT = "teleprompter:lastScript";
 	const STORAGE_KEY_ONBOARDING = "teleprompter:onboarding:done";
@@ -24,7 +24,7 @@
 	const JUMP_ACTION_PX = 240;
 
 	// =========================================================================
-	// CONTRATOS DE TIPOS EXPLÍCITOS
+	// TIPADO FUERTE
 	// =========================================================================
 	interface SavedScript {
 		id: string;
@@ -53,7 +53,7 @@
 	}
 
 	// =========================================================================
-	// ESTADO REACTIVO DEL COMPONENTE
+	// ESTADO DEL TELEPROMPTER
 	// =========================================================================
 	let text = `Pega aquí tu guion...\n\nTip: Usa párrafos cortos para una lectura más cómoda.`;
 	let speed = 60;
@@ -83,15 +83,17 @@
 	let isDark = false;
 
 	// =========================================================================
-	// REFS Y CONTROLADORES DE ANIMACIÓN
+	// REFS AL DOM Y COMPONENTES
 	// =========================================================================
 	let scrollContainer: HTMLDivElement | null = null;
 	let content: HTMLDivElement | null = null;
+	let progressBarElement: HTMLDivElement | null = null;
 	let fullscreenTarget: HTMLDivElement | null = null;
 	let lineElements: Array<HTMLParagraphElement | null> = [];
 
 	let rafId: number | null = null;
 	let lastFrameTimestamp: number | null = null;
+	let lastUiSyncTimestamp = 0;
 	let countdownTimer: ReturnType<typeof setInterval> | null = null;
 	let saveDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 	let stopThemeWatch: (() => void) | null = null;
@@ -111,7 +113,7 @@
 	let activeLineIndex = 0;
 
 	// =========================================================================
-	// REACTIVIDAD DERIVADA (MÉTRICAS DE LECTURA)
+	// REACTIVIDAD DERIVADA
 	// =========================================================================
 	$: lines = text.split("\n");
 	$: if (lineElements.length !== lines.length) {
@@ -159,7 +161,7 @@
 	};
 
 	// =========================================================================
-	// CONTROLADOR ATÓMICO Y GUARDS DEL MODO ESPEJO
+	// CONTROL ATÓMICO DEL MODO ESPEJO
 	// =========================================================================
 	const toggleMirror = (forceState?: boolean): void => {
 		isMirror = typeof forceState === "boolean" ? forceState : !isMirror;
@@ -169,28 +171,15 @@
 
 	const applyMirrorToDOM = (): void => {
 		if (!content) return;
-		const transformValue = isMirror ? "scaleX(-1)" : "none";
+		const transformValue = isMirror ? "scaleX(-1) translateZ(0)" : "translateZ(0)";
 		content.style.setProperty("transform", transformValue, "important");
 		content.style.setProperty("-webkit-transform", transformValue, "important");
 		content.style.setProperty("transform-origin", "center center", "important");
 		content.classList.toggle("mirror", isMirror);
-		assertMirrorState();
-	};
-
-	const assertMirrorState = (): void => {
-		if (!content || typeof window === "undefined") return;
-		requestAnimationFrame(() => {
-			if (!content) return;
-			const computed = window.getComputedStyle(content).transform;
-			const hasMirroredMatrix = computed !== "none" && computed.includes("-1");
-			if (isMirror && !hasMirroredMatrix) {
-				content.style.cssText += `; transform: scaleX(-1) !important; -webkit-transform: scaleX(-1) !important; transform-origin: center center !important;`;
-			}
-		});
 	};
 
 	// =========================================================================
-	// CONTROLADORES DE MODOS Y EFECTOS
+	// CONTROLADORES DE MODOS
 	// =========================================================================
 	const toggleDimOutside = (): void => {
 		dimOutside = !dimOutside;
@@ -218,7 +207,7 @@
 				const targetScroll = ratio * cachedMaxScroll;
 				scrollAccumulator = targetScroll;
 				if (scrollContainer) scrollContainer.scrollTop = targetScroll;
-				updateProgressFromScroll(targetScroll);
+				syncUiState(targetScroll);
 			}
 			scheduleSave();
 		}, 60);
@@ -230,7 +219,7 @@
 	};
 
 	// =========================================================================
-	// AUTO-ORGANIZADOR DE GUIONES PROFESIONAL
+	// AUTO-ORGANIZADOR PROFESIONAL DE GUIONES
 	// =========================================================================
 	const autoFormatScript = (): void => {
 		if (!text.trim() || isFormatting) return;
@@ -299,15 +288,16 @@
 	};
 
 	// =========================================================================
-	// MÉTRICAS EN MEMORIA Y SEGUIMIENTO GEOMÉTRICO
+	// MÉTRICAS EN MEMORIA Y CÁLCULO FÍSICO EXACTO DEL SCROLL
 	// =========================================================================
 	const calculateMetrics = (): void => {
 		if (!scrollContainer || !content) return;
 
-		cachedMaxScroll = Math.max(content.scrollHeight - scrollContainer.clientHeight, 0);
+		// RESOLUCIÓN EXACTA: El límite físico es del contenedor de scroll, no del hijo
+		cachedMaxScroll = Math.max(scrollContainer.scrollHeight - scrollContainer.clientHeight, 0);
 
 		if (!focusMode) {
-			updateProgressFromScroll(scrollContainer.scrollTop);
+			syncUiState(scrollContainer.scrollTop);
 			return;
 		}
 
@@ -316,14 +306,14 @@
 			return { center: el.offsetTop + el.offsetHeight / 2 };
 		});
 
-		updateProgressFromScroll(scrollContainer.scrollTop);
+		syncUiState(scrollContainer.scrollTop);
 	};
 
 	const updateActiveLineFromMemory = (currentScrollTop: number): void => {
 		if (!scrollContainer || lineMetrics.length === 0 || !focusMode) return;
 
 		const viewportHeight = scrollContainer.clientHeight;
-		const opticalCenter = currentScrollTop + (viewportHeight * 0.45 + 50);
+		const opticalCenter = currentScrollTop + (viewportHeight * 0.45);
 
 		let closestIndex = 0;
 		let minDistance = Number.POSITIVE_INFINITY;
@@ -336,27 +326,37 @@
 			}
 		}
 
-		activeLineIndex = closestIndex;
+		if (activeLineIndex !== closestIndex) {
+			activeLineIndex = closestIndex;
+		}
 	};
 
-	const updateProgressFromScroll = (scrollTop: number): void => {
+	const syncUiState = (scrollTop: number): void => {
 		if (cachedMaxScroll <= 0) {
 			progress = 0;
+			if (progressBarElement) progressBarElement.style.transform = "scaleX(0)";
 			return;
 		}
-		progress = clamp(scrollTop / cachedMaxScroll, 0, 1);
+
+		const currentRatio = clamp(scrollTop / cachedMaxScroll, 0, 1);
+		progress = currentRatio;
+
+		if (progressBarElement) {
+			progressBarElement.style.transform = `scaleX(${currentRatio})`;
+		}
+
 		updateActiveLineFromMemory(scrollTop);
 	};
 
 	const handleScroll = (): void => {
 		if (!isPlaying && scrollContainer) {
 			scrollAccumulator = scrollContainer.scrollTop;
-			updateProgressFromScroll(scrollAccumulator);
+			syncUiState(scrollAccumulator);
 		}
 	};
 
 	// =========================================================================
-	// MOTOR DE SCROLL CONTINUO DE ALTA FLUIDEZ
+	// MOTOR DE ANIMACIÓN ULTRA FLUIDO (60/120 FPS NATIVO)
 	// =========================================================================
 	const tick = (timestamp: number): void => {
 		if (!isPlaying || !scrollContainer) {
@@ -367,6 +367,7 @@
 
 		if (lastFrameTimestamp === null) {
 			lastFrameTimestamp = timestamp;
+			lastUiSyncTimestamp = timestamp;
 			scrollAccumulator = scrollContainer.scrollTop;
 			rafId = requestAnimationFrame(tick);
 			return;
@@ -376,18 +377,19 @@
 		lastFrameTimestamp = timestamp;
 
 		if (smooth) {
-			const smoothingFactor = 1 - Math.exp(-elapsedSeconds * 10);
+			const smoothingFactor = 1 - Math.exp(-elapsedSeconds * 12);
 			currentSpeed += (speed - currentSpeed) * smoothingFactor;
 		} else {
 			currentSpeed = speed;
 		}
 
-		if (Math.abs(currentSpeed - speed) < 0.2) {
+		if (Math.abs(currentSpeed - speed) < 0.1) {
 			currentSpeed = speed;
 		}
 
 		scrollAccumulator += currentSpeed * elapsedSeconds;
 
+		// CONDICIÓN DE PARADA: Fin total de recorrido hasta el último carácter
 		if (scrollAccumulator >= cachedMaxScroll) {
 			scrollContainer.scrollTop = cachedMaxScroll;
 			scrollAccumulator = cachedMaxScroll;
@@ -395,17 +397,29 @@
 			rafId = null;
 			lastFrameTimestamp = null;
 			progress = 1;
+			if (progressBarElement) progressBarElement.style.transform = "scaleX(1)";
 			updateActiveLineFromMemory(cachedMaxScroll);
 			return;
 		}
 
+		// Asignación de desplazamiento directo en hardware
 		scrollContainer.scrollTop = scrollAccumulator;
 
-		if (cachedMaxScroll > 0) {
-			progress = clamp(scrollAccumulator / cachedMaxScroll, 0, 1);
+		// Actualización directa del progress bar en GPU sin pasar por dirty-check de Svelte
+		if (cachedMaxScroll > 0 && progressBarElement) {
+			const currentRatio = clamp(scrollAccumulator / cachedMaxScroll, 0, 1);
+			progressBarElement.style.transform = `scaleX(${currentRatio})`;
 		}
-		if (focusMode) {
-			updateActiveLineFromMemory(scrollAccumulator);
+
+		// ESTRANGULADOR: Solo actualiza Svelte y Focus Mode a 10 Hz para evitar micro-stuttering
+		if (timestamp - lastUiSyncTimestamp > 100) {
+			lastUiSyncTimestamp = timestamp;
+			if (cachedMaxScroll > 0) {
+				progress = clamp(scrollAccumulator / cachedMaxScroll, 0, 1);
+			}
+			if (focusMode) {
+				updateActiveLineFromMemory(scrollAccumulator);
+			}
 		}
 
 		rafId = requestAnimationFrame(tick);
@@ -418,7 +432,8 @@
 		calculateMetrics();
 		if (cachedMaxScroll <= 0) return;
 
-		if (progress >= 0.99) {
+		// Si está en el final absoluto, reinicia limpiamente desde el carácter 0
+		if (progress >= 0.999) {
 			scrollContainer.scrollTop = 0;
 			scrollAccumulator = 0;
 		} else {
@@ -427,6 +442,7 @@
 
 		isPlaying = true;
 		lastFrameTimestamp = null;
+		lastUiSyncTimestamp = performance.now();
 		rafId = requestAnimationFrame(tick);
 	};
 
@@ -478,7 +494,7 @@
 
 		if (scrollContainer) {
 			scrollAccumulator = scrollContainer.scrollTop;
-			updateProgressFromScroll(scrollAccumulator);
+			syncUiState(scrollAccumulator);
 		}
 	};
 
@@ -497,7 +513,7 @@
 		if (scrollContainer) {
 			scrollContainer.scrollTop = 0;
 			scrollAccumulator = 0;
-			updateProgressFromScroll(0);
+			syncUiState(0);
 		}
 	};
 
@@ -507,7 +523,7 @@
 		if (scrollContainer) {
 			scrollContainer.scrollTop = 0;
 			scrollAccumulator = 0;
-			updateProgressFromScroll(0);
+			syncUiState(0);
 		}
 	};
 
@@ -516,7 +532,7 @@
 		const targetPosition = clamp(scrollContainer.scrollTop + pixels, 0, cachedMaxScroll);
 		scrollContainer.scrollTop = targetPosition;
 		scrollAccumulator = targetPosition;
-		updateProgressFromScroll(targetPosition);
+		syncUiState(targetPosition);
 	};
 
 	const scrollToProgressRatio = (ratio: number): void => {
@@ -524,11 +540,11 @@
 		const targetPosition = clamp(ratio, 0, 1) * cachedMaxScroll;
 		scrollContainer.scrollTop = targetPosition;
 		scrollAccumulator = targetPosition;
-		updateProgressFromScroll(targetPosition);
+		syncUiState(targetPosition);
 	};
 
 	// =========================================================================
-	// FULLSCREEN ROBUSTO CON FALLBACK WEBKIT MÓVIL
+	// FULLSCREEN COMPATIBLE MULTIPLATAFORMA
 	// =========================================================================
 	const toggleFullscreen = async (): Promise<void> => {
 		if (!fullscreenTarget) return;
@@ -568,7 +584,7 @@
 	};
 
 	// =========================================================================
-	// ENTRADAS DE USUARIO Y ATADOS DE TECLADO
+	// EVENTOS DE USUARIO
 	// =========================================================================
 	const adjustSpeed = (delta: number): void => {
 		speed = Math.round(clamp(speed + delta, SPEED_MIN, SPEED_MAX));
@@ -685,7 +701,7 @@
 	};
 
 	// =========================================================================
-	// PERSISTENCIA Y SINCRONIZACIÓN DE SCRIPTS
+	// GESTIÓN DE GUIONES Y STORAGE
 	// =========================================================================
 	const loadScripts = (): void => {
 		const serialized = safeStorage.get(STORAGE_KEY_SCRIPTS);
@@ -819,7 +835,7 @@
 	};
 
 	// =========================================================================
-	// HELPERS VISUALES
+	// FORMATEO VISUAL Y HELPERS
 	// =========================================================================
 	const getSpeedLabel = (spd: number): string => {
 		if (spd < 40) return "Muy lento";
@@ -832,7 +848,7 @@
 	const getStatus = (): string => {
 		if (isPlaying) return "Al aire 🔴";
 		if (isCountingDown) return "Cuenta regresiva...";
-		if (progress >= 0.99) return "Fin de guion ✓";
+		if (progress >= 0.999) return "Fin de guion ✓";
 		if (progress > 0) return "En pausa ⏸";
 		return "En línea";
 	};
@@ -840,7 +856,7 @@
 	const getStatusColor = (): string => {
 		if (isPlaying) return "oklch(0.60 0.15 220)";
 		if (isCountingDown) return "oklch(0.65 0.15 60)";
-		if (progress >= 0.99) return "oklch(0.50 0.05 var(--hue))";
+		if (progress >= 0.999) return "oklch(0.50 0.05 var(--hue))";
 		return "oklch(0.60 0.15 150)";
 	};
 
@@ -875,7 +891,7 @@
 	};
 
 	const getEstimatedTimeRemaining = (): string => {
-		if (!scrollContainer || !content || speed === 0) return "";
+		if (!scrollContainer || speed === 0) return "";
 		const remaining = cachedMaxScroll - scrollContainer.scrollTop;
 		if (remaining <= 0) return "0s";
 		const seconds = Math.ceil(remaining / speed);
@@ -886,12 +902,8 @@
 	};
 
 	// =========================================================================
-	// INICIALIZACIÓN Y MONTAJE SEGURO
+	// CICLO DE VIDA
 	// =========================================================================
-	$: if (isReady && content) {
-		applyMirrorToDOM();
-	}
-
 	$: if (
 		isReady &&
 		(text || speed || fontSize || lineHeight || isMirror || autoCenter ||
@@ -1443,7 +1455,8 @@
 				}
 			}}
 		>
-			<div class="progress-bar" style={`width: ${progress * 100}%`}></div>
+			<!-- ACTUALIZACIÓN GPU NATIVA: SCALEX SIN REFLOWS -->
+			<div class="progress-bar" bind:this={progressBarElement}></div>
 			{#if isPlaying || progress > 0}
 				<div class="time-remaining">{getEstimatedTimeRemaining()}</div>
 			{/if}
@@ -1451,6 +1464,7 @@
 
 		<div class="reading-position-marker"></div>
 
+		<!-- GEOMETRÍA CALIBRADA: PADDING INFERIOR SUFICIENTE PARA RECORRIDO TOTAL DEL 100% -->
 		<div
 			class="teleprompter-frame"
 			bind:this={scrollContainer}
@@ -1459,10 +1473,9 @@
 			on:click={handleFrameClick}
 			on:touchstart={handleTouchStart}
 			on:touchmove={handleTouchMove}
-			style={`padding: ${autoCenter ? "35vh 2rem 50vh" : "2.5rem 2rem"};`}
+			style={`padding: ${autoCenter ? "3.5rem 2rem calc(100vh - 8rem)" : "2.5rem 2rem 85vh"};`}
 			tabindex="-1"
 		>
-			<!-- CONTENEDOR CON REGLAS DE ESPEJO INLINE Y DE CLASE -->
 			<div
 				class="teleprompter-content"
 				class:mirror={isMirror}
@@ -1481,7 +1494,7 @@
 			</div>
 		</div>
 
-		<!-- VIÑETA TOTALMENTE DESACOPLADA DE FOCUS MODE -->
+		<!-- VIÑETA TOTALMENTE INDEPENDIENTE DE FOCUS MODE -->
 		{#if dimOutside}
 			<div class="teleprompter-dim pointer-none"></div>
 		{/if}
@@ -2607,7 +2620,7 @@
 	}
 
 	/* =========================================================================
-	   PANTALLA DE PROYECCIÓN Y EFECTO GLOW CORREGIDO
+	   PANTALLA DE PROYECCIÓN Y GLOW DIRECTO
 	   ========================================================================= */
 	.teleprompter-screen {
 		position: relative;
@@ -2633,7 +2646,7 @@
 		}
 	}
 
-	/* GLOW ATÓMICO DIRECTO SIN OCLUSIÓN DE STACKING CONTEXT */
+	/* GLOW ATÓMICO EN CAJA: CERO CONFLICTO CON BACKGROUND */
 	.teleprompter-screen.glow {
 		box-shadow: 0 0 35px oklch(0.70 0.14 var(--hue) / 0.45), inset 0 0 15px oklch(0.70 0.14 var(--hue) / 0.2) !important;
 		border: 1px solid oklch(0.70 0.14 var(--hue) / 0.6) !important;
@@ -2661,11 +2674,16 @@
 		background: rgba(255, 255, 255, 0.1);
 	}
 
+	/* BARRA DE PROGRESO CON ACELERACIÓN GPU ESTRICTA (ZERO LAYOUT THRASHING) */
 	.progress-bar {
+		width: 100%;
 		height: 100%;
 		background: linear-gradient(90deg, oklch(0.70 0.14 var(--hue)), oklch(0.65 0.16 calc(var(--hue) + 60)));
-		transition: width 0.3s ease;
 		box-shadow: 0 0 10px oklch(0.70 0.14 var(--hue) / 0.5);
+		transform: scaleX(0);
+		transform-origin: left center;
+		will-change: transform;
+		transition: none !important; /* ELIMINA MICRO-CLIPS POR COMPETENCIA RAF VS CSS */
 	}
 
 	.time-remaining {
@@ -2684,7 +2702,7 @@
 
 	.reading-position-marker {
 		position: absolute;
-		top: 50%;
+		top: 45%;
 		left: 0;
 		right: 0;
 		height: 2px;
@@ -2700,7 +2718,7 @@
 	}
 
 	/* =========================================================================
-	   CONTENEDOR DE SCROLL NATIVO LIBRE DE TRAP DE GPU
+	   CONTENEDOR DE SCROLL NATIVO ULTRA FLUIDO
 	   ========================================================================= */
 	.teleprompter-frame {
 		height: 100%;
@@ -2711,6 +2729,7 @@
 		scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
 		will-change: scroll-position;
 		overflow-anchor: none;
+		box-sizing: border-box;
 	}
 
 	:global(.dark) .teleprompter-frame,
@@ -2746,7 +2765,7 @@
 	}
 
 	/* =========================================================================
-	   REGLAS DE MODO ESPEJO INFALIBLES (TECLA M Y BOTÓN)
+	   REGLAS DEL TEXTO Y MODO ESPEJO
 	   ========================================================================= */
 	.teleprompter-content {
 		color: #0f172a;
@@ -2758,14 +2777,14 @@
 		transform-origin: center center !important;
 		-webkit-transform-origin: center center !important;
 		transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+		backface-visibility: hidden;
+		-webkit-font-smoothing: antialiased;
 	}
 
 	.teleprompter-content.mirror {
-		transform: scaleX(-1) !important;
-		-webkit-transform: scaleX(-1) !important;
+		transform: scaleX(-1) translateZ(0) !important;
+		-webkit-transform: scaleX(-1) translateZ(0) !important;
 		display: block;
-		backface-visibility: hidden;
-		-webkit-font-smoothing: antialiased;
 	}
 
 	:global(.dark) .teleprompter-content,
@@ -2773,26 +2792,29 @@
 		color: #f1f5f9;
 	}
 
+	/* ELIMINACIÓN DE REFLOWS EN PÁRRAFOS: DIMENSIONES 100% ESTÁTICAS */
 	.teleprompter-content p {
 		margin: 0.75rem 0;
 		padding: 0.5rem 1rem;
 		border-radius: 0.5rem;
 		line-height: inherit;
 		min-height: 1.5em;
-		transition: opacity 0.2s ease, background-color 0.15s ease;
+		box-sizing: border-box;
+		border-left: 4px solid transparent; /* EVITA CAMBIOS DE BOX-MODEL */
+		transition: opacity 0.2s ease, background-color 0.15s ease, border-color 0.15s ease;
 	}
 
+	/* SIN MUTACIÓN DE FONT-WEIGHT NI PADDING: ZERO REWRAPPING */
 	.teleprompter-content p.active {
 		background: rgba(0, 0, 0, 0.06);
-		border-left: 4px solid oklch(0.70 0.14 var(--hue));
-		padding-left: calc(1rem - 4px);
+		border-left-color: oklch(0.70 0.14 var(--hue));
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-		font-weight: 600;
 	}
 
 	:global(.dark) .teleprompter-content p.active,
 	.dark .teleprompter-content p.active {
 		background: rgba(255, 255, 255, 0.1);
+		border-left-color: oklch(0.70 0.14 var(--hue));
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 	}
 
@@ -2802,19 +2824,19 @@
 	}
 
 	/* =========================================================================
-	   OSCURECER BORDES (VIÑETA CINEMATOGRÁFICA DESACOPLADA)
+	   VIÑETA CINEMATOGRÁFICA (OSCURECER BORDES INDEPENDIENTE)
 	   ========================================================================= */
 	.teleprompter-dim {
 		position: absolute;
 		inset: 0;
 		background: linear-gradient(
 			to bottom,
-			rgba(241, 245, 249, 0.95) 0%,
-			rgba(241, 245, 249, 0.7) 12%,
-			transparent 26%,
-			transparent 74%,
-			rgba(241, 245, 249, 0.7) 88%,
-			rgba(241, 245, 249, 0.95) 100%
+			rgba(241, 245, 249, 0.98) 0%,
+			rgba(241, 245, 249, 0.75) 12%,
+			transparent 28%,
+			transparent 72%,
+			rgba(241, 245, 249, 0.75) 88%,
+			rgba(241, 245, 249, 0.98) 100%
 		);
 		pointer-events: none;
 		z-index: 15;
@@ -2826,16 +2848,16 @@
 		background: linear-gradient(
 			to bottom,
 			rgba(15, 23, 42, 0.98) 0%,
-			rgba(15, 23, 42, 0.75) 12%,
-			transparent 26%,
-			transparent 74%,
-			rgba(15, 23, 42, 0.75) 88%,
+			rgba(15, 23, 42, 0.8) 12%,
+			transparent 28%,
+			transparent 72%,
+			rgba(15, 23, 42, 0.8) 88%,
 			rgba(15, 23, 42, 0.98) 100%
 		);
 	}
 
 	/* =========================================================================
-	   CONTROLES FLOTANTES Y BARRA INFERIOR
+	   BARRA FLOTANTE Y CONTROLES OVERLAY
 	   ========================================================================= */
 	.teleprompter-float {
 		position: absolute;
@@ -2965,7 +2987,7 @@
 	}
 
 	/* =========================================================================
-	   OVERLAY CUENTA REGRESIVA
+	   CUENTA REGRESIVA
 	   ========================================================================= */
 	.teleprompter-countdown {
 		position: absolute;
@@ -2996,7 +3018,7 @@
 	}
 
 	/* =========================================================================
-	   ANIMACIONES
+	   KEYFRAMES
 	   ========================================================================= */
 	@keyframes fadeIn {
 		from { opacity: 0; }
@@ -3024,7 +3046,7 @@
 	}
 
 	/* =========================================================================
-	   ADAPTABILIDAD RESPONSIVE
+	   MEDIA QUERIES Y RESPONSIVE
 	   ========================================================================= */
 	@media (max-width: 768px) {
 		.teleprompter-header {
