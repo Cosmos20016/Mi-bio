@@ -56,8 +56,6 @@ const jsonLd = {
   jsonLd={jsonLd}
 >
   <article class="tool-page">
-    <!-- Skip link ELIMINADO (ya no se necesita el duplicado) -->
-
     <!-- Navegación superior -->
     <nav class="tool-nav premium-reveal" aria-label="Navegación de herramientas">
       <a
@@ -111,20 +109,14 @@ const jsonLd = {
 </MainGridLayout>
 
 <style>
-  /* ============================================
-     Variables y configuración base
-     ============================================ */
   .tool-page {
     --hue-fallback: 250;
     --card-bg-fallback: #ffffff;
     --radius-large-fallback: 1rem;
-
     --color-text-muted: #64748b;
     --color-text-muted-dark: #94a3b8;
-
     --color-border-light: rgba(0, 0, 0, 0.06);
     --color-border-dark: rgba(255, 255, 255, 0.08);
-
     --touch-target-min: 2.75rem;
     --transition-fast: 150ms ease;
     --transition-normal: 200ms ease;
@@ -134,17 +126,12 @@ const jsonLd = {
     flex-direction: column;
     gap: 1.5rem;
     min-height: 0;
-
     padding-left: max(0px, env(safe-area-inset-left));
     padding-right: max(0px, env(safe-area-inset-right));
-
     scroll-behavior: smooth;
     overflow-x: hidden;
   }
 
-  /* ============================================
-     Navegación superior
-     ============================================ */
   .tool-nav {
     display: flex;
     align-items: center;
@@ -167,14 +154,11 @@ const jsonLd = {
       background-color var(--transition-normal),
       color var(--transition-normal),
       transform var(--transition-fast);
-
     min-height: var(--touch-target-min);
     position: relative;
     outline-offset: 2px;
-
     -webkit-tap-highlight-color: oklch(0.6 0.18 var(--hue, var(--hue-fallback)) / 0.1);
     user-select: none;
-
     transform: translateZ(0);
     backface-visibility: hidden;
   }
@@ -240,9 +224,6 @@ const jsonLd = {
     color: var(--color-text-muted-dark);
   }
 
-  /* ============================================
-     Header de la herramienta
-     ============================================ */
   .tool-page-header {
     display: flex;
     align-items: flex-start;
@@ -298,9 +279,7 @@ const jsonLd = {
     letter-spacing: -0.01em;
     line-height: 1.2;
     margin: 0 0 0.35rem 0;
-
     color: oklch(0.6 0.18 var(--hue, var(--hue-fallback)));
-
     background: linear-gradient(
       135deg,
       oklch(0.65 0.16 var(--hue, var(--hue-fallback))),
@@ -343,9 +322,6 @@ const jsonLd = {
     flex-wrap: wrap;
   }
 
-  /* ============================================
-     Badges y características
-     ============================================ */
   .tool-page-badges {
     display: flex;
     flex-wrap: wrap;
@@ -378,34 +354,33 @@ const jsonLd = {
 
   :global(.dark) .tool-page-badge {
     background: oklch(0.3 0.05 var(--hue, var(--hue-fallback)));
-    color: oklch(0.78 0.12 var(--hue, var(--hue-fallback));
+    color: oklch(0.78 0.12 var(--hue, var(--hue-fallback)));
   }
 
-  /* ============================================
-     Sección principal
-     ============================================ */
   .tool-page-section {
     content-visibility: auto;
     contain-intrinsic-size: auto 500px;
+    min-height: 600px;
   }
 
-  /* ============================================
-     Responsive Design
-     ============================================ */
+  /* ⭐ FIX: prevenir que premium-reveal oculte el Teleprompter */
+  .tool-page-section,
+  .tool-page-section * {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
 
   @media (max-width: 768px) {
     .tool-page {
       gap: 1.25rem;
     }
-
     .tool-page-header {
       gap: 1rem;
     }
-
     .tool-page-title {
       font-size: 1.6rem;
     }
-
     .tool-page-header-actions {
       width: 100%;
     }
@@ -417,47 +392,38 @@ const jsonLd = {
       padding-left: max(1rem, env(safe-area-inset-left));
       padding-right: max(1rem, env(safe-area-inset-right));
     }
-
     .tool-nav {
       padding: 0.5rem 0;
     }
-
     .tool-nav-back {
       font-size: 0.85rem;
       padding: 0.5rem 0.65rem;
     }
-
     .tool-page-header {
       flex-direction: column;
       align-items: flex-start;
       padding: 1rem 1.25rem;
       gap: 0.875rem;
     }
-
     .tool-page-title {
       font-size: 1.5rem;
     }
-
     .tool-page-description {
       font-size: 0.875rem;
     }
-
     .tool-page-icon-wrapper {
       width: 3rem;
       height: 3rem;
       min-width: 3rem;
     }
-
     .tool-page-icon {
       font-size: 1.5rem;
     }
-
     .tool-page-header-actions {
       flex-direction: column;
       align-items: flex-start;
       width: 100%;
     }
-
     .tool-page-badges {
       width: 100%;
     }
@@ -469,26 +435,21 @@ const jsonLd = {
       padding: 0.75rem 1rem;
       gap: 1rem;
     }
-
     .tool-page-icon-wrapper {
       width: 2.5rem;
       height: 2.5rem;
       min-width: 2.5rem;
     }
-
     .tool-page-icon {
       font-size: 1.25rem;
     }
-
     .tool-page-title {
       font-size: 1.25rem;
     }
-
     .tool-page-description {
       font-size: 0.8rem;
       margin-bottom: 0.5rem;
     }
-
     .tool-page-header-actions {
       flex-direction: row;
       width: auto;
@@ -499,25 +460,19 @@ const jsonLd = {
     .tool-page-header {
       padding: 0.875rem 1rem;
     }
-
     .tool-page-title {
       font-size: 1.35rem;
     }
-
     .tool-page-badge {
       font-size: 0.65rem;
       padding: 0.15rem 0.45rem;
     }
   }
 
-  /* ============================================
-     Accesibilidad - Reduce motion
-     ============================================ */
   @media (prefers-reduced-motion: reduce) {
     .tool-page {
       scroll-behavior: auto;
     }
-
     *,
     *::before,
     *::after {
@@ -527,73 +482,44 @@ const jsonLd = {
     }
   }
 
-  /* ============================================
-     Alto contraste
-     ============================================ */
   @media (prefers-contrast: high) {
     .tool-page-header {
       border-width: 2px;
     }
-
     .tool-nav-back:focus-visible {
       outline-width: 3px;
     }
-
     .tool-page-badge {
       border: 1px solid currentColor;
     }
   }
 
-  /* ============================================
-     Print styles
-     ============================================ */
   @media print {
     .tool-nav,
     .tool-page-badges,
     .tool-page-header-actions {
       display: none;
     }
-
     .tool-page-header {
       border: 1px solid #000;
       box-shadow: none;
       page-break-inside: avoid;
     }
-
     .tool-page-title {
       color: #000 !important;
       -webkit-text-fill-color: #000 !important;
       background: none !important;
     }
-
     .tool-page {
       overflow: visible;
     }
   }
 
-  /* ============================================
-     Optimizaciones para GPU
-     ============================================ */
   @media (hover: hover) and (pointer: fine) {
     .tool-nav-back,
     .tool-page-icon-wrapper,
     .tool-page-badge {
       -webkit-font-smoothing: antialiased;
     }
-  }
-
-  .tool-page-section,
-  .tool-page-section *,
-  .tool-page-section *::before,
-  .tool-page-section *::after {
-    opacity: 1 !important;
-    transform: none !important;
-    animation: none !important;
-    visibility: visible !important;
-  }
-
-  /* Forzar altura mínima para que el componente no colapse */
-  .tool-page-section {
-    min-height: 700px;
   }
 </style>
