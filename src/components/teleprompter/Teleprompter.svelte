@@ -92,6 +92,26 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			: "";
 
 	// =========================================================
+	// COMPARTIR POR TELEGRAM (DOMINIO OFICIAL KEVINBORJA.COM)
+	// =========================================================
+	const shareOnTelegram = () => {
+		const isProduction =
+			typeof window !== "undefined" &&
+			window.location.hostname.includes("kevinborja.com");
+		const shareUrl = isProduction
+			? window.location.href
+			: "https://kevinborja.com";
+
+		const snippet = text.trim()
+			? `\n\n"${text.trim().slice(0, 140)}${text.trim().length > 140 ? "..." : ""}"`
+			: "";
+		const shareMessage = `🎙️ Teleprompter Pro en kevinborja.com${snippet}\n\nAccede a la herramienta aquí:`;
+		const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareMessage)}`;
+
+		window.open(telegramUrl, "_blank", "noopener,noreferrer");
+	};
+
+	// =========================================================
 	// AUTO-ORGANIZADOR PROFESIONAL DE GUIONES
 	// =========================================================
 	let isFormatting = false;
@@ -160,7 +180,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	};
 
 	// =========================================================
-	// MÉTRICAS EN MEMORIA (ELIMINA EL LAYOUT THRASHING Y LAG)
+	// MÉTRICAS EN MEMORIA (CERO REFLOWS SÍNCRONOS)
 	// =========================================================
 	const calculateMetrics = () => {
 		if (!scrollContainer || !content) return;
@@ -171,7 +191,6 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			return;
 		}
 
-		// Pre-cálculo de coordenadas en frío para no consultar el DOM durante el scroll
 		lineMetrics = lineElements.map((el) => {
 			if (!el) return { center: 0 };
 			return { center: el.offsetTop + el.offsetHeight / 2 };
@@ -215,7 +234,14 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		updateActiveLineFromMemory(scrollContainer.scrollTop);
 	};
 
-	// Motor de scroll de alta precisión sin "Math.round" y sin lecturas síncronas del DOM
+	const handleScroll = () => {
+		if (!isPlaying && scrollContainer) {
+			scrollAccumulator = scrollContainer.scrollTop;
+			updateProgress();
+		}
+	};
+
+	// Motor de scroll de alta precisión sin jitter
 	const tick = (timestamp: number) => {
 		if (!isPlaying || !scrollContainer) {
 			raf = null;
@@ -445,10 +471,8 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			try { if (typeof data.dimOutside === "boolean") dimOutside = data.dimOutside; } catch {}
 			try { if (typeof data.countdownDuration === "number") countdownDuration = data.countdownDuration; } catch {}
 
-			// ultraClean y showControls se mantienen visibles al iniciar para no ocultar la barra
 			ultraClean = false;
 			showControls = true;
-
 			speed = Math.round(clamp(speed, speedMin, speedMax));
 		} catch (e) {
 			console.warn("[Teleprompter] Estado corrupto, usando valores por defecto:", e);
@@ -992,6 +1016,13 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 				✨ Auto-Organizar
 			</button>
 			<button
+				class="btn-telegram"
+				on:click={shareOnTelegram}
+				title="Compartir guion en Telegram hacia kevinborja.com"
+			>
+				✈️ Telegram
+			</button>
+			<button
 				class="btn-help"
 				on:click={() => (showOnboarding = true)}
 				title="Ver tutorial"
@@ -1254,6 +1285,7 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		<div
 			class="teleprompter-frame"
 			bind:this={scrollContainer}
+			on:scroll={handleScroll}
 			on:wheel={handleWheel}
 			on:click={handleFrameClick}
 			on:touchstart={handleTouchStart}
@@ -1261,11 +1293,11 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 			style={`padding: ${autoCenter ? "35vh 2rem 50vh" : "2.5rem 2rem"};`}
 			tabindex="-1"
 		>
-			<!-- EL EFECTO ESPEJO SE APLICA EXCLUSIVAMENTE AL CONTENIDO DE TEXTO -->
+			<!-- INYECCIÓN DUAL DE ESPEJO: CLASE + TRANSFORM INLINE PARA GARANTÍA TOTAL -->
 			<div
 				class="teleprompter-content"
 				class:mirror={isMirror}
-				style={`font-size:${fontSize}px; line-height:${lineHeight}; letter-spacing: 0.01em;`}
+				style={`font-size:${fontSize}px; line-height:${lineHeight}; letter-spacing: 0.01em; transform: ${isMirror ? 'scaleX(-1)' : 'none'};`}
 				bind:this={content}
 			>
 				{#each lines as line, index}
@@ -1843,6 +1875,31 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 	}
 
 	.btn-format:active {
+		transform: translateY(0);
+	}
+
+	.btn-telegram {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.5rem 1rem;
+		background: linear-gradient(135deg, #229ED9, #197db3);
+		color: white;
+		border: none;
+		border-radius: 0.5rem;
+		font-size: 0.9rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		box-shadow: 0 4px 12px rgba(34, 158, 217, 0.3);
+	}
+
+	.btn-telegram:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 6px 16px rgba(34, 158, 217, 0.45);
+	}
+
+	.btn-telegram:active {
 		transform: translateY(0);
 	}
 
@@ -2514,18 +2571,18 @@ Tip: Usa párrafos cortos para una lectura más cómoda.`;
 		background: rgba(255, 255, 255, 0.5);
 	}
 
-	/* MODO ESPEJO TRADICIONAL (TECLA M): APLICADO DIRECTAMENTE AL TEXTO */
+	/* REGLA DEFINITIVA PARA MODO ESPEJO HORIZONTAL */
 	.teleprompter-content {
 		color: #0f172a;
 		text-align: center;
 		user-select: none;
 		width: 100%;
-		transform-origin: center center;
+		transform-origin: center center !important;
 		transition: transform 0.2s ease;
 	}
 
 	.teleprompter-content.mirror {
-		transform: scaleX(-1);
+		transform: scaleX(-1) !important;
 		display: block;
 		backface-visibility: hidden;
 		-webkit-font-smoothing: antialiased;
