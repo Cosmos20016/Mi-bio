@@ -85,6 +85,11 @@
 	let countdownDuration = 3;
 	let isDark = false;
 
+	// Sistema de Feedback Visual (Toast Notification)
+	let toastMessage = "";
+	let toastVisible = false;
+	let toastTimer: ReturnType<typeof setTimeout> | null = null;
+
 	// Coordenadas calculadas en frío (px)
 	let topPaddingPx = 250;
 	let bottomPaddingPx = 300;
@@ -139,7 +144,7 @@
 			: "";
 
 	// =========================================================================
-	// UTILIDADES DE STORAGE SEGURO
+	// UTILIDADES DE STORAGE SEGURO Y CLAMPING
 	// =========================================================================
 	const clamp = (value: number, min: number, max: number): number =>
 		Math.min(Math.max(value, min), max);
@@ -168,6 +173,16 @@
 		}
 	};
 
+	// Micro-interacción Toast Feedback
+	const showToast = (message: string): void => {
+		toastMessage = message;
+		toastVisible = true;
+		if (toastTimer !== null) clearTimeout(toastTimer);
+		toastTimer = setTimeout(() => {
+			toastVisible = false;
+		}, 2000);
+	};
+
 	// =========================================================================
 	// CONTROL ATÓMICO DEL MODO ESPEJO
 	// =========================================================================
@@ -175,6 +190,7 @@
 		isMirror = typeof forceState === "boolean" ? forceState : !isMirror;
 		applyMirrorToDOM();
 		scheduleSave();
+		showToast(isMirror ? "Modo espejo activado" : "Modo espejo desactivado");
 	};
 
 	const applyMirrorToDOM = (): void => {
@@ -192,6 +208,7 @@
 	const toggleDimOutside = (): void => {
 		dimOutside = !dimOutside;
 		scheduleSave();
+		showToast(dimOutside ? "Bordes oscurecidos" : "Bordes normales");
 	};
 
 	const toggleGlow = (): void => {
@@ -203,6 +220,7 @@
 		focusMode = !focusMode;
 		setTimeout(calculateMetrics, 50);
 		scheduleSave();
+		showToast(focusMode ? "Focus Mode activado" : "Focus Mode desactivado");
 	};
 
 	const toggleAutoCenter = (): void => {
@@ -219,6 +237,7 @@
 			}
 			scheduleSave();
 		}, 60);
+		showToast(autoCenter ? "Auto-centrado activado" : "Auto-centrado desactivado");
 	};
 
 	const toggleSmooth = (): void => {
@@ -283,6 +302,7 @@
 		setTimeout(() => {
 			calculateMetrics();
 			isFormatting = false;
+			showToast("✨ Guion auto-organizado");
 		}, 80);
 	};
 
@@ -296,7 +316,7 @@
 	};
 
 	// =========================================================================
-	// CÁLCULO FÍSICO DE LÍMITES Y LÍNEA ÓPTICA (SIN SALTO AL VACÍO)
+	// CÁLCULO FÍSICO DE LÍMITES Y LÍNEA ÓPTICA
 	// =========================================================================
 	const calculateMetrics = (): void => {
 		if (!scrollContainer || !content) return;
@@ -312,15 +332,12 @@
 
 		const opticalCenter = viewportHeight * READING_LINE_RATIO;
 
-		// Alineación geométrica exacta: primer párrafo al 45% y último párrafo detenido al 45%
 		topPaddingPx = Math.max(0, Math.round(opticalCenter - hFirst / 2));
 		bottomPaddingPx = Math.max(0, Math.round(viewportHeight * (1 - READING_LINE_RATIO) - hLast / 2));
 
-		// Cálculo analítico estricto del scroll máximo
 		const totalScrollHeight = topPaddingPx + content.offsetHeight + bottomPaddingPx;
 		cachedMaxScroll = Math.max(totalScrollHeight - viewportHeight, 0);
 
-		// Matriz de centros absolutos congruente con topPaddingPx
 		lineMetrics = lineElements.map((el) => {
 			if (!el) return { center: 0 };
 			return { center: topPaddingPx + el.offsetTop + el.offsetHeight / 2 };
@@ -351,7 +368,6 @@
 		}
 	};
 
-	// Sincronización directa en hardware (Zero Layout Thrashing, Zero Svelte Diffing)
 	const syncUiDirect = (scrollTop: number): void => {
 		if (cachedMaxScroll <= 0) {
 			progress = 0;
@@ -399,7 +415,7 @@
 	};
 
 	// =========================================================================
-	// MOTOR DE DESPLAZAMIENTO ULTRA FLUIDO (60/120 FPS NATIVO)
+	// MOTOR DE DESPLAZAMIENTO ULTRA FLUIDO
 	// =========================================================================
 	const tick = (timestamp: number): void => {
 		if (!isPlaying || !scrollContainer) {
@@ -432,7 +448,6 @@
 
 		scrollAccumulator += currentSpeed * elapsedSeconds;
 
-		// Condición de parada exacta: último párrafo descansando en la línea de lectura
 		if (scrollAccumulator >= cachedMaxScroll) {
 			scrollContainer.scrollTop = cachedMaxScroll;
 			scrollAccumulator = cachedMaxScroll;
@@ -446,11 +461,9 @@
 			return;
 		}
 
-		// Asignación de desplazamiento directo en hardware
 		scrollContainer.scrollTop = scrollAccumulator;
 		syncUiDirect(scrollAccumulator);
 
-		// Sincronización de baja frecuencia hacia Svelte (4 Hz) para labels de UI sin saturar el Main Thread
 		if (timestamp - lastLowFreqSyncTimestamp > 250) {
 			lastLowFreqSyncTimestamp = timestamp;
 			progress = cachedMaxScroll > 0 ? clamp(scrollAccumulator / cachedMaxScroll, 0, 1) : 0;
@@ -466,7 +479,6 @@
 		calculateMetrics();
 		if (cachedMaxScroll <= 0) return;
 
-		// Si terminó, reinicia desde el origen exacto (carácter cero)
 		if (progress >= 0.999) {
 			resetScrollToStart();
 		} else {
@@ -550,13 +562,40 @@
 	const reset = (): void => {
 		pause();
 		resetScrollToStart();
+		showToast("Rebobinado al inicio");
 	};
 
+	// FIX CRÍTICO #1: Vaciar sin residuos de memoria ni fantasmas en storage
 	const clearText = (): void => {
 		pause();
 		text = "";
+		currentScript = null;
+		safeStorage.remove(STORAGE_KEY_LAST_SCRIPT);
+
+		if (saveDebounceTimer !== null) {
+			clearTimeout(saveDebounceTimer);
+			saveDebounceTimer = null;
+		}
+
+		// Persistencia inmediata del estado vacío explícito
+		const payload: TeleprompterPersistedState = {
+			text: "",
+			speed,
+			fontSize,
+			lineHeight,
+			isMirror,
+			autoCenter,
+			smooth,
+			glow,
+			focusMode,
+			dimOutside,
+			countdownDuration,
+		};
+		safeStorage.set(STORAGE_KEY_STATE, JSON.stringify(payload));
+
 		resetScrollToStart();
-		scheduleSave();
+		calculateMetrics();
+		showToast("Texto vaciado");
 	};
 
 	const jump = (pixels: number): void => {
@@ -578,12 +617,11 @@
 	};
 
 	// =========================================================================
-	// CONTROL SEGURO DE FULLSCREEN (CONSERVACIÓN ESTRICTA DE POSICIÓN)
+	// CONTROL SEGURO DE FULLSCREEN
 	// =========================================================================
 	const toggleFullscreen = async (): Promise<void> => {
 		if (!fullscreenTarget) return;
 
-		// Capturar la posición fraccional antes del redimensionamiento del viewport
 		const previousRatio = cachedMaxScroll > 0 ? scrollAccumulator / cachedMaxScroll : 0;
 
 		const doc = document as Document & {
@@ -616,7 +654,6 @@
 			} catch {}
 		}
 
-		// Fallback para iOS WebKit
 		isPseudoFullscreen = !isPseudoFullscreen;
 		handleViewportResize(previousRatio);
 	};
@@ -750,7 +787,7 @@
 	};
 
 	// =========================================================================
-	// PERSISTENCIA BLINDADA
+	// GESTIÓN DE GUIONES Y PERSISTENCIA BLINDADA
 	// =========================================================================
 	const loadScripts = (): void => {
 		const serialized = safeStorage.get(STORAGE_KEY_SCRIPTS);
@@ -772,8 +809,11 @@
 		scripts = scriptsToSave;
 	};
 
-	const saveCurrentScript = (): void => {
-		if (!text.trim()) return;
+	const saveCurrentScript = (notify = true): void => {
+		if (!text.trim()) {
+			showToast("Escribe algo antes de guardar");
+			return;
+		}
 		const nowIso = new Date().toISOString();
 
 		if (currentScript) {
@@ -782,6 +822,7 @@
 				scripts[index].text = text;
 				scripts[index].updatedAt = nowIso;
 				saveScripts(scripts);
+				if (notify) showToast("💾 Guion actualizado");
 				return;
 			}
 		}
@@ -800,16 +841,18 @@
 		saveScripts(updatedList);
 		currentScript = newScriptRecord.id;
 		safeStorage.set(STORAGE_KEY_LAST_SCRIPT, currentScript);
+		if (notify) showToast("💾 Guion guardado");
 	};
 
 	const loadScript = (id: string): void => {
 		const targetScript = scripts.find((s) => s.id === id);
-		if (targetScript && targetScript.text.trim()) {
+		if (targetScript) {
 			text = targetScript.text;
 			currentScript = id;
 			safeStorage.set(STORAGE_KEY_LAST_SCRIPT, id);
 			resetScrollToStart();
 			setTimeout(calculateMetrics, 60);
+			showToast(`Cargado: ${targetScript.name}`);
 		}
 	};
 
@@ -818,18 +861,54 @@
 		saveScripts(updatedList);
 		if (currentScript === id) {
 			currentScript = null;
+			text = "";
 			safeStorage.remove(STORAGE_KEY_LAST_SCRIPT);
+			
+			const payload: TeleprompterPersistedState = {
+				text: "",
+				speed,
+				fontSize,
+				lineHeight,
+				isMirror,
+				autoCenter,
+				smooth,
+				glow,
+				focusMode,
+				dimOutside,
+				countdownDuration,
+			};
+			safeStorage.set(STORAGE_KEY_STATE, JSON.stringify(payload));
+			resetScrollToStart();
+			setTimeout(calculateMetrics, 60);
 		}
+		showToast("🗑️ Guion eliminado");
 	};
 
 	const newScript = (): void => {
 		currentScript = null;
 		text = "";
 		safeStorage.remove(STORAGE_KEY_LAST_SCRIPT);
+		
+		const payload: TeleprompterPersistedState = {
+			text: "",
+			speed,
+			fontSize,
+			lineHeight,
+			isMirror,
+			autoCenter,
+			smooth,
+			glow,
+			focusMode,
+			dimOutside,
+			countdownDuration,
+		};
+		safeStorage.set(STORAGE_KEY_STATE, JSON.stringify(payload));
 		resetScrollToStart();
 		setTimeout(calculateMetrics, 60);
+		showToast("➕ Nuevo guion listo");
 	};
 
+	// FIX CRÍTICO #2: Clamping y preservación estricta de vacíos
 	const loadState = (): void => {
 		const raw = safeStorage.get(STORAGE_KEY_STATE);
 		if (!raw) return;
@@ -838,20 +917,20 @@
 			const data = JSON.parse(raw) as Partial<TeleprompterPersistedState>;
 			if (typeof data !== "object" || data === null) return;
 
-			// Solo restaura si existe contenido válido
-			if (typeof data.text === "string" && data.text.trim().length > 0) {
+			// Respeta la cadena vacía explícita si el usuario la borró
+			if (typeof data.text === "string") {
 				text = data.text;
 			}
 			if (typeof data.speed === "number") speed = clamp(data.speed, SPEED_MIN, SPEED_MAX);
-			if (typeof data.fontSize === "number") fontSize = data.fontSize;
-			if (typeof data.lineHeight === "number") lineHeight = data.lineHeight;
+			if (typeof data.fontSize === "number") fontSize = clamp(data.fontSize, 22, 64);
+			if (typeof data.lineHeight === "number") lineHeight = clamp(data.lineHeight, 1.2, 2.2);
 			if (typeof data.isMirror === "boolean") isMirror = data.isMirror;
 			if (typeof data.autoCenter === "boolean") autoCenter = data.autoCenter;
 			if (typeof data.smooth === "boolean") smooth = data.smooth;
 			if (typeof data.glow === "boolean") glow = data.glow;
 			if (typeof data.focusMode === "boolean") focusMode = data.focusMode;
 			if (typeof data.dimOutside === "boolean") dimOutside = data.dimOutside;
-			if (typeof data.countdownDuration === "number") countdownDuration = data.countdownDuration;
+			if (typeof data.countdownDuration === "number") countdownDuration = clamp(data.countdownDuration, 0, 5);
 
 			ultraClean = false;
 			showControls = true;
@@ -860,13 +939,13 @@
 		}
 	};
 
+	// FIX CRÍTICO #1: Eliminación de la guarda que bloqueaba el guardado de texto vacío
 	const scheduleSave = (): void => {
 		if (!isReady) return;
 		if (saveDebounceTimer !== null) clearTimeout(saveDebounceTimer);
 
 		const debounceDelayMs = text.length > 5000 ? 500 : 300;
 		saveDebounceTimer = setTimeout(() => {
-			if (!text.trim()) return;
 			const payload: TeleprompterPersistedState = {
 				text,
 				speed,
@@ -881,8 +960,8 @@
 				countdownDuration,
 			};
 			safeStorage.set(STORAGE_KEY_STATE, JSON.stringify(payload));
-			if (currentScript) {
-				saveCurrentScript();
+			if (currentScript && text.trim()) {
+				saveCurrentScript(false);
 			}
 		}, debounceDelayMs);
 	};
@@ -942,6 +1021,7 @@
 		scheduleSave();
 		resetScrollToStart();
 		setTimeout(calculateMetrics, 60);
+		showToast("✨ Ajustes de YouTube aplicados");
 	};
 
 	// =========================================================================
@@ -980,8 +1060,9 @@
 		loadState();
 		loadScripts();
 
+		// Si el usuario vació el texto, no restauramos guiones obsoletos
 		const lastScriptId = safeStorage.get(STORAGE_KEY_LAST_SCRIPT);
-		if (lastScriptId) {
+		if (lastScriptId && text.trim().length > 0) {
 			loadScript(lastScriptId);
 		}
 
@@ -990,7 +1071,6 @@
 			showOnboarding = true;
 		}
 
-		// ResizeObserver atómico sin loops de layout
 		resizeObserver = new ResizeObserver(() => {
 			if (!isPlaying) {
 				handleViewportResize();
@@ -1030,11 +1110,18 @@
 
 		if (saveDebounceTimer !== null) clearTimeout(saveDebounceTimer);
 		if (countdownTimer !== null) clearInterval(countdownTimer);
+		if (toastTimer !== null) clearTimeout(toastTimer);
 
 		stopThemeWatch?.();
 		stopThemeWatch = null;
 	});
 </script>
+{#if toastVisible}
+	<div class="teleprompter-toast" role="status" aria-live="polite">
+		<span>{toastMessage}</span>
+	</div>
+{/if}
+
 <div
 	class="teleprompter-wrapper"
 	class:clean={ultraClean}
@@ -1318,7 +1405,7 @@
 						</option>
 					{/each}
 				</select>
-				<button class="btn-icon" on:click={saveCurrentScript} title="Guardar guion actual">💾</button>
+				<button class="btn-icon" on:click={() => saveCurrentScript(true)} title="Guardar guion actual">💾</button>
 				<button class="btn-icon" on:click={newScript} title="Nuevo guion">➕</button>
 				{#if currentScript}
 					<button class="btn-icon" on:click={() => deleteScript(currentScript!)} title="Eliminar guion">🗑️</button>
@@ -1580,7 +1667,54 @@
 		{/if}
 	</div>
 </div>
+
 <style>
+	/* =========================================================================
+	   NOTIFICACIÓN TOAST REACTIVA PREMIUM
+	   ========================================================================= */
+	.teleprompter-toast {
+		position: fixed;
+		bottom: 2rem;
+		left: 50%;
+		transform: translateX(-50%) translateY(0);
+		background: rgba(15, 23, 42, 0.92);
+		color: #ffffff;
+		padding: 0.65rem 1.35rem;
+		border-radius: 9999px;
+		font-size: 0.88rem;
+		font-weight: 600;
+		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+		backdrop-filter: blur(12px);
+		border: 1px solid rgba(255, 255, 255, 0.15);
+		z-index: 999999;
+		pointer-events: none;
+		animation: toastSlideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	:global(.dark) .teleprompter-toast {
+		background: rgba(255, 255, 255, 0.95);
+		color: #0f172a;
+		border-color: rgba(0, 0, 0, 0.1);
+		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+	}
+
+	@keyframes toastSlideIn {
+		from {
+			opacity: 0;
+			transform: translateX(-50%) translateY(12px) scale(0.96);
+		}
+		to {
+			opacity: 1;
+			transform: translateX(-50%) translateY(0) scale(1);
+		}
+	}
+
+	/* =========================================================================
+	   WRAPPER PRINCIPAL Y MODO LIMPIO
+	   ========================================================================= */
 	.teleprompter-wrapper {
 		display: flex;
 		flex-direction: column;
@@ -2117,7 +2251,7 @@
 		font-size: 0.9rem;
 		font-weight: 600;
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
 		box-shadow: 0 4px 12px oklch(0.70 0.14 var(--hue) / 0.3);
 	}
 
@@ -2220,7 +2354,7 @@
 	}
 
 	/* =========================================================================
-	   PANEL DE CONTROL Y GESTIÓN DE GUIONES
+	   PANEL DE CONTROL Y GESTIÓN DE GUIONES (ALINEACIÓN HOMOGÉNEA)
 	   ========================================================================= */
 	.teleprompter-panel {
 		background: rgba(255, 255, 255, 0.8);
@@ -2261,19 +2395,22 @@
 		display: flex;
 		gap: 0.5rem;
 		flex-wrap: wrap;
+		align-items: center;
 	}
 
 	.script-controls select {
 		flex: 1;
 		min-width: 200px;
-		padding: 0.6rem 1rem;
+		height: 2.5rem;
+		padding: 0 1rem;
 		background: white;
 		color: #0f172a;
 		border: 1px solid #cbd5e1;
 		border-radius: 0.5rem;
 		font-size: 0.9rem;
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition: border-color 0.2s ease, box-shadow 0.2s ease;
+		box-sizing: border-box;
 	}
 
 	:global(.dark) .script-controls select,
@@ -2287,20 +2424,20 @@
 		border-color: oklch(0.70 0.14 var(--hue));
 	}
 
-	.script-controls select:focus {
-		outline: none;
-		border-color: oklch(0.70 0.14 var(--hue));
-		box-shadow: 0 0 0 3px oklch(0.70 0.14 var(--hue) / 0.1);
-	}
-
 	.btn-icon {
-		padding: 0.6rem 0.9rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		height: 2.5rem;
+		min-width: 2.5rem;
+		padding: 0 0.85rem;
 		background: oklch(0.95 0.02 var(--hue));
 		border: 1px solid #cbd5e1;
 		border-radius: 0.5rem;
 		font-size: 1.1rem;
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition: transform 0.15s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+		box-sizing: border-box;
 	}
 
 	:global(.dark) .btn-icon,
@@ -2316,6 +2453,10 @@
 		box-shadow: 0 4px 12px oklch(0.70 0.14 var(--hue) / 0.2);
 	}
 
+	.btn-icon:active {
+		transform: scale(0.96);
+	}
+
 	.teleprompter-input {
 		width: 100%;
 		min-height: 120px;
@@ -2328,8 +2469,9 @@
 		font-size: 1rem;
 		line-height: 1.5;
 		resize: vertical;
-		transition: all 0.2s ease;
+		transition: border-color 0.2s ease, box-shadow 0.2s ease;
 		margin-bottom: 1rem;
+		box-sizing: border-box;
 	}
 
 	:global(.dark) .teleprompter-input,
@@ -2346,12 +2488,6 @@
 	:global(.dark) .teleprompter-input::placeholder,
 	.dark .teleprompter-input::placeholder {
 		color: #64748b;
-	}
-
-	.teleprompter-input:focus {
-		outline: none;
-		border-color: oklch(0.70 0.14 var(--hue));
-		box-shadow: 0 0 0 3px oklch(0.70 0.14 var(--hue) / 0.1);
 	}
 
 	.teleprompter-controls {
@@ -2377,7 +2513,7 @@
 		border: 1px solid rgba(0, 0, 0, 0.06);
 		border-radius: 0.75rem;
 		padding: 1rem;
-		transition: all 0.2s ease;
+		transition: background-color 0.2s ease, border-color 0.2s ease;
 	}
 
 	:global(.dark) .control-group,
@@ -2451,7 +2587,7 @@
 	.speed-indicator-bar {
 		height: 4px;
 		border-radius: 999px;
-		transition: all 0.3s ease;
+		transition: width 0.2s ease, background-color 0.3s ease;
 		max-width: 60px;
 	}
 
@@ -2464,7 +2600,7 @@
 		border-radius: 999px;
 		outline: none;
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition: opacity 0.2s ease;
 	}
 
 	:global(.dark) .custom-range,
@@ -2482,7 +2618,7 @@
 		cursor: pointer;
 		border: 3px solid white;
 		box-shadow: 0 2px 8px oklch(0.70 0.14 var(--hue) / 0.3);
-		transition: all 0.2s ease;
+		transition: transform 0.15s ease, box-shadow 0.2s ease;
 	}
 
 	:global(.dark) .custom-range::-webkit-slider-thumb,
@@ -2503,7 +2639,7 @@
 		cursor: pointer;
 		border: 3px solid white;
 		box-shadow: 0 2px 8px oklch(0.70 0.14 var(--hue) / 0.3);
-		transition: all 0.2s ease;
+		transition: transform 0.15s ease, box-shadow 0.2s ease;
 	}
 
 	:global(.dark) .custom-range::-moz-range-thumb,
@@ -2518,14 +2654,16 @@
 
 	.countdown-select {
 		width: 100%;
-		padding: 0.6rem 1rem;
+		height: 2.5rem;
+		padding: 0 1rem;
 		background: white;
 		color: #0f172a;
 		border: 1px solid #cbd5e1;
 		border-radius: 0.5rem;
 		font-size: 0.9rem;
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition: border-color 0.2s ease, box-shadow 0.2s ease;
+		box-sizing: border-box;
 	}
 
 	:global(.dark) .countdown-select,
@@ -2537,12 +2675,6 @@
 
 	.countdown-select:hover {
 		border-color: oklch(0.70 0.14 var(--hue));
-	}
-
-	.countdown-select:focus {
-		outline: none;
-		border-color: oklch(0.70 0.14 var(--hue));
-		box-shadow: 0 0 0 3px oklch(0.70 0.14 var(--hue) / 0.1);
 	}
 
 	.control-group.toggles {
@@ -2564,7 +2696,7 @@
 		font-size: 0.9rem;
 		font-weight: 500;
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition: transform 0.15s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 		text-align: center;
 	}
 
@@ -2616,7 +2748,7 @@
 		font-size: 1.05rem;
 		font-weight: 700;
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition: transform 0.15s ease, box-shadow 0.2s ease;
 		box-shadow: 0 4px 16px oklch(0.70 0.14 var(--hue) / 0.3);
 	}
 
@@ -2638,7 +2770,7 @@
 		font-size: 0.9rem;
 		font-weight: 500;
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition: transform 0.15s ease, background-color 0.2s ease, border-color 0.2s ease;
 	}
 
 	:global(.dark) .btn-action,
@@ -2662,8 +2794,12 @@
 		color: oklch(0.75 0.14 var(--hue));
 	}
 
+	.btn-action:active {
+		transform: scale(0.97);
+	}
+
 	/* =========================================================================
-	   PANTALLA DE PROYECCIÓN Y GLOW DIRECTO (SIN TRANSICIÓN DE HEIGHT)
+	   PANTALLA DE PROYECCIÓN Y GLOW DIRECTO
 	   ========================================================================= */
 	.teleprompter-screen {
 		position: relative;
@@ -2674,7 +2810,7 @@
 		height: 65vh;
 		min-height: 500px;
 		transition: box-shadow 0.3s ease, border-color 0.3s ease;
-		contain: content; /* AISLAMIENTO DE RENDERIZADO DEL RESTO DE LA PÁGINA */
+		contain: content;
 	}
 
 	:global(.dark) .teleprompter-screen,
@@ -2749,7 +2885,6 @@
 		opacity: 1;
 	}
 
-	/* GUÍA VISUAL ANCLADA AL 45% (RATIO ÓPTICO COINCIDENTE) */
 	.reading-position-marker {
 		position: absolute;
 		top: 45%;
@@ -2845,7 +2980,6 @@
 		color: #f1f5f9;
 	}
 
-	/* CAJA ESTÁTICA PARA ELIMINAR REFLOWS EN EL BUCLE DE ANIMACIÓN */
 	.teleprompter-content p {
 		margin: 0.75rem 0;
 		padding: 0.5rem 1rem;
@@ -2947,7 +3081,7 @@
 		font-size: 1.1rem;
 		font-weight: 600;
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition: transform 0.15s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 	}
 
 	.btn-float:hover {
@@ -2960,6 +3094,10 @@
 	.btn-float.active {
 		background: oklch(0.60 0.14 var(--hue));
 		border-color: oklch(0.60 0.14 var(--hue));
+	}
+
+	.btn-float:active {
+		transform: scale(0.96);
 	}
 
 	.float-speed-control {
@@ -3070,7 +3208,17 @@
 	}
 
 	/* =========================================================================
-	   ANIMACIONES
+	   ACCESIBILIDAD Y FOCUS VISIBLE (ESTÁNDAR TOP TIER)
+	   ========================================================================= */
+	button:focus-visible,
+	select:focus-visible,
+	textarea:focus-visible {
+		outline: 2px solid oklch(0.70 0.14 var(--hue)) !important;
+		outline-offset: 2px !important;
+	}
+
+	/* =========================================================================
+	   ANIMACIONES KEYFRAMES
 	   ========================================================================= */
 	@keyframes fadeIn {
 		from { opacity: 0; }
