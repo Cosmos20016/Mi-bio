@@ -270,30 +270,46 @@ const jsonLdString = jsonLd
 >
 	@tailwind components;
 	@layer components {
-		/* Geometría universal del banner en móvil y escritorio */
-		.enable-banner.is-home #banner-wrapper {
-			@apply h-[var(--banner-height-home)] translate-y-[var(--banner-height-extend)];
-		}
+		/* =========================================================================
+		   CONFIGURACIÓN FUWARI ORIGINAL:
+		   En móvil (< 1024px) y en subpáginas de PC: el banner mide BANNER_HEIGHT (35vh).
+		   En PC (>= 1024px) en la Home: se expande a BANNER_HEIGHT_HOME (65vh).
+		   ========================================================================= */
+
+		/* 1. Reglas base: Móvil (Home y Subpáginas) y Desktop (Subpáginas) */
 		.enable-banner #banner-wrapper {
 			@apply h-[var(--banner-height-home)];
+			transform: translateY(0);
 		}
 
-		.enable-banner.is-home #banner {
-			@apply h-[var(--banner-height-home)] translate-y-0;
-		}
 		.enable-banner #banner {
 			@apply h-[var(--banner-height-home)] translate-y-[var(--bannerOffset)];
 		}
-		.enable-banner.is-home #main-grid {
-			@apply translate-y-[var(--banner-height-extend)];
-		}
+
 		.enable-banner #top-row {
-			@apply h-[calc(var(--banner-height-home)_-_4.5rem)];
+			@apply h-[calc(var(--banner-height)_-_4.5rem)];
 			transition: background-color 0.2s ease, border-color 0.2s ease;
 		}
-		.enable-banner.is-home #sidebar-sticky {
-			@apply top-[calc(1rem_-_var(--banner-height-extend))];
+
+		/* 2. Reglas de expansión: SOLO en Desktop Home (>= 1024px) */
+		@media (min-width: 1024px) {
+			.enable-banner.is-home #banner-wrapper {
+				@apply h-[var(--banner-height-home)] translate-y-[var(--banner-height-extend)];
+			}
+			.enable-banner.is-home #banner {
+				@apply h-[var(--banner-height-home)] translate-y-0;
+			}
+			.enable-banner.is-home #main-grid {
+				@apply translate-y-[var(--banner-height-extend)];
+			}
+			.enable-banner.is-home #top-row {
+				@apply h-[calc(var(--banner-height-home)_-_4.5rem)];
+			}
+			.enable-banner.is-home #sidebar-sticky {
+				@apply top-[calc(1rem_-_var(--banner-height-extend))];
+			}
 		}
+
 		.navbar-hidden {
 			@apply opacity-0 -translate-y-4 pointer-events-none;
 		}
@@ -334,7 +350,7 @@ const jsonLdString = jsonLd
 	}
 
 	/* =========================================================================
-	   CENTRADOR GLOBAL DE COMENTARIOS GISCUS (PC Y MÓVIL)
+	   CENTRADO DE COMENTARIOS GISCUS (PC Y MÓVIL)
 	   ========================================================================= */
 	#comments,
 	.giscus,
@@ -365,7 +381,7 @@ const jsonLdString = jsonLd
 		margin-right: auto !important;
 	}
 
-	/* Micro-interacciones en botones */
+	/* Micro-interacciones táctiles en controles */
 	button, 
 	a[role="button"],
 	.btn-action,
@@ -734,7 +750,10 @@ const jsonLdString = jsonLd
 				const MAIN_PANEL_EXCESS_HEIGHT = MAIN_PANEL_OVERLAPS_BANNER_HEIGHT * 16;
 
 				let navBannerHeight = BANNER_HEIGHT;
-				if (document.body.classList.contains("is-home")) {
+				if (
+					document.body.classList.contains("is-home") &&
+					window.innerWidth >= 1024
+				) {
 					navBannerHeight = BANNER_HEIGHT_HOME;
 				}
 				const threshold =
