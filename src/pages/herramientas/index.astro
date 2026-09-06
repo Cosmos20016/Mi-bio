@@ -2,26 +2,26 @@
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { url } from "@utils/url-utils";
 
-// ============================================
-// Tipos e interfaces
-// ============================================
+// =========================================================================
+// TIPADO ESTRICTO E INMUTABLE
+// =========================================================================
 type IconType = "teleprompter" | "link" | "qr" | "image" | "text" | "palette";
 
-interface Tool {
-	name: string;
-	description: string;
-	href: string;
-	iconType: IconType;
-	badge: string;
-	features: readonly string[];
-	hue: number;
-	keywords: readonly string[];
+interface ToolItem {
+	readonly name: string;
+	readonly description: string;
+	readonly href: string;
+	readonly iconType: IconType;
+	readonly badge: string;
+	readonly features: readonly string[];
+	readonly hue: number;
+	readonly keywords: readonly string[];
 }
 
-// ============================================
-// Lista de herramientas
-// ============================================
-const tools: readonly Tool[] = [
+// =========================================================================
+// REGISTRO DE HERRAMIENTAS DE PRODUCCIÓN
+// =========================================================================
+const tools: readonly ToolItem[] = [
 	{
 		name: "Teleprompter Studio",
 		description:
@@ -46,22 +46,22 @@ const tools: readonly Tool[] = [
 	},
 ] as const;
 
-// ============================================
-// SEO Metadata
-// ============================================
-const SITE_URL = "https://kevinborja.com";
-const PAGE_URL = `${SITE_URL}/herramientas/`;
-const PAGE_TITLE = "Herramientas";
-const PAGE_DESCRIPTION = "Suite de herramientas profesionales gratuitas para creadores: teleprompter premium, acortador de URLs con QR y más.";
-const PAGE_KEYWORDS = "herramientas, teleprompter, acortador urls, qr, gratis, sin publicidad";
+// =========================================================================
+// RESOLUCIÓN DINÁMICA DE ENTORNO Y SEO
+// =========================================================================
+const siteOrigin = (Astro.site ? Astro.site.toString() : Astro.url.origin).replace(/\/$/, "");
+const pageUrl = `${siteOrigin}/herramientas/`;
+const pageTitle = "Herramientas";
+const pageDescription = "Suite de herramientas profesionales gratuitas para creadores: teleprompter premium, acortador de URLs con QR y más.";
+const pageKeywords = "herramientas, teleprompter, acortador urls, qr, gratis, sin publicidad";
 
-// JSON-LD ItemList
-const jsonLd = {
+// Schema.org ItemList con prevención estricta de XSS
+const jsonLdPayload = {
 	"@context": "https://schema.org",
 	"@type": "ItemList",
-	name: PAGE_TITLE,
-	description: PAGE_DESCRIPTION,
-	url: PAGE_URL,
+	name: pageTitle,
+	description: pageDescription,
+	url: pageUrl,
 	numberOfItems: tools.length,
 	itemListElement: tools.map((tool, idx) => ({
 		"@type": "ListItem",
@@ -70,30 +70,30 @@ const jsonLd = {
 			"@type": "WebApplication",
 			name: tool.name,
 			description: tool.description,
-			url: `${SITE_URL}${tool.href}`,
+			url: `${siteOrigin}${tool.href}`,
 			applicationCategory: "UtilityApplication",
 			offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
 			featureList: tool.features.join(", "),
 		},
 	})),
 };
+
+const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 ---
 
 <MainGridLayout
-	title={PAGE_TITLE}
-	description={PAGE_DESCRIPTION}
-	image={`${SITE_URL}/og-images/tools.png`}
-	url={PAGE_URL}
-	keywords={PAGE_KEYWORDS}
+	title={pageTitle}
+	description={pageDescription}
+	image={`${siteOrigin}/og-images/tools.png`}
+	url={pageUrl}
+	keywords={pageKeywords}
 >
-	<!-- JSON-LD Schema.org -->
-	<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
+	<!-- Inyección segura de Schema JSON-LD -->
+	<script type="application/ld+json" set:html={jsonLdString} is:inline />
 
-	<main id="main-content" class="tools-hub">
+	<div class="tools-hub-container">
 		<section class="tools-hub-section" aria-labelledby="tools-title">
-			<!-- ============================================
-          HEADER
-          ============================================ -->
+			<!-- HEADER -->
 			<header class="tools-header">
 				<div class="header-icon-wrap" aria-hidden="true">
 					<svg
@@ -102,11 +102,11 @@ const jsonLd = {
 						class="header-icon"
 					>
 						<defs>
-							<linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+							<linearGradient id="tools-hub-header-grad" x1="0%" y1="0%" x2="100%" y2="100%">
 								<stop offset="0%" class="grad-stop-1" />
 								<stop offset="100%" class="grad-stop-2" />
 							</linearGradient>
-							<filter id="headerGlow">
+							<filter id="tools-hub-header-glow">
 								<feGaussianBlur stdDeviation="2" result="coloredBlur" />
 								<feMerge>
 									<feMergeNode in="coloredBlur" />
@@ -117,7 +117,7 @@ const jsonLd = {
 						<polygon
 							points="50,15 75,28 75,54 50,67 25,54 25,28"
 							fill="none"
-							stroke="url(#headerGrad)"
+							stroke="url(#tools-hub-header-grad)"
 							stroke-width="2"
 							opacity="0.5"
 							class="hex-outline"
@@ -126,8 +126,8 @@ const jsonLd = {
 							cx="50"
 							cy="41"
 							r="12"
-							fill="url(#headerGrad)"
-							filter="url(#headerGlow)"
+							fill="url(#tools-hub-header-grad)"
+							filter="url(#tools-hub-header-glow)"
 							opacity="0.7"
 							class="center-glow"
 						></circle>
@@ -137,50 +137,47 @@ const jsonLd = {
 							opacity="0.9"
 							class="star"
 						></path>
-						<circle cx="35" cy="30" r="2" fill="url(#headerGrad)" class="dot d1"></circle>
-						<circle cx="65" cy="30" r="2" fill="url(#headerGrad)" class="dot d2"></circle>
-						<circle cx="35" cy="52" r="2" fill="url(#headerGrad)" class="dot d3"></circle>
-						<circle cx="65" cy="52" r="2" fill="url(#headerGrad)" class="dot d4"></circle>
+						<circle cx="35" cy="30" r="2" fill="url(#tools-hub-header-grad)" class="dot d1"></circle>
+						<circle cx="65" cy="30" r="2" fill="url(#tools-hub-header-grad)" class="dot d2"></circle>
+						<circle cx="35" cy="52" r="2" fill="url(#tools-hub-header-grad)" class="dot d3"></circle>
+						<circle cx="65" cy="52" r="2" fill="url(#tools-hub-header-grad)" class="dot d4"></circle>
 					</svg>
 				</div>
 
 				<p class="header-eyebrow">Suite de herramientas</p>
-				<h1 id="tools-title" class="tools-title">{PAGE_TITLE}</h1>
+				<h1 id="tools-title" class="tools-title">{pageTitle}</h1>
 				<p class="tools-subtitle">
 					Herramientas profesionales diseñadas para potenciar tu creatividad y flujo de trabajo.
 				</p>
 
 				<ul class="tools-pills" role="list" aria-label="Características del sitio">
-					<li role="listitem" class="pill">
+					<li class="pill">
 						<span class="pill-dot" aria-hidden="true"></span>
 						{tools.length} herramientas
 					</li>
-					<li role="listitem" class="pill">
+					<li class="pill">
 						<span class="pill-dot" aria-hidden="true"></span>
 						100% gratuitas
 					</li>
-					<li role="listitem" class="pill">
+					<li class="pill">
 						<span class="pill-dot" aria-hidden="true"></span>
 						Sin publicidad
 					</li>
 				</ul>
 			</header>
 
-			<!-- ============================================
-          GRID
-          ============================================ -->
-			<ul class="tools-grid" role="list" aria-label="Lista de herramientas">
+			<!-- GRID -->
+			<ul class="tools-grid" role="list" aria-label="Lista de herramientas disponibles">
 				{tools.map((tool, i) => (
-					<li role="listitem" class="tool-card-wrapper" style={`--i: ${i};`}>
+					<li class="tool-card-wrapper" style={`--i: ${i};`}>
 						<a
 							class="tool-card"
 							href={tool.href}
 							style={`--hue-tool: ${tool.hue};`}
-							aria-label={`${tool.name}. ${tool.description}`}
 						>
 							<div class="card-glow" aria-hidden="true"></div>
 
-							<span class="card-badge" aria-label={`Etiqueta: ${tool.badge}`}>
+							<span class="card-badge">
 								{tool.badge}
 							</span>
 
@@ -242,7 +239,7 @@ const jsonLd = {
 
 							<ul class="card-features" role="list" aria-label={`Características de ${tool.name}`}>
 								{tool.features.map((f) => (
-									<li class="feature-tag" role="listitem">
+									<li class="feature-tag">
 										<span class="feature-dot" aria-hidden="true">✦</span>
 										{f}
 									</li>
@@ -268,9 +265,7 @@ const jsonLd = {
 				))}
 			</ul>
 
-			<!-- ============================================
-          FOOTER
-          ============================================ -->
+			<!-- FOOTER -->
 			<footer class="tools-footer">
 				<div class="footer-card">
 					<span class="footer-icon" aria-hidden="true">🔒</span>
@@ -281,14 +276,11 @@ const jsonLd = {
 				</div>
 			</footer>
 		</section>
-	</main>
+	</div>
 </MainGridLayout>
 
 <style>
-	/* =============================================
-     TOKENS & THEME
-     ============================================= */
-	.tools-hub {
+	.tools-hub-container {
 		--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 		--ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 		--text-primary: oklch(0.15 0.01 var(--hue));
@@ -296,7 +288,7 @@ const jsonLd = {
 		--text-muted: oklch(0.6 0.02 var(--hue));
 		--border: oklch(0.88 0.01 var(--hue));
 		--bg-tag: oklch(0.95 0.01 var(--hue));
-		--card-surface: #fff;
+		--card-surface: #ffffff;
 		--card-shadow:
 			0 2px 12px oklch(0.4 0.1 var(--hue) / 0.08),
 			0 1px 3px oklch(0.4 0.1 var(--hue) / 0.06);
@@ -307,38 +299,30 @@ const jsonLd = {
 		display: flex;
 		flex-direction: column;
 		gap: 2rem;
-
-		/* Safe areas */
+		width: 100%;
+		contain: layout style;
 		padding-left: max(0px, env(safe-area-inset-left));
 		padding-right: max(0px, env(safe-area-inset-right));
 	}
 
-	:global(.dark) .tools-hub {
+	:global(.dark) .tools-hub-container {
 		--text-primary: oklch(0.95 0.01 var(--hue));
 		--text-secondary: oklch(0.7 0.03 var(--hue));
 		--text-muted: oklch(0.55 0.03 var(--hue));
 		--border: oklch(0.28 0.03 var(--hue));
 		--bg-tag: oklch(0.2 0.03 var(--hue));
 		--card-surface: oklch(0.14 0.02 var(--hue));
-		--card-shadow:
-			0 2px 12px rgb(0 0 0 / 0.3), 0 1px 3px rgb(0 0 0 / 0.25);
-		--card-shadow-hover:
-			0 16px 40px rgb(0 0 0 / 0.5), 0 4px 12px rgb(0 0 0 / 0.4);
+		--card-shadow: 0 2px 12px rgb(0 0 0 / 0.3), 0 1px 3px rgb(0 0 0 / 0.25);
+		--card-shadow-hover: 0 16px 40px rgb(0 0 0 / 0.5), 0 4px 12px rgb(0 0 0 / 0.4);
 	}
 
-	/* =============================================
-     SECTION WRAPPER
-     ============================================= */
 	.tools-hub-section {
 		display: flex;
 		flex-direction: column;
 		gap: 2rem;
-		animation: fadeUp 0.6s var(--ease-out) both;
+		animation: fadeUp 0.5s var(--ease-out) both;
 	}
 
-	/* =============================================
-     HEADER
-     ============================================= */
 	.tools-header {
 		text-align: center;
 		padding: 1rem 0 0.25rem;
@@ -348,21 +332,21 @@ const jsonLd = {
 		display: inline-flex;
 		margin-bottom: 1rem;
 		color: oklch(0.6 0.2 var(--hue));
+		transform: translateZ(0);
 	}
 
 	.header-icon {
 		width: 80px;
 		height: 80px;
 		animation: headerFloat 4s ease-in-out infinite;
-		filter: drop-shadow(0 6px 20px oklch(0.7 0.18 var(--hue) / 0.3));
+		will-change: transform;
 	}
 
 	@keyframes headerFloat {
 		0%, 100% { transform: translateY(0); }
-		50% { transform: translateY(-8px); }
+		50% { transform: translateY(-6px); }
 	}
 
-	/* Gradiente del SVG (usando CSS, no style attr) */
 	.grad-stop-1 { stop-color: oklch(0.7 0.2 var(--hue)); }
 	.grad-stop-2 { stop-color: oklch(0.6 0.22 calc(var(--hue) + 40)); }
 
@@ -372,7 +356,7 @@ const jsonLd = {
 	}
 	@keyframes hexBreath {
 		0%, 100% { transform: scale(1); opacity: 0.5; }
-		50% { transform: scale(1.05); opacity: 0.7; }
+		50% { transform: scale(1.04); opacity: 0.7; }
 	}
 
 	.center-glow {
@@ -381,156 +365,43 @@ const jsonLd = {
 	}
 	@keyframes glowPulse {
 		0%, 100% { transform: scale(1); opacity: 0.7; }
-		50% { transform: scale(1.1); opacity: 0.9; }
+		50% { transform: scale(1.08); opacity: 0.85; }
 	}
 
 	.star {
-		animation: starSpin 12s linear infinite;
+		animation: starSpin 14s linear infinite;
 		transform-origin: 50px 41px;
+		will-change: transform;
 	}
 	@keyframes starSpin {
 		from { transform: rotate(0deg); }
 		to { transform: rotate(360deg); }
 	}
 
-	/* =============================================
-     DOTS — animaciones premium
-     ============================================= */
-	.d1 {
-		transform-origin: 35px 30px;
-		animation: dotArc1 2.9s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite 0s;
-	}
-	.d2 {
-		transform-origin: 65px 30px;
-		animation: dotArc2 4.1s cubic-bezier(0.22, 1, 0.36, 1) infinite 1.1s;
-	}
-	.d3 {
-		transform-origin: 35px 52px;
-		animation: dotArc3 3.6s cubic-bezier(0.55, 0, 0.45, 1) infinite 2.3s;
-	}
-	.d4 {
-		transform-origin: 65px 52px;
-		animation: dotArc4 5.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite 0.6s;
-	}
+	.d1 { transform-origin: 35px 30px; animation: dotArc1 3s ease-in-out infinite; }
+	.d2 { transform-origin: 65px 30px; animation: dotArc2 4s ease-in-out infinite 0.8s; }
+	.d3 { transform-origin: 35px 52px; animation: dotArc3 3.5s ease-in-out infinite 1.5s; }
+	.d4 { transform-origin: 65px 52px; animation: dotArc4 4.5s ease-in-out infinite 0.4s; }
 
 	@keyframes dotArc1 {
-		0% {
-			opacity: 0.28;
-			transform: scale(0.8) translate(0, 0);
-			filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0));
-		}
-		20% {
-			opacity: 0.55;
-			transform: scale(1.05) translate(-0.8px, -1px);
-		}
-		52% {
-			opacity: 1;
-			transform: scale(1.25) translate(-2.8px, -2.6px);
-			filter: drop-shadow(0 0 4px oklch(0.75 0.22 var(--hue) / 0.8));
-		}
-		76% {
-			opacity: 0.5;
-			transform: scale(1.08) translate(-1.6px, -1.8px);
-			filter: drop-shadow(0 0 1.5px oklch(0.75 0.22 var(--hue) / 0.25));
-		}
-		100% {
-			opacity: 0.28;
-			transform: scale(0.8) translate(0, 0);
-			filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0));
-		}
+		0%, 100% { opacity: 0.3; transform: translate(0, 0) scale(0.85); }
+		50% { opacity: 0.95; transform: translate(-2px, -2px) scale(1.2); }
 	}
-
 	@keyframes dotArc2 {
-		0% {
-			opacity: 0.32;
-			transform: scale(0.82) translate(0, 0);
-			filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0));
-		}
-		18% {
-			opacity: 0.48;
-			transform: scale(1.04) translate(0.6px, -1.2px);
-		}
-		55% {
-			opacity: 1;
-			transform: scale(1.35) translate(3px, -2.8px);
-			filter: drop-shadow(0 0 5px oklch(0.75 0.22 var(--hue) / 0.85));
-		}
-		80% {
-			opacity: 0.55;
-			transform: scale(1.1) translate(2px, -1.6px);
-			filter: drop-shadow(0 0 1.5px oklch(0.75 0.22 var(--hue) / 0.2));
-		}
-		100% {
-			opacity: 0.32;
-			transform: scale(0.82) translate(0, 0);
-			filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0));
-		}
+		0%, 100% { opacity: 0.35; transform: translate(0, 0) scale(0.85); }
+		50% { opacity: 1; transform: translate(2px, -2px) scale(1.25); }
 	}
-
 	@keyframes dotArc3 {
-		0% {
-			opacity: 0.3;
-			transform: scale(0.78) translate(0, 0);
-			filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0));
-		}
-		25% {
-			opacity: 0.52;
-			transform: scale(1.06) translate(-1.2px, 0.6px);
-		}
-		58% {
-			opacity: 1;
-			transform: scale(1.28) translate(-2.6px, 3px);
-			filter: drop-shadow(0 0 4px oklch(0.75 0.22 var(--hue) / 0.75));
-		}
-		82% {
-			opacity: 0.45;
-			transform: scale(1.07) translate(-1.8px, 2px);
-			filter: drop-shadow(0 0 1px oklch(0.75 0.22 var(--hue) / 0.18));
-		}
-		100% {
-			opacity: 0.3;
-			transform: scale(0.78) translate(0, 0);
-			filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0));
-		}
+		0%, 100% { opacity: 0.3; transform: translate(0, 0) scale(0.85); }
+		50% { opacity: 0.95; transform: translate(-2px, 2px) scale(1.2); }
 	}
-
 	@keyframes dotArc4 {
-		0% {
-			opacity: 0.25;
-			transform: scale(0.75) translate(0, 0);
-			filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0));
-		}
-		14% {
-			opacity: 0.38;
-			transform: scale(0.95) translate(0.4px, 0.6px);
-		}
-		40% {
-			opacity: 0.72;
-			transform: scale(1.12) translate(1.8px, 2px);
-			filter: drop-shadow(0 0 2.5px oklch(0.75 0.22 var(--hue) / 0.4));
-		}
-		62% {
-			opacity: 1;
-			transform: scale(1.2) translate(2.8px, 2.8px);
-			filter: drop-shadow(0 0 5px oklch(0.75 0.22 var(--hue) / 0.9));
-		}
-		84% {
-			opacity: 0.48;
-			transform: scale(1.06) translate(1.4px, 1.8px);
-			filter: drop-shadow(0 0 1px oklch(0.75 0.22 var(--hue) / 0.15));
-		}
-		100% {
-			opacity: 0.25;
-			transform: scale(0.75) translate(0, 0);
-			filter: drop-shadow(0 0 0 oklch(0.75 0.22 var(--hue) / 0));
-		}
+		0%, 100% { opacity: 0.25; transform: translate(0, 0) scale(0.8); }
+		50% { opacity: 1; transform: translate(2px, 2px) scale(1.2); }
 	}
 
-	/* =============================================
-     HEADER TEXT & PILLS
-     ============================================= */
 	.header-eyebrow {
-		font-size: 0.72rem;
+		font-size: 0.75rem;
 		font-weight: 700;
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
@@ -539,31 +410,20 @@ const jsonLd = {
 	}
 
 	.tools-title {
-		font-size: clamp(2rem, 5vw, 2.8rem);
+		font-size: clamp(2rem, 5vw, 2.75rem);
 		font-weight: 800;
 		letter-spacing: -0.03em;
-		line-height: 1.1;
+		line-height: 1.15;
 		margin: 0 0 0.6rem 0;
-
-		/* Color fallback */
 		color: oklch(0.55 0.22 var(--hue));
-
 		background: linear-gradient(
 			135deg,
 			oklch(0.55 0.22 var(--hue)),
-			oklch(0.65 0.2 calc(var(--hue) + 50)),
-			oklch(0.55 0.22 var(--hue))
+			oklch(0.65 0.2 calc(var(--hue) + 50))
 		);
-		background-size: 200%;
 		-webkit-background-clip: text;
 		background-clip: text;
 		-webkit-text-fill-color: transparent;
-		animation: shimmer 5s ease-in-out infinite;
-	}
-
-	@keyframes shimmer {
-		0%, 100% { background-position: 0% 50%; }
-		50% { background-position: 100% 50%; }
 	}
 
 	:global(.dark) .tools-title {
@@ -571,10 +431,8 @@ const jsonLd = {
 		background: linear-gradient(
 			135deg,
 			oklch(0.75 0.2 var(--hue)),
-			oklch(0.82 0.18 calc(var(--hue) + 50)),
-			oklch(0.75 0.2 var(--hue))
+			oklch(0.82 0.18 calc(var(--hue) + 50))
 		);
-		background-size: 200%;
 		-webkit-background-clip: text;
 		background-clip: text;
 		-webkit-text-fill-color: transparent;
@@ -584,8 +442,8 @@ const jsonLd = {
 		font-size: 0.95rem;
 		line-height: 1.6;
 		color: var(--text-secondary);
-		max-width: 30rem;
-		margin: 0 auto 1rem;
+		max-width: 32rem;
+		margin: 0 auto 1.25rem;
 		padding: 0 1rem;
 	}
 
@@ -624,50 +482,35 @@ const jsonLd = {
 		height: 5px;
 		border-radius: 50%;
 		background: oklch(0.6 0.2 var(--hue));
-		animation: dotBlink 2s ease-in-out infinite;
 	}
 
-	.pill:nth-child(2) .pill-dot { animation-delay: 0.66s; }
-	.pill:nth-child(3) .pill-dot { animation-delay: 1.33s; }
-
-	@keyframes dotBlink {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0.3; }
-	}
-
-	/* =============================================
-     GRID
-     ============================================= */
 	.tools-grid {
 		display: grid;
 		grid-template-columns: 1fr;
-		gap: 1rem;
+		gap: 1.25rem;
 		list-style: none;
 		padding: 0;
 		margin: 0;
 	}
 
 	.tool-card-wrapper {
-		animation: cardIn 0.5s var(--ease-out) both;
-		animation-delay: calc(0.1s * var(--i, 0));
+		animation: cardIn 0.4s var(--ease-out) both;
+		animation-delay: calc(0.08s * var(--i, 0));
 	}
 
-	@media (min-width: 700px) {
+	@media (min-width: 720px) {
 		.tools-grid {
 			grid-template-columns: repeat(2, 1fr);
-			gap: 1.25rem;
+			gap: 1.5rem;
 		}
 	}
 
-	/* =============================================
-     CARD
-     ============================================= */
 	.tool-card {
 		position: relative;
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
-		padding: 1.5rem;
+		gap: 1.25rem;
+		padding: 1.75rem;
 		background: var(--card-surface);
 		border: 1px solid var(--border);
 		border-radius: 1.25rem;
@@ -676,35 +519,30 @@ const jsonLd = {
 		overflow: hidden;
 		box-shadow: var(--card-shadow);
 		transition:
-			transform 0.4s var(--ease-spring),
-			box-shadow 0.4s var(--ease-out),
-			border-color 0.3s ease;
+			transform 0.3s var(--ease-spring),
+			box-shadow 0.3s var(--ease-out),
+			border-color 0.25s ease;
 		isolation: isolate;
-		/* GPU promotion */
 		transform: translateZ(0);
 		backface-visibility: hidden;
 	}
 
-	@media (min-width: 768px) {
-		.tool-card { padding: 2rem; }
-	}
-
 	@keyframes cardIn {
-		from { opacity: 0; transform: translateZ(0) translateY(18px); }
-		to { opacity: 1; transform: translateZ(0) translateY(0); }
+		from { opacity: 0; transform: translateY(14px); }
+		to { opacity: 1; transform: translateY(0); }
 	}
 
 	.card-glow {
 		position: absolute;
-		inset: -1px;
+		inset: 0;
 		border-radius: inherit;
 		background: radial-gradient(
 			circle at 50% 0%,
-			oklch(0.7 0.2 var(--hue-tool, var(--hue)) / 0.12),
-			transparent 60%
+			oklch(0.7 0.2 var(--hue-tool, var(--hue)) / 0.1),
+			transparent 65%
 		);
 		opacity: 0;
-		transition: opacity 0.4s ease;
+		transition: opacity 0.3s ease;
 		pointer-events: none;
 		z-index: 0;
 	}
@@ -712,9 +550,9 @@ const jsonLd = {
 	.tool-card:hover .card-glow { opacity: 1; }
 
 	.tool-card:hover {
-		transform: translateZ(0) translateY(-5px);
+		transform: translateY(-4px);
 		box-shadow: var(--card-shadow-hover);
-		border-color: oklch(0.7 0.15 var(--hue-tool, var(--hue)) / 0.3);
+		border-color: oklch(0.7 0.15 var(--hue-tool, var(--hue)) / 0.35);
 	}
 
 	.tool-card:focus-visible {
@@ -722,20 +560,11 @@ const jsonLd = {
 		outline-offset: 3px;
 	}
 
-	:global(.dark) .tool-card:hover {
-		border-color: oklch(0.7 0.15 var(--hue-tool, var(--hue)) / 0.4);
-	}
-
-	@media (hover: none) {
-		.tool-card:hover { transform: translateZ(0); }
-		.tool-card:active { transform: translateZ(0) scale(0.985); }
-	}
-
 	.card-badge {
 		position: absolute;
-		top: 1rem;
-		right: 1rem;
-		padding: 0.28rem 0.65rem;
+		top: 1.25rem;
+		right: 1.25rem;
+		padding: 0.25rem 0.65rem;
 		font-size: 0.68rem;
 		font-weight: 700;
 		letter-spacing: 0.06em;
@@ -753,57 +582,41 @@ const jsonLd = {
 		border-color: oklch(0.7 0.18 var(--hue-tool, var(--hue)) / 0.3);
 	}
 
-	/* =============================================
-     ICON
-     ============================================= */
 	.card-icon {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 80px;
-		height: 80px;
+		width: 68px;
+		height: 68px;
 		border-radius: 1rem;
 		background: oklch(0.7 0.15 var(--hue-tool, var(--hue)) / 0.1);
-		border: 1px solid oklch(0.7 0.15 var(--hue-tool, var(--hue)) / 0.15);
+		border: 1px solid oklch(0.7 0.15 var(--hue-tool, var(--hue)) / 0.18);
 		flex-shrink: 0;
 		position: relative;
 		z-index: 1;
-		transition: transform 0.4s var(--ease-spring);
+		transition: transform 0.3s var(--ease-spring);
 	}
 
 	.tool-card:hover .card-icon {
-		transform: scale(1.06) rotate(-2deg);
+		transform: scale(1.05);
 	}
 
 	:global(.dark) .card-icon {
 		background: oklch(0.7 0.15 var(--hue-tool, var(--hue)) / 0.15);
-		border-color: oklch(0.7 0.15 var(--hue-tool, var(--hue)) / 0.2);
+		border-color: oklch(0.7 0.15 var(--hue-tool, var(--hue)) / 0.22);
 	}
 
-	.icon-svg { width: 48px; height: 48px; overflow: visible; }
+	.icon-svg { width: 44px; height: 44px; overflow: visible; }
 
-	/* =============================================
-     TELEPROMPTER ICON
-     ============================================= */
 	.monitor-body { fill: oklch(0.7 0.18 var(--hue-tool, var(--hue))); opacity: 0.9; }
 	.monitor-screen { fill: oklch(0.15 0.05 var(--hue-tool, var(--hue))); }
 	.tele-line { fill: oklch(0.75 0.16 var(--hue-tool, var(--hue))); }
-	.l1 { opacity: 0.9; animation: lineScroll 2.5s ease-in-out infinite 0s; }
-	.l2 { opacity: 0.65; animation: lineScroll 2.5s ease-in-out infinite 0.2s; }
-	.l3 { opacity: 0.4; animation: lineScroll 2.5s ease-in-out infinite 0.4s; }
-
-	@keyframes lineScroll {
-		0%, 100% { transform: translateY(0); opacity: inherit; }
-		50% { transform: translateY(2px); opacity: 0.3; }
-	}
+	.l1 { opacity: 0.9; }
+	.l2 { opacity: 0.65; }
+	.l3 { opacity: 0.4; }
 
 	.tele-arrow {
 		stroke: oklch(0.85 0.15 var(--hue-tool, var(--hue)));
-		animation: arrowBounce 2s ease-in-out infinite;
-	}
-	@keyframes arrowBounce {
-		0%, 100% { transform: translateY(0); }
-		50% { transform: translateY(-2px); }
 	}
 
 	.stand-neck, .stand-base {
@@ -813,75 +626,20 @@ const jsonLd = {
 
 	.rec-dot {
 		fill: oklch(0.65 0.28 20);
-		animation: recBlink 1.5s ease-in-out infinite;
-	}
-	@keyframes recBlink {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0.2; }
 	}
 
-	/* =============================================
-     LINK ICON
-     ============================================= */
 	.url-bar { fill: oklch(0.7 0.18 var(--hue-tool, var(--hue))); }
-	.long-bar { opacity: 0.8; animation: longPulse 3s ease-in-out infinite; }
-	.short-bar { animation: shortAppear 3s ease-in-out infinite; }
-
-	@keyframes longPulse {
-		0%, 40%, 100% { opacity: 0.8; }
-		50%, 90% { opacity: 0.4; }
-	}
-	@keyframes shortAppear {
-		0%, 40% { opacity: 0; transform: scaleX(0.7); }
-		60%, 100% { opacity: 0.9; transform: scaleX(1); }
-	}
-
-	.url-chunk { fill: white; animation: chunkFlow 3s ease-in-out infinite; }
-	.c1 { animation-delay: 0s; }
-	.c2 { animation-delay: 0.1s; }
-	.c3 { animation-delay: 0.2s; }
-	.c4 { animation-delay: 0.3s; }
-
-	@keyframes chunkFlow {
-		0%, 10% { opacity: 0; }
-		20%, 38% { opacity: 0.85; }
-		45%, 100% { opacity: 0; }
-	}
-
+	.long-bar { opacity: 0.8; }
+	.url-chunk { fill: white; opacity: 0.9; }
 	.arrow-path {
 		stroke: oklch(0.7 0.18 var(--hue-tool, var(--hue)));
-		stroke-dasharray: 40;
-		stroke-dashoffset: 40;
-		animation: drawPath 3s ease-in-out infinite;
 	}
-	@keyframes drawPath {
-		0%, 20% { stroke-dashoffset: 40; opacity: 0; }
-		40%, 55% { stroke-dashoffset: 0; opacity: 0.7; }
-		65%, 100% { stroke-dashoffset: -40; opacity: 0; }
-	}
-
-	.link-ring,
-	.link-bridge,
-	.short-text-bar {
+	.link-ring, .link-bridge, .short-text-bar {
 		stroke: white;
-		animation: linkAppear 3s ease-in-out infinite;
 	}
-	.short-text-bar { stroke: none; }
+	.short-text-bar { stroke: none; fill: white; }
 	.link-bridge { fill: none; }
 
-	@keyframes linkAppear {
-		0%, 55% { opacity: 0; }
-		70%, 100% { opacity: 0.9; }
-	}
-
-	.lr1 { animation-delay: 0.05s; }
-	.lr2 { animation-delay: 0.1s; }
-	.link-bridge { animation-delay: 0.15s; }
-	.short-text-bar { animation-delay: 0.2s; }
-
-	/* =============================================
-     CARD CONTENT
-     ============================================= */
 	.card-content {
 		flex: 1;
 		position: relative;
@@ -889,7 +647,7 @@ const jsonLd = {
 	}
 
 	.card-title {
-		font-size: 1.2rem;
+		font-size: 1.25rem;
 		font-weight: 700;
 		letter-spacing: -0.02em;
 		color: var(--text-primary);
@@ -897,24 +655,13 @@ const jsonLd = {
 		line-height: 1.25;
 	}
 
-	@media (min-width: 768px) {
-		.card-title { font-size: 1.35rem; }
-	}
-
 	.card-desc {
 		font-size: 0.88rem;
-		line-height: 1.6;
+		line-height: 1.55;
 		color: var(--text-secondary);
 		margin: 0;
 	}
 
-	@media (min-width: 768px) {
-		.card-desc { font-size: 0.92rem; }
-	}
-
-	/* =============================================
-     FEATURES
-     ============================================= */
 	.card-features {
 		display: flex;
 		flex-wrap: wrap;
@@ -930,18 +677,14 @@ const jsonLd = {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.3rem;
-		padding: 0.28rem 0.6rem;
-		font-size: 0.74rem;
+		padding: 0.25rem 0.55rem;
+		font-size: 0.72rem;
 		font-weight: 600;
-		border-radius: 0.5rem;
+		border-radius: 0.4rem;
 		background: var(--bg-tag);
 		color: var(--text-muted);
 		border: 1px solid var(--border);
 		white-space: nowrap;
-		transition:
-			background-color 0.2s ease,
-			color 0.2s ease,
-			border-color 0.2s ease;
 	}
 
 	.tool-card:hover .feature-tag {
@@ -960,18 +703,15 @@ const jsonLd = {
 		color: oklch(0.65 0.2 var(--hue-tool, var(--hue)));
 	}
 
-	/* =============================================
-     CTA
-     ============================================= */
 	.card-cta {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding-top: 0.875rem;
+		padding-top: 0.85rem;
 		border-top: 1px solid var(--border);
 		position: relative;
 		z-index: 1;
-		transition: border-color 0.3s ease;
+		transition: border-color 0.25s ease;
 	}
 
 	.tool-card:hover .card-cta {
@@ -990,16 +730,13 @@ const jsonLd = {
 		display: flex;
 		align-items: center;
 		color: oklch(0.52 0.18 var(--hue-tool, var(--hue)));
-		transition: transform 0.35s var(--ease-spring);
+		transition: transform 0.3s var(--ease-spring);
 	}
 
 	:global(.dark) .cta-arrow { color: oklch(0.72 0.16 var(--hue-tool, var(--hue))); }
 
-	.tool-card:hover .cta-arrow { transform: translateX(5px); }
+	.tool-card:hover .cta-arrow { transform: translateX(4px); }
 
-	/* =============================================
-     FOOTER
-     ============================================= */
 	.tools-footer { padding: 0.25rem 0 0.5rem; }
 
 	.footer-card {
@@ -1024,65 +761,33 @@ const jsonLd = {
 	.footer-card strong { color: var(--text-primary); }
 	.footer-card p { margin: 0; }
 
-	/* =============================================
-     ENTRY ANIMATION
-     ============================================= */
 	@keyframes fadeUp {
-		from { opacity: 0; transform: translateY(12px); }
+		from { opacity: 0; transform: translateY(10px); }
 		to { opacity: 1; transform: translateY(0); }
 	}
 
-	/* =============================================
-     REDUCED MOTION (solo desactiva decorativas)
-     ============================================= */
 	@media (prefers-reduced-motion: reduce) {
-		.header-icon,
-		.hex-outline,
-		.center-glow,
-		.star,
-		.dot,
-		.l1, .l2, .l3,
-		.tele-arrow,
-		.rec-dot,
-		.long-bar, .short-bar,
-		.url-chunk,
-		.arrow-path,
-		.link-ring, .link-bridge, .short-text-bar,
-		.tools-title {
+		.header-icon, .hex-outline, .center-glow, .star, .dot {
 			animation: none !important;
 		}
-
-		.tool-card,
-		.tool-card-wrapper,
-		.tools-hub-section {
+		.tool-card-wrapper, .tools-hub-section {
 			animation: none !important;
 		}
-
 		* {
 			transition-duration: 0.01ms !important;
 		}
 	}
 
-	/* =============================================
-     PRINT
-     ============================================= */
 	@media print {
-		.card-glow,
-		.card-badge,
-		.tools-pills,
-		.card-cta,
-		.tools-footer {
+		.card-glow, .card-badge, .tools-pills, .card-cta, .tools-footer {
 			display: none;
 		}
-
 		.tool-card {
 			break-inside: avoid;
 			box-shadow: none;
 			border: 1px solid #000;
 		}
-
-		.tools-title,
-		.card-title {
+		.tools-title, .card-title {
 			color: #000 !important;
 			-webkit-text-fill-color: #000 !important;
 			background: none !important;
