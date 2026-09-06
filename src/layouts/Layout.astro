@@ -270,7 +270,7 @@ const jsonLdString = jsonLd
 >
 	@tailwind components;
 	@layer components {
-		/* FIX RESPONSIVE: Banner adaptable (30dvh en móvil para priorizar contenido, completo en desktop) */
+		/* BANNER RESPONSIVO: 30dvh en móvil para priorizar contenido, altura completa en desktop */
 		.enable-banner.is-home #banner-wrapper {
 			@apply h-[30dvh] md:h-[var(--banner-height-home)] translate-y-0 md:translate-y-[var(--banner-height-extend)];
 		}
@@ -303,6 +303,9 @@ const jsonLdString = jsonLd
 		scroll-behavior: smooth;
 	}
 
+	/* =========================================================================
+	   REFINAMIENTO UX: ANIMACIÓN DE ENTRADA Y TRANSICIÓN SPA CINEMÁTICA
+	   ========================================================================= */
 	.premium-reveal {
 		opacity: 0;
 		transform: translateY(16px);
@@ -317,14 +320,100 @@ const jsonLdString = jsonLd
 		transform: translateY(0);
 	}
 
+	.transition-swup-fade {
+		transition: opacity 0.24s cubic-bezier(0.16, 1, 0.3, 1), transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+		will-change: opacity, transform;
+	}
+
+	html.is-animating .transition-swup-fade {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+
 	#main-content {
 		opacity: 1 !important;
 		visibility: visible !important;
 	}
 
+	/* =========================================================================
+	   MICRO-INTERACCIONES TÁCTILES EN BOTONES Y CONTROLES
+	   ========================================================================= */
+	button, 
+	a[role="button"],
+	.btn-action,
+	.btn-play,
+	.toggle-btn {
+		transition: transform 0.14s cubic-bezier(0.16, 1, 0.3, 1), 
+		            background-color 0.2s ease, 
+		            box-shadow 0.2s ease, 
+		            border-color 0.2s ease;
+	}
+
+	button:active:not(:disabled),
+	a[role="button"]:active:not(:disabled),
+	.btn-action:active,
+	.btn-play:active,
+	.toggle-btn:active {
+		transform: scale(0.97) !important;
+	}
+
+	/* =========================================================================
+	   ACCESIBILIDAD POR TECLADO (FOCUS-VISIBLE DUAL RING)
+	   ========================================================================= */
+	:focus:not(:focus-visible) {
+		outline: none !important;
+	}
+
+	:focus-visible {
+		outline: 2px solid oklch(0.70 0.14 var(--hue)) !important;
+		outline-offset: 3px !important;
+		transition: outline-offset 0.12s ease;
+	}
+
+	/* =========================================================================
+	   SOMBRAS MULTICAPA VOLUMÉTRICAS (DEPTH & AMBIENT OCCLUSION)
+	   ========================================================================= */
+	.card-base,
+	.tool-card,
+	.teleprompter-panel {
+		box-shadow: 
+			0 1px 2px oklch(0.20 0.02 var(--hue) / 0.04),
+			0 8px 24px -4px oklch(0.20 0.02 var(--hue) / 0.06);
+	}
+
+	:global(.dark) .card-base,
+	:global(.dark) .tool-card,
+	:global(.dark) .teleprompter-panel {
+		box-shadow: 
+			0 1px 1px rgba(0, 0, 0, 0.4),
+			0 12px 32px -6px rgba(0, 0, 0, 0.55),
+			inset 0 1px 0 rgba(255, 255, 255, 0.05);
+	}
+
+	.tool-card:hover {
+		box-shadow: 
+			0 2px 4px oklch(0.20 0.02 var(--hue) / 0.06),
+			0 16px 36px -6px oklch(0.20 0.02 var(--hue) / 0.12);
+	}
+
+	:global(.dark) .tool-card:hover {
+		box-shadow: 
+			0 2px 4px rgba(0, 0, 0, 0.5),
+			0 20px 40px -8px rgba(0, 0, 0, 0.7),
+			inset 0 1px 0 rgba(255, 255, 255, 0.08);
+	}
+
 	@media (prefers-reduced-motion: reduce) {
 		html {
 			scroll-behavior: auto !important;
+		}
+		*,
+		*::before,
+		*::after {
+			animation-duration: 0.001ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.001ms !important;
+			transform: none !important;
 		}
 		.premium-reveal {
 			transition: none !important;
