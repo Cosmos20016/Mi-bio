@@ -116,16 +116,17 @@ const jsonLdString = jsonLd
 		</div>
 	)}
 
-	<!-- Contenedor del contenido principal -->
+	<!-- Contenedor del contenido principal con breathing room inferior garantizado -->
 	<div
 		class="absolute w-full z-30 pointer-events-none"
 		style={`top: ${mainPanelTop};`}
 	>
-		<div class="relative max-w-[var(--page-width)] mx-auto pointer-events-auto">
+		<!-- FIX PREMIUM: pb-12 en mobile y pb-16 en desktop para evitar colisión con el viewport -->
+		<div class="relative max-w-[var(--page-width)] mx-auto pointer-events-auto pb-12 md:pb-16">
 			<!-- Cuadrícula estructural optimizada sin layout thrashing -->
 			<div
 				id="main-grid"
-				class="w-full grid grid-cols-1 lg:grid-cols-[17.5rem_1fr] mx-auto gap-4 px-0 md:px-4"
+				class="w-full grid grid-cols-1 lg:grid-cols-[17.5rem_1fr] mx-auto gap-4 px-0 md:px-4 items-start"
 			>
 				<!-- Créditos del banner -->
 				{hasBannerCredit && (
@@ -156,7 +157,7 @@ const jsonLdString = jsonLd
 					</a>
 				)}
 
-				<!-- Barra lateral izquierda -->
+				<!-- Barra lateral izquierda (con margen inferior defensivo) -->
 				<SideBar
 					class="mb-4 lg:mb-0 lg:max-w-[17.5rem] onload-animation"
 					headings={headings}
@@ -170,15 +171,15 @@ const jsonLdString = jsonLd
 					<div
 						id="content-wrapper"
 						class="onload-animation flex flex-col flex-1"
-						style={`min-height: calc(100vh - ${mainPanelTop} - 2rem);`}
+						style={`min-height: calc(100vh - ${mainPanelTop} - 5rem);`}
 					>
 						<!-- Contenido dinámico inyectado por las rutas -->
 						<div class="flex-1">
 							<slot />
 						</div>
 
-						<!-- Footer único unificado: siempre anclado al fondo -->
-						<footer class="footer mt-auto pt-6 pb-4 premium-reveal">
+						<!-- Footer único unificado: anclado al fondo con espacio de respiro -->
+						<footer class="footer mt-auto pt-8 pb-4 premium-reveal">
 							<Footer />
 						</footer>
 					</div>
