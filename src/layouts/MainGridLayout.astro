@@ -1,24 +1,19 @@
 ---
-import "@fontsource/roboto/400.css";
-import "@fontsource/roboto/500.css";
-import "@fontsource/roboto/700.css";
-
-import ConfigCarrier from "@components/ConfigCarrier.astro";
-import { profileConfig, siteConfig } from "@/config";
+import BackToTop from "@components/control/BackToTop.astro";
+import Footer from "@components/Footer.astro";
+import Navbar from "@components/Navbar.astro";
+import SideBar from "@components/widget/SideBar.astro";
+import type { MarkdownHeading } from "astro";
+import { Icon } from "astro-icon/components";
+import ImageWrapper from "../components/misc/ImageWrapper.astro";
+import TOC from "../components/widget/TOC.astro";
+import { siteConfig } from "../config";
 import {
-	AUTO_MODE,
 	BANNER_HEIGHT,
 	BANNER_HEIGHT_EXTEND,
-	BANNER_HEIGHT_HOME,
-	DARK_MODE,
-	DEFAULT_THEME,
-	LIGHT_MODE,
-	PAGE_WIDTH,
+	MAIN_PANEL_OVERLAPS_BANNER_HEIGHT,
 } from "../constants/constants";
-import { defaultFavicons } from "../constants/icon";
-import type { Favicon } from "../types/config";
-import { pathsEqual, url } from "../utils/url-utils";
-import "katex/dist/katex.css";
+import Layout from "./Layout.astro";
 
 interface Props {
 	title?: string;
@@ -28,878 +23,198 @@ interface Props {
 	url?: string;
 	keywords?: string;
 	lang?: string;
-	ogType?: "website" | "article";
 	setOGTypeArticle?: boolean;
+	headings?: MarkdownHeading[];
 	jsonLd?: Record<string, unknown> | null;
 }
 
 const {
 	title,
-	banner: propBanner,
+	banner,
 	description,
 	image,
-	url: pageUrl,
+	url: propUrl,
 	keywords,
-	lang: propLang,
-	ogType,
+	lang,
 	setOGTypeArticle,
+	headings = [],
 	jsonLd = null,
 } = Astro.props;
 
-const isHomePage = pathsEqual(Astro.url.pathname, url("/"));
-const configHue = siteConfig.themeColor.hue;
+const hasBannerCredit =
+	Boolean(siteConfig.banner.enable) && Boolean(siteConfig.banner.credit.enable);
+const hasBannerLink = Boolean(siteConfig.banner.credit.url);
 
-const banner =
-	typeof propBanner === "string" && propBanner.trim() !== ""
-		? propBanner
-		: siteConfig.banner.src;
+const mainPanelTop = siteConfig.banner.enable
+	? `calc(${BANNER_HEIGHT}vh - ${MAIN_PANEL_OVERLAPS_BANNER_HEIGHT}rem)`
+	: "5.5rem";
 
-const enableBanner = Boolean(siteConfig.banner.enable);
+// Resolución canónica segura y desacoplada
+const siteOrigin = (Astro.site ? Astro.site.toString() : Astro.url.origin).replace(/\/$/, "");
+const canonicalUrl = propUrl
+	? (propUrl.startsWith("http") ? propUrl : `${siteOrigin}${propUrl.startsWith("/") ? "" : "/"}${propUrl}`)
+	: `${siteOrigin}${Astro.url.pathname}`;
 
-let pageTitle: string;
-if (title && title.trim() !== "") {
-	pageTitle = `${title.trim()} - ${siteConfig.title}`;
-} else if (siteConfig.subtitle && siteConfig.subtitle.trim() !== "") {
-	pageTitle = `${siteConfig.title} - ${siteConfig.subtitle.trim()}`;
-} else {
-	pageTitle = siteConfig.title;
-}
-
-const favicons: Favicon[] =
-	Array.isArray(siteConfig.favicon) && siteConfig.favicon.length > 0
-		? siteConfig.favicon
-		: defaultFavicons;
-
-const rawLang = propLang || `${siteConfig.lang || "es"}`;
-const siteLang = rawLang.replace("_", "-");
-
-const bannerOffsetByPosition = {
-	top: `${BANNER_HEIGHT_EXTEND}vh`,
-	center: `${BANNER_HEIGHT_EXTEND / 2}vh`,
-	bottom: "0",
-} as const;
-
-const bannerPositionKey = siteConfig.banner.position as keyof typeof bannerOffsetByPosition;
-const bannerOffset = bannerOffsetByPosition[bannerPositionKey] ?? bannerOffsetByPosition.center;
-
-const siteUrlFallback = Astro.url.origin;
-const siteUrlRaw = (Astro.site ? Astro.site.toString() : siteUrlFallback).replace(/\/$/, "");
-const currentPath = Astro.url.pathname;
-const fullCanonicalUrl = pageUrl ?? `${siteUrlRaw}${currentPath}`;
-
-const ogImageUrl = image
-	? image.startsWith("http")
-		? image
-		: `${siteUrlRaw}${image.startsWith("/") ? "" : "/"}${image}`
-	: `${siteUrlRaw}/og-default.png`;
-
-const metaDescription = description || siteConfig.description || pageTitle;
-const finalOgType = ogType ?? (setOGTypeArticle ? "article" : "website");
-
-// Sanitización estricta anti-XSS
+// Sanitización estricta anti-XSS para JSON-LD
 const jsonLdString = jsonLd
 	? JSON.stringify(jsonLd).replace(/</g, "\\u003c")
 	: null;
 ---
 
-<!DOCTYPE html>
-<html
-	lang={siteLang}
-	class="bg-[var(--page-bg)] text-[14px] md:text-[16px] scroll-smooth"
-	data-overlayscrollbars-initialize
+<Layout
+	title={title}
+	banner={banner}
+	description={description}
+	image={image}
+	url={canonicalUrl}
+	keywords={keywords}
+	lang={lang}
+	setOGTypeArticle={setOGTypeArticle}
 >
-	<head>
-		<title>{pageTitle}</title>
-
-		<meta charset="UTF-8" />
-		<meta name="description" content={metaDescription} />
-		<meta name="author" content={profileConfig.name} />
-		<meta name="keywords" content={keywords || ""} />
-
-		<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
-		<meta name="theme-color" content={`hsl(${configHue}, 50%, 50%)`} />
-		<meta name="generator" content={Astro.generator} />
-
-		<meta property="og:site_name" content={siteConfig.title} />
-		<meta property="og:url" content={fullCanonicalUrl} />
-		<meta property="og:title" content={pageTitle} />
-		<meta property="og:description" content={metaDescription} />
-		<meta property="og:image" content={ogImageUrl} />
-		<meta property="og:image:width" content="1200" />
-		<meta property="og:image:height" content="630" />
-		<meta property="og:type" content={finalOgType} />
-		<meta property="og:locale" content={siteLang.replace("-", "_")} />
-		<meta property="og:locale:alternate" content="es_ES" />
-
-		<meta name="twitter:card" content="summary_large_image" />
-		<meta name="twitter:site" content={`@${profileConfig.name}`} />
-		<meta name="twitter:creator" content={`@${profileConfig.name}`} />
-		<meta property="twitter:url" content={fullCanonicalUrl} />
-		<meta name="twitter:title" content={pageTitle} />
-		<meta name="twitter:description" content={metaDescription} />
-		<meta name="twitter:image" content={ogImageUrl} />
-		<meta name="twitter:image:alt" content={pageTitle} />
-
-		<link rel="canonical" href={fullCanonicalUrl} />
-
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-
-		{jsonLdString && (
-			<script
-				type="application/ld+json"
-				set:html={jsonLdString}
-				is:inline
-			/>
-		)}
-
-		{enableBanner && banner && (
-			<link
-				rel="preload"
-				href={banner.startsWith("/") ? url(banner) : url(`/${banner}`)}
-				as="image"
-				fetchpriority="high"
-			/>
-		)}
-
-		<link rel="dns-prefetch" href="https://api.qrserver.com" />
-		<link rel="preconnect" href="https://api.qrserver.com" crossorigin />
-		<link rel="dns-prefetch" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
-		<link rel="dns-prefetch" href="https://giscus-personal-woft.vercel.app" />
-		<link
-			rel="preconnect"
-			href="https://giscus-personal-woft.vercel.app"
-			crossorigin
-		/>
-
-		{favicons.map((favicon) => (
-			<link
-				rel="icon"
-				href={favicon.src.startsWith("/") ? url(favicon.src) : favicon.src}
-				sizes={favicon.sizes}
-				media={favicon.theme ? `(prefers-color-scheme: ${favicon.theme})` : undefined}
-			/>
-		))}
-
-		<link rel="manifest" href="/manifest.json" />
-		<link rel="sitemap" href="/sitemap-index.xml" />
-
-		<link rel="prefetch" href="/" />
-		<link rel="prefetch" href="/archive/" />
-		<link rel="prefetch" href="/about/" />
-		<link rel="prefetch" href="/herramientas/" />
-
+	<!-- JSON-LD opcional sanitizado -->
+	{jsonLdString && (
 		<script
+			type="application/ld+json"
+			set:html={jsonLdString}
 			is:inline
-			define:vars={{
-				DEFAULT_THEME,
-				LIGHT_MODE,
-				DARK_MODE,
-				AUTO_MODE,
-				BANNER_HEIGHT_EXTEND,
-				PAGE_WIDTH,
-				configHue,
-			}}
-		>
-			(function () {
-				try {
-					const theme = localStorage.getItem("theme") || DEFAULT_THEME;
-					switch (theme) {
-						case LIGHT_MODE:
-							document.documentElement.classList.remove("dark");
-							break;
-						case DARK_MODE:
-							document.documentElement.classList.add("dark");
-							break;
-						case AUTO_MODE:
-							if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-								document.documentElement.classList.add("dark");
-							} else {
-								document.documentElement.classList.remove("dark");
-							}
-							break;
-					}
-
-					const hue = localStorage.getItem("hue") || configHue;
-					document.documentElement.style.setProperty("--hue", String(hue));
-
-					let offset = Math.floor(window.innerHeight * (BANNER_HEIGHT_EXTEND / 100));
-					offset = offset - (offset % 4);
-					document.documentElement.style.setProperty(
-						"--banner-height-extend",
-						`${offset}px`,
-					);
-				} catch {}
-			})();
-		</script>
-
-		<style
-			define:vars={{
-				configHue,
-				"page-width": `${PAGE_WIDTH}rem`,
-			}}
-		></style>
-
-		<slot name="head" />
-
-		<link
-			rel="alternate"
-			type="application/rss+xml"
-			title={profileConfig.name}
-			href={`${siteUrlRaw}/rss.xml`}
+			slot="head"
 		/>
-	</head>
+	)}
 
-	<body
-		class="min-h-screen flex flex-col transition"
-		class:list={[{ "is-home": isHomePage, "enable-banner": enableBanner }]}
-		data-overlayscrollbars-initialize
+	<!-- Slot para metadatos adicionales -->
+	<slot slot="head" name="head" />
+
+	<!-- Barra de navegación superior -->
+	<div
+		id="top-row"
+		class="z-50 pointer-events-none relative max-w-[var(--page-width)] px-0 md:px-4 mx-auto"
 	>
-		<ConfigCarrier />
-		<slot />
-	</body>
-</html>
-
-<style
-	is:global
-	define:vars={{
-		bannerOffset,
-		"banner-height-home": `${BANNER_HEIGHT_HOME}vh`,
-		"banner-height": `${BANNER_HEIGHT}vh`,
-	}}
->
-	@tailwind components;
-	@layer components {
-		/* Geometría universal del Banner en móvil y escritorio */
-		.enable-banner.is-home #banner-wrapper {
-			@apply h-[var(--banner-height-home)] translate-y-[var(--banner-height-extend)];
-		}
-		.enable-banner #banner-wrapper {
-			@apply h-[var(--banner-height-home)];
-		}
-
-		.enable-banner.is-home #banner {
-			@apply h-[var(--banner-height-home)] translate-y-0;
-		}
-		.enable-banner #banner {
-			@apply h-[var(--banner-height-home)] translate-y-[var(--bannerOffset)];
-		}
-		.enable-banner.is-home #main-grid {
-			@apply translate-y-[var(--banner-height-extend)];
-		}
-		.enable-banner #top-row {
-			@apply h-[calc(var(--banner-height-home)_-_4.5rem)];
-			transition: background-color 0.2s ease, border-color 0.2s ease;
-		}
-		.enable-banner.is-home #sidebar-sticky {
-			@apply top-[calc(1rem_-_var(--banner-height-extend))];
-		}
-		.navbar-hidden {
-			@apply opacity-0 -translate-y-4 pointer-events-none;
-		}
-	}
-
-	html {
-		scroll-behavior: smooth;
-	}
-
-	/* Animación de entrada y transición SPA */
-	.premium-reveal {
-		opacity: 0;
-		transform: translateY(16px);
-		transition:
-			opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-			transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-		will-change: opacity, transform;
-	}
-
-	.premium-reveal.is-revealed {
-		opacity: 1;
-		transform: translateY(0);
-	}
-
-	.transition-swup-fade {
-		transition: opacity 0.24s cubic-bezier(0.16, 1, 0.3, 1), transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
-		will-change: opacity, transform;
-	}
-
-	html.is-animating .transition-swup-fade {
-		opacity: 0;
-		transform: translateY(4px);
-	}
-
-	#main-content {
-		opacity: 1 !important;
-		visibility: visible !important;
-	}
-
-	/* =========================================================================
-	   CENTRADOR GLOBAL DE COMENTARIOS GISCUS (PC Y MÓVIL)
-	   ========================================================================= */
-	#comments,
-	.giscus,
-	#giscus-container,
-	section[aria-label*="comentarios" i],
-	section[aria-label*="comments" i] {
-		width: 100% !important;
-		max-width: 52rem !important;
-		margin-left: auto !important;
-		margin-right: auto !important;
-		display: flex !important;
-		flex-direction: column !important;
-		align-items: center !important;
-		justify-content: center !important;
-	}
-
-	.giscus,
-	.giscus-frame,
-	iframe.giscus-frame {
-		width: 100% !important;
-		margin-left: auto !important;
-		margin-right: auto !important;
-		display: block !important;
-	}
-
-	#comments > * {
-		margin-left: auto !important;
-		margin-right: auto !important;
-	}
-
-	/* Micro-interacciones en botones */
-	button, 
-	a[role="button"],
-	.btn-action,
-	.btn-play,
-	.toggle-btn {
-		transition: transform 0.14s cubic-bezier(0.16, 1, 0.3, 1), 
-		            background-color 0.2s ease, 
-		            box-shadow 0.2s ease, 
-		            border-color 0.2s ease;
-	}
-
-	button:active:not(:disabled),
-	a[role="button"]:active:not(:disabled),
-	.btn-action:active,
-	.btn-play:active,
-	.toggle-btn:active {
-		transform: scale(0.97) !important;
-	}
-
-	/* Accesibilidad por teclado: Focus Visible */
-	:focus:not(:focus-visible) {
-		outline: none !important;
-	}
-
-	:focus-visible {
-		outline: 2px solid oklch(0.70 0.14 var(--hue)) !important;
-		outline-offset: 3px !important;
-		transition: outline-offset 0.12s ease;
-	}
-
-	/* Sombras volumétricas */
-	.card-base,
-	.tool-card,
-	.teleprompter-panel {
-		box-shadow: 
-			0 1px 2px oklch(0.20 0.02 var(--hue) / 0.04),
-			0 8px 24px -4px oklch(0.20 0.02 var(--hue) / 0.06);
-	}
-
-	:global(.dark) .card-base,
-	:global(.dark) .tool-card,
-	:global(.dark) .teleprompter-panel {
-		box-shadow: 
-			0 1px 1px rgba(0, 0, 0, 0.4),
-			0 12px 32px -6px rgba(0, 0, 0, 0.55),
-			inset 0 1px 0 rgba(255, 255, 255, 0.05);
-	}
-
-	.tool-card:hover {
-		box-shadow: 
-			0 2px 4px oklch(0.20 0.02 var(--hue) / 0.06),
-			0 16px 36px -6px oklch(0.20 0.02 var(--hue) / 0.12);
-	}
-
-	:global(.dark) .tool-card:hover {
-		box-shadow: 
-			0 2px 4px rgba(0, 0, 0, 0.5),
-			0 20px 40px -8px rgba(0, 0, 0, 0.7),
-			inset 0 1px 0 rgba(255, 255, 255, 0.08);
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		html {
-			scroll-behavior: auto !important;
-		}
-		*,
-		*::before,
-		*::after {
-			animation-duration: 0.001ms !important;
-			animation-iteration-count: 1 !important;
-			transition-duration: 0.001ms !important;
-			transform: none !important;
-		}
-		.premium-reveal {
-			transition: none !important;
-			opacity: 1 !important;
-			transform: none !important;
-		}
-	}
-</style>
-
-<script>
-	import "overlayscrollbars/overlayscrollbars.css";
-	import { OverlayScrollbars } from "overlayscrollbars";
-	import { getHue, getStoredTheme, setHue, setTheme } from "../utils/setting-utils";
-	import { pathsEqual, url } from "../utils/url-utils";
-	import {
-		BANNER_HEIGHT,
-		BANNER_HEIGHT_HOME,
-		BANNER_HEIGHT_EXTEND,
-		MAIN_PANEL_OVERLAPS_BANNER_HEIGHT,
-	} from "../constants/constants";
-	import { siteConfig } from "../config";
-
-	const bannerEnabled = Boolean(document.getElementById("banner-wrapper"));
-	let katexObserverInstance: IntersectionObserver | null = null;
-	let revealObserverInstance: IntersectionObserver | null = null;
-
-	function setClickOutsideToClose(panelId: string, ignoreIds: string[]) {
-		document.addEventListener("click", (event) => {
-			const panelDom = document.getElementById(panelId);
-			const target = event.target;
-			if (!(target instanceof Node)) return;
-			for (const id of ignoreIds) {
-				const el = document.getElementById(id);
-				if (el === target || el?.contains(target)) {
-					return;
-				}
-			}
-			panelDom?.classList.add("float-panel-closed");
-		});
-	}
-
-	setClickOutsideToClose("display-setting", [
-		"display-setting",
-		"display-settings-switch",
-	]);
-	setClickOutsideToClose("nav-menu-panel", ["nav-menu-panel", "nav-menu-switch"]);
-	setClickOutsideToClose("search-panel", [
-		"search-panel",
-		"search-bar",
-		"search-switch",
-	]);
-
-	function loadTheme() {
-		setTheme(getStoredTheme());
-	}
-
-	function loadHue() {
-		setHue(getHue());
-	}
-
-	function initCustomScrollbar() {
-		const bodyElement = document.querySelector("body");
-		if (!bodyElement) return;
-
-		const existingInstance = OverlayScrollbars(bodyElement);
-		if (!existingInstance) {
-			OverlayScrollbars(
-				{
-					target: bodyElement,
-					cancel: {
-						nativeScrollbarsOverlaid: true,
-					},
-				},
-				{
-					scrollbars: {
-						theme: "scrollbar-base scrollbar-auto py-1",
-						autoHide: "move",
-						autoHideDelay: 500,
-						autoHideSuspend: false,
-					},
-				},
-			);
-		}
-
-		const katexElements = document.querySelectorAll(
-			".katex-display",
-		) as NodeListOf<HTMLElement>;
-
-		if (katexObserverInstance) {
-			katexObserverInstance.disconnect();
-		}
-
-		const processKatexElement = (element: HTMLElement) => {
-			if (!element.parentNode) return;
-			if (element.hasAttribute("data-scrollbar-initialized")) return;
-
-			const container = document.createElement("div");
-			container.className = "katex-display-container";
-			container.setAttribute("aria-label", "scrollable container for formulas");
-
-			element.parentNode.insertBefore(container, element);
-			container.appendChild(element);
-
-			OverlayScrollbars(container, {
-				scrollbars: {
-					theme: "scrollbar-base scrollbar-auto",
-					autoHide: "leave",
-					autoHideDelay: 500,
-					autoHideSuspend: false,
-				},
-			});
-
-			element.setAttribute("data-scrollbar-initialized", "true");
-		};
-
-		katexObserverInstance = new IntersectionObserver((entries, observer) => {
-			entries.forEach((entry) => {
-				if (entry.isIntersecting) {
-					processKatexElement(entry.target as HTMLElement);
-					observer.unobserve(entry.target);
-				}
-			});
-		});
-
-		katexElements.forEach((element) => {
-			katexObserverInstance?.observe(element);
-		});
-	}
-
-	function showBanner() {
-		if (!siteConfig.banner.enable) return;
-		const banner = document.getElementById("banner");
-		if (!banner) return;
-		banner.classList.remove("opacity-0", "scale-105");
-	}
-
-	function initPremiumReveal() {
-		if (revealObserverInstance) {
-			revealObserverInstance.disconnect();
-		}
-
-		if (!("IntersectionObserver" in window)) {
-			document
-				.querySelectorAll(".premium-reveal")
-				.forEach((el) => el.classList.add("is-revealed"));
-			return;
-		}
-
-		revealObserverInstance = new IntersectionObserver(
-			(entries, obs) => {
-				entries.forEach((entry) => {
-					if (entry.isIntersecting) {
-						entry.target.classList.add("is-revealed");
-						obs.unobserve(entry.target);
-					}
-				});
-			},
-			{ threshold: 0.05, rootMargin: "0px 0px -20px 0px" },
-		);
-
-		document
-			.querySelectorAll(".premium-reveal:not(.is-revealed)")
-			.forEach((el) => {
-				revealObserverInstance?.observe(el);
-			});
-	}
-
-	function init() {
-		loadTheme();
-		loadHue();
-		initCustomScrollbar();
-		showBanner();
-		initPremiumReveal();
-	}
-
-	init();
-
-	const setupSwupHooks = () => {
-		const swup = (window as any).swup;
-		if (!swup?.hooks) return;
-
-		swup.hooks.replace("scroll:top", () => {
-			const bodyElement = document.querySelector("body");
-			const osInstance = bodyElement ? OverlayScrollbars(bodyElement) : null;
-			const currentY = window.scrollY || document.documentElement.scrollTop || 0;
-
-			if (currentY <= 5) {
-				return;
-			}
-
-			if (osInstance) {
-				const { viewport } = osInstance.elements();
-				viewport.scrollTo({ top: 0, behavior: "smooth" });
-			} else {
-				window.scrollTo({ top: 0, behavior: "smooth" });
-			}
-		});
-
-		swup.hooks.on("link:click", () => {
-			document.documentElement.style.setProperty("--content-delay", "0ms");
-
-			if (!bannerEnabled) return;
-			const threshold = window.innerHeight * (BANNER_HEIGHT / 100) - 72 - 16;
-			const navbar = document.getElementById("navbar-wrapper");
-			if (!navbar || !document.body.classList.contains("is-home")) return;
-			if (
-				document.body.scrollTop >= threshold ||
-				document.documentElement.scrollTop >= threshold
-			) {
-				navbar.classList.add("navbar-hidden");
-			}
-		});
-
-		swup.hooks.on("visit:start", (visit: any) => {
-			const destination = visit.to?.url || "";
-			const bodyElement = document.querySelector("body");
-			if (pathsEqual(destination, url("/"))) {
-				bodyElement?.classList.add("is-home");
-			} else {
-				bodyElement?.classList.remove("is-home");
-			}
-
-			const toc = document.getElementById("toc-wrapper");
-			if (toc) toc.classList.add("toc-not-ready");
-		});
-
-		swup.hooks.on("content:replace", () => {
-			initCustomScrollbar();
-			initPremiumReveal();
-		});
-
-		swup.hooks.on("visit:end", () => {
-			const heightExtend = document.getElementById("page-height-extend");
-			if (heightExtend) {
-				heightExtend.classList.add("hidden");
-			}
-
-			const toc = document.getElementById("toc-wrapper");
-			if (toc) {
-				toc.classList.remove("toc-not-ready");
-			}
-		});
-	};
-
-	const swup = (window as any).swup;
-	if (swup?.hooks) {
-		setupSwupHooks();
-	} else {
-		document.addEventListener("swup:enable", setupSwupHooks, { once: true });
-	}
-
-	const backToTopBtn = document.getElementById("back-to-top-btn");
-	const toc = document.getElementById("toc-wrapper");
-	const navbar = document.getElementById("navbar-wrapper");
-	let lastScrollY = 0;
-	let ticking = false;
-	const SCROLL_DELTA = 60;
-
-	function scrollFunction() {
-		const currentScrollY = Math.max(
-			document.body.scrollTop,
-			document.documentElement.scrollTop,
-		);
-		const bannerHeight = window.innerHeight * (BANNER_HEIGHT / 100);
-
-		if (backToTopBtn) {
-			if (currentScrollY > bannerHeight) {
-				backToTopBtn.classList.remove("hide");
-			} else {
-				backToTopBtn.classList.add("hide");
-			}
-		}
-
-		if (bannerEnabled && toc) {
-			if (currentScrollY > bannerHeight) {
-				toc.classList.remove("toc-hide");
-			} else {
-				toc.classList.add("toc-hide");
-			}
-		}
-
-		if (navbar) {
-			if (!bannerEnabled) {
-				if (currentScrollY <= 10) {
-					navbar.classList.remove("navbar-hidden");
-				} else if (currentScrollY < lastScrollY - 5) {
-					navbar.classList.remove("navbar-hidden");
-				} else if (currentScrollY > lastScrollY + SCROLL_DELTA) {
-					navbar.classList.add("navbar-hidden");
-				}
-			} else {
-				const NAVBAR_HEIGHT = 72;
-				const MAIN_PANEL_EXCESS_HEIGHT = MAIN_PANEL_OVERLAPS_BANNER_HEIGHT * 16;
-
-				let navBannerHeight = BANNER_HEIGHT;
-				if (
-					document.body.classList.contains("is-home") &&
-					window.innerWidth >= 1024
-				) {
-					navBannerHeight = BANNER_HEIGHT_HOME;
-				}
-				const threshold =
-					window.innerHeight * (navBannerHeight / 100) -
-					NAVBAR_HEIGHT -
-					MAIN_PANEL_EXCESS_HEIGHT -
-					16;
-
-				if (currentScrollY < threshold) {
-					navbar.classList.remove("navbar-hidden");
-				} else if (currentScrollY <= threshold + 10) {
-					navbar.classList.remove("navbar-hidden");
-				} else if (currentScrollY < lastScrollY - 5) {
-					navbar.classList.remove("navbar-hidden");
-				} else if (currentScrollY > lastScrollY + SCROLL_DELTA) {
-					navbar.classList.add("navbar-hidden");
-				}
-			}
-		}
-
-		if (Math.abs(currentScrollY - lastScrollY) > 5) {
-			lastScrollY = currentScrollY;
-		}
-	}
-
-	window.addEventListener(
-		"scroll",
-		() => {
-			if (!ticking) {
-				window.requestAnimationFrame(() => {
-					scrollFunction();
-					ticking = false;
-				});
-				ticking = true;
-			}
-		},
-		{ passive: true },
-	);
-
-	window.addEventListener(
-		"resize",
-		() => {
-			const rawOffset = window.innerHeight * (BANNER_HEIGHT_EXTEND / 100);
-			const offset = Math.floor(rawOffset) - (Math.floor(rawOffset) % 4);
-			document.documentElement.style.setProperty(
-				"--banner-height-extend",
-				`${offset}px`,
-			);
-		},
-		{ passive: true },
-	);
-</script>
-
-<script>
-	import PhotoSwipeLightbox from "photoswipe/lightbox";
-	import "photoswipe/style.css";
-
-	let lightbox: PhotoSwipeLightbox | null = null;
-	const pswp = import("photoswipe");
-
-	function createPhotoSwipe() {
-		if (lightbox) {
-			lightbox.destroy();
-			lightbox = null;
-		}
-
-		lightbox = new PhotoSwipeLightbox({
-			gallery: ".custom-md img, #post-cover img",
-			pswpModule: () => pswp,
-			closeSVG:
-				'<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff"><path d="M480-424 284-228q-11 11-28 11t-28-11q-11-11-11-28t11-28l196-196-196-196q-11-11-11-28t11-28q11-11 28-11t28 11l196 196 196-196q11-11 28-11t28 11q11 11 11 28t-11 28L536-480l196 196q11 11 11 28t-11 28q-11 11-28 11t-28-11L480-424Z"/></svg>',
-			zoomSVG:
-				'<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff"><path d="M340-540h-40q-17 0-28.5-11.5T260-580q0-17 11.5-28.5T300-620h40v-40q0-17 11.5-28.5T380-700q17 0 28.5 11.5T420-660v40h40q17 0 28.5 11.5T500-580q0 17-11.5 28.5T460-540h-40v40q0 17-11.5 28.5T380-460q-17 0-28.5-11.5T340-500v-40Zm40 220q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l224 224q11 11 11 28t-11 28q-11 11-28 11t-28-11L532-372q-30 24-69 38t-83 14Zm0-80q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/></svg>',
-			padding: { top: 20, bottom: 20, left: 20, right: 20 },
-			wheelToZoom: true,
-			arrowPrev: false,
-			arrowNext: false,
-			imageClickAction: "close",
-			tapAction: "close",
-			doubleTapAction: "zoom",
-		});
-
-		lightbox.addFilter("domItemData", (itemData, element) => {
-			if (element instanceof HTMLImageElement) {
-				itemData.src = element.src;
-				itemData.w = Number(element.naturalWidth || window.innerWidth);
-				itemData.h = Number(element.naturalHeight || window.innerHeight);
-				itemData.msrc = element.src;
-			}
-			return itemData;
-		});
-
-		lightbox.init();
-	}
-
-	const setupPhotoSwipe = () => {
-		const swup = (window as any).swup;
-		if (!swup) return;
-
-		if (!lightbox) {
-			createPhotoSwipe();
-		}
-
-		swup.hooks.on("page:view", () => {
-			createPhotoSwipe();
-		});
-
-		swup.hooks.on(
-			"content:replace",
-			() => {
-				lightbox?.destroy?.();
-				lightbox = null;
-			},
-			{ before: true },
-		);
-	};
-
-	if ((window as any).swup) {
-		setupPhotoSwipe();
-	} else {
-		document.addEventListener("swup:enable", setupPhotoSwipe, { once: true });
-	}
-</script>
-
-<script is:inline>
-	(function () {
-		document.addEventListener("contextmenu", function (e) {
-			if (e.target && e.target.tagName === "IMG") {
-				e.preventDefault();
-			}
-		});
-
-		document.addEventListener("dragstart", function (e) {
-			if (e.target && e.target.tagName === "IMG") {
-				e.preventDefault();
-			}
-		});
-	})();
-</script>
-
-<script is:inline>
-	if ("serviceWorker" in navigator) {
-		window.addEventListener("load", () => {
-			navigator.serviceWorker
-				.register("/sw.js", { updateViaCache: "none" })
-				.then((reg) => {
-					setInterval(() => {
-						reg.update().catch(() => {});
-					}, 60 * 60 * 1000);
-				})
-				.catch(() => {});
-		});
-
-		document.addEventListener("visibilitychange", () => {
-			if (document.visibilityState === "visible") {
-				navigator.serviceWorker.getRegistration().then((reg) => {
-					if (reg && reg.waiting) {
-						reg.waiting.postMessage({ type: "SKIP_WAITING" });
-					} else if (reg) {
-						reg.update().catch(() => {});
-					}
-				}).catch(() => {});
-			}
-		});
-	}
-</script>
+		<div
+			id="navbar-wrapper"
+			class="pointer-events-auto sticky top-0 transition-all duration-300"
+		>
+			<Navbar />
+		</div>
+	</div>
+
+	<!-- Banner Hero -->
+	{siteConfig.banner.enable && (
+		<div
+			id="banner-wrapper"
+			class="absolute z-10 w-full transition duration-700 overflow-hidden"
+			style={`top: -${BANNER_HEIGHT_EXTEND}vh;`}
+		>
+			<ImageWrapper
+				id="banner"
+				alt="Banner image of the blog"
+				class:list={[
+					"object-cover h-full transition duration-700 opacity-0 scale-105",
+				]}
+				src={siteConfig.banner.src}
+				position={siteConfig.banner.position}
+			/>
+		</div>
+	)}
+
+	<!-- Contenedor del contenido principal con breathing room inferior garantizado -->
+	<div
+		class="absolute w-full z-30 pointer-events-none"
+		style={`top: ${mainPanelTop};`}
+	>
+		<!-- Margen de seguridad inferior para evitar colisión de la última tarjeta con el viewport -->
+		<div class="relative max-w-[var(--page-width)] mx-auto pointer-events-auto pb-16 md:pb-24">
+			<!-- Cuadrícula estructural: orden content-first en móvil y stretch para sticky footer -->
+			<div
+				id="main-grid"
+				class="w-full grid grid-cols-1 lg:grid-cols-[17.5rem_1fr] mx-auto gap-4 px-0 md:px-4 items-stretch"
+			>
+				<!-- Créditos del banner -->
+				{hasBannerCredit && (
+					<a
+						href={siteConfig.banner.credit.url || "#"}
+						id="banner-credit"
+						target="_blank"
+						rel="noopener noreferrer"
+						aria-label="Visitar fuente de la imagen"
+						class:list={[
+							"group onload-animation transition-all absolute flex justify-center items-center rounded-full px-3 right-4 -top-[3.25rem] bg-black/60 hover:bg-black/70 h-9",
+							{ "hover:pr-9 active:bg-black/80": hasBannerLink },
+						]}
+					>
+						<Icon
+							class="text-white/75 text-[1.25rem] mr-1"
+							name="material-symbols:copyright-outline-rounded"
+						/>
+						<div class="text-white/75 text-xs">
+							{siteConfig.banner.credit.text}
+						</div>
+						{hasBannerLink && (
+							<Icon
+								class="transition absolute text-[oklch(0.75_0.14_var(--hue))] right-4 text-[0.75rem] opacity-0 group-hover:opacity-100"
+								name="fa6-solid:arrow-up-right-from-square"
+							/>
+						)}
+					</a>
+				)}
+
+				<!-- Barra lateral: En móvil pasa a segundo plano debajo del contenido (order-2) -->
+				<SideBar
+					class="order-2 lg:order-1 mb-4 lg:mb-0 lg:max-w-[17.5rem] onload-animation"
+					headings={headings}
+				/>
+
+				<!-- Contenedor principal: En móvil siempre se presenta primero (order-1) -->
+				<main
+					id="swup-container"
+					class="order-1 lg:order-2 transition-swup-fade flex flex-col min-w-0 flex-1 h-full"
+				>
+					<div
+						id="content-wrapper"
+						class="onload-animation flex flex-col flex-1 justify-between"
+						style={`min-height: calc(100dvh - ${mainPanelTop} - 6rem);`}
+					>
+						<!-- Listado / Artículo dinámico -->
+						<div class="flex-1 flex flex-col gap-4">
+							<slot />
+						</div>
+
+						<!-- Footer único unificado: anclado al fondo con espacio de respiro -->
+						<footer class="footer mt-auto pt-12 pb-4 premium-reveal">
+							<Footer />
+						</footer>
+					</div>
+				</main>
+			</div>
+
+			<BackToTop />
+		</div>
+	</div>
+
+	<!-- Tabla de contenidos flotante (Pantallas ultra-anchas) -->
+	<div class="absolute w-full z-0 hidden 2xl:block" aria-hidden="true">
+		<div class="relative max-w-[var(--page-width)] mx-auto">
+			{siteConfig.toc.enable && (
+				<div
+					id="toc-wrapper"
+					class:list={[
+						"hidden lg:block transition-all absolute top-0 -right-[var(--toc-width)] w-[var(--toc-width)] items-center",
+						{ "toc-hide": siteConfig.banner.enable },
+					]}
+				>
+					<div
+						id="toc-inner-wrapper"
+						class="fixed top-14 w-[var(--toc-width)] h-[calc(100vh_-_20rem)] overflow-y-auto overflow-x-hidden hide-scrollbar"
+					>
+						<div id="toc" class="w-full h-full transition-swup-fade">
+							<div class="h-8 w-full"></div>
+							<TOC headings={headings} />
+							<div class="h-8 w-full"></div>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{!siteConfig.toc.enable && <div id="toc" />}
+		</div>
+	</div>
+</Layout>
