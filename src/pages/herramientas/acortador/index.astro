@@ -4,9 +4,9 @@ import UrlShortener from "@components/url-shortener/UrlShortener.svelte";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { url } from "@utils/url-utils";
 
-// =========================================================================
-// METADATA Y RESOLUCIÓN DINÁMICA DE ENTORNO
-// =========================================================================
+// ============================================
+// Metadata y resolución dinámica de entorno
+// ============================================
 const siteOrigin = (Astro.site ? Astro.site.toString() : Astro.url.origin).replace(/\/$/, "");
 const relativeToolPath = "/herramientas/acortador/";
 const fullCanonicalUrl = `${siteOrigin}${relativeToolPath}`;
@@ -17,7 +17,7 @@ const toolMetadata = {
 	description: "Acorta, organiza y comparte tus enlaces favoritos. QR codes al instante, historial completo y exportación sin límites.",
 	icon: "🔗",
 	features: ["Sin publicidad", "Privado", "Gratuito"],
-	keywords: ["acortador urls", "shortener", "url shortener", "qr code", "generador qr", "enlaces cortos"]
+	keywords: ["acortador urls", "shortener", "url shortener", "qr code", "generador qr", "enlaces cortos"],
 } as const;
 
 // Esquema JSON-LD blindado contra Stored XSS
@@ -32,27 +32,27 @@ const jsonLdPayload = {
 	offers: {
 		"@type": "Offer",
 		price: "0",
-		priceCurrency: "USD"
+		priceCurrency: "USD",
 	},
 	featureList: toolMetadata.features.join(", "),
 	browserRequirements: "Requires modern browser with JavaScript enabled",
-	inLanguage: "es"
+	inLanguage: "es",
 };
 
 const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 ---
 
-<MainGridLayout 
+<MainGridLayout
 	title={toolMetadata.name}
 	description={toolMetadata.shortDescription}
 	image={`${siteOrigin}/og-images/url-shortener.png`}
 	url={fullCanonicalUrl}
 	keywords={toolMetadata.keywords.join(", ")}
 >
-	<!-- Inyección segura de Schema JSON-LD -->
+	<!-- JSON-LD Schema.org sanitizado -->
 	<script type="application/ld+json" set:html={jsonLdString} is:inline />
 
-	<article class="tool-page-wrapper">
+	<article class="tool-page">
 		<!-- Navegación superior con breadcrumb semántico -->
 		<nav class="tool-nav" aria-label="Breadcrumb">
 			<ol class="tool-nav-list">
@@ -71,7 +71,7 @@ const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 			</ol>
 		</nav>
 
-		<!-- Header principal de la herramienta -->
+		<!-- Header de la herramienta -->
 		<header class="tool-page-header">
 			<div class="tool-page-icon-wrapper" aria-hidden="true">
 				<span class="tool-page-icon">{toolMetadata.icon}</span>
@@ -89,7 +89,7 @@ const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 							</li>
 						))}
 					</ul>
-					<ShareToolButton 
+					<ShareToolButton
 						toolName={toolMetadata.name}
 						toolDescription={toolMetadata.shortDescription}
 						toolUrl={fullCanonicalUrl}
@@ -98,45 +98,50 @@ const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 			</div>
 		</header>
 
-		<!-- Contenedor del widget interactivo (Idempotente y libre de CLS) -->
-		<section class="tool-widget-container" aria-label="Acortador de URLs">
+		<!-- Componente principal (Sin id duplicado para evitar colisiones de scroll) -->
+		<section
+			class="tool-page-section"
+			aria-label="Acortador de URLs"
+		>
 			<UrlShortener client:only="svelte" />
 		</section>
 	</article>
 </MainGridLayout>
 
 <style>
-	/* =========================================================================
-	   VARIABLES Y CONFIGURACIÓN BASE
-	   ========================================================================= */
-	.tool-page-wrapper {
+	/* ============================================
+	   Variables y configuración base
+	   ============================================ */
+	.tool-page {
 		--hue-fallback: 250;
 		--card-bg-fallback: #ffffff;
 		--radius-large-fallback: 1rem;
-		
+
 		--color-text-muted: #64748b;
 		--color-text-muted-dark: #94a3b8;
 		--color-border-light: rgba(0, 0, 0, 0.06);
 		--color-border-dark: rgba(255, 255, 255, 0.08);
-		
+
 		--touch-target-min: 2.75rem;
 		--transition-fast: 150ms ease;
 		--transition-normal: 200ms ease;
 		--transition-smooth: 200ms cubic-bezier(0.4, 0, 0.2, 1);
-		
+
 		display: flex;
 		flex-direction: column;
 		gap: 1.5rem;
 		width: 100%;
 		max-width: 100%;
-		contain: layout style;
+		overflow-x: hidden;
+
+		/* Safe areas para dispositivos con notch */
 		padding-left: max(0px, env(safe-area-inset-left));
 		padding-right: max(0px, env(safe-area-inset-right));
 	}
 
-	/* =========================================================================
-	   NAVEGACIÓN BREADCRUMB
-	   ========================================================================= */
+	/* ============================================
+	   Navegación (Breadcrumb semántico)
+	   ============================================ */
 	.tool-nav {
 		display: flex;
 		align-items: center;
@@ -174,10 +179,14 @@ const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 		outline-offset: 2px;
 		-webkit-tap-highlight-color: oklch(0.6 0.18 var(--hue, var(--hue-fallback)) / 0.1);
 		user-select: none;
+
+		/* Transiciones específicas */
 		transition:
 			background-color var(--transition-normal),
 			color var(--transition-normal),
 			transform var(--transition-fast);
+
+		/* GPU promotion */
 		transform: translateZ(0);
 		backface-visibility: hidden;
 	}
@@ -189,7 +198,7 @@ const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 	.tool-nav-back:hover {
 		background: oklch(0.95 0.025 var(--hue, var(--hue-fallback)));
 		color: oklch(0.5 0.14 var(--hue, var(--hue-fallback)));
-		transform: translateX(-2px);
+		transform: translateZ(0) translateX(-2px);
 	}
 
 	:global(.dark) .tool-nav-back:hover {
@@ -198,7 +207,7 @@ const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 	}
 
 	.tool-nav-back:active {
-		transform: translateX(-1px) scale(0.98);
+		transform: translateZ(0) translateX(-1px) scale(0.98);
 	}
 
 	.tool-nav-back:focus-visible {
@@ -251,9 +260,9 @@ const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 		color: #94a3b8;
 	}
 
-	/* =========================================================================
-	   HEADER DE LA HERRAMIENTA
-	   ========================================================================= */
+	/* ============================================
+	   Header de la herramienta
+	   ============================================ */
 	.tool-page-header {
 		display: flex;
 		align-items: flex-start;
@@ -292,7 +301,7 @@ const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 	}
 
 	.tool-page-header:hover .tool-page-icon-wrapper {
-		transform: scale(1.04);
+		transform: translateZ(0) scale(1.05);
 	}
 
 	.tool-page-icon {
@@ -313,7 +322,11 @@ const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 		line-height: 1.2;
 		margin: 0 0 0.35rem 0;
 		word-wrap: break-word;
+
+		/* Color fallback */
 		color: oklch(0.65 0.16 var(--hue, var(--hue-fallback)));
+
+		/* Gradiente */
 		background: linear-gradient(
 			135deg,
 			oklch(0.65 0.16 var(--hue, var(--hue-fallback))),
@@ -355,9 +368,9 @@ const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 		flex-wrap: wrap;
 	}
 
-	/* =========================================================================
-	   BADGES
-	   ========================================================================= */
+	/* ============================================
+	   Badges
+	   ============================================ */
 	.tool-page-badges {
 		display: flex;
 		flex-wrap: wrap;
@@ -379,7 +392,10 @@ const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 		line-height: 1.4;
 		white-space: nowrap;
 		display: inline-block;
-		transition: transform var(--transition-fast);
+		transition:
+			background-color var(--transition-normal),
+			color var(--transition-normal),
+			transform var(--transition-fast);
 	}
 
 	.tool-page-badges li:hover .tool-page-badge {
@@ -391,73 +407,184 @@ const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 		color: oklch(0.78 0.12 var(--hue, var(--hue-fallback)));
 	}
 
-	/* =========================================================================
-	   CONTENEDOR DEL WIDGET (ESTABILIDAD SIN CLS)
-	   ========================================================================= */
-	.tool-widget-container {
+	/* ============================================
+	   Sección principal (Estabilidad dimensional)
+	   ============================================ */
+	.tool-page-section {
 		width: 100%;
 		min-height: 520px;
-		position: relative;
 		contain: layout style;
 	}
 
-	/* =========================================================================
-	   MEDIA QUERIES Y RESPONSIVE
-	   ========================================================================= */
+	/* ============================================
+	   Responsive
+	   ============================================ */
+
+	/* Tablets */
 	@media (max-width: 768px) {
-		.tool-page-header { padding: 1.125rem 1.375rem; }
-		.tool-page-title { font-size: 1.625rem; }
-		.tool-page-description { font-size: 0.875rem; }
+		.tool-page-header {
+			padding: 1.125rem 1.375rem;
+		}
+
+		.tool-page-title {
+			font-size: 1.625rem;
+		}
+
+		.tool-page-description {
+			font-size: 0.875rem;
+		}
 	}
 
+	/* Mobile */
 	@media (max-width: 640px) {
-		.tool-page-wrapper {
+		.tool-page {
 			gap: 1.25rem;
 			padding-left: max(1rem, env(safe-area-inset-left));
 			padding-right: max(1rem, env(safe-area-inset-right));
 		}
-		.tool-nav-back { font-size: 0.85rem; padding: 0.35rem 0.65rem; }
-		.tool-nav-breadcrumb { font-size: 0.8rem; }
-		.tool-page-header { padding: 1rem; gap: 1rem; }
-		.tool-page-icon-wrapper { width: 3rem; height: 3rem; min-width: 3rem; }
-		.tool-page-icon { font-size: 1.5rem; }
-		.tool-page-title { font-size: 1.375rem; margin-bottom: 0.25rem; }
-		.tool-page-description { font-size: 0.85rem; line-height: 1.5; margin-bottom: 0.75rem; }
-		.tool-page-header-actions { flex-direction: column; align-items: flex-start; gap: 0.65rem; width: 100%; }
-		.tool-page-badges { gap: 0.35rem; width: 100%; }
-		.tool-page-badge { font-size: 0.65rem; padding: 0.2rem 0.5rem; }
+
+		.tool-nav-back {
+			font-size: 0.85rem;
+			padding: 0.35rem 0.65rem;
+		}
+
+		.tool-nav-breadcrumb {
+			font-size: 0.8rem;
+		}
+
+		.tool-page-header {
+			padding: 1rem;
+			gap: 1rem;
+		}
+
+		.tool-page-icon-wrapper {
+			width: 3rem;
+			height: 3rem;
+			min-width: 3rem;
+		}
+
+		.tool-page-icon {
+			font-size: 1.5rem;
+		}
+
+		.tool-page-title {
+			font-size: 1.375rem;
+			margin-bottom: 0.25rem;
+		}
+
+		.tool-page-description {
+			font-size: 0.85rem;
+			line-height: 1.5;
+			margin-bottom: 0.75rem;
+		}
+
+		.tool-page-header-actions {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0.65rem;
+			width: 100%;
+		}
+
+		.tool-page-badges {
+			gap: 0.35rem;
+			width: 100%;
+		}
+
+		.tool-page-badge {
+			font-size: 0.65rem;
+			padding: 0.2rem 0.5rem;
+		}
 	}
 
+	/* Mobile pequeño */
 	@media (max-width: 480px) {
-		.tool-page-header { padding: 0.875rem; }
-		.tool-page-title { font-size: 1.25rem; }
-		.tool-page-description { font-size: 0.8rem; }
-		.tool-nav-list { gap: 0.15rem; }
-		.breadcrumb-current { max-width: 150px; }
+		.tool-page-header {
+			padding: 0.875rem;
+		}
+
+		.tool-page-title {
+			font-size: 1.25rem;
+		}
+
+		.tool-page-description {
+			font-size: 0.8rem;
+		}
+
+		.tool-nav-list {
+			gap: 0.15rem;
+		}
+
+		.breadcrumb-current {
+			max-width: 150px;
+		}
 	}
 
+	/* ============================================
+	   Accesibilidad
+	   ============================================ */
 	@media (prefers-reduced-motion: reduce) {
-		*, *::before, *::after {
+		.tool-page {
+			scroll-behavior: auto;
+		}
+
+		*,
+		*::before,
+		*::after {
 			animation-duration: 0.01ms !important;
 			animation-iteration-count: 1 !important;
 			transition-duration: 0.01ms !important;
 		}
 	}
 
+	/* High contrast */
 	@media (prefers-contrast: high) {
-		.tool-page-header { border-width: 2px; }
-		.tool-nav-back:focus-visible { outline-width: 3px; }
-		.tool-page-badge { border: 1px solid currentColor; }
+		.tool-page-header {
+			border-width: 2px;
+		}
+
+		.tool-nav-back:focus-visible {
+			outline-width: 3px;
+		}
+
+		.tool-page-badge {
+			border: 1px solid currentColor;
+		}
 	}
 
+	/* ============================================
+	   Print
+	   ============================================ */
 	@media print {
-		.tool-nav, .tool-page-badges, .tool-page-header-actions { display: none; }
-		.tool-page-header { border: 1px solid #000; box-shadow: none; page-break-inside: avoid; }
-		.tool-page-title { color: #000 !important; -webkit-text-fill-color: #000 !important; background: none !important; }
+		.tool-nav,
+		.tool-page-badges,
+		.tool-page-header-actions {
+			display: none;
+		}
+
+		.tool-page-header {
+			border: 1px solid #000;
+			box-shadow: none;
+			page-break-inside: avoid;
+		}
+
+		.tool-page-title {
+			color: #000 !important;
+			-webkit-text-fill-color: #000 !important;
+			background: none !important;
+		}
+
+		.tool-page {
+			overflow: visible;
+		}
 	}
 
+	/* ============================================
+	   GPU optimizations
+	   ============================================ */
 	@media (hover: hover) and (pointer: fine) {
-		.tool-nav-back, .tool-page-icon-wrapper, .tool-page-badge {
+		.tool-nav-back,
+		.tool-page-icon-wrapper,
+		.tool-page-badge {
 			-webkit-font-smoothing: antialiased;
 		}
 	}
