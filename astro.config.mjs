@@ -16,36 +16,37 @@ import remarkGithubAdmonitionsToDirectives from "remark-github-admonitions-to-di
 import remarkMath from "remark-math";
 import remarkSectionize from "remark-sectionize";
 import { expressiveCodeConfig } from "./src/config.ts";
+import { pluginCustomCopyButton } from "./src/plugins/expressive-code/custom-copy-button.js";
 import { pluginLanguageBadge } from "./src/plugins/expressive-code/language-badge.ts";
 import { AdmonitionComponent } from "./src/plugins/rehype-component-admonition.mjs";
 import { GithubCardComponent } from "./src/plugins/rehype-component-github-card.mjs";
 import { parseDirectiveNode } from "./src/plugins/remark-directive-rehype.js";
 import { remarkExcerpt } from "./src/plugins/remark-excerpt.js";
 import { remarkReadingTime } from "./src/plugins/remark-reading-time.mjs";
-import { pluginCustomCopyButton } from "./src/plugins/expressive-code/custom-copy-button.js";
 
 export default defineConfig({
-  site: "https://kevinborja.com/",
+  site: "https://kevinborja.com",
   base: "/",
   trailingSlash: "always",
   integrations: [
     tailwind({
       nesting: true,
     }),
-    // ✅ FIX 1: Usar el id correcto de tu <main>
     swup({
       theme: false,
       animationClass: "transition-swup-",
-      containers: ["#swup-container", "#toc"], // ✅ Antes era ["main", "#toc"]
-      smoothScrolling: true,
-      cache: false, // ✅ FIX 2: Desactivar cache para que las páginas se re-rendericen correctamente
+      // Contenedor unificado: existe en el 100% de las páginas evitando fallos de montaje
+      containers: ["#swup-container"],
+      // Delegamos el scroll suave al hook cinematográfico de Layout.astro para evitar colisiones
+      smoothScrolling: false,
+      // Caché habilitada para que el prefetch en hover monte las vistas de forma instantánea a 60 FPS
+      cache: true,
       preload: true,
       accessibility: true,
-      // ✅ FIX 3: NO reemplazar <head> para no romper hidratación de Svelte
-      updateHead: false,
-      updateBodyClass: false,
+      // Sincronización obligatoria del <head> (título de página y metadatos SEO dinámicos)
+      updateHead: true,
+      updateBodyClass: true,
       globalInstance: true,
-      // ✅ FIX 4: Ignorar forms y scripts para que Svelte no se rompa
       ignoreForms: true,
     }),
     icon({
@@ -159,8 +160,8 @@ export default defineConfig({
       rollupOptions: {
         onwarn(warning, warn) {
           if (
-            warning.message.includes("is dynamically imported by") &&
-            warning.message.includes("but also statically imported by")
+            warning.message?.includes("is dynamically imported by") &&
+            warning.message?.includes("but also statically imported by")
           ) {
             return;
           }
