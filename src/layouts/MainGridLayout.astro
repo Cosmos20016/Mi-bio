@@ -84,14 +84,14 @@ const jsonLdString = jsonLd
 	<!-- Slot para metadatos adicionales -->
 	<slot slot="head" name="head" />
 
-	<!-- Barra de navegación superior -->
+	<!-- Barra de navegación superior: w-full asegura ocupar todo el ancho en móvil -->
 	<div
 		id="top-row"
-		class="z-50 pointer-events-none relative max-w-[var(--page-width)] px-0 md:px-4 mx-auto"
+		class="z-50 pointer-events-none relative w-full max-w-[var(--page-width)] px-0 md:px-4 mx-auto"
 	>
 		<div
 			id="navbar-wrapper"
-			class="pointer-events-auto sticky top-0 transition-all duration-300"
+			class="pointer-events-auto sticky top-0 transition-all duration-300 w-full"
 		>
 			<Navbar />
 		</div>
@@ -121,7 +121,6 @@ const jsonLdString = jsonLd
 		class="absolute w-full z-30 pointer-events-none"
 		style={`top: ${mainPanelTop};`}
 	>
-		<!-- Margen de seguridad inferior para evitar colisión de la última tarjeta con el viewport -->
 		<div class="relative max-w-[var(--page-width)] mx-auto pointer-events-auto pb-16 md:pb-24">
 			<!-- Cuadrícula estructural: orden content-first en móvil y stretch para sticky footer -->
 			<div
