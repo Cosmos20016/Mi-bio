@@ -270,7 +270,7 @@ const jsonLdString = jsonLd
 >
 	@tailwind components;
 	@layer components {
-		/* Banner universal: cálculo matemático exacto para visibilidad en móvil y desktop */
+		/* Geometría universal del Banner en móvil y escritorio */
 		.enable-banner.is-home #banner-wrapper {
 			@apply h-[var(--banner-height-home)] translate-y-[var(--banner-height-extend)];
 		}
@@ -303,9 +303,7 @@ const jsonLdString = jsonLd
 		scroll-behavior: smooth;
 	}
 
-	/* =========================================================================
-	   REFINAMIENTO UX: ANIMACIÓN DE ENTRADA Y TRANSICIÓN SPA CINEMÁTICA
-	   ========================================================================= */
+	/* Animación de entrada y transición SPA */
 	.premium-reveal {
 		opacity: 0;
 		transform: translateY(16px);
@@ -336,7 +334,7 @@ const jsonLdString = jsonLd
 	}
 
 	/* =========================================================================
-	   CENTRADOR GLOBAL DE COMENTARIOS (PC Y MÓVIL)
+	   CENTRADOR GLOBAL DE COMENTARIOS GISCUS (PC Y MÓVIL)
 	   ========================================================================= */
 	#comments,
 	.giscus,
@@ -344,7 +342,7 @@ const jsonLdString = jsonLd
 	section[aria-label*="comentarios" i],
 	section[aria-label*="comments" i] {
 		width: 100% !important;
-		max-width: 100% !important;
+		max-width: 52rem !important;
 		margin-left: auto !important;
 		margin-right: auto !important;
 		display: flex !important;
@@ -367,9 +365,7 @@ const jsonLdString = jsonLd
 		margin-right: auto !important;
 	}
 
-	/* =========================================================================
-	   MICRO-INTERACCIONES TÁCTILES EN BOTONES Y CONTROLES
-	   ========================================================================= */
+	/* Micro-interacciones en botones */
 	button, 
 	a[role="button"],
 	.btn-action,
@@ -389,9 +385,7 @@ const jsonLdString = jsonLd
 		transform: scale(0.97) !important;
 	}
 
-	/* =========================================================================
-	   ACCESIBILIDAD POR TECLADO (FOCUS-VISIBLE DUAL RING)
-	   ========================================================================= */
+	/* Accesibilidad por teclado: Focus Visible */
 	:focus:not(:focus-visible) {
 		outline: none !important;
 	}
@@ -402,9 +396,7 @@ const jsonLdString = jsonLd
 		transition: outline-offset 0.12s ease;
 	}
 
-	/* =========================================================================
-	   SOMBRAS MULTICAPA VOLUMÉTRICAS (DEPTH & AMBIENT OCCLUSION)
-	   ========================================================================= */
+	/* Sombras volumétricas */
 	.card-base,
 	.tool-card,
 	.teleprompter-panel {
