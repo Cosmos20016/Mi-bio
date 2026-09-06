@@ -121,8 +121,9 @@ const jsonLdString = jsonLd
 		class="absolute w-full z-30 pointer-events-none"
 		style={`top: ${mainPanelTop};`}
 	>
-		<div class="relative max-w-[var(--page-width)] mx-auto pointer-events-auto pb-12 md:pb-16">
-			<!-- Cuadrícula estructural: order-1 para contenido principal en móvil, order-2 para sidebar -->
+		<!-- FIX PREMIUM: pb-16 en mobile y pb-24 en desktop para evitar colisión de la última tarjeta con el viewport -->
+		<div class="relative max-w-[var(--page-width)] mx-auto pointer-events-auto pb-16 md:pb-24">
+			<!-- Cuadrícula estructural: orden content-first en móvil y stretch para sticky footer -->
 			<div
 				id="main-grid"
 				class="w-full grid grid-cols-1 lg:grid-cols-[17.5rem_1fr] mx-auto gap-4 px-0 md:px-4 items-stretch"
@@ -156,26 +157,28 @@ const jsonLdString = jsonLd
 					</a>
 				)}
 
-				<!-- Barra lateral: En móvil se ubica después del contenido -->
+				<!-- Barra lateral: En móvil pasa a segundo plano debajo del contenido (order-2) -->
 				<SideBar
 					class="order-2 lg:order-1 mb-4 lg:mb-0 lg:max-w-[17.5rem] onload-animation"
 					headings={headings}
 				/>
 
-				<!-- Contenedor de contenido: En móvil se ubica primero -->
+				<!-- Contenedor principal: En móvil siempre se presenta primero (order-1) -->
 				<main
 					id="swup-container"
-					class="order-1 lg:order-2 transition-swup-fade flex flex-col min-w-0 flex-1"
+					class="order-1 lg:order-2 transition-swup-fade flex flex-col min-w-0 flex-1 h-full"
 				>
 					<div
 						id="content-wrapper"
 						class="onload-animation flex flex-col flex-1 justify-between"
-						style={`min-height: calc(100dvh - ${mainPanelTop} - 4rem);`}
+						style={`min-height: calc(100dvh - ${mainPanelTop} - 6rem);`}
 					>
+						<!-- Listado / Artículo dinámico -->
 						<div class="flex-1 flex flex-col gap-4">
 							<slot />
 						</div>
 
+						<!-- Footer único unificado: anclado al fondo con espacio de respiro -->
 						<footer class="footer mt-auto pt-12 pb-4 premium-reveal">
 							<Footer />
 						</footer>
