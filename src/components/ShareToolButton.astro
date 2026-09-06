@@ -64,7 +64,6 @@ const uniqueId = `share-btn-${sanitizedSlug}`;
 						} catch {}
 					});
 					window.__shareGlobalState.instances.clear();
-					// Limpieza defensiva de cualquier portal residual en el DOM
 					document.querySelectorAll(".share-popup-portal").forEach(function (portal) {
 						portal.remove();
 					});
@@ -76,7 +75,6 @@ const uniqueId = `share-btn-${sanitizedSlug}`;
 				},
 			};
 
-			// Integración prioritaria con el ciclo de vida de Swup
 			const swup = window.swup;
 			if (swup && swup.hooks) {
 				swup.hooks.on("visit:start", window.__shareGlobalState.cleanupAll);
@@ -91,12 +89,10 @@ const uniqueId = `share-btn-${sanitizedSlug}`;
 				}, { once: true });
 			}
 
-			// Fallback para Astro ClientRouter / ViewTransitions
 			document.addEventListener("astro:before-swap", window.__shareGlobalState.cleanupAll);
 			document.addEventListener("astro:page-load", window.__shareGlobalState.initAll);
 		}
 
-		// Inicialización inmediata de la instancia actual
 		initBtn(uniqueId);
 
 		// =========================================================================
@@ -117,8 +113,8 @@ const uniqueId = `share-btn-${sanitizedSlug}`;
 
 			switch (platform) {
 				case "telegram":
-					// Fix Crítico: Parámetros RFC 3986 validados para el backend de Telegram
-					return `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`;
+					// FIX CRÍTICO: 'telegram.me' en lugar de 't.me' para evadir bloqueos de DNS locales (DNS_PROBE_POSSIBLE)
+					return `https://telegram.me/share/url?url=${encodedUrl}&text=${encodedText}`;
 				case "whatsapp":
 					return `https://api.whatsapp.com/send?text=${encodedText}%20${encodedUrl}`;
 				case "facebook":
@@ -132,20 +128,14 @@ const uniqueId = `share-btn-${sanitizedSlug}`;
 			}
 		}
 
-		function openCenteredWindow(targetUrl) {
-			const width = 600;
-			const height = 640;
-			const left = Math.max(0, Math.round(window.screenX + (window.outerWidth - width) / 2));
-			const top = Math.max(0, Math.round(window.screenY + (window.outerHeight - height) / 2));
-			const windowFeatures = `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,resizable=yes,status=no,location=yes,toolbar=no,menubar=no,noopener`;
-
+		function openCleanTab(targetUrl) {
 			try {
-				const newWin = window.open(targetUrl, "_blank", windowFeatures);
-				if (!newWin || newWin.closed || typeof newWin.closed === "undefined") {
-					window.location.href = targetUrl;
+				const newWin = window.open(targetUrl, "_blank", "noopener,noreferrer");
+				if (!newWin) {
+					console.warn("Apertura de pestaña bloqueada por el navegador.");
 				}
-			} catch {
-				window.location.href = targetUrl;
+			} catch (e) {
+				console.error("Error al abrir pestaña:", e);
 			}
 		}
 
@@ -163,13 +153,11 @@ const uniqueId = `share-btn-${sanitizedSlug}`;
 			const btn = document.getElementById(id);
 			if (!btn) return;
 
-			// Limpieza de instancia preexistente
 			const existingDestroy = window.__shareGlobalState.instances.get(id);
 			if (existingDestroy) {
 				existingDestroy();
 			}
 
-			// Limpieza física de cualquier portal residual previo en el DOM
 			const oldPortal = document.getElementById(id + "-portal");
 			if (oldPortal) {
 				oldPortal.remove();
@@ -179,7 +167,6 @@ const uniqueId = `share-btn-${sanitizedSlug}`;
 			const dataDesc = btn.dataset.toolDescription || toolDescription || "";
 			const dataUrl = btn.dataset.toolUrl || toolUrl || "";
 			
-			// Fix Crítico: Garantía absoluta de URL única sin duplicación de host
 			const absUrl = resolveAbsoluteUrl(dataUrl);
 			const shareText = `¡Mira esta herramienta gratuita: ${dataName}! ${dataDesc} 🚀`;
 
@@ -194,7 +181,6 @@ const uniqueId = `share-btn-${sanitizedSlug}`;
 				})());
 			const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
 
-			// Creación del Portal accesible
 			const portal = document.createElement("div");
 			portal.id = id + "-portal";
 			portal.className = "share-popup-portal";
@@ -263,7 +249,7 @@ const uniqueId = `share-btn-${sanitizedSlug}`;
 			document.body.appendChild(portal);
 
 			// =========================================================================
-			// 4. POSICIONAMIENTO EN PANTALLAS DE ESCRITORIO
+			// 4. POSICIONAMIENTO EN ESCRITORIO
 			// =========================================================================
 			function positionPopup() {
 				if (window.innerWidth <= 640) return;
@@ -274,12 +260,10 @@ const uniqueId = `share-btn-${sanitizedSlug}`;
 				const popupHeight = portal.offsetHeight || 190;
 
 				let top = r.bottom + 8;
-				// Si desborda por abajo, posicionar arriba del botón
 				if (top + popupHeight + margin > window.innerHeight) {
 					top = Math.max(margin, r.top - popupHeight - 8);
 				}
 
-				// Alineación horizontal a la derecha del botón
 				let left = r.right - popupWidth;
 				if (left < margin) left = margin;
 				if (left + popupWidth > window.innerWidth - margin) {
@@ -291,12 +275,11 @@ const uniqueId = `share-btn-${sanitizedSlug}`;
 			}
 
 			// =========================================================================
-			// 5. APERTURA, CIERRE Y FOCUS TRAP
+			// 5. APERTURA Y CIERRE
 			// =========================================================================
 			let isOpen = false;
 
 			function openPortal() {
-				// Cierre coordinado de cualquier otro popup abierto
 				document.querySelectorAll(".share-popup-portal").forEach(function (p) {
 					if (p !== portal && p._shareCloseFn) p._shareCloseFn();
 				});
@@ -359,8 +342,29 @@ const uniqueId = `share-btn-${sanitizedSlug}`;
 					return;
 				}
 
+				if (platform === "telegram") {
+					// Disparo dual: Si está en móvil o desktop con app, invocar protocolo nativo tg://
+					const tgDeepLink = `tg://msg_url?url=${encodeURIComponent(absUrl)}&text=${encodeURIComponent(shareText)}`;
+					const fallbackWebUrl = getShareUrl("telegram", absUrl, shareText);
+					
+					// Intentar abrir app local primero
+					const iframe = document.createElement("iframe");
+					iframe.style.display = "none";
+					document.body.appendChild(iframe);
+					iframe.src = tgDeepLink;
+					
+					setTimeout(function () {
+						iframe.remove();
+					}, 300);
+
+					// Abrir paralelamente el mirror no bloqueado en nueva pestaña
+					openCleanTab(fallbackWebUrl);
+					closePortal();
+					return;
+				}
+
 				const targetShareUrl = getShareUrl(platform, absUrl, shareText);
-				openCenteredWindow(targetShareUrl);
+				openCleanTab(targetShareUrl);
 				closePortal();
 			}
 
@@ -423,7 +427,6 @@ const uniqueId = `share-btn-${sanitizedSlug}`;
 					return;
 				}
 
-				// Focus trap bidireccional
 				if (e.key === "Tab") {
 					const focusable = portal.querySelectorAll(".spp-option");
 					if (focusable.length === 0) return;
@@ -455,9 +458,6 @@ const uniqueId = `share-btn-${sanitizedSlug}`;
 			window.addEventListener("scroll", onViewportChange, { passive: true });
 			window.addEventListener("resize", onViewportChange, { passive: true });
 
-			// =========================================================================
-			// 7. DESTRUCTOR Y PURGA TOTAL DE RECURSOS
-			// =========================================================================
 			const destroy = function () {
 				portal.remove();
 				btn.removeEventListener("click", onBtnClick);
@@ -541,9 +541,6 @@ const uniqueId = `share-btn-${sanitizedSlug}`;
 </style>
 
 <style is:global>
-	/* =========================================================================
-	   PORTAL FLOTANTE (DESKTOP)
-	   ========================================================================= */
 	.share-popup-portal {
 		position: fixed;
 		width: 300px;
@@ -637,36 +634,18 @@ const uniqueId = `share-btn-${sanitizedSlug}`;
 		flex-shrink: 0;
 	}
 
-	.spp-icon-x {
-		background: #000;
-		color: #fff;
-	}
-
-	.share-popup-portal.dark .spp-icon-x {
-		background: #fff;
-		color: #000;
-	}
+	.spp-icon-x { background: #000; color: #fff; }
+	.share-popup-portal.dark .spp-icon-x { background: #fff; color: #000; }
 
 	.spp-icon-copy {
 		background: oklch(0.5 0.14 var(--hue, 250));
 		position: relative;
 	}
 
-	.spp-icon-copy .spp-copy-check {
-		display: none;
-	}
+	.spp-icon-copy .spp-copy-check { display: none; }
+	.spp-copy-success .spp-icon-copy { background: oklch(0.65 0.15 145); }
+	.spp-copy-success { background: oklch(0.95 0.05 145) !important; }
 
-	.spp-copy-success .spp-icon-copy {
-		background: oklch(0.65 0.15 145);
-	}
-
-	.spp-copy-success {
-		background: oklch(0.95 0.05 145) !important;
-	}
-
-	/* =========================================================================
-	   FIX CRÍTICO: BOTTOM SHEET MOBILE ANCLADO Y SAFE-AREA RESPONSIVE
-	   ========================================================================= */
 	@media (max-width: 640px) {
 		.share-popup-portal {
 			top: auto !important;
