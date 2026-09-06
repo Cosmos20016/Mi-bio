@@ -41,9 +41,11 @@
   }
   .desc-chill b {
     display: block;
-    text-align: center;
-    text-wrap: balance;
-    margin-top: 0.25rem;
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+    text-wrap: pretty;
   }
 </style>
 
