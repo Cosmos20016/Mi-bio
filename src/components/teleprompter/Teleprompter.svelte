@@ -7,7 +7,7 @@
 	import { onDestroy, onMount } from "svelte";
 
 	// =========================================================================
-	// CONSTANTES Y CONFIGURACIÓN INMUTABLE
+	// CONSTANTES Y CONFIGURACIÓN GEOMÉTRICA INMUTABLE
 	// =========================================================================
 	const STORAGE_KEY_STATE = "teleprompter:state:v5";
 	const STORAGE_KEY_SCRIPTS = "teleprompter:scripts";
@@ -23,8 +23,11 @@
 	const JUMP_LONG_PX = 320;
 	const JUMP_ACTION_PX = 240;
 
+	// Eje óptico de lectura: 45% del alto del viewport
+	const READING_LINE_RATIO = 0.45;
+
 	// =========================================================================
-	// TIPADO FUERTE
+	// CONTRATOS DE TIPOS EXPLÍCITOS
 	// =========================================================================
 	interface SavedScript {
 		id: string;
@@ -53,7 +56,7 @@
 	}
 
 	// =========================================================================
-	// ESTADO DEL TELEPROMPTER
+	// ESTADO REACTIVO DEL TELEPROMPTER
 	// =========================================================================
 	let text = `Pega aquí tu guion...\n\nTip: Usa párrafos cortos para una lectura más cómoda.`;
 	let speed = 60;
@@ -81,6 +84,10 @@
 	let currentScript: string | null = null;
 	let countdownDuration = 3;
 	let isDark = false;
+
+	// Paddings calibrados dinámicamente para alineación óptica de inicio a fin
+	let topPaddingPx = 300;
+	let bottomPaddingPx = 400;
 
 	// =========================================================================
 	// REFS AL DOM Y COMPONENTES
@@ -179,7 +186,7 @@
 	};
 
 	// =========================================================================
-	// CONTROLADORES DE MODOS
+	// CONTROLADORES DE MODOS Y EFECTOS
 	// =========================================================================
 	const toggleDimOutside = (): void => {
 		dimOutside = !dimOutside;
@@ -288,18 +295,29 @@
 	};
 
 	// =========================================================================
-	// MÉTRICAS EN MEMORIA Y CÁLCULO FÍSICO EXACTO DEL SCROLL
+	// CALIBRACIÓN ÓPTICA Y CÁLCULO FÍSICO EXACTO DEL SCROLL
 	// =========================================================================
 	const calculateMetrics = (): void => {
 		if (!scrollContainer || !content) return;
 
-		// RESOLUCIÓN EXACTA: El límite físico es del contenedor de scroll, no del hijo
-		cachedMaxScroll = Math.max(scrollContainer.scrollHeight - scrollContainer.clientHeight, 0);
+		const viewportHeight = scrollContainer.clientHeight;
+		const lineH = fontSize * lineHeight;
+		const opticalCenter = viewportHeight * READING_LINE_RATIO;
 
-		if (!focusMode) {
-			syncUiState(scrollContainer.scrollTop);
-			return;
+		// Alinea exactamente el primer párrafo en la línea de lectura al inicio (scrollTop = 0)
+		// y permite que el último párrafo suba hasta dicha línea al final (scrollTop = maxScroll)
+		if (autoCenter) {
+			topPaddingPx = Math.max(0, Math.round(opticalCenter - lineH / 2));
+			bottomPaddingPx = Math.max(0, Math.round(viewportHeight * (1 - READING_LINE_RATIO) + lineH / 2));
+		} else {
+			topPaddingPx = Math.round(2.5 * 16);
+			bottomPaddingPx = Math.round(viewportHeight * 0.85);
 		}
+
+		scrollContainer.style.paddingTop = `${topPaddingPx}px`;
+		scrollContainer.style.paddingBottom = `${bottomPaddingPx}px`;
+
+		cachedMaxScroll = Math.max(scrollContainer.scrollHeight - scrollContainer.clientHeight, 0);
 
 		lineMetrics = lineElements.map((el) => {
 			if (!el) return { center: 0 };
@@ -313,13 +331,13 @@
 		if (!scrollContainer || lineMetrics.length === 0 || !focusMode) return;
 
 		const viewportHeight = scrollContainer.clientHeight;
-		const opticalCenter = currentScrollTop + (viewportHeight * 0.45);
+		const currentReadingY = currentScrollTop + (viewportHeight * READING_LINE_RATIO);
 
 		let closestIndex = 0;
 		let minDistance = Number.POSITIVE_INFINITY;
 
 		for (let i = 0; i < lineMetrics.length; i++) {
-			const distance = Math.abs(lineMetrics[i].center - opticalCenter);
+			const distance = Math.abs(lineMetrics[i].center - currentReadingY);
 			if (distance < minDistance) {
 				minDistance = distance;
 				closestIndex = i;
@@ -335,6 +353,7 @@
 		if (cachedMaxScroll <= 0) {
 			progress = 0;
 			if (progressBarElement) progressBarElement.style.transform = "scaleX(0)";
+			activeLineIndex = 0;
 			return;
 		}
 
@@ -356,7 +375,19 @@
 	};
 
 	// =========================================================================
-	// MOTOR DE ANIMACIÓN ULTRA FLUIDO (60/120 FPS NATIVO)
+	// GUARDIA DE RESETEO AL INICIO ABSOLUTO (FRAME 0)
+	// =========================================================================
+	const resetScrollToStart = (): void => {
+		if (!scrollContainer) return;
+		scrollContainer.scrollTop = 0;
+		scrollAccumulator = 0;
+		progress = 0;
+		activeLineIndex = 0;
+		syncUiState(0);
+	};
+
+	// =========================================================================
+	// MOTOR DE ANIMACIÓN ULTRA FLUIDO
 	// =========================================================================
 	const tick = (timestamp: number): void => {
 		if (!isPlaying || !scrollContainer) {
@@ -389,7 +420,7 @@
 
 		scrollAccumulator += currentSpeed * elapsedSeconds;
 
-		// CONDICIÓN DE PARADA: Fin total de recorrido hasta el último carácter
+		// Condición de final de texto: último carácter en la línea de lectura
 		if (scrollAccumulator >= cachedMaxScroll) {
 			scrollContainer.scrollTop = cachedMaxScroll;
 			scrollAccumulator = cachedMaxScroll;
@@ -402,16 +433,13 @@
 			return;
 		}
 
-		// Asignación de desplazamiento directo en hardware
 		scrollContainer.scrollTop = scrollAccumulator;
 
-		// Actualización directa del progress bar en GPU sin pasar por dirty-check de Svelte
 		if (cachedMaxScroll > 0 && progressBarElement) {
 			const currentRatio = clamp(scrollAccumulator / cachedMaxScroll, 0, 1);
 			progressBarElement.style.transform = `scaleX(${currentRatio})`;
 		}
 
-		// ESTRANGULADOR: Solo actualiza Svelte y Focus Mode a 10 Hz para evitar micro-stuttering
 		if (timestamp - lastUiSyncTimestamp > 100) {
 			lastUiSyncTimestamp = timestamp;
 			if (cachedMaxScroll > 0) {
@@ -432,10 +460,9 @@
 		calculateMetrics();
 		if (cachedMaxScroll <= 0) return;
 
-		// Si está en el final absoluto, reinicia limpiamente desde el carácter 0
-		if (progress >= 0.999) {
-			scrollContainer.scrollTop = 0;
-			scrollAccumulator = 0;
+		// VALIDACIÓN: Si arranca desde el principio o al final, alinea exactamente en el carácter 0
+		if (progress <= 0.01 || progress >= 0.99) {
+			resetScrollToStart();
 		} else {
 			scrollAccumulator = scrollContainer.scrollTop;
 		}
@@ -457,6 +484,12 @@
 
 	const beginCountdown = (): void => {
 		if (isCountingDown) return;
+
+		// Posiciona el primer carácter en la línea de lectura antes de iniciar el conteo regresivo
+		if (progress <= 0.01 || progress >= 0.99) {
+			resetScrollToStart();
+		}
+
 		if (countdownDuration <= 0) {
 			startPlayback();
 			return;
@@ -510,21 +543,13 @@
 
 	const reset = (): void => {
 		pause();
-		if (scrollContainer) {
-			scrollContainer.scrollTop = 0;
-			scrollAccumulator = 0;
-			syncUiState(0);
-		}
+		resetScrollToStart();
 	};
 
 	const clearText = (): void => {
 		pause();
 		text = "";
-		if (scrollContainer) {
-			scrollContainer.scrollTop = 0;
-			scrollAccumulator = 0;
-			syncUiState(0);
-		}
+		resetScrollToStart();
 	};
 
 	const jump = (pixels: number): void => {
@@ -544,7 +569,7 @@
 	};
 
 	// =========================================================================
-	// FULLSCREEN COMPATIBLE MULTIPLATAFORMA
+	// FULLSCREEN MULTIPLATAFORMA
 	// =========================================================================
 	const toggleFullscreen = async (): Promise<void> => {
 		if (!fullscreenTarget) return;
@@ -584,7 +609,7 @@
 	};
 
 	// =========================================================================
-	// EVENTOS DE USUARIO
+	// MANEJO DE ENTRADAS Y ATADOS DE EVENTOS
 	// =========================================================================
 	const adjustSpeed = (delta: number): void => {
 		speed = Math.round(clamp(speed + delta, SPEED_MIN, SPEED_MAX));
@@ -701,7 +726,7 @@
 	};
 
 	// =========================================================================
-	// GESTIÓN DE GUIONES Y STORAGE
+	// GESTIÓN DE GUIONES Y PERSISTENCIA
 	// =========================================================================
 	const loadScripts = (): void => {
 		const serialized = safeStorage.get(STORAGE_KEY_SCRIPTS);
@@ -759,6 +784,7 @@
 			text = targetScript.text;
 			currentScript = id;
 			safeStorage.set(STORAGE_KEY_LAST_SCRIPT, id);
+			resetScrollToStart();
 			setTimeout(calculateMetrics, 60);
 		}
 	};
@@ -770,6 +796,7 @@
 			currentScript = null;
 			text = "";
 			safeStorage.remove(STORAGE_KEY_LAST_SCRIPT);
+			resetScrollToStart();
 			setTimeout(calculateMetrics, 60);
 		}
 	};
@@ -778,6 +805,7 @@
 		currentScript = null;
 		text = "";
 		safeStorage.remove(STORAGE_KEY_LAST_SCRIPT);
+		resetScrollToStart();
 		setTimeout(calculateMetrics, 60);
 	};
 
@@ -835,7 +863,7 @@
 	};
 
 	// =========================================================================
-	// FORMATEO VISUAL Y HELPERS
+	// HELPERS VISUALES
 	// =========================================================================
 	const getSpeedLabel = (spd: number): string => {
 		if (spd < 40) return "Muy lento";
@@ -887,6 +915,7 @@
 		countdownDuration = 3;
 		applyMirrorToDOM();
 		scheduleSave();
+		resetScrollToStart();
 		setTimeout(calculateMetrics, 60);
 	};
 
@@ -902,7 +931,7 @@
 	};
 
 	// =========================================================================
-	// CICLO DE VIDA
+	// CICLO DE VIDA DEL COMPONENTE
 	// =========================================================================
 	$: if (
 		isReady &&
@@ -965,6 +994,7 @@
 		setTimeout(() => {
 			calculateMetrics();
 			applyMirrorToDOM();
+			resetScrollToStart();
 		}, 80);
 
 		return () => {
@@ -1455,7 +1485,6 @@
 				}
 			}}
 		>
-			<!-- ACTUALIZACIÓN GPU NATIVA: SCALEX SIN REFLOWS -->
 			<div class="progress-bar" bind:this={progressBarElement}></div>
 			{#if isPlaying || progress > 0}
 				<div class="time-remaining">{getEstimatedTimeRemaining()}</div>
@@ -1464,7 +1493,6 @@
 
 		<div class="reading-position-marker"></div>
 
-		<!-- GEOMETRÍA CALIBRADA: PADDING INFERIOR SUFICIENTE PARA RECORRIDO TOTAL DEL 100% -->
 		<div
 			class="teleprompter-frame"
 			bind:this={scrollContainer}
@@ -1473,7 +1501,6 @@
 			on:click={handleFrameClick}
 			on:touchstart={handleTouchStart}
 			on:touchmove={handleTouchMove}
-			style={`padding: ${autoCenter ? "3.5rem 2rem calc(100vh - 8rem)" : "2.5rem 2rem 85vh"};`}
 			tabindex="-1"
 		>
 			<div
@@ -1494,7 +1521,6 @@
 			</div>
 		</div>
 
-		<!-- VIÑETA TOTALMENTE INDEPENDIENTE DE FOCUS MODE -->
 		{#if dimOutside}
 			<div class="teleprompter-dim pointer-none"></div>
 		{/if}
@@ -2700,6 +2726,7 @@
 		z-index: 11;
 	}
 
+	/* MARCADOR ÓPTICO ANCLADO AL 45% EXACTO PARA ALINEACIÓN DETERMINISTA */
 	.reading-position-marker {
 		position: absolute;
 		top: 45%;
@@ -2730,6 +2757,8 @@
 		will-change: scroll-position;
 		overflow-anchor: none;
 		box-sizing: border-box;
+		padding-left: 2rem;
+		padding-right: 2rem;
 	}
 
 	:global(.dark) .teleprompter-frame,
@@ -2792,7 +2821,7 @@
 		color: #f1f5f9;
 	}
 
-	/* ELIMINACIÓN DE REFLOWS EN PÁRRAFOS: DIMENSIONES 100% ESTÁTICAS */
+	/* DIMENSIONES ESTÁTICAS PARA PREVENIR RE-WRAPPING Y REFLOWS EN PÁRRAFOS */
 	.teleprompter-content p {
 		margin: 0.75rem 0;
 		padding: 0.5rem 1rem;
@@ -2800,11 +2829,10 @@
 		line-height: inherit;
 		min-height: 1.5em;
 		box-sizing: border-box;
-		border-left: 4px solid transparent; /* EVITA CAMBIOS DE BOX-MODEL */
+		border-left: 4px solid transparent; /* PREVIENE MODIFICACIÓN DE BOX-MODEL */
 		transition: opacity 0.2s ease, background-color 0.15s ease, border-color 0.15s ease;
 	}
 
-	/* SIN MUTACIÓN DE FONT-WEIGHT NI PADDING: ZERO REWRAPPING */
 	.teleprompter-content p.active {
 		background: rgba(0, 0, 0, 0.06);
 		border-left-color: oklch(0.70 0.14 var(--hue));
@@ -2824,7 +2852,7 @@
 	}
 
 	/* =========================================================================
-	   VIÑETA CINEMATOGRÁFICA (OSCURECER BORDES INDEPENDIENTE)
+	   VIÑETA CINEMATOGRÁFICA (OSCURECER BORDES)
 	   ========================================================================= */
 	.teleprompter-dim {
 		position: absolute;
