@@ -166,7 +166,7 @@ const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 				</ul>
 			</header>
 
-			<!-- GRID -->
+			<!-- GRID CON ESTIRAMIENTO SIMÉTRICO Y ANIMACIONES NATIVAS -->
 			<ul class="tools-grid" role="list" aria-label="Lista de herramientas disponibles">
 				{tools.map((tool, i) => (
 					<li class="tool-card-wrapper" style={`--i: ${i};`}>
@@ -484,6 +484,9 @@ const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 		background: oklch(0.6 0.2 var(--hue));
 	}
 
+	/* =========================================================================
+	   GRID Y HOMOGENEIDAD ESTRUCTURAL (FIX CRÍTICO DE ALTURA)
+	   ========================================================================= */
 	.tools-grid {
 		display: grid;
 		grid-template-columns: 1fr;
@@ -491,11 +494,7 @@ const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 		list-style: none;
 		padding: 0;
 		margin: 0;
-	}
-
-	.tool-card-wrapper {
-		animation: cardIn 0.4s var(--ease-out) both;
-		animation-delay: calc(0.08s * var(--i, 0));
+		align-items: stretch;
 	}
 
 	@media (min-width: 720px) {
@@ -503,6 +502,15 @@ const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 			grid-template-columns: repeat(2, 1fr);
 			gap: 1.5rem;
 		}
+	}
+
+	.tool-card-wrapper {
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		width: 100%;
+		animation: cardIn 0.4s var(--ease-out) both;
+		animation-delay: calc(0.08s * var(--i, 0));
 	}
 
 	.tool-card {
@@ -525,6 +533,10 @@ const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 		isolation: isolate;
 		transform: translateZ(0);
 		backface-visibility: hidden;
+		width: 100%;
+		height: 100%;
+		flex: 1 1 auto;
+		box-sizing: border-box;
 	}
 
 	@keyframes cardIn {
@@ -608,15 +620,30 @@ const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 
 	.icon-svg { width: 44px; height: 44px; overflow: visible; }
 
+	/* =========================================================================
+	   ANIMACIONES RESTAURADAS: TELEPROMPTER ICON
+	   ========================================================================= */
 	.monitor-body { fill: oklch(0.7 0.18 var(--hue-tool, var(--hue))); opacity: 0.9; }
 	.monitor-screen { fill: oklch(0.15 0.05 var(--hue-tool, var(--hue))); }
 	.tele-line { fill: oklch(0.75 0.16 var(--hue-tool, var(--hue))); }
-	.l1 { opacity: 0.9; }
-	.l2 { opacity: 0.65; }
-	.l3 { opacity: 0.4; }
+
+	.l1 { opacity: 0.9; animation: lineScroll 2.5s ease-in-out infinite 0s; }
+	.l2 { opacity: 0.65; animation: lineScroll 2.5s ease-in-out infinite 0.2s; }
+	.l3 { opacity: 0.4; animation: lineScroll 2.5s ease-in-out infinite 0.4s; }
+
+	@keyframes lineScroll {
+		0%, 100% { transform: translateY(0); opacity: inherit; }
+		50% { transform: translateY(2px); opacity: 0.3; }
+	}
 
 	.tele-arrow {
 		stroke: oklch(0.85 0.15 var(--hue-tool, var(--hue)));
+		animation: arrowBounce 2s ease-in-out infinite;
+	}
+
+	@keyframes arrowBounce {
+		0%, 100% { transform: translateY(0); }
+		50% { transform: translateY(-2px); }
 	}
 
 	.stand-neck, .stand-base {
@@ -626,22 +653,82 @@ const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 
 	.rec-dot {
 		fill: oklch(0.65 0.28 20);
+		animation: recBlink 1.5s ease-in-out infinite;
 	}
 
+	@keyframes recBlink {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0.2; }
+	}
+
+	/* =========================================================================
+	   ANIMACIONES RESTAURADAS: LINK SHORTENER ICON
+	   ========================================================================= */
 	.url-bar { fill: oklch(0.7 0.18 var(--hue-tool, var(--hue))); }
-	.long-bar { opacity: 0.8; }
-	.url-chunk { fill: white; opacity: 0.9; }
+	.long-bar { opacity: 0.8; animation: longPulse 3s ease-in-out infinite; }
+	.short-bar { animation: shortAppear 3s ease-in-out infinite; }
+
+	@keyframes longPulse {
+		0%, 40%, 100% { opacity: 0.8; }
+		50%, 90% { opacity: 0.4; }
+	}
+
+	@keyframes shortAppear {
+		0%, 40% { opacity: 0; transform: scaleX(0.7); }
+		60%, 100% { opacity: 0.9; transform: scaleX(1); }
+	}
+
+	.url-chunk { fill: white; animation: chunkFlow 3s ease-in-out infinite; }
+	.c1 { animation-delay: 0s; }
+	.c2 { animation-delay: 0.1s; }
+	.c3 { animation-delay: 0.2s; }
+	.c4 { animation-delay: 0.3s; }
+
+	@keyframes chunkFlow {
+		0%, 10% { opacity: 0; }
+		20%, 38% { opacity: 0.85; }
+		45%, 100% { opacity: 0; }
+	}
+
 	.arrow-path {
 		stroke: oklch(0.7 0.18 var(--hue-tool, var(--hue)));
+		stroke-dasharray: 40;
+		stroke-dashoffset: 40;
+		animation: drawPath 3s ease-in-out infinite;
 	}
-	.link-ring, .link-bridge, .short-text-bar {
+
+	@keyframes drawPath {
+		0%, 20% { stroke-dashoffset: 40; opacity: 0; }
+		40%, 55% { stroke-dashoffset: 0; opacity: 0.7; }
+		65%, 100% { stroke-dashoffset: -40; opacity: 0; }
+	}
+
+	.link-ring,
+	.link-bridge,
+	.short-text-bar {
 		stroke: white;
+		animation: linkAppear 3s ease-in-out infinite;
 	}
 	.short-text-bar { stroke: none; fill: white; }
 	.link-bridge { fill: none; }
 
+	@keyframes linkAppear {
+		0%, 55% { opacity: 0; }
+		70%, 100% { opacity: 0.9; }
+	}
+
+	.lr1 { animation-delay: 0.05s; }
+	.lr2 { animation-delay: 0.1s; }
+	.link-bridge { animation-delay: 0.15s; }
+	.short-text-bar { animation-delay: 0.2s; }
+
+	/* =========================================================================
+	   CONTENIDO Y ANCLAJE CINEMÁTICO INFERIOR
+	   ========================================================================= */
 	.card-content {
-		flex: 1;
+		flex: 1 1 auto;
+		display: flex;
+		flex-direction: column;
 		position: relative;
 		z-index: 1;
 	}
@@ -660,6 +747,7 @@ const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 		line-height: 1.55;
 		color: var(--text-secondary);
 		margin: 0;
+		flex-grow: 1; /* Absorbe el espacio vertical excedente para alinear badges y CTA */
 	}
 
 	.card-features {
@@ -668,7 +756,7 @@ const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 		gap: 0.4rem;
 		list-style: none;
 		padding: 0;
-		margin: 0;
+		margin: 0.75rem 0 0 0;
 		position: relative;
 		z-index: 1;
 	}
@@ -712,6 +800,7 @@ const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 		position: relative;
 		z-index: 1;
 		transition: border-color 0.25s ease;
+		margin-top: auto; /* Anclaje milimétrico en la base de la tarjeta */
 	}
 
 	.tool-card:hover .card-cta {
@@ -767,7 +856,10 @@ const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.header-icon, .hex-outline, .center-glow, .star, .dot {
+		.header-icon, .hex-outline, .center-glow, .star, .dot,
+		.l1, .l2, .l3, .tele-arrow, .rec-dot,
+		.long-bar, .short-bar, .url-chunk, .arrow-path,
+		.link-ring, .link-bridge, .short-text-bar {
 			animation: none !important;
 		}
 		.tool-card-wrapper, .tools-hub-section {
