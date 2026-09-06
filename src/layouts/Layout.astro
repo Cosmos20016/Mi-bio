@@ -251,7 +251,7 @@ const jsonLdString = jsonLd
 	</head>
 
 	<body
-		class="min-h-screen"
+		class="min-h-screen flex flex-col transition"
 		class:list={[{ "lg:is-home": isHomePage, "enable-banner": enableBanner }]}
 		data-overlayscrollbars-initialize
 	>
@@ -270,24 +270,25 @@ const jsonLdString = jsonLd
 >
 	@tailwind components;
 	@layer components {
+		/* FIX RESPONSIVE: Banner adaptable (30dvh en móvil para priorizar contenido, completo en desktop) */
 		.enable-banner.is-home #banner-wrapper {
-			@apply h-[var(--banner-height-home)] translate-y-[var(--banner-height-extend)];
+			@apply h-[30dvh] md:h-[var(--banner-height-home)] translate-y-0 md:translate-y-[var(--banner-height-extend)];
 		}
 		.enable-banner #banner-wrapper {
-			@apply h-[var(--banner-height-home)];
+			@apply h-[20dvh] md:h-[var(--banner-height-home)];
 		}
 
 		.enable-banner.is-home #banner {
-			@apply h-[var(--banner-height-home)] translate-y-0;
+			@apply h-[30dvh] md:h-[var(--banner-height-home)] translate-y-0;
 		}
 		.enable-banner #banner {
-			@apply h-[var(--banner-height-home)] translate-y-[var(--bannerOffset)];
+			@apply h-[20dvh] md:h-[var(--banner-height-home)] translate-y-[var(--bannerOffset)];
 		}
 		.enable-banner.is-home #main-grid {
-			@apply translate-y-[var(--banner-height-extend)];
+			@apply translate-y-0 md:translate-y-[var(--banner-height-extend)];
 		}
 		.enable-banner #top-row {
-			@apply h-[calc(var(--banner-height-home)_-_4.5rem)];
+			@apply h-[calc(30dvh_-_4.5rem)] md:h-[calc(var(--banner-height-home)_-_4.5rem)];
 			transition: background-color 0.2s ease, border-color 0.2s ease;
 		}
 		.enable-banner.is-home #sidebar-sticky {
@@ -384,7 +385,6 @@ const jsonLdString = jsonLd
 		setHue(getHue());
 	}
 
-	// Inicialización idempotente de OverlayScrollbars
 	function initCustomScrollbar() {
 		const bodyElement = document.querySelector("body");
 		if (!bodyElement) return;
@@ -502,20 +502,15 @@ const jsonLdString = jsonLd
 
 	init();
 
-	// =========================================================================
-	// PIPELINE DE NAVEGACIÓN CINEMÁTICA SWUP (CERO SALTOS TOSCOS)
-	// =========================================================================
 	const setupSwupHooks = () => {
 		const swup = (window as any).swup;
 		if (!swup?.hooks) return;
 
-		// 1. Intercepción del scroll reset: desplazamiento suave coordinado
 		swup.hooks.replace("scroll:top", () => {
 			const bodyElement = document.querySelector("body");
 			const osInstance = bodyElement ? OverlayScrollbars(bodyElement) : null;
 			const currentY = window.scrollY || document.documentElement.scrollTop || 0;
 
-			// Si ya estamos arriba, no ejecutar movimiento redundante
 			if (currentY <= 5) {
 				return;
 			}
@@ -561,7 +556,6 @@ const jsonLdString = jsonLd
 			initPremiumReveal();
 		});
 
-		// 2. Erradicación del Post-Load Layout Shift: Ocultación atómica sin delay de 200ms
 		swup.hooks.on("visit:end", () => {
 			const heightExtend = document.getElementById("page-height-extend");
 			if (heightExtend) {
