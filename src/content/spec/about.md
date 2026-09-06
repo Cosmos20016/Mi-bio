@@ -14,29 +14,40 @@
     font-size: 2.5rem;
   }
   @keyframes wave-animation {
-    0% { transform: rotate(0deg);}
-    10% { transform: rotate(14deg);}
-    20% { transform: rotate(-8deg);}
-    30% { transform: rotate(14deg);}
-    40% { transform: rotate(-4deg);}
-    50% { transform: rotate(10deg);}
-    60% { transform: rotate(0deg);}
-    100% { transform: rotate(0deg);}
+    0% { transform: rotate(0deg); }
+    10% { transform: rotate(14deg); }
+    20% { transform: rotate(-8deg); }
+    30% { transform: rotate(14deg); }
+    40% { transform: rotate(-4deg); }
+    50% { transform: rotate(10deg); }
+    60% { transform: rotate(0deg); }
+    100% { transform: rotate(0deg); }
   }
   .desc-chill {
     text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+    text-wrap: pretty;
     max-width: 480px;
     margin: 1.5rem auto 0 auto;
-    background: rgba(255,255,255,0.75);
+    background: rgba(255, 255, 255, 0.75);
     border-radius: 12px;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.04);
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
     padding: 1.2rem 2rem;
     line-height: 1.6;
     color: #4a4a4a;
     font-size: 1.15rem;
   }
+  .desc-chill b {
+    display: block;
+    text-align: center;
+    text-wrap: balance;
+    margin-top: 0.25rem;
+  }
 </style>
-<div class="center-chill">
+
+<div class="center-chill" lang="es">
   <span class="wave">🐢</span>
   <div class="desc-chill">
     Me llamo Kevin Borja y avanzo al ritmo de una tortuga cósmica: cada paso es preciso, cada idea es un universo en expansión.<br /><br />
