@@ -96,7 +96,7 @@ const ogImageUrl = image
 const metaDescription = description || siteConfig.description || pageTitle;
 const finalOgType = ogType ?? (setOGTypeArticle ? "article" : "website");
 
-// Fix Crítico: Prevención de Stored XSS mediante escape estricto de secuencias HTML en JSON-LD
+// Sanitización estricta anti-XSS
 const jsonLdString = jsonLd
 	? JSON.stringify(jsonLd).replace(/</g, "\\u003c")
 	: null;
@@ -105,7 +105,7 @@ const jsonLdString = jsonLd
 <!DOCTYPE html>
 <html
 	lang={siteLang}
-	class="bg-[var(--page-bg)] transition text-[14px] md:text-[16px]"
+	class="bg-[var(--page-bg)] text-[14px] md:text-[16px] scroll-smooth"
 	data-overlayscrollbars-initialize
 >
 	<head>
@@ -229,9 +229,7 @@ const jsonLdString = jsonLd
 						"--banner-height-extend",
 						`${offset}px`,
 					);
-				} catch {
-					// Fallback silencioso en caso de almacenamiento local deshabilitado en iframes restringidos
-				}
+				} catch {}
 			})();
 		</script>
 
@@ -253,7 +251,7 @@ const jsonLdString = jsonLd
 	</head>
 
 	<body
-		class="min-h-screen transition"
+		class="min-h-screen"
 		class:list={[{ "lg:is-home": isHomePage, "enable-banner": enableBanner }]}
 		data-overlayscrollbars-initialize
 	>
@@ -289,7 +287,8 @@ const jsonLdString = jsonLd
 			@apply translate-y-[var(--banner-height-extend)];
 		}
 		.enable-banner #top-row {
-			@apply h-[calc(var(--banner-height-home)_-_4.5rem)] transition-all duration-300;
+			@apply h-[calc(var(--banner-height-home)_-_4.5rem)];
+			transition: background-color 0.2s ease, border-color 0.2s ease;
 		}
 		.enable-banner.is-home #sidebar-sticky {
 			@apply top-[calc(1rem_-_var(--banner-height-extend))];
@@ -299,12 +298,16 @@ const jsonLdString = jsonLd
 		}
 	}
 
+	html {
+		scroll-behavior: smooth;
+	}
+
 	.premium-reveal {
 		opacity: 0;
-		transform: translateY(20px);
+		transform: translateY(16px);
 		transition:
-			opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
-			transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+			opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+			transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 		will-change: opacity, transform;
 	}
 
@@ -313,13 +316,15 @@ const jsonLdString = jsonLd
 		transform: translateY(0);
 	}
 
-	/* Fix Crítico: Se elimina '#main-content * { transform: none !important }' para no anular el Teleprompter */
 	#main-content {
 		opacity: 1 !important;
 		visibility: visible !important;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
+		html {
+			scroll-behavior: auto !important;
+		}
 		.premium-reveal {
 			transition: none !important;
 			opacity: 1 !important;
@@ -379,7 +384,7 @@ const jsonLdString = jsonLd
 		setHue(getHue());
 	}
 
-	// Fix Crítico (Punto 3): Inicialización idempotente. Si body ya tiene scrollbar, no re-instanciar
+	// Inicialización idempotente de OverlayScrollbars
 	function initCustomScrollbar() {
 		const bodyElement = document.querySelector("body");
 		if (!bodyElement) return;
@@ -477,7 +482,7 @@ const jsonLdString = jsonLd
 					}
 				});
 			},
-			{ threshold: 0.05, rootMargin: "0px 0px -30px 0px" },
+			{ threshold: 0.05, rootMargin: "0px 0px -20px 0px" },
 		);
 
 		document
@@ -497,10 +502,31 @@ const jsonLdString = jsonLd
 
 	init();
 
-	// Fix Crítico (Punto 3): Intercepción de transiciones Swup para evitar saltos en herramientas
+	// =========================================================================
+	// PIPELINE DE NAVEGACIÓN CINEMÁTICA SWUP (CERO SALTOS TOSCOS)
+	// =========================================================================
 	const setupSwupHooks = () => {
 		const swup = (window as any).swup;
 		if (!swup?.hooks) return;
+
+		// 1. Intercepción del scroll reset: desplazamiento suave coordinado
+		swup.hooks.replace("scroll:top", () => {
+			const bodyElement = document.querySelector("body");
+			const osInstance = bodyElement ? OverlayScrollbars(bodyElement) : null;
+			const currentY = window.scrollY || document.documentElement.scrollTop || 0;
+
+			// Si ya estamos arriba, no ejecutar movimiento redundante
+			if (currentY <= 5) {
+				return;
+			}
+
+			if (osInstance) {
+				const { viewport } = osInstance.elements();
+				viewport.scrollTo({ top: 0, behavior: "smooth" });
+			} else {
+				window.scrollTo({ top: 0, behavior: "smooth" });
+			}
+		});
 
 		swup.hooks.on("link:click", () => {
 			document.documentElement.style.setProperty("--content-delay", "0ms");
@@ -519,22 +545,12 @@ const jsonLdString = jsonLd
 
 		swup.hooks.on("visit:start", (visit: any) => {
 			const destination = visit.to?.url || "";
-			// Si se navega a la herramienta del teleprompter, congelar el reseteo brusco a 0
-			if (destination.includes("teleprompter")) {
-				if (visit.scroll) {
-					visit.scroll.reset = false;
-				}
-			}
-
 			const bodyElement = document.querySelector("body");
 			if (pathsEqual(destination, url("/"))) {
 				bodyElement?.classList.add("lg:is-home");
 			} else {
 				bodyElement?.classList.remove("lg:is-home");
 			}
-
-			const heightExtend = document.getElementById("page-height-extend");
-			if (heightExtend) heightExtend.classList.remove("hidden");
 
 			const toc = document.getElementById("toc-wrapper");
 			if (toc) toc.classList.add("toc-not-ready");
@@ -545,19 +561,17 @@ const jsonLdString = jsonLd
 			initPremiumReveal();
 		});
 
-		swup.hooks.on("page:view", () => {
-			const heightExtend = document.getElementById("page-height-extend");
-			if (heightExtend) heightExtend.classList.remove("hidden");
-		});
-
+		// 2. Erradicación del Post-Load Layout Shift: Ocultación atómica sin delay de 200ms
 		swup.hooks.on("visit:end", () => {
-			setTimeout(() => {
-				const heightExtend = document.getElementById("page-height-extend");
-				if (heightExtend) heightExtend.classList.add("hidden");
+			const heightExtend = document.getElementById("page-height-extend");
+			if (heightExtend) {
+				heightExtend.classList.add("hidden");
+			}
 
-				const toc = document.getElementById("toc-wrapper");
-				if (toc) toc.classList.remove("toc-not-ready");
-			}, 200);
+			const toc = document.getElementById("toc-wrapper");
+			if (toc) {
+				toc.classList.remove("toc-not-ready");
+			}
 		});
 	};
 
