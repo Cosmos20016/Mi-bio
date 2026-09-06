@@ -4,618 +4,461 @@ import UrlShortener from "@components/url-shortener/UrlShortener.svelte";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { url } from "@utils/url-utils";
 
-// ============================================
-// Metadata para SEO
-// ============================================
-const SITE_URL = "https://kevinborja.com";
-const TOOL_URL = "/herramientas/acortador/";
-const FULL_TOOL_URL = `${SITE_URL}${TOOL_URL}`;
+// =========================================================================
+// METADATA Y RESOLUCIÓN DINÁMICA DE ENTORNO
+// =========================================================================
+const siteOrigin = (Astro.site ? Astro.site.toString() : Astro.url.origin).replace(/\/$/, "");
+const relativeToolPath = "/herramientas/acortador/";
+const fullCanonicalUrl = `${siteOrigin}${relativeToolPath}`;
 
 const toolMetadata = {
-  name: "Acortador de URLs",
-  shortDescription: "Acortador de URLs premium para creadores con QR codes y privacidad",
-  description: "Acorta, organiza y comparte tus enlaces favoritos. QR codes al instante, historial completo y exportación sin límites.",
-  icon: "🔗",
-  features: ["Sin publicidad", "Privado", "Gratuito"],
-  keywords: ["acortador urls", "shortener", "url shortener", "qr code", "generador qr", "enlaces cortos"]
+	name: "Acortador de URLs",
+	shortDescription: "Acortador de URLs premium para creadores con QR codes y privacidad",
+	description: "Acorta, organiza y comparte tus enlaces favoritos. QR codes al instante, historial completo y exportación sin límites.",
+	icon: "🔗",
+	features: ["Sin publicidad", "Privado", "Gratuito"],
+	keywords: ["acortador urls", "shortener", "url shortener", "qr code", "generador qr", "enlaces cortos"]
 } as const;
 
-// JSON-LD Schema.org
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "WebApplication",
-  name: toolMetadata.name,
-  description: toolMetadata.description,
-  url: FULL_TOOL_URL,
-  applicationCategory: "UtilityApplication",
-  operatingSystem: "Web Browser",
-  offers: {
-    "@type": "Offer",
-    price: "0",
-    priceCurrency: "USD"
-  },
-  featureList: toolMetadata.features.join(", "),
-  browserRequirements: "Requires modern browser with JavaScript enabled",
-  inLanguage: "es"
+// Esquema JSON-LD blindado contra Stored XSS
+const jsonLdPayload = {
+	"@context": "https://schema.org",
+	"@type": "WebApplication",
+	name: toolMetadata.name,
+	description: toolMetadata.description,
+	url: fullCanonicalUrl,
+	applicationCategory: "UtilityApplication",
+	operatingSystem: "Web Browser",
+	offers: {
+		"@type": "Offer",
+		price: "0",
+		priceCurrency: "USD"
+	},
+	featureList: toolMetadata.features.join(", "),
+	browserRequirements: "Requires modern browser with JavaScript enabled",
+	inLanguage: "es"
 };
+
+const jsonLdString = JSON.stringify(jsonLdPayload).replace(/</g, "\\u003c");
 ---
 
 <MainGridLayout 
-  title={toolMetadata.name}
-  description={toolMetadata.shortDescription}
-  image={`${SITE_URL}/og-images/url-shortener.png`}
-  url={FULL_TOOL_URL}
-  keywords={toolMetadata.keywords.join(", ")}
+	title={toolMetadata.name}
+	description={toolMetadata.shortDescription}
+	image={`${siteOrigin}/og-images/url-shortener.png`}
+	url={fullCanonicalUrl}
+	keywords={toolMetadata.keywords.join(", ")}
 >
-  <!-- JSON-LD Schema.org para SEO -->
-  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
+	<!-- Inyección segura de Schema JSON-LD -->
+	<script type="application/ld+json" set:html={jsonLdString} is:inline />
 
-  <article class="tool-page">
-    <!-- Skip link para accesibilidad -->
-    <a href="#main-content" class="skip-link">
-      Saltar al contenido principal
-    </a>
+	<article class="tool-page-wrapper">
+		<!-- Navegación superior con breadcrumb semántico -->
+		<nav class="tool-nav" aria-label="Breadcrumb">
+			<ol class="tool-nav-list">
+				<li class="tool-nav-item">
+					<a class="tool-nav-back" href={url("/herramientas/")} aria-label="Volver a Herramientas">
+						<span class="tool-nav-arrow" aria-hidden="true">←</span>
+						<span>Herramientas</span>
+					</a>
+				</li>
+				<li class="tool-nav-item tool-nav-breadcrumb">
+					<span class="breadcrumb-sep" aria-hidden="true">/</span>
+					<span class="breadcrumb-current" aria-current="page">
+						{toolMetadata.name}
+					</span>
+				</li>
+			</ol>
+		</nav>
 
-    <!-- Navegación superior con breadcrumb semántico -->
-    <nav class="tool-nav" aria-label="Breadcrumb">
-      <ol class="tool-nav-list">
-        <li class="tool-nav-item">
-          <a class="tool-nav-back" href={url("/herramientas/")} aria-label="Volver a Herramientas">
-            <span class="tool-nav-arrow" aria-hidden="true">←</span>
-            <span>Herramientas</span>
-          </a>
-        </li>
-        <li class="tool-nav-item tool-nav-breadcrumb">
-          <span class="breadcrumb-sep" aria-hidden="true">/</span>
-          <span class="breadcrumb-current" aria-current="page">
-            {toolMetadata.name}
-          </span>
-        </li>
-      </ol>
-    </nav>
+		<!-- Header principal de la herramienta -->
+		<header class="tool-page-header">
+			<div class="tool-page-icon-wrapper" aria-hidden="true">
+				<span class="tool-page-icon">{toolMetadata.icon}</span>
+			</div>
+			<div class="tool-page-content">
+				<h1 class="tool-page-title">{toolMetadata.name}</h1>
+				<p class="tool-page-description">
+					{toolMetadata.description}
+				</p>
+				<div class="tool-page-header-actions">
+					<ul class="tool-page-badges" role="list" aria-label="Características de la herramienta">
+						{toolMetadata.features.map((feature) => (
+							<li>
+								<span class="tool-page-badge">{feature}</span>
+							</li>
+						))}
+					</ul>
+					<ShareToolButton 
+						toolName={toolMetadata.name}
+						toolDescription={toolMetadata.shortDescription}
+						toolUrl={fullCanonicalUrl}
+					/>
+				</div>
+			</div>
+		</header>
 
-    <!-- Header de la herramienta -->
-    <header class="tool-page-header">
-      <div class="tool-page-icon-wrapper" aria-hidden="true">
-        <span class="tool-page-icon">{toolMetadata.icon}</span>
-      </div>
-      <div class="tool-page-content">
-        <h1 class="tool-page-title">{toolMetadata.name}</h1>
-        <p class="tool-page-description">
-          {toolMetadata.description}
-        </p>
-        <div class="tool-page-header-actions">
-          <ul class="tool-page-badges" role="list" aria-label="Características de la herramienta">
-            {toolMetadata.features.map((feature) => (
-              <li>
-                <span class="tool-page-badge">{feature}</span>
-              </li>
-            ))}
-          </ul>
-          <ShareToolButton 
-            toolName={toolMetadata.name}
-            toolDescription={toolMetadata.shortDescription}
-            toolUrl={TOOL_URL}
-          />
-        </div>
-      </div>
-    </header>
-
-    <!-- Componente principal -->
-    <section 
-      id="main-content" 
-      class="tool-page-section" 
-      aria-label="Acortador de URLs"
-    >
-      <UrlShortener client:only="svelte" />
-    </section>
-  </article>
+		<!-- Contenedor del widget interactivo (Idempotente y libre de CLS) -->
+		<section class="tool-widget-container" aria-label="Acortador de URLs">
+			<UrlShortener client:only="svelte" />
+		</section>
+	</article>
 </MainGridLayout>
 
 <style>
-  /* ============================================
-     Variables y configuración base
-     ============================================ */
-  .tool-page {
-    --hue-fallback: 250;
-    --card-bg-fallback: #ffffff;
-    --radius-large-fallback: 1rem;
-    
-    --color-text-muted: #64748b;
-    --color-text-muted-dark: #94a3b8;
-    --color-border-light: rgba(0, 0, 0, 0.06);
-    --color-border-dark: rgba(255, 255, 255, 0.08);
-    
-    --touch-target-min: 2.75rem;
-    --transition-fast: 150ms ease;
-    --transition-normal: 200ms ease;
-    --transition-smooth: 200ms cubic-bezier(0.4, 0, 0.2, 1);
-    
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-    
-    /* Safe areas para dispositivos con notch */
-    padding-left: max(0px, env(safe-area-inset-left));
-    padding-right: max(0px, env(safe-area-inset-right));
-  }
-
-  /* ============================================
-     Skip link (Accesibilidad)
-     ============================================ */
-  .skip-link {
-    position: absolute;
-    top: -3rem;
-    left: 0;
-    background: oklch(0.6 0.18 var(--hue, var(--hue-fallback)));
-    color: white;
-    padding: 0.75rem 1.5rem;
-    z-index: 1000;
-    border-radius: 0 0 0.5rem 0;
-    font-weight: 600;
-    text-decoration: none;
-    font-size: 0.95rem;
-    transition: top var(--transition-smooth);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-
-  .skip-link:focus {
-    top: 0;
-    outline: 3px solid white;
-    outline-offset: -3px;
-  }
-
-  /* ============================================
-     Navegación (Breadcrumb semántico)
-     ============================================ */
-  .tool-nav {
-    display: flex;
-    align-items: center;
-    width: 100%;
-  }
-
-  .tool-nav-list {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    flex-wrap: wrap;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    width: 100%;
-  }
-
-  .tool-nav-item {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-
-  .tool-nav-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: oklch(0.55 0.12 var(--hue, var(--hue-fallback)));
-    text-decoration: none;
-    padding: 0.4rem 0.75rem;
-    border-radius: 0.5rem;
-    min-height: var(--touch-target-min);
-    outline-offset: 2px;
-    -webkit-tap-highlight-color: oklch(0.6 0.18 var(--hue, var(--hue-fallback)) / 0.1);
-    user-select: none;
-    
-    /* Transiciones específicas (no "all") */
-    transition:
-      background-color var(--transition-normal),
-      color var(--transition-normal),
-      transform var(--transition-fast);
-    
-    /* GPU promotion una sola vez */
-    transform: translateZ(0);
-    backface-visibility: hidden;
-  }
-
-  :global(.dark) .tool-nav-back {
-    color: oklch(0.72 0.12 var(--hue, var(--hue-fallback)));
-  }
-
-  .tool-nav-back:hover {
-    background: oklch(0.95 0.025 var(--hue, var(--hue-fallback)));
-    color: oklch(0.5 0.14 var(--hue, var(--hue-fallback)));
-    transform: translateZ(0) translateX(-2px);
-  }
-
-  :global(.dark) .tool-nav-back:hover {
-    background: oklch(0.28 0.03 var(--hue, var(--hue-fallback)));
-    color: oklch(0.78 0.14 var(--hue, var(--hue-fallback)));
-  }
-
-  .tool-nav-back:active {
-    transform: translateZ(0) translateX(-1px) scale(0.98);
-  }
-
-  .tool-nav-back:focus-visible {
-    outline: 2px solid oklch(0.6 0.18 var(--hue, var(--hue-fallback)));
-    outline-offset: 2px;
-    background: oklch(0.95 0.025 var(--hue, var(--hue-fallback)));
-  }
-
-  :global(.dark) .tool-nav-back:focus-visible {
-    outline-color: oklch(0.78 0.14 var(--hue, var(--hue-fallback)));
-    background: oklch(0.28 0.03 var(--hue, var(--hue-fallback)));
-  }
-
-  .tool-nav-arrow {
-    transition: transform var(--transition-smooth);
-    font-size: 1rem;
-    line-height: 1;
-    display: inline-block;
-  }
-
-  .tool-nav-back:hover .tool-nav-arrow {
-    transform: translateX(-3px);
-  }
-
-  .tool-nav-breadcrumb {
-    font-size: 0.85rem;
-    min-width: 0;
-  }
-
-  .breadcrumb-sep {
-    color: #cbd5e1;
-    user-select: none;
-    pointer-events: none;
-    flex-shrink: 0;
-  }
-
-  :global(.dark) .breadcrumb-sep {
-    color: #475569;
-  }
-
-  .breadcrumb-current {
-    color: #64748b;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  :global(.dark) .breadcrumb-current {
-    color: #94a3b8;
-  }
-
-  /* ============================================
-     Header de la herramienta
-     ============================================ */
-  .tool-page-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 1.25rem;
-    padding: 1.25rem 1.5rem;
-    background: var(--card-bg, var(--card-bg-fallback));
-    border-radius: var(--radius-large, var(--radius-large-fallback));
-    border: 1px solid var(--color-border-light);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-    width: 100%;
-  }
-
-  :global(.dark) .tool-page-header {
-    background: oklch(0.2 0.02 var(--hue, var(--hue-fallback)));
-    border-color: var(--color-border-dark);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  }
-
-  .tool-page-icon-wrapper {
-    width: 3.5rem;
-    height: 3.5rem;
-    min-width: 3.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 1rem;
-    background: oklch(0.95 0.03 var(--hue, var(--hue-fallback)));
-    transition: transform var(--transition-normal);
-    flex-shrink: 0;
-    transform: translateZ(0);
-    backface-visibility: hidden;
-  }
-
-  :global(.dark) .tool-page-icon-wrapper {
-    background: oklch(0.28 0.03 var(--hue, var(--hue-fallback)));
-  }
-
-  .tool-page-header:hover .tool-page-icon-wrapper {
-    transform: translateZ(0) scale(1.05);
-  }
-
-  .tool-page-icon {
-    font-size: 1.75rem;
-    line-height: 1;
-  }
-
-  .tool-page-content {
-    flex: 1;
-    min-width: 0;
-    width: 100%;
-  }
-
-  .tool-page-title {
-    font-size: 1.75rem;
-    font-weight: 800;
-    letter-spacing: -0.01em;
-    line-height: 1.2;
-    margin: 0 0 0.35rem 0;
-    word-wrap: break-word;
-    
-    /* Color fallback SIEMPRE visible */
-    color: oklch(0.65 0.16 var(--hue, var(--hue-fallback)));
-    
-    /* Gradiente */
-    background: linear-gradient(
-      135deg,
-      oklch(0.65 0.16 var(--hue, var(--hue-fallback))),
-      oklch(0.6 0.18 calc(var(--hue, var(--hue-fallback)) + 40))
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  :global(.dark) .tool-page-title {
-    color: oklch(0.75 0.14 var(--hue, var(--hue-fallback)));
-    background: linear-gradient(
-      135deg,
-      oklch(0.75 0.14 var(--hue, var(--hue-fallback))),
-      oklch(0.7 0.16 calc(var(--hue, var(--hue-fallback)) + 40))
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  .tool-page-description {
-    font-size: 0.9rem;
-    color: #64748b;
-    line-height: 1.55;
-    margin: 0 0 0.65rem 0;
-  }
-
-  :global(.dark) .tool-page-description {
-    color: #94a3b8;
-  }
-
-  .tool-page-header-actions {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-  }
-
-  /* ============================================
-     Badges
-     ============================================ */
-  .tool-page-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .tool-page-badge {
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    padding: 0.2rem 0.55rem;
-    border-radius: 9999px;
-    background: oklch(0.93 0.04 var(--hue, var(--hue-fallback)));
-    color: oklch(0.5 0.14 var(--hue, var(--hue-fallback)));
-    line-height: 1.4;
-    white-space: nowrap;
-    display: inline-block;
-    transition:
-      background-color var(--transition-normal),
-      color var(--transition-normal),
-      transform var(--transition-fast);
-  }
-
-  .tool-page-badges li:hover .tool-page-badge {
-    transform: translateY(-1px);
-  }
-
-  :global(.dark) .tool-page-badge {
-    background: oklch(0.3 0.05 var(--hue, var(--hue-fallback)));
-    color: oklch(0.78 0.12 var(--hue, var(--hue-fallback)));
-  }
-
-  /* ============================================
-     Sección principal con content-visibility
-     ============================================ */
-  .tool-page-section {
-    content-visibility: auto;
-    contain-intrinsic-size: auto 500px;
-  }
-
-  /* ============================================
-     Responsive
-     ============================================ */
-  
-  /* Tablets */
-  @media (max-width: 768px) {
-    .tool-page-header {
-      padding: 1.125rem 1.375rem;
-    }
-
-    .tool-page-title {
-      font-size: 1.625rem;
-    }
-
-    .tool-page-description {
-      font-size: 0.875rem;
-    }
-  }
-
-  /* Mobile */
-  @media (max-width: 640px) {
-    .tool-page {
-      gap: 1.25rem;
-      padding-left: max(1rem, env(safe-area-inset-left));
-      padding-right: max(1rem, env(safe-area-inset-right));
-    }
-
-    .tool-nav-back {
-      font-size: 0.85rem;
-      padding: 0.35rem 0.65rem;
-    }
-
-    .tool-nav-breadcrumb {
-      font-size: 0.8rem;
-    }
-
-    .tool-page-header {
-      padding: 1rem;
-      gap: 1rem;
-    }
-
-    .tool-page-icon-wrapper {
-      width: 3rem;
-      height: 3rem;
-      min-width: 3rem;
-    }
-
-    .tool-page-icon {
-      font-size: 1.5rem;
-    }
-
-    .tool-page-title {
-      font-size: 1.375rem;
-      margin-bottom: 0.25rem;
-    }
-
-    .tool-page-description {
-      font-size: 0.85rem;
-      line-height: 1.5;
-      margin-bottom: 0.75rem;
-    }
-
-    .tool-page-header-actions {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.65rem;
-      width: 100%;
-    }
-
-    .tool-page-badges {
-      gap: 0.35rem;
-      width: 100%;
-    }
-
-    .tool-page-badge {
-      font-size: 0.65rem;
-      padding: 0.2rem 0.5rem;
-    }
-  }
-
-  /* Mobile pequeño */
-  @media (max-width: 480px) {
-    .tool-page-header {
-      padding: 0.875rem;
-    }
-
-    .tool-page-title {
-      font-size: 1.25rem;
-    }
-
-    .tool-page-description {
-      font-size: 0.8rem;
-    }
-
-    .tool-nav-list {
-      gap: 0.15rem;
-    }
-
-    .breadcrumb-current {
-      max-width: 150px;
-    }
-  }
-
-  /* ============================================
-     Accesibilidad
-     ============================================ */
-  @media (prefers-reduced-motion: reduce) {
-    .tool-page {
-      scroll-behavior: auto;
-    }
-
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-    }
-  }
-
-  /* High contrast */
-  @media (prefers-contrast: high) {
-    .tool-page-header {
-      border-width: 2px;
-    }
-
-    .tool-nav-back:focus-visible,
-    .skip-link:focus {
-      outline-width: 3px;
-    }
-
-    .tool-page-badge {
-      border: 1px solid currentColor;
-    }
-  }
-
-  /* ============================================
-     Print
-     ============================================ */
-  @media print {
-    .tool-nav,
-    .tool-page-badges,
-    .tool-page-header-actions,
-    .skip-link {
-      display: none;
-    }
-
-    .tool-page-header {
-      border: 1px solid #000;
-      box-shadow: none;
-      page-break-inside: avoid;
-    }
-
-    .tool-page-title {
-      color: #000 !important;
-      -webkit-text-fill-color: #000 !important;
-      background: none !important;
-    }
-
-    .tool-page {
-      overflow: visible;
-    }
-  }
-
-  /* ============================================
-     GPU optimizations (solo desktop con mouse)
-     ============================================ */
-  @media (hover: hover) and (pointer: fine) {
-    .tool-nav-back,
-    .tool-page-icon-wrapper,
-    .tool-page-badge {
-      -webkit-font-smoothing: antialiased;
-    }
-  }
+	/* =========================================================================
+	   VARIABLES Y CONFIGURACIÓN BASE
+	   ========================================================================= */
+	.tool-page-wrapper {
+		--hue-fallback: 250;
+		--card-bg-fallback: #ffffff;
+		--radius-large-fallback: 1rem;
+		
+		--color-text-muted: #64748b;
+		--color-text-muted-dark: #94a3b8;
+		--color-border-light: rgba(0, 0, 0, 0.06);
+		--color-border-dark: rgba(255, 255, 255, 0.08);
+		
+		--touch-target-min: 2.75rem;
+		--transition-fast: 150ms ease;
+		--transition-normal: 200ms ease;
+		--transition-smooth: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+		
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+		width: 100%;
+		max-width: 100%;
+		contain: layout style;
+		padding-left: max(0px, env(safe-area-inset-left));
+		padding-right: max(0px, env(safe-area-inset-right));
+	}
+
+	/* =========================================================================
+	   NAVEGACIÓN BREADCRUMB
+	   ========================================================================= */
+	.tool-nav {
+		display: flex;
+		align-items: center;
+		width: 100%;
+	}
+
+	.tool-nav-list {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		flex-wrap: wrap;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		width: 100%;
+	}
+
+	.tool-nav-item {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
+	.tool-nav-back {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: oklch(0.55 0.12 var(--hue, var(--hue-fallback)));
+		text-decoration: none;
+		padding: 0.4rem 0.75rem;
+		border-radius: 0.5rem;
+		min-height: var(--touch-target-min);
+		outline-offset: 2px;
+		-webkit-tap-highlight-color: oklch(0.6 0.18 var(--hue, var(--hue-fallback)) / 0.1);
+		user-select: none;
+		transition:
+			background-color var(--transition-normal),
+			color var(--transition-normal),
+			transform var(--transition-fast);
+		transform: translateZ(0);
+		backface-visibility: hidden;
+	}
+
+	:global(.dark) .tool-nav-back {
+		color: oklch(0.72 0.12 var(--hue, var(--hue-fallback)));
+	}
+
+	.tool-nav-back:hover {
+		background: oklch(0.95 0.025 var(--hue, var(--hue-fallback)));
+		color: oklch(0.5 0.14 var(--hue, var(--hue-fallback)));
+		transform: translateX(-2px);
+	}
+
+	:global(.dark) .tool-nav-back:hover {
+		background: oklch(0.28 0.03 var(--hue, var(--hue-fallback)));
+		color: oklch(0.78 0.14 var(--hue, var(--hue-fallback)));
+	}
+
+	.tool-nav-back:active {
+		transform: translateX(-1px) scale(0.98);
+	}
+
+	.tool-nav-back:focus-visible {
+		outline: 2px solid oklch(0.6 0.18 var(--hue, var(--hue-fallback)));
+		outline-offset: 2px;
+		background: oklch(0.95 0.025 var(--hue, var(--hue-fallback)));
+	}
+
+	:global(.dark) .tool-nav-back:focus-visible {
+		outline-color: oklch(0.78 0.14 var(--hue, var(--hue-fallback)));
+		background: oklch(0.28 0.03 var(--hue, var(--hue-fallback)));
+	}
+
+	.tool-nav-arrow {
+		transition: transform var(--transition-smooth);
+		font-size: 1rem;
+		line-height: 1;
+		display: inline-block;
+	}
+
+	.tool-nav-back:hover .tool-nav-arrow {
+		transform: translateX(-3px);
+	}
+
+	.tool-nav-breadcrumb {
+		font-size: 0.85rem;
+		min-width: 0;
+	}
+
+	.breadcrumb-sep {
+		color: #cbd5e1;
+		user-select: none;
+		pointer-events: none;
+		flex-shrink: 0;
+	}
+
+	:global(.dark) .breadcrumb-sep {
+		color: #475569;
+	}
+
+	.breadcrumb-current {
+		color: #64748b;
+		font-weight: 500;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	:global(.dark) .breadcrumb-current {
+		color: #94a3b8;
+	}
+
+	/* =========================================================================
+	   HEADER DE LA HERRAMIENTA
+	   ========================================================================= */
+	.tool-page-header {
+		display: flex;
+		align-items: flex-start;
+		gap: 1.25rem;
+		padding: 1.25rem 1.5rem;
+		background: var(--card-bg, var(--card-bg-fallback));
+		border-radius: var(--radius-large, var(--radius-large-fallback));
+		border: 1px solid var(--color-border-light);
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+		width: 100%;
+	}
+
+	:global(.dark) .tool-page-header {
+		background: oklch(0.2 0.02 var(--hue, var(--hue-fallback)));
+		border-color: var(--color-border-dark);
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	}
+
+	.tool-page-icon-wrapper {
+		width: 3.5rem;
+		height: 3.5rem;
+		min-width: 3.5rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 1rem;
+		background: oklch(0.95 0.03 var(--hue, var(--hue-fallback)));
+		transition: transform var(--transition-normal);
+		flex-shrink: 0;
+		transform: translateZ(0);
+		backface-visibility: hidden;
+	}
+
+	:global(.dark) .tool-page-icon-wrapper {
+		background: oklch(0.28 0.03 var(--hue, var(--hue-fallback)));
+	}
+
+	.tool-page-header:hover .tool-page-icon-wrapper {
+		transform: scale(1.04);
+	}
+
+	.tool-page-icon {
+		font-size: 1.75rem;
+		line-height: 1;
+	}
+
+	.tool-page-content {
+		flex: 1;
+		min-width: 0;
+		width: 100%;
+	}
+
+	.tool-page-title {
+		font-size: 1.75rem;
+		font-weight: 800;
+		letter-spacing: -0.01em;
+		line-height: 1.2;
+		margin: 0 0 0.35rem 0;
+		word-wrap: break-word;
+		color: oklch(0.65 0.16 var(--hue, var(--hue-fallback)));
+		background: linear-gradient(
+			135deg,
+			oklch(0.65 0.16 var(--hue, var(--hue-fallback))),
+			oklch(0.6 0.18 calc(var(--hue, var(--hue-fallback)) + 40))
+		);
+		-webkit-background-clip: text;
+		background-clip: text;
+		-webkit-text-fill-color: transparent;
+	}
+
+	:global(.dark) .tool-page-title {
+		color: oklch(0.75 0.14 var(--hue, var(--hue-fallback)));
+		background: linear-gradient(
+			135deg,
+			oklch(0.75 0.14 var(--hue, var(--hue-fallback))),
+			oklch(0.7 0.16 calc(var(--hue, var(--hue-fallback)) + 40))
+		);
+		-webkit-background-clip: text;
+		background-clip: text;
+		-webkit-text-fill-color: transparent;
+	}
+
+	.tool-page-description {
+		font-size: 0.9rem;
+		color: #64748b;
+		line-height: 1.55;
+		margin: 0 0 0.65rem 0;
+	}
+
+	:global(.dark) .tool-page-description {
+		color: #94a3b8;
+	}
+
+	.tool-page-header-actions {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+	}
+
+	/* =========================================================================
+	   BADGES
+	   ========================================================================= */
+	.tool-page-badges {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+
+	.tool-page-badge {
+		font-size: 0.7rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		padding: 0.2rem 0.55rem;
+		border-radius: 9999px;
+		background: oklch(0.93 0.04 var(--hue, var(--hue-fallback)));
+		color: oklch(0.5 0.14 var(--hue, var(--hue-fallback)));
+		line-height: 1.4;
+		white-space: nowrap;
+		display: inline-block;
+		transition: transform var(--transition-fast);
+	}
+
+	.tool-page-badges li:hover .tool-page-badge {
+		transform: translateY(-1px);
+	}
+
+	:global(.dark) .tool-page-badge {
+		background: oklch(0.3 0.05 var(--hue, var(--hue-fallback)));
+		color: oklch(0.78 0.12 var(--hue, var(--hue-fallback)));
+	}
+
+	/* =========================================================================
+	   CONTENEDOR DEL WIDGET (ESTABILIDAD SIN CLS)
+	   ========================================================================= */
+	.tool-widget-container {
+		width: 100%;
+		min-height: 520px;
+		position: relative;
+		contain: layout style;
+	}
+
+	/* =========================================================================
+	   MEDIA QUERIES Y RESPONSIVE
+	   ========================================================================= */
+	@media (max-width: 768px) {
+		.tool-page-header { padding: 1.125rem 1.375rem; }
+		.tool-page-title { font-size: 1.625rem; }
+		.tool-page-description { font-size: 0.875rem; }
+	}
+
+	@media (max-width: 640px) {
+		.tool-page-wrapper {
+			gap: 1.25rem;
+			padding-left: max(1rem, env(safe-area-inset-left));
+			padding-right: max(1rem, env(safe-area-inset-right));
+		}
+		.tool-nav-back { font-size: 0.85rem; padding: 0.35rem 0.65rem; }
+		.tool-nav-breadcrumb { font-size: 0.8rem; }
+		.tool-page-header { padding: 1rem; gap: 1rem; }
+		.tool-page-icon-wrapper { width: 3rem; height: 3rem; min-width: 3rem; }
+		.tool-page-icon { font-size: 1.5rem; }
+		.tool-page-title { font-size: 1.375rem; margin-bottom: 0.25rem; }
+		.tool-page-description { font-size: 0.85rem; line-height: 1.5; margin-bottom: 0.75rem; }
+		.tool-page-header-actions { flex-direction: column; align-items: flex-start; gap: 0.65rem; width: 100%; }
+		.tool-page-badges { gap: 0.35rem; width: 100%; }
+		.tool-page-badge { font-size: 0.65rem; padding: 0.2rem 0.5rem; }
+	}
+
+	@media (max-width: 480px) {
+		.tool-page-header { padding: 0.875rem; }
+		.tool-page-title { font-size: 1.25rem; }
+		.tool-page-description { font-size: 0.8rem; }
+		.tool-nav-list { gap: 0.15rem; }
+		.breadcrumb-current { max-width: 150px; }
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		*, *::before, *::after {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+		}
+	}
+
+	@media (prefers-contrast: high) {
+		.tool-page-header { border-width: 2px; }
+		.tool-nav-back:focus-visible { outline-width: 3px; }
+		.tool-page-badge { border: 1px solid currentColor; }
+	}
+
+	@media print {
+		.tool-nav, .tool-page-badges, .tool-page-header-actions { display: none; }
+		.tool-page-header { border: 1px solid #000; box-shadow: none; page-break-inside: avoid; }
+		.tool-page-title { color: #000 !important; -webkit-text-fill-color: #000 !important; background: none !important; }
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.tool-nav-back, .tool-page-icon-wrapper, .tool-page-badge {
+			-webkit-font-smoothing: antialiased;
+		}
+	}
 </style>
