@@ -7,7 +7,7 @@
 	import { onDestroy, onMount } from "svelte";
 
 	// =========================================================================
-	// CONSTANTES Y CONFIGURACIÓN GEOMÉTRICA INMUTABLE
+	// CONSTANTES Y GEOMETRÍA ÓPTICA
 	// =========================================================================
 	const STORAGE_KEY_STATE = "teleprompter:state:v5";
 	const STORAGE_KEY_SCRIPTS = "teleprompter:scripts";
@@ -27,7 +27,7 @@
 	const READING_LINE_RATIO = 0.45;
 
 	// =========================================================================
-	// CONTRATOS DE TIPOS EXPLÍCITOS
+	// TIPOS EXPLÍCITOS
 	// =========================================================================
 	interface SavedScript {
 		id: string;
@@ -56,7 +56,7 @@
 	}
 
 	// =========================================================================
-	// ESTADO REACTIVO DEL TELEPROMPTER
+	// ESTADO REACTIVO
 	// =========================================================================
 	let text = `Pega aquí tu guion...\n\nTip: Usa párrafos cortos para una lectura más cómoda.`;
 	let speed = 60;
@@ -85,12 +85,12 @@
 	let countdownDuration = 3;
 	let isDark = false;
 
-	// Paddings calibrados dinámicamente para alineación óptica de inicio a fin
-	let topPaddingPx = 300;
-	let bottomPaddingPx = 400;
+	// Paddings reactivos calculados dinámicamente
+	let topPaddingPx = 250;
+	let bottomPaddingPx = 300;
 
 	// =========================================================================
-	// REFS AL DOM Y COMPONENTES
+	// REFS AL DOM
 	// =========================================================================
 	let scrollContainer: HTMLDivElement | null = null;
 	let content: HTMLDivElement | null = null;
@@ -138,7 +138,7 @@
 			: "";
 
 	// =========================================================================
-	// ADAPTADOR DE STORAGE SEGURO
+	// ADAPTADOR DE ALMACENAMIENTO SEGURO
 	// =========================================================================
 	const clamp = (value: number, min: number, max: number): number =>
 		Math.min(Math.max(value, min), max);
@@ -168,7 +168,7 @@
 	};
 
 	// =========================================================================
-	// CONTROL ATÓMICO DEL MODO ESPEJO
+	// CONTROL DEL MODO ESPEJO
 	// =========================================================================
 	const toggleMirror = (forceState?: boolean): void => {
 		isMirror = typeof forceState === "boolean" ? forceState : !isMirror;
@@ -186,7 +186,7 @@
 	};
 
 	// =========================================================================
-	// CONTROLADORES DE MODOS Y EFECTOS
+	// CONTROLADORES DE MODOS
 	// =========================================================================
 	const toggleDimOutside = (): void => {
 		dimOutside = !dimOutside;
@@ -226,7 +226,7 @@
 	};
 
 	// =========================================================================
-	// AUTO-ORGANIZADOR PROFESIONAL DE GUIONES
+	// AUTO-ORGANIZADOR DE GUIONES
 	// =========================================================================
 	const autoFormatScript = (): void => {
 		if (!text.trim() || isFormatting) return;
@@ -295,33 +295,36 @@
 	};
 
 	// =========================================================================
-	// CALIBRACIÓN ÓPTICA Y CÁLCULO FÍSICO EXACTO DEL SCROLL
+	// CALIBRACIÓN ÓPTICA Y CÁLCULO DE LÍMITES FÍSICOS
 	// =========================================================================
 	const calculateMetrics = (): void => {
 		if (!scrollContainer || !content) return;
 
 		const viewportHeight = scrollContainer.clientHeight;
-		const lineH = fontSize * lineHeight;
+		if (viewportHeight <= 0) return;
+
+		const firstEl = lineElements.find((el) => el !== null);
+		const lastEl = [...lineElements].reverse().find((el) => el !== null);
+
+		const hFirst = firstEl ? firstEl.offsetHeight : fontSize * lineHeight;
+		const hLast = lastEl ? lastEl.offsetHeight : fontSize * lineHeight;
+
 		const opticalCenter = viewportHeight * READING_LINE_RATIO;
 
-		// Alinea exactamente el primer párrafo en la línea de lectura al inicio (scrollTop = 0)
-		// y permite que el último párrafo suba hasta dicha línea al final (scrollTop = maxScroll)
-		if (autoCenter) {
-			topPaddingPx = Math.max(0, Math.round(opticalCenter - lineH / 2));
-			bottomPaddingPx = Math.max(0, Math.round(viewportHeight * (1 - READING_LINE_RATIO) + lineH / 2));
-		} else {
-			topPaddingPx = Math.round(2.5 * 16);
-			bottomPaddingPx = Math.round(viewportHeight * 0.85);
-		}
+		// 1. Alineación inicial: el centro del primer párrafo inicia en la guía óptica
+		topPaddingPx = Math.max(0, Math.round(opticalCenter - hFirst / 2));
 
-		scrollContainer.style.paddingTop = `${topPaddingPx}px`;
-		scrollContainer.style.paddingBottom = `${bottomPaddingPx}px`;
+		// 2. Alineación final: el centro del último párrafo se detiene en la guía óptica sin avanzar al vacío
+		bottomPaddingPx = Math.max(0, Math.round(viewportHeight * (1 - READING_LINE_RATIO) - hLast / 2));
 
-		cachedMaxScroll = Math.max(scrollContainer.scrollHeight - scrollContainer.clientHeight, 0);
+		// 3. Altura de scroll total real calculada analíticamente
+		const totalScrollHeight = topPaddingPx + content.offsetHeight + bottomPaddingPx;
+		cachedMaxScroll = Math.max(totalScrollHeight - viewportHeight, 0);
 
+		// 4. Centros de línea absolutos congruentes con el padding superior
 		lineMetrics = lineElements.map((el) => {
 			if (!el) return { center: 0 };
-			return { center: el.offsetTop + el.offsetHeight / 2 };
+			return { center: topPaddingPx + el.offsetTop + el.offsetHeight / 2 };
 		});
 
 		syncUiState(scrollContainer.scrollTop);
@@ -331,13 +334,13 @@
 		if (!scrollContainer || lineMetrics.length === 0 || !focusMode) return;
 
 		const viewportHeight = scrollContainer.clientHeight;
-		const currentReadingY = currentScrollTop + (viewportHeight * READING_LINE_RATIO);
+		const currentReadingTargetY = currentScrollTop + (viewportHeight * READING_LINE_RATIO);
 
 		let closestIndex = 0;
 		let minDistance = Number.POSITIVE_INFINITY;
 
 		for (let i = 0; i < lineMetrics.length; i++) {
-			const distance = Math.abs(lineMetrics[i].center - currentReadingY);
+			const distance = Math.abs(lineMetrics[i].center - currentReadingTargetY);
 			if (distance < minDistance) {
 				minDistance = distance;
 				closestIndex = i;
@@ -374,9 +377,6 @@
 		}
 	};
 
-	// =========================================================================
-	// GUARDIA DE RESETEO AL INICIO ABSOLUTO (FRAME 0)
-	// =========================================================================
 	const resetScrollToStart = (): void => {
 		if (!scrollContainer) return;
 		scrollContainer.scrollTop = 0;
@@ -420,7 +420,7 @@
 
 		scrollAccumulator += currentSpeed * elapsedSeconds;
 
-		// Condición de final de texto: último carácter en la línea de lectura
+		// Condición de detención: el último párrafo descansa centrado en la guía de lectura
 		if (scrollAccumulator >= cachedMaxScroll) {
 			scrollContainer.scrollTop = cachedMaxScroll;
 			scrollAccumulator = cachedMaxScroll;
@@ -460,7 +460,6 @@
 		calculateMetrics();
 		if (cachedMaxScroll <= 0) return;
 
-		// VALIDACIÓN: Si arranca desde el principio o al final, alinea exactamente en el carácter 0
 		if (progress <= 0.01 || progress >= 0.99) {
 			resetScrollToStart();
 		} else {
@@ -485,7 +484,6 @@
 	const beginCountdown = (): void => {
 		if (isCountingDown) return;
 
-		// Posiciona el primer carácter en la línea de lectura antes de iniciar el conteo regresivo
 		if (progress <= 0.01 || progress >= 0.99) {
 			resetScrollToStart();
 		}
@@ -569,7 +567,7 @@
 	};
 
 	// =========================================================================
-	// FULLSCREEN MULTIPLATAFORMA
+	// SISTEMA FULLSCREEN
 	// =========================================================================
 	const toggleFullscreen = async (): Promise<void> => {
 		if (!fullscreenTarget) return;
@@ -609,7 +607,7 @@
 	};
 
 	// =========================================================================
-	// MANEJO DE ENTRADAS Y ATADOS DE EVENTOS
+	// EVENTOS DE ENTRADA
 	// =========================================================================
 	const adjustSpeed = (delta: number): void => {
 		speed = Math.round(clamp(speed + delta, SPEED_MIN, SPEED_MAX));
@@ -931,7 +929,7 @@
 	};
 
 	// =========================================================================
-	// CICLO DE VIDA DEL COMPONENTE
+	// CICLO DE VIDA
 	// =========================================================================
 	$: if (
 		isReady &&
@@ -1493,6 +1491,7 @@
 
 		<div class="reading-position-marker"></div>
 
+		<!-- PADDING DINÁMICO ENLAZADO DIRECTAMENTE A LA GEOMETRÍA ÓPTICA -->
 		<div
 			class="teleprompter-frame"
 			bind:this={scrollContainer}
@@ -1501,6 +1500,8 @@
 			on:click={handleFrameClick}
 			on:touchstart={handleTouchStart}
 			on:touchmove={handleTouchMove}
+			style:padding-top="{topPaddingPx}px"
+			style:padding-bottom="{bottomPaddingPx}px"
 			tabindex="-1"
 		>
 			<div
@@ -2709,7 +2710,7 @@
 		transform: scaleX(0);
 		transform-origin: left center;
 		will-change: transform;
-		transition: none !important; /* ELIMINA MICRO-CLIPS POR COMPETENCIA RAF VS CSS */
+		transition: none !important;
 	}
 
 	.time-remaining {
@@ -2829,7 +2830,7 @@
 		line-height: inherit;
 		min-height: 1.5em;
 		box-sizing: border-box;
-		border-left: 4px solid transparent; /* PREVIENE MODIFICACIÓN DE BOX-MODEL */
+		border-left: 4px solid transparent;
 		transition: opacity 0.2s ease, background-color 0.15s ease, border-color 0.15s ease;
 	}
 
