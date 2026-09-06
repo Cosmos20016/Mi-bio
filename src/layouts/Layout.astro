@@ -252,7 +252,7 @@ const jsonLdString = jsonLd
 
 	<body
 		class="min-h-screen flex flex-col transition"
-		class:list={[{ "lg:is-home": isHomePage, "enable-banner": enableBanner }]}
+		class:list={[{ "is-home": isHomePage, "enable-banner": enableBanner }]}
 		data-overlayscrollbars-initialize
 	>
 		<ConfigCarrier />
@@ -270,25 +270,25 @@ const jsonLdString = jsonLd
 >
 	@tailwind components;
 	@layer components {
-		/* BANNER RESPONSIVO: 30dvh en móvil para priorizar contenido, altura completa en desktop */
+		/* Geometría universal del banner en móvil y escritorio */
 		.enable-banner.is-home #banner-wrapper {
-			@apply h-[30dvh] md:h-[var(--banner-height-home)] translate-y-0 md:translate-y-[var(--banner-height-extend)];
+			@apply h-[var(--banner-height-home)] translate-y-[var(--banner-height-extend)];
 		}
 		.enable-banner #banner-wrapper {
-			@apply h-[20dvh] md:h-[var(--banner-height-home)];
+			@apply h-[var(--banner-height-home)];
 		}
 
 		.enable-banner.is-home #banner {
-			@apply h-[30dvh] md:h-[var(--banner-height-home)] translate-y-0;
+			@apply h-[var(--banner-height-home)] translate-y-0;
 		}
 		.enable-banner #banner {
-			@apply h-[20dvh] md:h-[var(--banner-height-home)] translate-y-[var(--bannerOffset)];
+			@apply h-[var(--banner-height-home)] translate-y-[var(--bannerOffset)];
 		}
 		.enable-banner.is-home #main-grid {
-			@apply translate-y-0 md:translate-y-[var(--banner-height-extend)];
+			@apply translate-y-[var(--banner-height-extend)];
 		}
 		.enable-banner #top-row {
-			@apply h-[calc(30dvh_-_4.5rem)] md:h-[calc(var(--banner-height-home)_-_4.5rem)];
+			@apply h-[calc(var(--banner-height-home)_-_4.5rem)];
 			transition: background-color 0.2s ease, border-color 0.2s ease;
 		}
 		.enable-banner.is-home #sidebar-sticky {
@@ -303,9 +303,7 @@ const jsonLdString = jsonLd
 		scroll-behavior: smooth;
 	}
 
-	/* =========================================================================
-	   REFINAMIENTO UX: ANIMACIÓN DE ENTRADA Y TRANSICIÓN SPA CINEMÁTICA
-	   ========================================================================= */
+	/* Animación de entrada y transición SPA */
 	.premium-reveal {
 		opacity: 0;
 		transform: translateY(16px);
@@ -336,8 +334,38 @@ const jsonLdString = jsonLd
 	}
 
 	/* =========================================================================
-	   MICRO-INTERACCIONES TÁCTILES EN BOTONES Y CONTROLES
+	   CENTRADOR GLOBAL DE COMENTARIOS GISCUS (PC Y MÓVIL)
 	   ========================================================================= */
+	#comments,
+	.giscus,
+	#giscus-container,
+	section[aria-label*="comentarios" i],
+	section[aria-label*="comments" i] {
+		width: 100% !important;
+		max-width: 52rem !important;
+		margin-left: auto !important;
+		margin-right: auto !important;
+		display: flex !important;
+		flex-direction: column !important;
+		align-items: center !important;
+		justify-content: center !important;
+	}
+
+	.giscus,
+	.giscus-frame,
+	iframe.giscus-frame {
+		width: 100% !important;
+		margin-left: auto !important;
+		margin-right: auto !important;
+		display: block !important;
+	}
+
+	#comments > * {
+		margin-left: auto !important;
+		margin-right: auto !important;
+	}
+
+	/* Micro-interacciones en botones */
 	button, 
 	a[role="button"],
 	.btn-action,
@@ -357,9 +385,7 @@ const jsonLdString = jsonLd
 		transform: scale(0.97) !important;
 	}
 
-	/* =========================================================================
-	   ACCESIBILIDAD POR TECLADO (FOCUS-VISIBLE DUAL RING)
-	   ========================================================================= */
+	/* Accesibilidad por teclado: Focus Visible */
 	:focus:not(:focus-visible) {
 		outline: none !important;
 	}
@@ -370,9 +396,7 @@ const jsonLdString = jsonLd
 		transition: outline-offset 0.12s ease;
 	}
 
-	/* =========================================================================
-	   SOMBRAS MULTICAPA VOLUMÉTRICAS (DEPTH & AMBIENT OCCLUSION)
-	   ========================================================================= */
+	/* Sombras volumétricas */
 	.card-base,
 	.tool-card,
 	.teleprompter-panel {
@@ -618,7 +642,7 @@ const jsonLdString = jsonLd
 			if (!bannerEnabled) return;
 			const threshold = window.innerHeight * (BANNER_HEIGHT / 100) - 72 - 16;
 			const navbar = document.getElementById("navbar-wrapper");
-			if (!navbar || !document.body.classList.contains("lg:is-home")) return;
+			if (!navbar || !document.body.classList.contains("is-home")) return;
 			if (
 				document.body.scrollTop >= threshold ||
 				document.documentElement.scrollTop >= threshold
@@ -631,9 +655,9 @@ const jsonLdString = jsonLd
 			const destination = visit.to?.url || "";
 			const bodyElement = document.querySelector("body");
 			if (pathsEqual(destination, url("/"))) {
-				bodyElement?.classList.add("lg:is-home");
+				bodyElement?.classList.add("is-home");
 			} else {
-				bodyElement?.classList.remove("lg:is-home");
+				bodyElement?.classList.remove("is-home");
 			}
 
 			const toc = document.getElementById("toc-wrapper");
@@ -643,6 +667,7 @@ const jsonLdString = jsonLd
 		swup.hooks.on("content:replace", () => {
 			initCustomScrollbar();
 			initPremiumReveal();
+			showBanner();
 		});
 
 		swup.hooks.on("visit:end", () => {
@@ -709,10 +734,7 @@ const jsonLdString = jsonLd
 				const MAIN_PANEL_EXCESS_HEIGHT = MAIN_PANEL_OVERLAPS_BANNER_HEIGHT * 16;
 
 				let navBannerHeight = BANNER_HEIGHT;
-				if (
-					document.body.classList.contains("lg:is-home") &&
-					window.innerWidth >= 1024
-				) {
+				if (document.body.classList.contains("is-home")) {
 					navBannerHeight = BANNER_HEIGHT_HOME;
 				}
 				const threshold =
