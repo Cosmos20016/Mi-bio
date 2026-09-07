@@ -9,17 +9,34 @@
 	const ONBOARDING_KEY = "urlshortener:onboarding:done:v1";
 	const MAX_URLS = 100;
 	const MAX_ALIAS_LENGTH = 30;
-	const MAX_DOMAIN_ALIAS_LENGTH = 8;
 	const COPY_FEEDBACK_DURATION = 2000;
 	const TOAST_DURATION = 3000;
 	const MAX_INPUT_LENGTH = 2048;
+	const METADATA_TIMEOUT_MS = 2500;
+
+	// Alfabeto nano-id sin caracteres ambiguos (sin 0, O, o, 1, l, I)
+	const UNAMBIGUOUS_CHARS = "23456789abcdefghjkmnpqrstuvwxyz";
 
 	// ============================================
 	// Types
 	// ============================================
 	type SortBy = "date" | "copies" | "name";
 	type ViewMode = "grid" | "list";
-	type CategoryId = "all" | "social" | "work" | "personal" | "dev" | "other";
+	type CategoryId =
+		| "all"
+		| "tech"
+		| "dev"
+		| "social"
+		| "entertainment"
+		| "news"
+		| "shopping"
+		| "education"
+		| "finance"
+		| "health"
+		| "sports"
+		| "work"
+		| "personal"
+		| "other";
 
 	interface ShortenedUrl {
 		id: string;
@@ -38,52 +55,36 @@
 		icon: string;
 	}
 
+	interface UrlMetadata {
+		title: string;
+		description: string;
+		ogTitle: string;
+	}
+
+	interface CategoryRule {
+		domains: readonly string[];
+		keywords: readonly string[];
+	}
+
 	// ============================================
-	// Categorías (declaradas como const para inmutabilidad)
+	// Categorías (Estructura expandida con preservación de compatibilidad)
 	// ============================================
 	const CATEGORIES: readonly Category[] = [
 		{ id: "all", label: "Todos", icon: "📋" },
+		{ id: "tech", label: "Tecnología", icon: "💡" },
+		{ id: "dev", label: "Desarrollo", icon: "💻" },
 		{ id: "social", label: "Social", icon: "📱" },
+		{ id: "entertainment", label: "Entretenimiento", icon: "🎬" },
+		{ id: "news", label: "Noticias", icon: "📰" },
+		{ id: "shopping", label: "Compras", icon: "🛍️" },
+		{ id: "education", label: "Educación", icon: "🎓" },
+		{ id: "finance", label: "Finanzas", icon: "💰" },
+		{ id: "health", label: "Salud", icon: "🏥" },
+		{ id: "sports", label: "Deportes", icon: "⚽" },
 		{ id: "work", label: "Trabajo", icon: "💼" },
 		{ id: "personal", label: "Personal", icon: "🏠" },
-		{ id: "dev", label: "Dev", icon: "💻" },
 		{ id: "other", label: "Otros", icon: "🔗" },
 	] as const;
-
-	const CATEGORY_RULES: Record<Exclude<CategoryId, "all" | "other">, readonly string[]> = {
-		social: [
-			"youtube", "youtu.be", "tiktok", "instagram", "facebook", "fb.com", "twitter", "x.com",
-			"linkedin", "threads", "pinterest", "reddit", "twitch", "discord", "snapchat",
-			"whatsapp", "telegram", "vk.com", "mastodon", "bluesky", "vimeo", "medium.com",
-			"substack", "patreon", "ko-fi", "linktree",
-		],
-		dev: [
-			"github", "gitlab", "bitbucket", "stackoverflow", "npmjs", "vercel", "netlify",
-			"heroku", "railway.app", "render.com", "codepen", "codesandbox", "replit",
-			"developer.mozilla", "devto", "dev.to", "hashnode", "hackernoon", "docker.com",
-			"kubernetes.io", "aws.amazon", "cloud.google", "digitalocean", "cloudflare",
-			"firebase.google", "supabase", "mongodb.com", "postgresql.org", "redis.io",
-			"postman.com", "swagger.io",
-		],
-		work: [
-			"docs.google", "drive.google", "sheets.google", "notion", "slack", "trello",
-			"asana", "jira", "atlassian", "monday.com", "clickup", "airtable", "coda.io",
-			"basecamp", "todoist", "evernote", "onenote", "confluence", "miro", "figma",
-			"sketch", "canva", "zoom", "teams.microsoft", "meet.google", "calendly",
-			"outlook", "gmail", "dropbox", "sharepoint", "salesforce", "hubspot",
-			"intercom", "zendesk",
-		],
-		personal: [
-			"blogspot", "wordpress.com", "wix.com", "squarespace", "ghost.org", "carrd.co",
-			"about.me", "linktr.ee", "spotify", "soundcloud", "apple.com/music", "deezer",
-			"tidal", "imdb", "letterboxd", "goodreads", "yelp", "tripadvisor", "booking.com",
-			"airbnb", "expedia", "etsy", "ebay", "amazon", "aliexpress", "mercadolibre",
-			"shopify", "gumroad", "udemy", "coursera", "duolingo", "strava",
-		],
-	};
-
-	const ADJECTIVES = ["fast", "cool", "smart", "bold", "zen", "nova", "pro", "top", "max", "ace"] as const;
-	const NOUNS = ["link", "go", "hub", "bit", "web", "net", "dot", "io", "app", "dev"] as const;
 
 	const CATEGORY_MAP: Record<CategoryId, Category> = CATEGORIES.reduce(
 		(acc, cat) => {
@@ -94,15 +95,170 @@
 	);
 
 	// ============================================
-	// Utilidades puras
+	// Reglas y Palabras Clave Robustas (ES/EN)
+	// ============================================
+	const CATEGORY_RULES: Record<
+		Exclude<CategoryId, "all" | "work" | "personal" | "other">,
+		CategoryRule
+	> = {
+		tech: {
+			domains: [
+				"techcrunch.com", "theverge.com", "wired.com", "cnet.com", "engadget.com",
+				"xataka.com", "genbeta.com", "gizmodo.com", "arstechnica.com", "slashdot.org",
+				"tomshardware.com", "gsmarena.com", "macrumors.com", "venturebeat.com",
+			],
+			keywords: [
+				"tech", "technology", "tecnologia", "tecnología", "gadget", "gadgets", "ai", "ia",
+				"artificial intelligence", "inteligencia artificial", "software", "hardware",
+				"device", "dispositivo", "electronics", "electronica", "electrónica", "robotics",
+				"robotica", "robótica", "cybersecurity", "ciberseguridad", "smartphone", "mobile",
+				"movil", "móvil", "innovation", "innovacion", "innovación", "computing", "computacion",
+				"computación", "processor", "procesador", "iot", "chip", "quantum", "digital",
+			],
+		},
+		dev: {
+			domains: [
+				"github.com", "gitlab.com", "bitbucket.org", "stackoverflow.com", "npmjs.com",
+				"vercel.com", "netlify.com", "codepen.io", "codesandbox.io", "replit.com",
+				"developer.mozilla.org", "dev.to", "hashnode.com", "docker.com", "kubernetes.io",
+				"pypi.org", "w3schools.com", "stackexchange.com", "geeksforgeeks.org", "leetcode.com",
+				"hackerrank.com", "railway.app", "render.com", "cloudflare.com", "supabase.com",
+			],
+			keywords: [
+				"github", "gitlab", "bitbucket", "git", "programming", "programacion", "programación",
+				"developer", "desarrollador", "desarrollo", "coding", "code", "codigo", "código",
+				"api", "rest", "graphql", "sdk", "frontend", "backend", "fullstack", "javascript",
+				"typescript", "python", "rust", "golang", "react", "svelte", "vue", "angular",
+				"nodejs", "docker", "kubernetes", "database", "devops", "stackoverflow", "npm",
+				"framework", "library", "libreria", "librería", "repository", "algoritmo",
+			],
+		},
+		news: {
+			domains: [
+				"cnn.com", "bbc.com", "nytimes.com", "theguardian.com", "elpais.com",
+				"elmundo.es", "reuters.com", "bloomberg.com", "infobae.com", "clarin.com",
+				"elcolombiano.com", "eltiempo.com", "semana.com", "forbes.com", "huffpost.com",
+				"washingtonpost.com", "apnews.com", "noticiascaracol.com", "news.google.com",
+			],
+			keywords: [
+				"news", "noticias", "noticia", "periodico", "periódico", "diario", "prensa",
+				"press", "journalism", "periodismo", "breaking", "urgente", "editorial",
+				"chronicle", "cronica", "crónica", "reportaje", "titulares", "headlines",
+				"actualidad", "boletin", "boletín", "newsletter", "report", "informe",
+				"politics", "politica", "política", "newspaper", "gaceta", "comunicacion",
+			],
+		},
+		entertainment: {
+			domains: [
+				"youtube.com", "youtu.be", "netflix.com", "disneyplus.com", "hbomax.com",
+				"max.com", "primevideo.com", "twitch.tv", "vimeo.com", "imdb.com",
+				"rottentomatoes.com", "letterboxd.com", "spotify.com", "soundcloud.com",
+				"tidal.com", "deezer.com", "bandcamp.com", "ign.com", "gamespot.com",
+				"steampowered.com", "epicgames.com", "crunchyroll.com",
+			],
+			keywords: [
+                "entertainment", "entretenimiento", "movie", "movies", "pelicula", "película",
+                "series", "film", "cinema", "cine", "trailer", "video", "stream", "streaming",
+                "music", "musica", "música", "song", "cancion", "canción", "album", "artist",
+                "artista", "gaming", "game", "videojuego", "juegos", "gamer", "comedy", "comedia",
+                "show", "anime", "manga", "fun", "diversion", "diversión", "podcast",
+			],
+		},
+		education: {
+			domains: [
+				"coursera.org", "udemy.com", "edx.org", "khanacademy.org", "duolingo.com",
+				"platzi.com", "mit.edu", "stanford.edu", "harvard.edu", "wikipedia.org",
+				"britannica.com", "academia.edu", "researchgate.net", "scholar.google.com",
+				"codecademy.com", "openlibrary.org",
+			],
+			keywords: [
+				"education", "educacion", "educación", "learn", "learning", "aprender",
+				"aprendizaje", "course", "curso", "tutorial", "academy", "academia",
+				"university", "universidad", "school", "escuela", "student", "estudiante",
+				"teacher", "profesor", "lesson", "leccion", "lección", "study", "estudio",
+				"scholar", "research", "investigacion", "investigación", "diploma", "certificacion",
+				"certification", "lecture", "clase", "aula",
+			],
+		},
+		shopping: {
+			domains: [
+				"amazon.com", "ebay.com", "aliexpress.com", "mercadolibre.com", "mercadolibre.com.co",
+				"etsy.com", "walmart.com", "target.com", "bestbuy.com", "shopify.com",
+				"alibaba.com", "shein.com", "falabella.com", "exito.com", "costco.com",
+			],
+			keywords: [
+				"shopping", "shop", "compras", "comprar", "tienda", "store", "ecommerce",
+				"e-commerce", "marketplace", "mercado", "cart", "carrito", "checkout",
+				"buy", "price", "precio", "discount", "descuento", "oferta", "deal",
+				"sale", "rebaja", "product", "producto", "order", "pedido", "shipping",
+				"envio", "envío", "catalog", "catalogo", "catálogo", "coupon", "cupon", "cupón",
+			],
+		},
+		social: {
+			domains: [
+				"facebook.com", "fb.com", "instagram.com", "twitter.com", "x.com",
+				"tiktok.com", "linkedin.com", "threads.net", "pinterest.com", "reddit.com",
+				"snapchat.com", "whatsapp.com", "telegram.org", "t.me", "bluesky.app",
+				"bsky.app", "mastodon.social", "discord.com", "vk.com",
+			],
+			keywords: [
+				"social", "network", "red social", "redes sociales", "community", "comunidad",
+				"profile", "perfil", "follow", "seguir", "follower", "seguidor", "post",
+				"publicacion", "publicación", "feed", "share", "compartir", "chat", "message",
+				"mensaje", "forum", "foro", "tweet", "reels", "story", "friends", "amigos",
+				"connect", "social media", "subscribers", "suscriptores",
+			],
+		},
+		finance: {
+			domains: [
+				"binance.com", "coinbase.com", "coinmarketcap.com", "investing.com", "tradingview.com",
+				"marketwatch.com", "paypal.com", "stripe.com", "bancolombia.com", "chase.com",
+				"bankofamerica.com", "revolut.com", "robinhood.com", "bloomberg.com/finance",
+			],
+			keywords: [
+				"finance", "finanzas", "financiero", "financial", "money", "dinero", "bank",
+				"banco", "banking", "crypto", "cripto", "bitcoin", "btc", "ethereum",
+				"invest", "investment", "inversion", "inversión", "trading", "bolsa",
+				"stock", "stocks", "acciones", "wallet", "billetera", "payment", "pago",
+				"loan", "prestamo", "préstamo", "credit", "credito", "crédito", "currency",
+				"divisa", "economy", "economia", "economía",
+			],
+		},
+		health: {
+			domains: [
+				"webmd.com", "healthline.com", "mayoclinic.org", "nih.gov", "who.int",
+				"medlineplus.gov", "medicalnewstoday.com", "psychologytoday.com", "menshealth.com",
+				"womenshealthmag.com", "minsalud.gov.co",
+			],
+			keywords: [
+				"health", "salud", "medical", "medico", "médico", "medicine", "medicina",
+				"doctor", "hospital", "clinic", "clinica", "clínica", "wellness", "bienestar",
+				"fitness", "nutrition", "nutricion", "nutrición", "diet", "dieta", "workout",
+				"ejercicio", "mental", "therapy", "terapia", "symptom", "sintoma", "síntoma",
+				"disease", "enfermedad", "pharma", "farmacia", "patient", "paciente",
+			],
+		},
+		sports: {
+			domains: [
+				"espn.com", "marca.com", "as.com", "mundodeportivo.com", "goal.com",
+				"nba.com", "fifa.com", "uefa.com", "formula1.com", "f1.com",
+				"motorsport.com", "strava.com", "olympics.com", "mlb.com", "nfl.com",
+			],
+			keywords: [
+				"sport", "sports", "deporte", "deportes", "football", "futbol", "fútbol",
+				"soccer", "basketball", "baloncesto", "tennis", "tenis", "baseball",
+				"beisbol", "béisbol", "formula1", "f1", "racing", "carreras", "championship",
+				"campeonato", "league", "liga", "tournament", "torneo", "player", "jugador",
+				"team", "equipo", "match", "partido", "stadium", "estadio", "athlete", "atleta",
+			],
+		},
+	};
+
+	// ============================================
+	// Utilidades Puras y Métricas
 	// ============================================
 	function clamp(value: number, min: number, max: number): number {
 		return Math.min(Math.max(value, min), max);
-	}
-
-	function getCategoryLabel(categoryId: CategoryId): string {
-		const cat = CATEGORY_MAP[categoryId];
-		return cat?.label ?? "Otros";
 	}
 
 	function getDomainHue(url: string): number {
@@ -116,18 +272,6 @@
 		} catch {
 			return 200;
 		}
-	}
-
-	function detectCategory(url: string): CategoryId {
-		try {
-			const hostname = new URL(url).hostname.toLowerCase();
-			for (const [category, domains] of Object.entries(CATEGORY_RULES) as [Exclude<CategoryId, "all" | "other">, readonly string[]][]) {
-				if (domains.some((d) => hostname.includes(d))) return category;
-			}
-		} catch {
-			// Ignore
-		}
-		return "other";
 	}
 
 	function isValidUrl(url: string): boolean {
@@ -146,31 +290,254 @@
 		return trimmed;
 	}
 
-	function isValidAlias(alias: string): boolean {
-		return /^[a-zA-Z0-9-]{1,30}$/.test(alias);
+	function decodeHtmlEntities(str: string): string {
+		return str
+			.replace(/&amp;/g, "&")
+			.replace(/&lt;/g, "<")
+			.replace(/&gt;/g, ">")
+			.replace(/&quot;/g, '"')
+			.replace(/&#39;/g, "'")
+			.replace(/&#x2F;/g, "/")
+			.replace(/&nbsp;/g, " ");
 	}
 
-	function generateAlias(url: string): string {
+	function parseHtmlMetadata(html: string): UrlMetadata {
+		let title = "";
+		let description = "";
+		let ogTitle = "";
+
+		const ogTitleMatch =
+			html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i) ||
+			html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i);
+		if (ogTitleMatch) ogTitle = decodeHtmlEntities(ogTitleMatch[1]);
+
+		const descMatch =
+			html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i) ||
+			html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["']/i) ||
+			html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i);
+		if (descMatch) description = decodeHtmlEntities(descMatch[1]);
+
+		const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+		if (titleMatch) title = decodeHtmlEntities(titleMatch[1]);
+
+		return {
+			title: title.trim(),
+			description: description.trim(),
+			ogTitle: ogTitle.trim(),
+		};
+	}
+
+	async function fetchUrlMetadata(url: string): Promise<UrlMetadata | null> {
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), METADATA_TIMEOUT_MS);
+
 		try {
-			const parsed = new URL(url);
-			const domain = parsed.hostname.replace("www.", "").split(".")[0];
-			if (domain.length <= MAX_DOMAIN_ALIAS_LENGTH && /^[a-zA-Z0-9]+$/.test(domain)) {
-				return `${domain}-${Math.random().toString(36).slice(2, 5)}`;
+			const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+			const res = await fetch(proxyUrl, { signal: controller.signal });
+			clearTimeout(timeoutId);
+
+			if (res.ok) {
+				const data = await res.json();
+				if (data && typeof data.contents === "string") {
+					return parseHtmlMetadata(data.contents);
+				}
 			}
 		} catch {
-			// Ignore
+			// Fallback controlado
+		} finally {
+			clearTimeout(timeoutId);
 		}
-		const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
-		const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
-		const num = Math.floor(Math.random() * 99);
-		return `${adj}-${noun}${num}`;
+
+		return null;
+	}
+
+	function fallbackTitleFromUrl(url: string): string {
+		try {
+			const parsed = new URL(url);
+			const pathParts = parsed.pathname
+				.split("/")
+				.filter(Boolean)
+				.map((p) => p.replace(/[-_]+/g, " ").replace(/\.[a-zA-Z0-9]+$/, "").trim())
+				.filter((p) => p.length > 0 && !/^\d+$/.test(p));
+
+			if (pathParts.length > 0) {
+				return pathParts[pathParts.length - 1];
+			}
+			return parsed.hostname.replace(/^www\./, "").split(".")[0];
+		} catch {
+			return "";
+		}
+	}
+
+	// ============================================
+	// FUNCIONALIDAD 1: GENERADOR AUTOMÁTICO DE ALIAS
+	// ============================================
+	function isValidAlias(alias: string): boolean {
+		if (!alias || alias.length > MAX_ALIAS_LENGTH) return false;
+		return /^[a-z0-9](?:[a-z0-9-]{0,28}[a-z0-9])?$/.test(alias) && !alias.includes("--");
+	}
+
+	function generateRandomSlug(len = 7): string {
+		let result = "";
+		for (let i = 0; i < len; i++) {
+			result += UNAMBIGUOUS_CHARS.charAt(Math.floor(Math.random() * UNAMBIGUOUS_CHARS.length));
+		}
+		return result;
+	}
+
+	function resolveAliasCollision(baseAlias: string, existingUrls: ShortenedUrl[]): string {
+		const existingSet = new Set(existingUrls.map((u) => u.alias.toLowerCase()));
+		if (!existingSet.has(baseAlias.toLowerCase())) {
+			return baseAlias;
+		}
+
+		let counter = 2;
+		while (counter < 1000) {
+			const suffix = `-${counter}`;
+			let prefix = baseAlias;
+			if (prefix.length + suffix.length > MAX_ALIAS_LENGTH) {
+				prefix = prefix.slice(0, MAX_ALIAS_LENGTH - suffix.length).replace(/-+$/, "");
+			}
+			const candidate = `${prefix}${suffix}`;
+			if (!existingSet.has(candidate.toLowerCase())) {
+				return candidate;
+			}
+			counter++;
+		}
+
+		while (true) {
+			const rand = generateRandomSlug(4);
+			const candidate = `${baseAlias.slice(0, 25).replace(/-+$/, "")}-${rand}`;
+			if (!existingSet.has(candidate.toLowerCase())) {
+				return candidate;
+			}
+		}
+	}
+
+	function generateSmartAlias(
+		url: string,
+		metadata: UrlMetadata | null,
+		existingUrls: ShortenedUrl[],
+	): string {
+		let rawSource = "";
+
+		if (metadata?.ogTitle && metadata.ogTitle.trim().length > 0) {
+			rawSource = metadata.ogTitle.trim();
+		} else if (metadata?.title && metadata.title.trim().length > 0) {
+			rawSource = metadata.title.trim();
+		} else {
+			rawSource = fallbackTitleFromUrl(url);
+		}
+
+		// Normalización estricta: minúsculas, eliminación de acentos, eñes -> n
+		let slug = rawSource
+			.toLowerCase()
+			.replace(/[ñÑ]/g, "n")
+			.normalize("NFD")
+			.replace(/[\u0300-\u036f]/g, "")
+			.replace(/[^a-z0-9]+/g, "-")
+			.replace(/^-+|-+$/g, "");
+
+		// Máx. 30 caracteres recortando por palabra completa
+		if (slug.length > MAX_ALIAS_LENGTH) {
+			const cut = slug.slice(0, MAX_ALIAS_LENGTH);
+			const lastDash = cut.lastIndexOf("-");
+			if (lastDash >= 10) {
+				slug = cut.slice(0, lastDash);
+			} else {
+				slug = cut.replace(/-+$/, "");
+			}
+		}
+		slug = slug.replace(/^-+|-+$/g, "");
+
+		// Si queda vacío tras sanitizar, generar nanoid sin ambigüedad
+		if (!slug || slug.length < 2) {
+			slug = generateRandomSlug(7);
+		}
+
+		return resolveAliasCollision(slug, existingUrls);
+	}
+
+	// ============================================
+	// FUNCIONALIDAD 2: DETECCIÓN AUTOMÁTICA DE CATEGORÍA
+	// ============================================
+	function detectCategory(url: string, metadata?: UrlMetadata | null): CategoryId {
+		try {
+			const parsed = new URL(url);
+			const hostname = parsed.hostname.toLowerCase();
+			const pathname = parsed.pathname.toLowerCase().replace(/[-_/.]+/g, " ");
+
+			const scores: Partial<Record<CategoryId, number>> = {};
+
+			const titleText = (metadata?.title || "").toLowerCase();
+			const ogTitleText = (metadata?.ogTitle || "").toLowerCase();
+			const descText = (metadata?.description || "").toLowerCase();
+
+			for (const [catId, rule] of Object.entries(CATEGORY_RULES) as [
+				Exclude<CategoryId, "all" | "work" | "personal" | "other">,
+				CategoryRule
+			][]) {
+				let score = 0;
+
+				// 1. Dominio exacto o subdominio (+15 pts)
+				for (const d of rule.domains) {
+					if (hostname === d || hostname.endsWith(`.${d}`) || hostname.includes(d)) {
+						score += 15;
+						break;
+					}
+				}
+
+				// 2. Título y og:title (+4 pts por coincidencia)
+				if (titleText || ogTitleText) {
+					for (const kw of rule.keywords) {
+						if (titleText.includes(kw) || ogTitleText.includes(kw)) {
+							score += 4;
+						}
+					}
+				}
+
+				// 3. Meta description (+2 pts por coincidencia)
+				if (descText) {
+					for (const kw of rule.keywords) {
+						if (descText.includes(kw)) {
+							score += 2;
+						}
+					}
+				}
+
+				// 4. Ruta del URL (+3 pts por coincidencia)
+				for (const kw of rule.keywords) {
+					if (pathname.includes(kw)) {
+						score += 3;
+					}
+				}
+
+				if (score > 0) {
+					scores[catId] = score;
+				}
+			}
+
+			// Seleccionar la categoría con mayor puntuación combinada
+			let bestCategory: CategoryId = "other";
+			let maxScore = 0;
+			for (const [cat, s] of Object.entries(scores) as [CategoryId, number][]) {
+				if (s > maxScore) {
+					maxScore = s;
+					bestCategory = cat;
+				}
+			}
+
+			return maxScore > 0 ? bestCategory : "other";
+		} catch {
+			return "other";
+		}
 	}
 
 	function formatDate(isoDate: string): string {
 		const date = new Date(isoDate);
 		if (Number.isNaN(date.getTime())) return "Fecha inválida";
 		const diffMs = Date.now() - date.getTime();
-		if (diffMs < 0) return "Ahora"; // Reloj desincronizado
+		if (diffMs < 0) return "Ahora";
 		const diffMins = Math.floor(diffMs / 60_000);
 		const diffHours = Math.floor(diffMs / 3_600_000);
 		const diffDays = Math.floor(diffMs / 86_400_000);
@@ -186,12 +553,8 @@
 		return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
 	}
 
-	function escapeRegex(s: string): string {
-		return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-	}
-
 	// ============================================
-	// Storage helpers (con try/catch y validación)
+	// Storage Helpers
 	// ============================================
 	function loadUrls(): ShortenedUrl[] {
 		try {
@@ -249,13 +612,11 @@
 	function saveSettings(sortBy: SortBy, viewMode: ViewMode): void {
 		try {
 			localStorage.setItem(SETTINGS_KEY, JSON.stringify({ sortBy, viewMode }));
-		} catch {
-			// Ignore
-		}
+		} catch {}
 	}
 
 	// ============================================
-	// Estado reactivo
+	// Estado Reactivo
 	// ============================================
 	let urls: ShortenedUrl[] = [];
 	let inputUrl = "";
@@ -266,7 +627,7 @@
 	let sortBy: SortBy = "date";
 	let viewMode: ViewMode = "list";
 
-	// UI state
+	// UI State
 	let showQR = false;
 	let qrUrl = "";
 	let qrAlias = "";
@@ -281,17 +642,17 @@
 	let editingAlias = "";
 	let isShortening = false;
 
-	// Dark mode
 	let darkModeObserver: MutationObserver | null = null;
+	const metadataCache = new Map<string, UrlMetadata>();
+	let prefetchTimeout: ReturnType<typeof setTimeout> | null = null;
 
 	// ============================================
-	// Persistencia
+	// Persistencia y Detección Reactiva
 	// ============================================
 	$: if (isReady) {
 		saveSettings(sortBy, viewMode);
 	}
 
-	// Reactive: detectar categoría automáticamente
 	let categoryDetected = false;
 	$: {
 		if (inputUrl && !categoryDetected) {
@@ -299,14 +660,29 @@
 			if (isValidUrl(normalized)) {
 				inputCategory = detectCategory(normalized);
 				categoryDetected = true;
+
+				if (prefetchTimeout) clearTimeout(prefetchTimeout);
+				prefetchTimeout = setTimeout(async () => {
+					if (!metadataCache.has(normalized)) {
+						const meta = await fetchUrlMetadata(normalized);
+						if (meta) {
+							metadataCache.set(normalized, meta);
+							if (inputCategory === "other") {
+								const refined = detectCategory(normalized, meta);
+								if (refined !== "other") inputCategory = refined;
+							}
+						}
+					}
+				}, 300);
 			}
 		} else if (!inputUrl) {
 			categoryDetected = false;
+			if (prefetchTimeout) clearTimeout(prefetchTimeout);
 		}
 	}
 
 	// ============================================
-	// Derivados (memoization-friendly)
+	// Derivados
 	// ============================================
 	$: filteredUrls = (() => {
 		const query = searchQuery.trim().toLowerCase();
@@ -318,7 +694,7 @@
 			const matchesCategory = filterCategory === "all" || u.category === filterCategory;
 			return matchesSearch && matchesCategory;
 		});
-		// No mutar el array original
+
 		return [...filtered].sort((a, b) => {
 			if (sortBy === "date") {
 				return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -352,7 +728,7 @@
 	})();
 
 	// ============================================
-	// Toast helper
+	// Toast Helper
 	// ============================================
 	let toastTimer: ReturnType<typeof setTimeout> | null = null;
 	let copyTimer: ReturnType<typeof setTimeout> | null = null;
@@ -369,7 +745,7 @@
 	}
 
 	// ============================================
-	// URL Shortening APIs (con fallback)
+	// URL Shortening APIs
 	// ============================================
 	async function shortenWithCleanUri(longUrl: string): Promise<string> {
 		const response = await fetch("https://cleanuri.com/api/v1/shorten", {
@@ -447,16 +823,10 @@
 			return;
 		}
 
-		let alias = inputAlias.trim();
-		if (!alias) {
-			alias = generateAlias(normalized);
-		} else if (!isValidAlias(alias)) {
-			showSuccessToast("⚠️ Alias inválido (solo letras, números y guiones)");
-			return;
-		}
-
-		if (urls.some((u) => u.alias === alias)) {
-			showSuccessToast("⚠️ Alias ya existe");
+		const existing = urls.find((u) => u.originalUrl === normalized);
+		if (existing) {
+			await copyToClipboard(existing.shortUrl);
+			showSuccessToast(`✓ Copiado (alias: #${existing.alias})`);
 			return;
 		}
 
@@ -465,16 +835,35 @@
 			return;
 		}
 
-		// Detectar duplicados por URL original
-		const existing = urls.find((u) => u.originalUrl === normalized);
-		if (existing) {
-			await copyToClipboard(existing.shortUrl);
-			showSuccessToast(`✓ Copiado (alias: #${existing.alias})`);
-			return;
+		let alias = inputAlias.trim().toLowerCase();
+		if (alias) {
+			if (!isValidAlias(alias)) {
+				showSuccessToast("⚠️ Alias inválido (solo a-z, 0-9 y guiones intermedios)");
+				return;
+			}
+			if (urls.some((u) => u.alias.toLowerCase() === alias)) {
+				showSuccessToast("⚠️ Alias ya existe");
+				return;
+			}
 		}
 
 		isShortening = true;
 		try {
+			let metadata: UrlMetadata | null = metadataCache.get(normalized) || null;
+			if (!alias || inputCategory === "other") {
+				if (!metadata) {
+					metadata = await fetchUrlMetadata(normalized);
+					if (metadata) metadataCache.set(normalized, metadata);
+				}
+				if (!alias) {
+					alias = generateSmartAlias(normalized, metadata, urls);
+				}
+				if (inputCategory === "other" && metadata) {
+					const refined = detectCategory(normalized, metadata);
+					if (refined !== "other") inputCategory = refined;
+				}
+			}
+
 			const shortUrl = await shortenUrl(normalized);
 			const newUrl: ShortenedUrl = {
 				id: generateId(),
@@ -495,7 +884,10 @@
 			showSuccessToast("✓ URL acortada");
 		} catch (err) {
 			console.warn("[UrlShortener] Acortamiento falló, guardando sin acortar", err);
-			// Guardar original sin acortar (mejor UX que perder el enlace)
+			if (!alias) {
+				const metadata = metadataCache.get(normalized) || null;
+				alias = generateSmartAlias(normalized, metadata, urls);
+			}
 			const newUrl: ShortenedUrl = {
 				id: generateId(),
 				originalUrl: normalized,
@@ -524,9 +916,7 @@
 				await navigator.clipboard.writeText(text);
 				return true;
 			}
-		} catch {
-			// Fallback
-		}
+		} catch {}
 		try {
 			const ta = document.createElement("textarea");
 			ta.value = text;
@@ -598,12 +988,12 @@
 
 	function saveEditAlias(): void {
 		if (!editingId) return;
-		const newAlias = editingAlias.trim();
+		const newAlias = editingAlias.trim().toLowerCase();
 		if (!newAlias || !isValidAlias(newAlias)) {
-			showSuccessToast("⚠️ Alias inválido");
+			showSuccessToast("⚠️ Alias inválido (solo a-z, 0-9 y guiones intermedios)");
 			return;
 		}
-		if (urls.some((u) => u.alias === newAlias && u.id !== editingId)) {
+		if (urls.some((u) => u.alias.toLowerCase() === newAlias && u.id !== editingId)) {
 			showSuccessToast("⚠️ Alias ya existe");
 			return;
 		}
@@ -657,7 +1047,6 @@
 						showSuccessToast("⚠️ Formato inválido");
 						return;
 					}
-					// Validar estructura mínima
 					const valid = imported.filter(
 						(u): u is ShortenedUrl =>
 							typeof u === "object" &&
@@ -686,9 +1075,7 @@
 		showOnboarding = false;
 		try {
 			localStorage.setItem(ONBOARDING_KEY, "true");
-		} catch {
-			// Ignore
-		}
+		} catch {}
 	}
 
 	// ============================================
@@ -717,23 +1104,21 @@
 			}
 		}
 
-		// Ctrl/Cmd + E: Exportar
 		if ((event.ctrlKey || event.metaKey) && event.key === "e" && !inField) {
 			event.preventDefault();
 			exportUrls();
 			return;
 		}
 
-		// Ctrl/Cmd + K: Focus search
 		if ((event.ctrlKey || event.metaKey) && event.key === "k" && !inField) {
 			event.preventDefault();
-			const searchInput = document.querySelector<HTMLInputElement>(".input-search");
+			const searchInput = document.querySelector<HTMLInputElement>("input[type='search'].input-search");
 			searchInput?.focus();
 		}
 	}
 
 	// ============================================
-	// QR Modal: focus trap
+	// QR Modal Focus Trap
 	// ============================================
 	let qrCard: HTMLDivElement;
 
@@ -755,7 +1140,6 @@
 	}
 
 	$: if (showQR && qrCard) {
-		// Focus al abrir
 		queueMicrotask(() => {
 			const firstButton = qrCard.querySelector<HTMLElement>("button");
 			firstButton?.focus();
@@ -763,16 +1147,14 @@
 	}
 
 	// ============================================
-	// Lifecycle
+	// Ciclo de Vida
 	// ============================================
 	onMount(() => {
-		// Cargar datos
 		urls = loadUrls();
 		const settings = loadSettings();
 		sortBy = settings.sortBy;
 		viewMode = settings.viewMode;
 
-		// Dark mode observer
 		const htmlEl = document.documentElement;
 		isDark = htmlEl.classList.contains("dark");
 		darkModeObserver = new MutationObserver(() => {
@@ -780,16 +1162,12 @@
 		});
 		darkModeObserver.observe(htmlEl, { attributes: true, attributeFilter: ["class"] });
 
-		// Atajos
 		document.addEventListener("keydown", onKey);
 
-		// Onboarding
 		try {
 			const hasSeen = localStorage.getItem(ONBOARDING_KEY);
 			if (!hasSeen && urls.length === 0) showOnboarding = true;
-		} catch {
-			// Ignore
-		}
+		} catch {}
 
 		isReady = true;
 	});
@@ -803,6 +1181,7 @@
 		if (toastTimer) clearTimeout(toastTimer);
 		if (copyTimer) clearTimeout(copyTimer);
 		if (copyAliasTimer) clearTimeout(copyAliasTimer);
+		if (prefetchTimeout) clearTimeout(prefetchTimeout);
 	});
 </script>
 
@@ -1266,8 +1645,8 @@
 	}
 
 	/* ============================================
-     Header
-     ============================================ */
+      Header
+      ============================================ */
 	.url-shortener-header {
 		display: flex;
 		align-items: flex-start;
@@ -1366,8 +1745,8 @@
 	}
 
 	/* ============================================
-     Input section
-     ============================================ */
+      Input section
+      ============================================ */
 	.input-section {
 		background: rgba(255, 255, 255, 0.8);
 		backdrop-filter: blur(10px);
@@ -1493,8 +1872,8 @@
 	}
 
 	/* ============================================
-     Category filter
-     ============================================ */
+      Category filter
+      ============================================ */
 	.category-filter {
 		display: flex;
 		gap: 0.5rem;
@@ -1560,8 +1939,8 @@
 	}
 
 	/* ============================================
-     Filter section
-     ============================================ */
+      Filter section
+      ============================================ */
 	.filter-section {
 		display: flex;
 		gap: 0.75rem;
@@ -1632,8 +2011,8 @@
 	}
 
 	/* ============================================
-     URLs list
-     ============================================ */
+      URLs list
+      ============================================ */
 	.urls-list {
 		display: grid;
 		gap: 0.85rem;
@@ -1671,8 +2050,8 @@
 	}
 
 	/* ============================================
-     URL card
-     ============================================ */
+      URL card
+      ============================================ */
 	.url-card {
 		background: rgba(255, 255, 255, 0.8);
 		backdrop-filter: blur(10px);
@@ -1767,7 +2146,6 @@
 		color: hsl(var(--hue, 200), 75%, 65%);
 	}
 
-	/* Animaciones reducidas si el usuario lo prefiere */
 	@media (prefers-reduced-motion: reduce) {
 		.globe-icon {
 			animation: none;
@@ -2044,8 +2422,8 @@
 	}
 
 	/* ============================================
-     QR Modal
-     ============================================ */
+      QR Modal
+      ============================================ */
 	.url-shortener-qr-overlay {
 		position: fixed;
 		inset: 0;
@@ -2179,8 +2557,8 @@
 	}
 
 	/* ============================================
-     Onboarding
-     ============================================ */
+      Onboarding
+      ============================================ */
 	.url-shortener-onboarding-overlay {
 		position: fixed;
 		inset: 0;
@@ -2285,8 +2663,8 @@
 	}
 
 	/* ============================================
-     Toast
-     ============================================ */
+      Toast
+      ============================================ */
 	.toast-success {
 		position: fixed;
 		bottom: 2rem;
@@ -2323,8 +2701,8 @@
 	}
 
 	/* ============================================
-     Footer
-     ============================================ */
+      Footer
+      ============================================ */
 	.url-shortener-footer {
 		display: flex;
 		justify-content: space-between;
@@ -2385,8 +2763,8 @@
 	}
 
 	/* ============================================
-     Info section
-     ============================================ */
+      Info section
+      ============================================ */
 	.info-section {
 		background: rgba(255, 255, 255, 0.8);
 		backdrop-filter: blur(10px);
@@ -2457,8 +2835,8 @@
 	}
 
 	/* ============================================
-     Animations globales
-     ============================================ */
+      Animations globales
+      ============================================ */
 	@keyframes fadeIn {
 		from { opacity: 0; }
 		to { opacity: 1; }
@@ -2487,8 +2865,8 @@
 	}
 
 	/* ============================================
-     Responsive
-     ============================================ */
+      Responsive
+      ============================================ */
 	@media (max-width: 640px) {
 		.url-shortener-header {
 			flex-direction: column;
