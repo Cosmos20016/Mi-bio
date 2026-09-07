@@ -9,6 +9,7 @@
 	const ONBOARDING_KEY = "urlshortener:onboarding:done:v1";
 	const MAX_URLS = 100;
 	const MAX_ALIAS_LENGTH = 30;
+	const MAX_GENERATED_ALIAS_LENGTH = 13;
 	const COPY_FEEDBACK_DURATION = 2000;
 	const TOAST_DURATION = 3000;
 	const MAX_INPUT_LENGTH = 2048;
@@ -67,7 +68,7 @@
 	}
 
 	// ============================================
-	// Categorías (Estructura expandida con preservación de compatibilidad)
+	// Categorías
 	// ============================================
 	const CATEGORIES: readonly Category[] = [
 		{ id: "all", label: "Todos", icon: "📋" },
@@ -157,11 +158,11 @@
 				"steampowered.com", "epicgames.com", "crunchyroll.com",
 			],
 			keywords: [
-                "entertainment", "entretenimiento", "movie", "movies", "pelicula", "película",
-                "series", "film", "cinema", "cine", "trailer", "video", "stream", "streaming",
-                "music", "musica", "música", "song", "cancion", "canción", "album", "artist",
-                "artista", "gaming", "game", "videojuego", "juegos", "gamer", "comedy", "comedia",
-                "show", "anime", "manga", "fun", "diversion", "diversión", "podcast",
+				"entertainment", "entretenimiento", "movie", "movies", "pelicula", "película",
+				"series", "film", "cinema", "cine", "trailer", "video", "stream", "streaming",
+				"music", "musica", "música", "song", "cancion", "canción", "album", "artist",
+				"artista", "gaming", "game", "videojuego", "juegos", "gamer", "comedy", "comedia",
+				"show", "anime", "manga", "fun", "diversion", "diversión", "podcast",
 			],
 		},
 		education: {
@@ -370,16 +371,17 @@
 	}
 
 	// ============================================
-	// FUNCIONALIDAD 1: GENERADOR AUTOMÁTICO DE ALIAS
+	// FUNCIONALIDAD 1: GENERADOR AUTOMÁTICO DE ALIAS (MÁX. 13 CARACTERES)
 	// ============================================
 	function isValidAlias(alias: string): boolean {
 		if (!alias || alias.length > MAX_ALIAS_LENGTH) return false;
 		return /^[a-z0-9](?:[a-z0-9-]{0,28}[a-z0-9])?$/.test(alias) && !alias.includes("--");
 	}
 
-	function generateRandomSlug(len = 7): string {
+	function generateRandomSlug(len = 6): string {
+		const targetLen = Math.min(len, MAX_GENERATED_ALIAS_LENGTH);
 		let result = "";
-		for (let i = 0; i < len; i++) {
+		for (let i = 0; i < targetLen; i++) {
 			result += UNAMBIGUOUS_CHARS.charAt(Math.floor(Math.random() * UNAMBIGUOUS_CHARS.length));
 		}
 		return result;
@@ -387,29 +389,52 @@
 
 	function resolveAliasCollision(baseAlias: string, existingUrls: ShortenedUrl[]): string {
 		const existingSet = new Set(existingUrls.map((u) => u.alias.toLowerCase()));
-		if (!existingSet.has(baseAlias.toLowerCase())) {
-			return baseAlias;
+
+		let cleanBase = baseAlias
+			.slice(0, MAX_GENERATED_ALIAS_LENGTH)
+			.replace(/^-+|-+$/g, "");
+
+		if (!cleanBase || cleanBase.length < 2) {
+			cleanBase = generateRandomSlug(6);
 		}
 
-		let counter = 2;
-		while (counter < 1000) {
+		if (!existingSet.has(cleanBase.toLowerCase())) {
+			return cleanBase;
+		}
+
+		// 1. Intentar sufijo numérico (-2 a -99) ajustando la base para NO exceder 13 caracteres
+		for (let counter = 2; counter <= 99; counter++) {
 			const suffix = `-${counter}`;
-			let prefix = baseAlias;
-			if (prefix.length + suffix.length > MAX_ALIAS_LENGTH) {
-				prefix = prefix.slice(0, MAX_ALIAS_LENGTH - suffix.length).replace(/-+$/, "");
+			const maxPrefixLen = MAX_GENERATED_ALIAS_LENGTH - suffix.length;
+			let prefix = cleanBase.slice(0, maxPrefixLen).replace(/-+$/, "");
+			if (!prefix) {
+				prefix = cleanBase.slice(0, maxPrefixLen);
 			}
 			const candidate = `${prefix}${suffix}`;
-			if (!existingSet.has(candidate.toLowerCase())) {
+			if (!existingSet.has(candidate.toLowerCase()) && candidate.length <= MAX_GENERATED_ALIAS_LENGTH) {
 				return candidate;
 			}
-			counter++;
 		}
 
-		while (true) {
-			const rand = generateRandomSlug(4);
-			const candidate = `${baseAlias.slice(0, 25).replace(/-+$/, "")}-${rand}`;
-			if (!existingSet.has(candidate.toLowerCase())) {
+		// 2. Si persisten colisiones, sufijo aleatorio corto (-xxx) respetando el límite estricto de 13
+		for (let attempts = 0; attempts < 50; attempts++) {
+			const randSuffix = `-${generateRandomSlug(3)}`;
+			const maxPrefixLen = MAX_GENERATED_ALIAS_LENGTH - randSuffix.length;
+			let prefix = cleanBase.slice(0, maxPrefixLen).replace(/-+$/, "");
+			if (!prefix) {
+				prefix = generateRandomSlug(Math.max(2, maxPrefixLen));
+			}
+			const candidate = `${prefix}${randSuffix}`;
+			if (!existingSet.has(candidate.toLowerCase()) && candidate.length <= MAX_GENERATED_ALIAS_LENGTH) {
 				return candidate;
+			}
+		}
+
+		// 3. Fallback final aleatorio único garantizado (6 caracteres <= 13)
+		while (true) {
+			const fallbackCandidate = generateRandomSlug(6);
+			if (!existingSet.has(fallbackCandidate.toLowerCase())) {
+				return fallbackCandidate;
 			}
 		}
 	}
@@ -429,7 +454,7 @@
 			rawSource = fallbackTitleFromUrl(url);
 		}
 
-		// Normalización estricta: minúsculas, eliminación de acentos, eñes -> n
+		// Normalización: minúsculas, sustitución de eñes, eliminación de acentos y caracteres especiales
 		let slug = rawSource
 			.toLowerCase()
 			.replace(/[ñÑ]/g, "n")
@@ -438,21 +463,25 @@
 			.replace(/[^a-z0-9]+/g, "-")
 			.replace(/^-+|-+$/g, "");
 
-		// Máx. 30 caracteres recortando por palabra completa
-		if (slug.length > MAX_ALIAS_LENGTH) {
-			const cut = slug.slice(0, MAX_ALIAS_LENGTH);
-			const lastDash = cut.lastIndexOf("-");
-			if (lastDash >= 10) {
-				slug = cut.slice(0, lastDash);
+		// Recorte estricto a máximo 13 caracteres por palabra completa si es viable
+		if (slug.length > MAX_GENERATED_ALIAS_LENGTH) {
+			if (slug.charAt(MAX_GENERATED_ALIAS_LENGTH) === "-") {
+				slug = slug.slice(0, MAX_GENERATED_ALIAS_LENGTH);
 			} else {
-				slug = cut.replace(/-+$/, "");
+				const cut = slug.slice(0, MAX_GENERATED_ALIAS_LENGTH);
+				const lastDash = cut.lastIndexOf("-");
+				if (lastDash >= 2) {
+					slug = cut.slice(0, lastDash);
+				} else {
+					slug = cut;
+				}
 			}
+			slug = slug.replace(/-+$/, "");
 		}
-		slug = slug.replace(/^-+|-+$/g, "");
 
-		// Si queda vacío tras sanitizar, generar nanoid sin ambigüedad
+		// Si queda vacío o con menos de 2 caracteres, fallback a nanoid aleatorio
 		if (!slug || slug.length < 2) {
-			slug = generateRandomSlug(7);
+			slug = generateRandomSlug(6);
 		}
 
 		return resolveAliasCollision(slug, existingUrls);
