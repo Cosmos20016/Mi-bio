@@ -246,59 +246,208 @@
 	};
 
 	// =========================================================================
-	// AUTO-ORGANIZADOR DE GUIONES
+	// MOTOR INTELIGENTE DE SEGMENTACIÓN DE GUIONES (TELEPROMPTER PROFESIONAL)
 	// =========================================================================
+	const BREATH_CONNECTORS = new Set([
+		"y", "e", "ni", "o", "u", "pero", "mas", "sino", "aunque",
+		"porque", "pues", "ya que", "puesto que", "dado que", "como",
+		"si", "conque", "así", "así que", "por tanto", "por lo tanto", "por ende", "entonces",
+		"que", "quien", "quienes", "donde", "cuando", "cual", "cuales", "cuyo", "cuya", "cuyos", "cuyas",
+		"para", "por", "hacia", "desde", "hasta", "entre", "durante", "mediante", "según", "frente", "contra",
+		"sin", "sobre", "tras"
+	]);
+
+	const isDenseText = (textChunk: string): boolean => {
+		const words = textChunk.trim().split(/\s+/).filter(Boolean);
+		if (words.length === 0) return false;
+
+		let longWordsCount = 0;
+		let numbersCount = 0;
+		let totalChars = 0;
+
+		for (const w of words) {
+			const clean = w.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
+			totalChars += clean.length;
+			if (clean.length >= 8) longWordsCount++;
+			if (/\d/.test(w)) numbersCount++;
+		}
+
+		const avgWordLength = totalChars / words.length;
+		const complexityRatio = (longWordsCount + numbersCount) / words.length;
+
+		return avgWordLength >= 6.0 || complexityRatio >= 0.22 || numbersCount >= 2;
+	};
+
+	const balanceOrphanLines = (segments: string[]): string[] => {
+		if (segments.length < 2) return segments;
+		const output = [...segments];
+
+		for (let i = output.length - 1; i > 0; i--) {
+			const current = output[i];
+			const prev = output[i - 1];
+
+			const currentWords = current.split(/\s+/).filter(Boolean);
+			const prevWords = prev.split(/\s+/).filter(Boolean);
+
+			// Si la línea final queda huérfana (1 o 2 palabras) y la anterior tiene suficiente margen
+			if (currentWords.length <= 2 && prevWords.length >= 6) {
+				const wordsToTransfer = Math.min(2, Math.floor(prevWords.length / 2));
+				const transferSlice = prevWords.slice(prevWords.length - wordsToTransfer);
+				const remainingPrev = prevWords.slice(0, prevWords.length - wordsToTransfer);
+
+				const candidatePrev = remainingPrev.join(" ");
+				const candidateCurrent = [...transferSlice, ...currentWords].join(" ");
+
+				if (candidatePrev.length <= 65 && candidateCurrent.length <= 65) {
+					output[i - 1] = candidatePrev;
+					output[i] = candidateCurrent;
+				}
+			}
+		}
+
+		return output;
+	};
+
+	const segmentSentence = (sentence: string): string[] => {
+		const trimmed = sentence.trim();
+		if (!trimmed) return [];
+
+		const words = trimmed.split(/\s+/).filter(Boolean);
+		if (words.length === 0) return [];
+
+		const isDense = isDenseText(trimmed);
+		const targetWordMin = isDense ? 5 : 8;
+		const targetWordMax = isDense ? 8 : 12;
+		const targetCharLimit = isDense ? 52 : 60;
+		const hardCharLimit = 65;
+
+		if (words.length <= targetWordMax && trimmed.length <= targetCharLimit) {
+			return [trimmed];
+		}
+
+		const rawSegments: string[] = [];
+		let currentTokens: string[] = [];
+
+		for (let i = 0; i < words.length; i++) {
+			const word = words[i];
+			currentTokens.push(word);
+
+			const currentText = currentTokens.join(" ");
+			const currentCount = currentTokens.length;
+
+			if (i === words.length - 1) {
+				rawSegments.push(currentText);
+				break;
+			}
+
+			const nextWord = words[i + 1];
+			const nextWordClean = nextWord.toLowerCase().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
+			const prospectiveLength = currentText.length + 1 + nextWord.length;
+
+			// 1. Puntuación suave en la palabra actual (: ; — –) -> Corte obligado si ya hay cláusula
+			if (/[:;—–][\)"'»”]*$/u.test(word) && currentCount >= 2) {
+				rawSegments.push(currentText);
+				currentTokens = [];
+				continue;
+			}
+
+			// 2. Coma en la palabra actual -> Corta si alcanzó longitud suficiente o si la siguiente excede margen
+			if (/[,][\)"'»”]*$/u.test(word)) {
+				if (currentCount >= targetWordMin || currentText.length >= 36 || prospectiveLength > targetCharLimit) {
+					rawSegments.push(currentText);
+					currentTokens = [];
+					continue;
+				}
+			}
+
+			// 3. Conectores naturales de respiración o gerundios en la siguiente palabra
+			const isConnectorNext = BREATH_CONNECTORS.has(nextWordClean) || /(?:ando|iendo|yendo)[.,:;—–]?$/i.test(nextWord);
+			if (isConnectorNext && currentCount >= targetWordMin) {
+				rawSegments.push(currentText);
+				currentTokens = [];
+				continue;
+			}
+
+			// 4. Límite máximo de palabras por línea
+			if (currentCount >= targetWordMax) {
+				rawSegments.push(currentText);
+				currentTokens = [];
+				continue;
+			}
+
+			// 5. Límite de caracteres visuales
+			if (prospectiveLength > targetCharLimit && currentCount >= targetWordMin) {
+				rawSegments.push(currentText);
+				currentTokens = [];
+				continue;
+			}
+
+			if (prospectiveLength > hardCharLimit) {
+				rawSegments.push(currentText);
+				currentTokens = [];
+				continue;
+			}
+		}
+
+		return balanceOrphanLines(rawSegments.filter((s) => s.trim().length > 0));
+	};
+
 	const autoFormatScript = (): void => {
 		if (!text.trim() || isFormatting) return;
 		isFormatting = true;
 
+		// Normalizar saltos de línea y espacios redundantes
 		const cleanText = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/[ \t]+/g, " ");
+		// Preservar la separación de párrafos original del usuario
 		const rawParagraphs = cleanText.split(/\n\s*\n/);
 		const structuredParagraphs: string[] = [];
 
 		for (const paragraph of rawParagraphs) {
-			const trimmed = paragraph.trim();
-			if (!trimmed) continue;
+			const trimmedParagraph = paragraph.trim();
+			if (!trimmedParagraph) continue;
 
-			const rawLines = trimmed.split("\n");
-			let joined = "";
+			// Si el párrafo ya es un elemento de lista o encabezado muy corto, respetarlo
+			const isListOrHeading = /^[-*•\d+.)#]\s/.test(trimmedParagraph) && trimmedParagraph.length <= 65;
+			if (isListOrHeading) {
+				structuredParagraphs.push(trimmedParagraph);
+				continue;
+			}
 
-			for (const rLine of rawLines) {
-				const singleLine = rLine.trim();
-				if (!singleLine) continue;
+			// Unificar líneas duras intermedias accidentales dentro del mismo párrafo
+			const unifiedText = trimmedParagraph.split("\n").map((l) => l.trim()).filter(Boolean).join(" ");
 
-				if (joined && !joined.endsWith("\n") && !/^[-*•\d+.]\s/.test(singleLine)) {
-					joined += ` ${singleLine}`;
-				} else {
-					joined += (joined ? "\n" : "") + singleLine;
+			// Proteger abreviaturas y cifras decimales para no quebrar oraciones prematuramente
+			const protectedText = unifiedText
+				.replace(/(\d)\.(\d)/g, "$1\u200B$2")
+				.replace(/\b(Dr|Dra|Sr|Sra|Srta|Prof|Ing|Lic|etc|pág|pag|vs|ej|EE\.UU|U\.S)\./gi, (m) => m.replace(/\./g, "\u200C"));
+
+			// Separar por límites de oración fuertes (. ! ? ...)
+			const rawSentences = protectedText.match(/[^.!?…]+(?:[.!?…]+|$)/gu) || [protectedText];
+			const paragraphSegments: string[] = [];
+
+			for (const rawSentence of rawSentences) {
+				const restoredSentence = rawSentence
+					.replace(/\u200B/g, ".")
+					.replace(/\u200C/g, ".")
+					.trim();
+
+				if (!restoredSentence) continue;
+
+				const segmentedLines = segmentSentence(restoredSentence);
+				for (const line of segmentedLines) {
+					paragraphSegments.push(line);
 				}
 			}
 
-			if (joined.length > 130 && !joined.includes("\n")) {
-				const sentences = joined.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g) || [joined];
-				let chunk = "";
-
-				for (const s of sentences) {
-					const sTrim = s.trim();
-					if (!sTrim) continue;
-
-					if (!chunk) {
-						chunk = sTrim;
-					} else if ((chunk + " " + sTrim).length <= 150) {
-						chunk += ` ${sTrim}`;
-					} else {
-						structuredParagraphs.push(chunk);
-						chunk = sTrim;
-					}
-				}
-
-				if (chunk) structuredParagraphs.push(chunk);
-			} else {
-				structuredParagraphs.push(joined);
+			if (paragraphSegments.length > 0) {
+				// Cada bloque de lectura ocupa su propia línea dentro del párrafo
+				structuredParagraphs.push(paragraphSegments.join("\n"));
 			}
 		}
 
+		// Preservar la separación estructural de párrafos con doble salto
 		text = structuredParagraphs.join("\n\n");
+
 		setTimeout(() => {
 			calculateMetrics();
 			isFormatting = false;
@@ -308,8 +457,8 @@
 
 	const handlePaste = (e: ClipboardEvent): void => {
 		const pasted = e.clipboardData?.getData("text");
-		if (pasted && pasted.length > 250) {
-			if (pasted.split("\n").some((l) => l.length > 160)) {
+		if (pasted && pasted.length > 200) {
+			if (pasted.split("\n").some((l) => l.length > 80)) {
 				setTimeout(autoFormatScript, 60);
 			}
 		}
@@ -565,7 +714,6 @@
 		showToast("Rebobinado al inicio");
 	};
 
-	// FIX CRÍTICO #1: Vaciar sin residuos de memoria ni fantasmas en storage
 	const clearText = (): void => {
 		pause();
 		text = "";
@@ -577,7 +725,6 @@
 			saveDebounceTimer = null;
 		}
 
-		// Persistencia inmediata del estado vacío explícito
 		const payload: TeleprompterPersistedState = {
 			text: "",
 			speed,
@@ -908,7 +1055,6 @@
 		showToast("➕ Nuevo guion listo");
 	};
 
-	// FIX CRÍTICO #2: Clamping y preservación estricta de vacíos
 	const loadState = (): void => {
 		const raw = safeStorage.get(STORAGE_KEY_STATE);
 		if (!raw) return;
@@ -917,7 +1063,6 @@
 			const data = JSON.parse(raw) as Partial<TeleprompterPersistedState>;
 			if (typeof data !== "object" || data === null) return;
 
-			// Respeta la cadena vacía explícita si el usuario la borró
 			if (typeof data.text === "string") {
 				text = data.text;
 			}
@@ -939,7 +1084,6 @@
 		}
 	};
 
-	// FIX CRÍTICO #1: Eliminación de la guarda que bloqueaba el guardado de texto vacío
 	const scheduleSave = (): void => {
 		if (!isReady) return;
 		if (saveDebounceTimer !== null) clearTimeout(saveDebounceTimer);
@@ -1060,7 +1204,6 @@
 		loadState();
 		loadScripts();
 
-		// Si el usuario vació el texto, no restauramos guiones obsoletos
 		const lastScriptId = safeStorage.get(STORAGE_KEY_LAST_SCRIPT);
 		if (lastScriptId && text.trim().length > 0) {
 			loadScript(lastScriptId);
@@ -1116,6 +1259,7 @@
 		stopThemeWatch = null;
 	});
 </script>
+
 {#if toastVisible}
 	<div class="teleprompter-toast" role="status" aria-live="polite">
 		<span>{toastMessage}</span>
